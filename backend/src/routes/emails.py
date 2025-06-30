@@ -304,7 +304,7 @@ def handle_inbound_email():
             current_app.logger.warning(f"Thread not found for subject: {subject}")
             return jsonify({'success': False, 'error': 'Thread not found'}), 404
         
-        # Create email reply record
+        # Create email reply record - FIXED: Use 'references' instead of 'email_references'
         email_reply = EmailReply(
             tenant_id=contact.tenant_id,
             thread_id=thread.id,
@@ -316,7 +316,7 @@ def handle_inbound_email():
             content_html=html_content,
             message_id=message_id,
             in_reply_to=in_reply_to,
-            email_references=references,
+            references=references,  # FIXED: Changed from 'email_references' to 'references'
             webhook_data=form_data,
             is_processed=True
         )
