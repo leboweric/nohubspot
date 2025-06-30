@@ -1,39 +1,63 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import Login from './components/Login'
-import ContactsList from './components/ContactsList'
-import ContactDetail from './components/ContactDetail'
-import { isAuthenticated, logout } from './lib/auth'
 import './App.css'
 
+// Components
+import AuthPage from './components/AuthPage'
+import Dashboard from './components/Dashboard'
+import ContactsList from './components/ContactsList'
+import ContactDetail from './components/ContactDetail'
+import Layout from './components/Layout'
+
+// API utilities
+import { api } from './lib/api'
+
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const authenticated = await isAuthenticated()
-      setIsLoggedIn(authenticated)
+    // Check if user is already logged in
+    const token = localStorage.getItem('access_token')
+    if (token) {
+      api.getCurrentUser()
+        .then(response => {
+          if (response.success) {
+            setUser(response.data.user)
+          } else {
+            localStorage.removeItem('access_token')
+            localStorage.removeItem('refresh_token')
+          }
+        })
+        .catch(() => {
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('refresh_token')
+        })
+        .finally(() => setLoading(false))
+    } else {
       setLoading(false)
     }
-    checkAuth()
   }, [])
 
-  const handleLogin = () => {
-    setIsLoggedIn(true)
+  const handleLogin = (userData) => {
+    setUser(userData.user)
+    localStorage.setItem('access_token', userData.access_token)
+    localStorage.setItem('refresh_token', userData.refresh_token)
   }
 
   const handleLogout = () => {
-    logout()
-    setIsLoggedIn(false)
+    setUser(null)
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    api.logout()
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading NotHubSpot...</p>
         </div>
       </div>
     )
@@ -41,59 +65,19 @@ function App() {
 
   return (
     <Router>
-      <div className="App">
-        {isLoggedIn && (
-          <nav className="bg-white shadow-sm border-b">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between h-16">
-                <div className="flex items-center">
-                  <h1 className="text-xl font-semibold text-gray-900">NotHubSpot</h1>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={handleLogout}
-                    className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Logout
-                  </button>
-                </div>
-              </div>
-            </div>
-          </nav>
+      <div className="min-h-screen bg-white">
+        {!user ? (
+          <AuthPage onLogin={handleLogin} />Add commentMore actions
+        ) : (
+          <Layout user={user} onLogout={handleLogout}>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/contacts" element={<ContactsList />} />
+              <Route path="/contacts/:id" element={<ContactDetail />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Layout>
         )}
-
-        <Routes>
-          <Route 
-            path="/login" 
-            element={
-              isLoggedIn ? 
-                <Navigate to="/contacts" replace /> : 
-                <Login onLogin={handleLogin} />
-            } 
-          />
-          <Route 
-            path="/contacts" 
-            element={
-              isLoggedIn ? 
-                <ContactsList /> : 
-                <Navigate to="/login" replace />
-            } 
-          />
-          <Route 
-            path="/contacts/:id" 
-            element={
-              isLoggedIn ? 
-                <ContactDetail /> : 
-                <Navigate to="/login" replace />
-            } 
-          />
-          <Route 
-            path="/" 
-            element={
-              <Navigate to={isLoggedIn ? "/contacts" : "/login"} replace />
-            } 
-          />
-        </Routes>
       </div>
     </Router>
   )
