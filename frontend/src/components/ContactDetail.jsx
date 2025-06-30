@@ -89,6 +89,7 @@ export default function ContactDetail() {
     const formData = new FormData(e.target)
     const emailData = {
       contact_id: id,
+      to: contact.email,
       subject: formData.get('subject'),
       content: formData.get('content'),
     }
@@ -454,12 +455,8 @@ export default function ContactDetail() {
                   </div>
                 )}
                 <div className="pt-4 border-t">
-                  <p className="text-sm text-gray-500">
-                    Created {new Date(contact.created_at).toLocaleDateString()}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Updated {new Date(contact.updated_at).toLocaleDateString()}
-                  </p>
+                  <p className="text-sm text-gray-500">Created {new Date(contact.created_at).toLocaleDateString()}</p>
+                  <p className="text-sm text-gray-500">Updated {new Date(contact.updated_at).toLocaleDateString()}</p>
                 </div>
                 {contact.notes && (
                   <div className="pt-4 border-t">
@@ -470,12 +467,12 @@ export default function ContactDetail() {
               </CardContent>
             </Card>
 
-            {/* Email Threads */}
+            {/* Email Conversations */}
             {threads.length > 0 && (
               <Card className="mt-6">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5" />
+                  <CardTitle className="flex items-center">
+                    <MessageSquare className="h-5 w-5 mr-2" />
                     Email Conversations
                   </CardTitle>
                 </CardHeader>
@@ -484,18 +481,20 @@ export default function ContactDetail() {
                     {threads.map((thread) => (
                       <div
                         key={thread.id}
-                        className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                        className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
                         onClick={() => handleViewThread(thread.id)}
                       >
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-medium text-sm truncate">{thread.subject}</h4>
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-sm">{thread.subject}</h4>
                           <Badge variant="secondary" className="text-xs">
-                            {thread.reply_count} replies
+                            {thread.reply_count} {thread.reply_count === 1 ? 'reply' : 'replies'}
                           </Badge>
                         </div>
-                        <div className="flex items-center justify-between text-xs text-gray-500">
-                          <span>Last activity: {formatTimestamp(thread.last_activity_at)}</span>
-                          <Reply className="h-3 w-3" />
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-xs text-gray-500">
+                            Last activity: {formatTimestamp(thread.last_activity_at)}
+                          </span>
+                          <Reply className="h-3 w-3 text-gray-400" />
                         </div>
                       </div>
                     ))}
@@ -505,84 +504,99 @@ export default function ContactDetail() {
             )}
           </div>
 
-          {/* Recent Activity */}
+          {/* Timeline */}
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
+                <CardTitle>Activity Timeline</CardTitle>
               </CardHeader>
               <CardContent>
-                {timeline.length > 0 ? (
+                {timeline.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">No activity yet</p>
+                    <p className="text-sm text-gray-400">Send an email or add a note to get started</p>
+                  </div>
+                ) : (
                   <div className="space-y-4">
-                    {timeline.map((item) => (
-                      <div key={item.id} className="flex items-start space-x-3 p-4 border rounded-lg">
-                        <div className="flex-shrink-0 mt-1">
-                          {getActivityIcon(item.type)}
+                    {timeline.map((item, index) => (
+                      <div key={index} className="flex space-x-3">
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            {getActivityIcon(item.type)}
+                          </div>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <p className="text-sm font-medium text-gray-900">
-                              {item.subject}
+                              {item.title}
                             </p>
                             <div className="flex items-center space-x-2">
-                              {item.type === 'email' && item.opens > 0 && (
-                                <div className="flex items-center space-x-1 text-xs text-green-600">
-                                  <Eye className="h-3 w-3" />
-                                  <span>{item.opens} opens</span>
-                                </div>
+                              {item.status && (
+                                <Badge 
+                                  variant={
+                                    item.status === 'sent' ? 'default' :
+                                    item.status === 'opened' ? 'secondary' :
+                                    item.status === 'clicked' ? 'destructive' :
+                                    'outline'
+                                  }
+                                  className="text-xs"
+                                >
+                                  {item.status}
+                                </Badge>
                               )}
-                              {item.type === 'email' && item.clicks > 0 && (
-                                <div className="flex items-center space-x-1 text-xs text-blue-600">
-                                  <MousePointer className="h-3 w-3" />
-                                  <span>{item.clicks} clicks</span>
-                                </div>
-                              )}
-                              <div className="flex items-center space-x-1 text-xs text-gray-500">
-                                <Clock className="h-3 w-3" />
-                                <span>{formatTimestamp(item.created_at)}</span>
-                              </div>
+                              <span className="text-xs text-gray-500 flex items-center">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {formatTimestamp(item.timestamp)}
+                              </span>
                             </div>
                           </div>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {item.content}
-                          </p>
-                          <div className="flex items-center space-x-2 mt-2">
-                            <Badge variant={item.direction === 'outbound' ? 'default' : 'secondary'}>
-                              {item.direction === 'outbound' ? 'Sent' : 'Received'}
-                            </Badge>
-                            <Badge variant="outline">
-                              {item.type}
-                            </Badge>
-                            {item.status && (
-                              <Badge variant={item.status === 'completed' ? 'default' : 'secondary'}>
-                                {item.status}
-                              </Badge>
-                            )}
-                          </div>
+                          {item.description && (
+                            <p className="text-sm text-gray-600 mt-1">
+                              {item.description}
+                            </p>
+                          )}
+                          {item.metadata && (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {item.metadata.opens > 0 && (
+                                <div className="flex items-center text-xs text-gray-500">
+                                  <Eye className="h-3 w-3 mr-1" />
+                                  {item.metadata.opens} opens
+                                </div>
+                              )}
+                              {item.metadata.clicks > 0 && (
+                                <div className="flex items-center text-xs text-gray-500">
+                                  <MousePointer className="h-3 w-3 mr-1" />
+                                  {item.metadata.clicks} clicks
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No activity yet</h3>
-                    <p className="text-gray-600">Start by sending an email to this contact.</p>
                   </div>
                 )}
               </CardContent>
             </Card>
           </div>
         </div>
-      </div>
 
-      {/* Email Thread Dialog */}
-      <EmailThread
-        threadId={selectedThreadId}
-        isOpen={threadDialogOpen}
-        onClose={() => setThreadDialogOpen(false)}
-        contactName={contact.full_name}
-      />
+        {/* Email Thread Dialog */}
+        <Dialog open={threadDialogOpen} onOpenChange={setThreadDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Email Conversation</DialogTitle>
+              <DialogDescription>
+                Complete email thread with replies
+              </DialogDescription>
+            </DialogHeader>
+            {selectedThreadId && (
+              <EmailThread threadId={selectedThreadId} />
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   )
 }
