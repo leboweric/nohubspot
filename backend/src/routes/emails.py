@@ -1,5 +1,5 @@
-from flask import Blueprint, request, jsonify, current_app, g, send_file, redirect
-from src.models.user import db, EmailSend, EmailPixel, EmailOpen, EmailClick, Contact, Interaction, EmailThread, EmailReply
+from flask import Blueprint, request, jsonify, g, current_app
+from src.models.user import db, EmailSend, EmailPixel, EmailOpen, EmailClick, Contact, Interaction, EmailThread, EmailReply, User, Tenant
 from src.models.user import normalize_subject, generate_thread_key, extract_message_id_from_headers, parse_references_header
 from datetime import datetime, timedelta
 from functools import wraps
@@ -99,29 +99,20 @@ def require_auth(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def create_tracking_pixel():
-    """Create a 1x1 transparent PNG pixel"""
-    # Create a 1x1 transparent image
-    img = Image.new('RGBA', (1, 1), (0, 0, 0, 0))
-    img_io = io.BytesIO()
-    img.save(img_io, 'PNG')
-    img_io.seek(0)
-    return img_io
-
 @emails_bp.route('/send', methods=['POST'])
 @require_auth
 def send_email():
-    """Send tracked email with thread support"""
+    """Send email to contact with thread tracking"""
     try:
         data = request.get_json()
         
         # Validate required fields
         required_fields = ['contact_id', 'subject', 'content']
         for field in required_fields:
-            if not data.get(field):
+            if field not in data:
                 return jsonify({'success': False, 'error': {'message': f'{field} is required'}}), 400
         
-        # Verify contact exists and belongs to tenant
+        # Get contact
         contact = Contact.query.filter_by(
             id=data['contact_id'],
             tenant_id=g.current_tenant_id
@@ -130,21 +121,28 @@ def send_email():
         if not contact:
             return jsonify({'success': False, 'error': {'message': 'Contact not found'}}), 404
         
-        if not contact.email:
-            return jsonify({'success': False, 'error': {'message': 'Contact has no email address'}}), 400
-        
         # Get current user and tenant for custom from name
-        from src.models.user import User, Tenant
         current_user = User.query.get(g.current_user_id)
-        if not current_user:
-            return jsonify({'success': False, 'error': {'message': 'User not found'}}), 404
-        
         tenant = Tenant.query.get(g.current_tenant_id)
-        if not tenant:
-            return jsonify({'success': False, 'error': {'message': 'Tenant not found'}}), 404
         
-        # Find or create email thread
-        thread = find_or_create_thread_for_outbound(contact, data['subject'])
+        # Create or find email thread
+        thread_key = generate_thread_key(data['subject'], contact.email)
+        thread = EmailThread.query.filter_by(
+            tenant_id=g.current_tenant_id,
+            contact_id=contact.id,
+            thread_key=thread_key
+        ).first()
+        
+        if not thread:
+            # Create new thread
+            thread = EmailThread(
+                tenant_id=g.current_tenant_id,
+                contact_id=contact.id,
+                subject=data['subject'],
+                thread_key=thread_key
+            )
+            db.session.add(thread)
+            db.session.flush()  # Get thread ID
         
         # Create email send record
         email_send = EmailSend(
@@ -182,6 +180,9 @@ def send_email():
         # Create custom from name with company
         custom_from_name = f"{current_user.full_name} ({tenant.name})"
         
+        # FIXED: Use nothubspot.app domain for reply-to to enable webhook capture
+        reply_to_email = f"replies+{contact.id}@nothubspot.app"
+        
         # Send email via SendGrid
         send_result = email_service.send_email(
             to_email=contact.email,
@@ -189,7 +190,7 @@ def send_email():
             subject=data['subject'],
             html_content=tracked_content,
             text_content=data.get('text_content'),
-            reply_to_email=current_user.email,
+            reply_to_email=reply_to_email,  # FIXED: Use nothubspot.app domain
             reply_to_name=current_user.full_name,
             from_name=custom_from_name  # Custom from name with company
         )
@@ -201,163 +202,22 @@ def send_email():
                 'error': {'message': f'Failed to send email: {send_result["error"]}'}
             }), 500
         
-        # Update email send record with SendGrid info
-        email_send.email_provider = 'sendgrid'
-        email_send.external_message_id = send_result.get('message_id')
+        # Store external message ID if available
+        if send_result.get('message_id'):
+            email_send.external_message_id = send_result['message_id']
         
         # Update thread activity
         thread.last_activity_at = datetime.utcnow()
         
-        # Log interaction
+        # Create interaction record
         interaction = Interaction(
             tenant_id=g.current_tenant_id,
             contact_id=contact.id,
             user_id=g.current_user_id,
             type='email',
-            subject=f'Email sent: {data["subject"]}',
-            content=f'Email sent to {contact.email}',
+            subject=f"Email sent: {data['subject']}",
+            content=data['content'],
             direction='outbound',
-            status='completed',
-            completed_at=datetime.utcnow()
-        )
-        db.session.add(interaction)
-        
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Email sent successfully',
-            'email_id': email_send.id,
-            'thread_id': thread.id,
-            'tracking_pixel': pixel_url
-        }), 201
-        
-    except Exception as e:
-        current_app.logger.error(f"Error sending email: {str(e)}")
-        db.session.rollback()
-        return jsonify({'success': False, 'error': {'message': 'Failed to send email'}}), 500
-
-def find_or_create_thread_for_outbound(contact, subject):
-    """Find existing thread or create new one for outbound email"""
-    try:
-        # Generate thread key for matching
-        thread_key = generate_thread_key(subject, contact.email)
-        
-        # Look for existing thread
-        existing_thread = EmailThread.query.filter_by(
-            tenant_id=contact.tenant_id,
-            contact_id=contact.id,
-            thread_key=thread_key,
-            is_active=True
-        ).first()
-        
-        if existing_thread:
-            return existing_thread
-        
-        # Create new thread
-        new_thread = EmailThread(
-            tenant_id=contact.tenant_id,
-            contact_id=contact.id,
-            subject=subject,
-            thread_key=thread_key,
-            last_activity_at=datetime.utcnow(),
-            reply_count=0,
-            is_active=True
-        )
-        
-        db.session.add(new_thread)
-        db.session.flush()  # Get the ID without committing
-        
-        return new_thread
-        
-    except Exception as e:
-        current_app.logger.error(f"Error finding/creating thread: {str(e)}")
-        raise
-
-# SendGrid Webhook Handler for Inbound Emails
-@emails_bp.route('/webhook/inbound', methods=['POST'])
-def handle_inbound_email():
-    """Handle incoming email webhook from SendGrid Inbound Parse"""
-    try:
-        # Get the raw email data from SendGrid
-        email_data = request.form.to_dict()
-        
-        # Extract basic email information
-        from_email = email_data.get('from', '').strip()
-        to_email = email_data.get('to', '').strip()
-        subject = email_data.get('subject', '').strip()
-        text_content = email_data.get('text', '')
-        html_content = email_data.get('html', '')
-        
-        # Extract email headers
-        headers = {}
-        for key, value in email_data.items():
-            if key.startswith('headers['):
-                header_name = key[8:-1]  # Remove 'headers[' and ']'
-                headers[header_name] = value
-        
-        # Extract threading information
-        message_id = extract_message_id_from_headers(headers)
-        in_reply_to = headers.get('In-Reply-To', '')
-        references = headers.get('References', '')
-        
-        # Log the incoming email for debugging
-        current_app.logger.info(f"Received inbound email from {from_email} to {to_email} with subject: {subject}")
-        
-        # Find the contact by email
-        contact = Contact.query.filter_by(email=from_email).first()
-        if not contact:
-            current_app.logger.warning(f"No contact found for email: {from_email}")
-            return jsonify({'success': True, 'message': 'Email received but no matching contact'}), 200
-        
-        # Find or create email thread
-        thread = find_or_create_thread_for_inbound(contact, subject, to_email)
-        if not thread:
-            current_app.logger.error(f"Failed to find or create thread for contact {contact.id}")
-            return jsonify({'success': False, 'error': 'Failed to process thread'}), 500
-        
-        # Create email reply record
-        email_reply = EmailReply(
-            tenant_id=contact.tenant_id,
-            thread_id=thread.id,
-            contact_id=contact.id,
-            from_email=from_email,
-            from_name=email_data.get('from_name', ''),
-            subject=subject,
-            content_text=text_content,
-            content_html=html_content,
-            message_id=message_id,
-            in_reply_to=in_reply_to,
-            references=references,
-            received_at=datetime.utcnow(),
-            is_processed=True,
-            webhook_data=email_data
-        )
-        
-        # Try to find the original email this is replying to
-        if in_reply_to:
-            original_email = EmailSend.query.filter_by(
-                external_message_id=in_reply_to,
-                tenant_id=contact.tenant_id
-            ).first()
-            if original_email:
-                email_reply.original_email_id = original_email.id
-        
-        # Save the reply
-        db.session.add(email_reply)
-        
-        # Update thread statistics
-        thread.reply_count += 1
-        thread.last_activity_at = datetime.utcnow()
-        
-        # Create interaction record for timeline
-        interaction = Interaction(
-            tenant_id=contact.tenant_id,
-            contact_id=contact.id,
-            type='email',
-            subject=f"Reply: {subject}",
-            content=text_content[:500] + ('...' if len(text_content) > 500 else ''),
-            direction='inbound',
             status='completed',
             completed_at=datetime.utcnow()
         )
@@ -366,68 +226,143 @@ def handle_inbound_email():
         # Commit all changes
         db.session.commit()
         
-        current_app.logger.info(f"Successfully processed email reply from {from_email} for thread {thread.id}")
+        return jsonify({
+            'success': True,
+            'message': 'Email sent successfully',
+            'email_id': email_send.id,
+            'thread_id': thread.id,
+            'tracking_pixel': pixel_token
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error sending email: {e}")
+        return jsonify({
+            'success': False,
+            'error': {'message': 'Internal server error'}
+        }), 500
+
+@emails_bp.route('/webhook/inbound', methods=['POST'])
+def handle_inbound_email():
+    """Handle incoming email replies via SendGrid webhook"""
+    try:
+        # Get form data from SendGrid webhook
+        form_data = request.form.to_dict()
+        
+        # Extract email details
+        from_email = form_data.get('from', '')
+        to_email = form_data.get('to', '')
+        subject = form_data.get('subject', '')
+        text_content = form_data.get('text', '')
+        html_content = form_data.get('html', '')
+        
+        # Extract headers for threading
+        headers = {}
+        for key, value in form_data.items():
+            if key.startswith('headers[') and key.endswith(']'):
+                header_name = key[8:-1]  # Remove 'headers[' and ']'
+                headers[header_name] = value
+        
+        message_id = headers.get('Message-ID', '')
+        in_reply_to = headers.get('In-Reply-To', '')
+        references = headers.get('References', '')
+        
+        current_app.logger.info(f"Received inbound email from {from_email} to {to_email}")
+        
+        # Parse the to_email to extract contact ID
+        # Format: replies+{contact_id}@nothubspot.app
+        if '+' in to_email and '@nothubspot.app' in to_email:
+            contact_id = to_email.split('+')[1].split('@')[0]
+        else:
+            current_app.logger.warning(f"Could not parse contact ID from to_email: {to_email}")
+            return jsonify({'success': False, 'error': 'Invalid to_email format'}), 400
+        
+        # Find the contact
+        contact = Contact.query.filter_by(id=contact_id).first()
+        if not contact:
+            current_app.logger.warning(f"Contact not found: {contact_id}")
+            return jsonify({'success': False, 'error': 'Contact not found'}), 404
+        
+        # Find the email thread
+        thread_key = generate_thread_key(subject, from_email)
+        thread = EmailThread.query.filter_by(
+            tenant_id=contact.tenant_id,
+            contact_id=contact.id,
+            thread_key=thread_key
+        ).first()
+        
+        if not thread:
+            # Try to find thread by normalized subject
+            normalized_subject = normalize_subject(subject)
+            thread = EmailThread.query.filter(
+                EmailThread.tenant_id == contact.tenant_id,
+                EmailThread.contact_id == contact.id,
+                EmailThread.thread_key.like(f"%{normalized_subject}%")
+            ).first()
+        
+        if not thread:
+            current_app.logger.warning(f"Thread not found for subject: {subject}")
+            return jsonify({'success': False, 'error': 'Thread not found'}), 404
+        
+        # Create email reply record
+        email_reply = EmailReply(
+            tenant_id=contact.tenant_id,
+            thread_id=thread.id,
+            contact_id=contact.id,
+            from_email=from_email,
+            from_name=form_data.get('from_name', ''),
+            subject=subject,
+            content_text=text_content,
+            content_html=html_content,
+            message_id=message_id,
+            in_reply_to=in_reply_to,
+            email_references=references,
+            webhook_data=form_data,
+            is_processed=True
+        )
+        db.session.add(email_reply)
+        
+        # Update thread activity
+        thread.last_activity_at = datetime.utcnow()
+        thread.reply_count += 1
+        
+        # Create interaction record for the reply
+        interaction = Interaction(
+            tenant_id=contact.tenant_id,
+            contact_id=contact.id,
+            type='email',
+            subject=f"Email reply: {subject}",
+            content=text_content or html_content,
+            direction='inbound',
+            status='completed',
+            completed_at=datetime.utcnow()
+        )
+        db.session.add(interaction)
+        
+        db.session.commit()
+        
+        current_app.logger.info(f"Successfully processed inbound email reply for thread {thread.id}")
         
         return jsonify({
             'success': True,
             'message': 'Email reply processed successfully',
-            'thread_id': thread.id,
-            'reply_id': email_reply.id
+            'reply_id': email_reply.id,
+            'thread_id': thread.id
         }), 200
         
     except Exception as e:
-        current_app.logger.error(f"Error processing inbound email: {str(e)}")
         db.session.rollback()
+        current_app.logger.error(f"Error processing inbound email: {e}")
         return jsonify({
             'success': False,
-            'error': 'Failed to process email',
-            'details': str(e)
+            'error': {'message': 'Internal server error'}
         }), 500
 
-def find_or_create_thread_for_inbound(contact, subject, to_email):
-    """Find existing thread or create new one for inbound email conversation"""
-    try:
-        # Generate thread key for matching
-        thread_key = generate_thread_key(subject, contact.email)
-        
-        # Look for existing thread
-        existing_thread = EmailThread.query.filter_by(
-            tenant_id=contact.tenant_id,
-            contact_id=contact.id,
-            thread_key=thread_key,
-            is_active=True
-        ).first()
-        
-        if existing_thread:
-            return existing_thread
-        
-        # Create new thread
-        new_thread = EmailThread(
-            tenant_id=contact.tenant_id,
-            contact_id=contact.id,
-            subject=subject,
-            thread_key=thread_key,
-            last_activity_at=datetime.utcnow(),
-            reply_count=0,
-            is_active=True
-        )
-        
-        db.session.add(new_thread)
-        db.session.flush()  # Get the ID without committing
-        
-        return new_thread
-        
-    except Exception as e:
-        current_app.logger.error(f"Error finding/creating thread: {str(e)}")
-        return None
-
-# Thread API Endpoints
 @emails_bp.route('/threads/<thread_id>', methods=['GET'])
 @require_auth
-def get_email_thread(thread_id):
-    """Get complete email thread with all messages"""
+def get_thread(thread_id):
+    """Get complete email thread with all emails and replies"""
     try:
-        # Get the thread
         thread = EmailThread.query.filter_by(
             id=thread_id,
             tenant_id=g.current_tenant_id
@@ -436,233 +371,156 @@ def get_email_thread(thread_id):
         if not thread:
             return jsonify({'success': False, 'error': {'message': 'Thread not found'}}), 404
         
-        # Get all emails in the thread (sent emails)
-        sent_emails = EmailSend.query.filter_by(
-            thread_id=thread_id,
-            tenant_id=g.current_tenant_id
-        ).order_by(EmailSend.sent_at.asc()).all()
+        # Get all emails in thread
+        emails = EmailSend.query.filter_by(thread_id=thread_id).order_by(EmailSend.sent_at).all()
         
-        # Get all replies in the thread
-        replies = EmailReply.query.filter_by(
-            thread_id=thread_id,
-            tenant_id=g.current_tenant_id
-        ).order_by(EmailReply.received_at.asc()).all()
+        # Get all replies in thread
+        replies = EmailReply.query.filter_by(thread_id=thread_id).order_by(EmailReply.received_at).all()
         
-        # Combine and sort all messages chronologically
-        messages = []
+        # Combine and sort by timestamp
+        thread_items = []
         
-        # Add sent emails
-        for email in sent_emails:
-            # Get user info
-            from src.models.user import User
-            user = User.query.get(email.user_id)
-            
-            messages.append({
+        for email in emails:
+            thread_items.append({
+                'type': 'email',
                 'id': email.id,
-                'type': 'sent',
                 'subject': email.subject,
                 'content': email.content,
                 'timestamp': email.sent_at.isoformat(),
-                'from_user': True,
-                'user_id': email.user_id,
-                'user_name': user.full_name if user else 'Unknown User'
+                'direction': 'outbound'
             })
         
-        # Add replies
         for reply in replies:
-            messages.append({
-                'id': reply.id,
+            thread_items.append({
                 'type': 'reply',
+                'id': reply.id,
                 'subject': reply.subject,
                 'content': reply.content_text or reply.content_html,
-                'timestamp': reply.received_at.isoformat(),
-                'from_user': False,
                 'from_email': reply.from_email,
-                'from_name': reply.from_name
+                'from_name': reply.from_name,
+                'timestamp': reply.received_at.isoformat(),
+                'direction': 'inbound'
             })
         
         # Sort by timestamp
-        messages.sort(key=lambda x: x['timestamp'])
+        thread_items.sort(key=lambda x: x['timestamp'])
         
         return jsonify({
             'success': True,
             'thread': thread.to_dict(),
-            'messages': messages
+            'items': thread_items
         }), 200
         
     except Exception as e:
-        current_app.logger.error(f"Error getting email thread: {str(e)}")
-        return jsonify({'success': False, 'error': {'message': 'Failed to get thread'}}), 500
+        current_app.logger.error(f"Error getting thread: {e}")
+        return jsonify({
+            'success': False,
+            'error': {'message': 'Internal server error'}
+        }), 500
 
 @emails_bp.route('/threads/contact/<contact_id>', methods=['GET'])
 @require_auth
 def get_contact_threads(contact_id):
-    """Get all email threads for a specific contact"""
+    """Get all email threads for a contact"""
     try:
-        # Verify contact belongs to current tenant
-        contact = Contact.query.filter_by(
-            id=contact_id,
-            tenant_id=g.current_tenant_id
-        ).first()
-        
-        if not contact:
-            return jsonify({'success': False, 'error': {'message': 'Contact not found'}}), 404
-        
-        # Get all threads for this contact
         threads = EmailThread.query.filter_by(
             contact_id=contact_id,
-            tenant_id=g.current_tenant_id,
-            is_active=True
+            tenant_id=g.current_tenant_id
         ).order_by(EmailThread.last_activity_at.desc()).all()
-        
-        # Add message counts and latest activity for each thread
-        thread_data = []
-        for thread in threads:
-            sent_count = EmailSend.query.filter_by(thread_id=thread.id).count()
-            reply_count = thread.reply_count
-            
-            thread_dict = thread.to_dict()
-            thread_dict['total_messages'] = sent_count + reply_count
-            thread_dict['sent_count'] = sent_count
-            
-            thread_data.append(thread_dict)
         
         return jsonify({
             'success': True,
-            'threads': thread_data
+            'threads': [thread.to_dict() for thread in threads]
         }), 200
         
     except Exception as e:
-        current_app.logger.error(f"Error getting contact threads: {str(e)}")
-        return jsonify({'success': False, 'error': {'message': 'Failed to get threads'}}), 500
+        current_app.logger.error(f"Error getting contact threads: {e}")
+        return jsonify({
+            'success': False,
+            'error': {'message': 'Internal server error'}
+        }), 500
 
-# Existing tracking endpoints (unchanged)
 @emails_bp.route('/track/pixel/<pixel_token>.png', methods=['GET'])
-def track_pixel(pixel_token):
-    """Track email open via pixel"""
+def track_email_open(pixel_token):
+    """Track email opens via tracking pixel"""
     try:
         # Find the pixel
         pixel = EmailPixel.query.filter_by(pixel_token=pixel_token).first()
-        if not pixel:
-            # Return a 1x1 transparent pixel even if not found
-            return send_file(io.BytesIO(create_tracking_pixel().read()), mimetype='image/png')
         
-        # Check if this is a unique open
-        existing_open = EmailOpen.query.filter_by(pixel_id=pixel.id).first()
-        is_unique = existing_open is None
+        if pixel:
+            # Check if this is a unique open (first time from this IP)
+            ip_address = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR'))
+            user_agent = request.headers.get('User-Agent', '')
+            
+            existing_open = EmailOpen.query.filter_by(
+                pixel_id=pixel.id,
+                ip_address=ip_address
+            ).first()
+            
+            is_unique = existing_open is None
+            
+            # Record the open
+            email_open = EmailOpen(
+                pixel_id=pixel.id,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                is_unique=is_unique
+            )
+            db.session.add(email_open)
+            db.session.commit()
         
-        # Record the open
-        email_open = EmailOpen(
-            pixel_id=pixel.id,
-            ip_address=request.remote_addr,
-            user_agent=request.headers.get('User-Agent', ''),
-            is_unique=is_unique
-        )
-        db.session.add(email_open)
+        # Return 1x1 transparent PNG
+        img = Image.new('RGBA', (1, 1), (0, 0, 0, 0))
+        img_io = io.BytesIO()
+        img.save(img_io, 'PNG')
+        img_io.seek(0)
         
-        # Update contact lead score for unique opens
-        if is_unique:
-            contact = Contact.query.get(pixel.email_send.contact_id)
-            if contact:
-                contact.lead_score += 5  # Add 5 points for email open
-        
-        db.session.commit()
-        
-        # Return 1x1 transparent pixel
-        return send_file(create_tracking_pixel(), mimetype='image/png')
-        
-    except Exception as e:
-        current_app.logger.error(f"Error tracking pixel: {str(e)}")
-        # Always return a pixel, even on error
-        return send_file(create_tracking_pixel(), mimetype='image/png')
-
-@emails_bp.route('/track/click', methods=['GET'])
-def track_click():
-    """Track email link click"""
-    try:
-        email_id = request.args.get('email_id')
-        url = request.args.get('url')
-        
-        if not email_id or not url:
-            return redirect('https://example.com')  # Fallback URL
-        
-        # Record the click
-        email_click = EmailClick(
-            email_send_id=email_id,
-            url=url,
-            ip_address=request.remote_addr,
-            user_agent=request.headers.get('User-Agent', '')
-        )
-        db.session.add(email_click)
-        
-        # Update contact lead score
-        email_send = EmailSend.query.get(email_id)
-        if email_send:
-            contact = Contact.query.get(email_send.contact_id)
-            if contact:
-                contact.lead_score += 10  # Add 10 points for link click
-        
-        db.session.commit()
-        
-        # Redirect to the actual URL
-        return redirect(url)
+        return img_io.getvalue(), 200, {'Content-Type': 'image/png'}
         
     except Exception as e:
-        current_app.logger.error(f"Error tracking click: {str(e)}")
-        return redirect('https://example.com')  # Fallback URL
+        current_app.logger.error(f"Error tracking email open: {e}")
+        # Still return the pixel even if tracking fails
+        img = Image.new('RGBA', (1, 1), (0, 0, 0, 0))
+        img_io = io.BytesIO()
+        img.save(img_io, 'PNG')
+        img_io.seek(0)
+        return img_io.getvalue(), 200, {'Content-Type': 'image/png'}
 
-@emails_bp.route('/analytics', methods=['GET'])
+@emails_bp.route('/stats', methods=['GET'])
 @require_auth
-def get_email_analytics():
-    """Get email analytics for the tenant"""
+def get_email_stats():
+    """Get email statistics for the tenant"""
     try:
-        # Get date range from query params
-        days = int(request.args.get('days', 30))
-        start_date = datetime.utcnow() - timedelta(days=days)
+        # Get email counts
+        total_sent = EmailSend.query.filter_by(tenant_id=g.current_tenant_id).count()
         
-        # Get email sends in date range
-        email_sends = EmailSend.query.filter(
-            EmailSend.tenant_id == g.current_tenant_id,
-            EmailSend.sent_at >= start_date
-        ).all()
-        
-        # Calculate metrics
-        total_sent = len(email_sends)
-        
-        # Get opens
-        email_ids = [email.id for email in email_sends]
-        total_opens = EmailOpen.query.join(EmailPixel).filter(
-            EmailPixel.email_send_id.in_(email_ids)
+        # Get open counts
+        total_opens = db.session.query(EmailOpen).join(EmailPixel).join(EmailSend).filter(
+            EmailSend.tenant_id == g.current_tenant_id
         ).count()
         
-        unique_opens = EmailOpen.query.join(EmailPixel).filter(
-            EmailPixel.email_send_id.in_(email_ids),
+        unique_opens = db.session.query(EmailOpen).join(EmailPixel).join(EmailSend).filter(
+            EmailSend.tenant_id == g.current_tenant_id,
             EmailOpen.is_unique == True
         ).count()
         
-        # Get clicks
-        total_clicks = EmailClick.query.filter(
-            EmailClick.email_send_id.in_(email_ids)
-        ).count()
-        
-        # Calculate rates
+        # Calculate open rate
         open_rate = (unique_opens / total_sent * 100) if total_sent > 0 else 0
-        click_rate = (total_clicks / total_sent * 100) if total_sent > 0 else 0
         
         return jsonify({
             'success': True,
-            'analytics': {
+            'stats': {
                 'total_sent': total_sent,
                 'total_opens': total_opens,
                 'unique_opens': unique_opens,
-                'total_clicks': total_clicks,
-                'open_rate': round(open_rate, 2),
-                'click_rate': round(click_rate, 2),
-                'date_range_days': days
+                'open_rate': round(open_rate, 2)
             }
         }), 200
         
     except Exception as e:
-        current_app.logger.error(f"Error getting analytics: {str(e)}")
-        return jsonify({'success': False, 'error': {'message': 'Failed to get analytics'}}), 500
+        current_app.logger.error(f"Error getting email stats: {e}")
+        return jsonify({
+            'success': False,
+            'error': {'message': 'Internal server error'}
+        }), 500
 
