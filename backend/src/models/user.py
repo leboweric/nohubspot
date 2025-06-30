@@ -238,6 +238,39 @@ class Interaction(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
+# Email Tracking System (Updated)
+class EmailSend(db.Model):
+    __tablename__ = 'email_sends'
+    
+    id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
+    tenant_id = db.Column(db.String(36), db.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=False)
+    contact_id = db.Column(db.String(36), db.ForeignKey('contacts.id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    thread_id = db.Column(db.String(36), db.ForeignKey('email_threads.id'))  # Link to thread
+    subject = db.Column(db.String(255))
+    content = db.Column(db.Text)
+    sent_at = db.Column(db.DateTime, default=datetime.utcnow)
+    email_provider = db.Column(db.String(50))  # gmail, outlook, manual
+    external_message_id = db.Column(db.String(255))  # SendGrid message ID
+    
+    # Relationships
+    pixel = db.relationship('EmailPixel', backref='email_send', uselist=False, cascade='all, delete-orphan')
+    clicks = db.relationship('EmailClick', backref='email_send', lazy=True, cascade='all, delete-orphan')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'tenant_id': self.tenant_id,
+            'contact_id': self.contact_id,
+            'user_id': self.user_id,
+            'thread_id': self.thread_id,
+            'subject': self.subject,
+            'content': self.content,
+            'sent_at': self.sent_at.isoformat() if self.sent_at else None,
+            'email_provider': self.email_provider,
+            'external_message_id': self.external_message_id
+        }
+
 # Email Thread Tracking System
 class EmailThread(db.Model):
     """Groups related emails into conversation threads"""
@@ -255,8 +288,11 @@ class EmailThread(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
-    emails = db.relationship('EmailSend', backref='thread', lazy=True)
+    # Relationships - Fixed to specify foreign keys explicitly
+    emails = db.relationship('EmailSend', 
+                           foreign_keys=[EmailSend.thread_id],
+                           backref='thread', 
+                           lazy=True)
     replies = db.relationship('EmailReply', backref='thread', lazy=True, cascade='all, delete-orphan')
     
     def to_dict(self):
@@ -325,39 +361,6 @@ class EmailReply(db.Model):
             'is_processed': self.is_processed,
             'processing_error': self.processing_error,
             'created_at': self.created_at.isoformat() if self.created_at else None
-        }
-
-# Email Tracking System (Updated)
-class EmailSend(db.Model):
-    __tablename__ = 'email_sends'
-    
-    id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
-    tenant_id = db.Column(db.String(36), db.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=False)
-    contact_id = db.Column(db.String(36), db.ForeignKey('contacts.id', ondelete='CASCADE'), nullable=False)
-    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
-    thread_id = db.Column(db.String(36), db.ForeignKey('email_threads.id'))  # NEW: Link to thread
-    subject = db.Column(db.String(255))
-    content = db.Column(db.Text)
-    sent_at = db.Column(db.DateTime, default=datetime.utcnow)
-    email_provider = db.Column(db.String(50))  # gmail, outlook, manual
-    external_message_id = db.Column(db.String(255))  # SendGrid message ID
-    
-    # Relationships
-    pixel = db.relationship('EmailPixel', backref='email_send', uselist=False, cascade='all, delete-orphan')
-    clicks = db.relationship('EmailClick', backref='email_send', lazy=True, cascade='all, delete-orphan')
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'tenant_id': self.tenant_id,
-            'contact_id': self.contact_id,
-            'user_id': self.user_id,
-            'thread_id': self.thread_id,
-            'subject': self.subject,
-            'content': self.content,
-            'sent_at': self.sent_at.isoformat() if self.sent_at else None,
-            'email_provider': self.email_provider,
-            'external_message_id': self.external_message_id
         }
 
 class EmailPixel(db.Model):
