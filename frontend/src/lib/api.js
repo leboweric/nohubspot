@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
 
 class ApiClient {
   constructor() {
@@ -54,29 +54,27 @@ class ApiClient {
     try {
       const response = await fetch(`${this.baseURL}/auth/refresh`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ refresh_token: refreshToken }),
       })
-      
+
       const data = await response.json()
-      if (data.success) {
-        localStorage.setItem('access_token', data.data.access_token)
+      
+      if (data.success && data.access_token) {
+        localStorage.setItem('access_token', data.access_token)
         return true
       }
+      
       return false
-    } catch {
+    } catch (error) {
+      console.error('Token refresh failed:', error)
       return false
     }
   }
 
   // Auth endpoints
-  async register(userData) {
-    return this.request('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    })
-  }
-
   async login(credentials) {
     return this.request('/auth/login', {
       method: 'POST',
@@ -84,24 +82,20 @@ class ApiClient {
     })
   }
 
-  async logout() {
-    const refreshToken = localStorage.getItem('refresh_token')
-    if (refreshToken) {
-      return this.request('/auth/logout', {
-        method: 'POST',
-        body: JSON.stringify({ refresh_token: refreshToken }),
-      })
-    }
+  async register(userData) {
+    return this.request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    })
   }
 
   async getCurrentUser() {
     return this.request('/auth/me')
   }
 
-  // Contacts endpoints
-  async getContacts(params = {}) {
-    const queryString = new URLSearchParams(params).toString()
-    return this.request(`/contacts/${queryString ? `?${queryString}` : ''}`)
+  // Contact endpoints
+  async getContacts() {
+    return this.request('/contacts/')
   }
 
   async getContact(id) {
@@ -136,6 +130,10 @@ class ApiClient {
     return this.request('/contacts/stats')
   }
 
+  async getRecentContacts() {
+    return this.request('/contacts/?limit=5&sort=created_at&order=desc')
+  }
+
   // Email endpoints
   async sendEmail(emailData) {
     return this.request('/emails/send', {
@@ -144,17 +142,21 @@ class ApiClient {
     })
   }
 
-  async getEmails(params = {}) {
-    const queryString = new URLSearchParams(params).toString()
-    return this.request(`/emails/${queryString ? `?${queryString}` : ''}`)
-  }
-
   async getEmailDetails(id) {
     return this.request(`/emails/${id}`)
   }
 
   async getEmailStats() {
     return this.request('/emails/stats')
+  }
+
+  // NEW: Email thread endpoints
+  async getEmailThread(threadId) {
+    return this.request(`/emails/threads/${threadId}`)
+  }
+
+  async getContactThreads(contactId) {
+    return this.request(`/emails/threads/contact/${contactId}`)
   }
 }
 
