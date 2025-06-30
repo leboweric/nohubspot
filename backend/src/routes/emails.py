@@ -20,7 +20,7 @@ class EmailService:
         self.from_email = os.environ.get('SENDGRID_FROM_EMAIL', 'noreply@nothubspot.app')
         self.from_name = os.environ.get('SENDGRID_FROM_NAME', 'NotHubSpot CRM')
         
-    def send_email(self, to_email, to_name, subject, html_content, text_content=None):
+    def send_email(self, to_email, to_name, subject, html_content, text_content=None, reply_to_email=None, reply_to_name=None):
         """Send email via SendGrid"""
         if not self.api_key:
             raise Exception("SendGrid API key not configured")
@@ -37,6 +37,10 @@ class EmailService:
                 subject=subject,
                 html_content=html_content
             )
+            
+            # Add Reply-To header if provided
+            if reply_to_email:
+                mail.reply_to = Email(reply_to_email, reply_to_name or reply_to_email)
             
             # Add plain text version if provided
             if text_content:
@@ -122,6 +126,12 @@ def send_email():
         if not contact.email:
             return jsonify({'success': False, 'error': {'message': 'Contact has no email address'}}), 400
         
+        # Get current user for Reply-To
+        from src.models.user import User
+        current_user = User.query.get(g.current_user_id)
+        if not current_user:
+            return jsonify({'success': False, 'error': {'message': 'User not found'}}), 404
+        
         # Create email send record
         email_send = EmailSend(
             tenant_id=g.current_tenant_id,
@@ -156,7 +166,9 @@ def send_email():
             to_name=contact.full_name,
             subject=data['subject'],
             html_content=tracked_content,
-            text_content=data.get('text_content')  # Optional plain text version
+            text_content=data.get('text_content'),  # Optional plain text version
+            reply_to_email=current_user.email,      # Replies go to the user
+            reply_to_name=current_user.full_name    # User's name in Reply-To
         )
         
         if not send_result['success']:
