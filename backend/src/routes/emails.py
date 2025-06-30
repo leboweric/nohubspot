@@ -2,8 +2,7 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, From, To, Subject, HtmlContent, PlainTextContent, ReplyTo
-from src.models.user import User, Contact, EmailSend, Interaction, EmailThread, EmailReply
-from src.models.user import db
+from src.models.user import User, Contact, EmailSend, Interaction, EmailThread, EmailReply, db
 from datetime import datetime
 import uuid
 import os
@@ -48,70 +47,102 @@ def parse_email_content(raw_email):
                 if content_type == "text/plain":
                     payload = part.get_payload(decode=True)
                     if payload:
-                        text_content = payload.decode('utf-8', errors='ignore')
-                        # Clean up quoted-printable encoding
-                        text_content = text_content.replace('=\r\n', '').replace('=E2=80=AF', ' ')
+                        try:
+                            text_content = payload.decode('utf-8')
+                        except UnicodeDecodeError:
+                            text_content = payload.decode('latin-1')
+                        # Clean up quoted content
+                        text_content = clean_quoted_content(text_content)
+                        break
                         
                 elif content_type == "text/html":
                     payload = part.get_payload(decode=True)
                     if payload:
-                        html_content = payload.decode('utf-8', errors='ignore')
-                        # Clean up quoted-printable encoding
-                        html_content = html_content.replace('=\r\n', '').replace('=E2=80=AF', ' ')
-                        # Decode HTML entities
-                        html_content = html.unescape(html_content)
+                        try:
+                            html_content = payload.decode('utf-8')
+                        except UnicodeDecodeError:
+                            html_content = payload.decode('latin-1')
+                        # Extract text from HTML and clean
+                        text_from_html = html.unescape(re.sub('<[^<]+?>', '', html_content))
+                        text_content = clean_quoted_content(text_from_html)
         else:
-            # Handle single-part messages
+            # Handle single part messages
             content_type = msg.get_content_type()
             payload = msg.get_payload(decode=True)
             
             if payload:
-                content = payload.decode('utf-8', errors='ignore')
-                if content_type == "text/plain":
-                    text_content = content
-                elif content_type == "text/html":
+                try:
+                    content = payload.decode('utf-8')
+                except UnicodeDecodeError:
+                    content = payload.decode('latin-1')
+                
+                if content_type == "text/html":
                     html_content = content
+                    # Extract text from HTML
+                    text_content = html.unescape(re.sub('<[^<]+?>', '', content))
+                else:
+                    text_content = content
+                
+                text_content = clean_quoted_content(text_content)
         
-        # Clean up the content - remove quoted sections and signatures
-        if text_content:
-            # Split by common reply separators and take the first part
-            lines = text_content.split('\n')
-            clean_lines = []
-            for line in lines:
-                # Stop at common reply indicators
-                if any(indicator in line.lower() for indicator in [
-                    'on ', 'wrote:', '>', 'from:', 'sent:', 'to:', 'subject:'
-                ]):
-                    break
-                clean_lines.append(line)
-            text_content = '\n'.join(clean_lines).strip()
-        
-        if html_content:
-            # For HTML, try to extract just the new content before quoted sections
-            # Look for gmail_quote or similar patterns
-            if 'gmail_quote' in html_content:
-                html_content = html_content.split('gmail_quote')[0]
-            elif 'blockquote' in html_content:
-                html_content = re.split(r'<blockquote[^>]*>', html_content)[0]
-            html_content = html_content.strip()
-        
-        return text_content, html_content
+        return text_content.strip(), html_content.strip()
         
     except Exception as e:
         current_app.logger.error(f"Error parsing email content: {str(e)}")
         return "", ""
 
+def clean_quoted_content(content):
+    """Remove quoted content from email replies"""
+    if not content:
+        return ""
+    
+    # Split by lines
+    lines = content.split('\n')
+    cleaned_lines = []
+    
+    for line in lines:
+        line = line.strip()
+        # Stop at common reply indicators
+        if (line.startswith('On ') and ('wrote:' in line or 'sent:' in line)) or \
+           line.startswith('From:') or \
+           line.startswith('Sent:') or \
+           line.startswith('To:') or \
+           line.startswith('Subject:') or \
+           line.startswith('-----Original Message-----') or \
+           line.startswith('________________________________'):
+            break
+        cleaned_lines.append(line)
+    
+    return '\n'.join(cleaned_lines).strip()
+
 @emails_bp.route('/send', methods=['POST'])
 @jwt_required()
 def send_email():
+    current_app.logger.info("=== EMAIL SEND REQUEST STARTED ===")
+    
     try:
         data = request.get_json()
+        current_app.logger.info(f"Request data received: {data}")
+        
         current_user_id = get_jwt_identity()
+        current_app.logger.info(f"Current user ID: {current_user_id}")
+        
+        # Validate required fields
+        required_fields = ['contact_id', 'to', 'subject', 'content']
+        for field in required_fields:
+            if field not in data:
+                current_app.logger.error(f"Missing required field: {field}")
+                return jsonify({'success': False, 'error': f'Missing required field: {field}'}), 422
+        
+        current_app.logger.info("All required fields present")
         
         # Get current user
         current_user = User.query.get(current_user_id)
         if not current_user:
+            current_app.logger.error(f"User not found: {current_user_id}")
             return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+        current_app.logger.info(f"Current user found: {current_user.email}")
         
         # Get contact
         contact = Contact.query.filter_by(
@@ -120,10 +151,15 @@ def send_email():
         ).first()
         
         if not contact:
+            current_app.logger.error(f"Contact not found: {data['contact_id']}")
             return jsonify({'success': False, 'error': 'Contact not found'}), 404
+        
+        current_app.logger.info(f"Contact found: {contact.email}")
         
         # Generate thread key and find or create thread
         thread_key = generate_thread_key(data['subject'], contact.email)
+        current_app.logger.info(f"Generated thread key: {thread_key}")
+        
         thread = EmailThread.query.filter_by(
             tenant_id=current_user.tenant_id,
             contact_id=contact.id,
@@ -131,6 +167,7 @@ def send_email():
         ).first()
         
         if not thread:
+            current_app.logger.info("Creating new email thread")
             thread = EmailThread(
                 tenant_id=current_user.tenant_id,
                 contact_id=contact.id,
@@ -140,16 +177,21 @@ def send_email():
             )
             db.session.add(thread)
             db.session.flush()  # Get the thread ID
+            current_app.logger.info(f"New thread created with ID: {thread.id}")
+        else:
+            current_app.logger.info(f"Using existing thread ID: {thread.id}")
         
         # Create email record
         email_id = str(uuid.uuid4())
+        current_app.logger.info(f"Generated email ID: {email_id}")
+        
         email_send = EmailSend(
             id=email_id,
             tenant_id=current_user.tenant_id,
             user_id=current_user.id,
             contact_id=contact.id,
             thread_id=thread.id,  # Link to thread
-            to_email=contact.email,
+            to_email=data['to'],  # Use the 'to' field from frontend
             to_name=contact.full_name,
             from_email=current_user.email,
             from_name=f"{current_user.full_name} ({current_user.company})" if current_user.company else current_user.full_name,
@@ -158,11 +200,13 @@ def send_email():
             status='sending'
         )
         db.session.add(email_send)
+        current_app.logger.info("Email record created")
         
         # Update thread with first email reference
         if not thread.first_email_id:
             thread.first_email_id = email_id
             thread.last_activity_at = datetime.utcnow()
+            current_app.logger.info("Updated thread with first email reference")
         
         # Create interaction record
         interaction = Interaction(
@@ -176,40 +220,57 @@ def send_email():
             completed_at=datetime.utcnow()
         )
         db.session.add(interaction)
+        current_app.logger.info("Interaction record created")
         
         # Prepare SendGrid email with custom reply-to for webhook capture
         reply_to_email = f"replies+{contact.id}@nothubspot.app"
+        current_app.logger.info(f"Reply-to email: {reply_to_email}")
         
         # Create tracking pixel URL
         tracking_pixel_url = f"{request.host_url}api/emails/track/pixel/{email_id}.png"
+        current_app.logger.info(f"Tracking pixel URL: {tracking_pixel_url}")
         
         # Add tracking pixel to content
         content_with_tracking = data['content'] + f'<img src="{tracking_pixel_url}" width="1" height="1" style="display: none;">'
         
         message = Mail(
             from_email=From(current_user.email, email_send.from_name),
-            to_emails=To(contact.email, contact.full_name),
+            to_emails=To(data['to'], contact.full_name),  # Use the 'to' field
             subject=Subject(data['subject']),
             html_content=HtmlContent(content_with_tracking)
         )
         
         # Set custom reply-to for webhook capture
         message.reply_to = ReplyTo(reply_to_email, email_send.from_name)
+        current_app.logger.info("SendGrid message prepared")
         
         # Send email via SendGrid
-        sg = SendGridAPIClient(api_key=os.environ.get('SENDGRID_API_KEY'))
+        sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
+        if not sendgrid_api_key:
+            current_app.logger.error("SENDGRID_API_KEY not found in environment")
+            return jsonify({'success': False, 'error': 'SendGrid API key not configured'}), 500
+        
+        current_app.logger.info("Sending email via SendGrid...")
+        sg = SendGridAPIClient(api_key=sendgrid_api_key)
         response = sg.send(message)
+        
+        current_app.logger.info(f"SendGrid response status: {response.status_code}")
+        current_app.logger.info(f"SendGrid response headers: {dict(response.headers)}")
         
         if response.status_code in [200, 202]:
             email_send.status = 'sent'
             email_send.sent_at = datetime.utcnow()
             email_send.sendgrid_message_id = response.headers.get('X-Message-Id', '')
+            current_app.logger.info("Email sent successfully")
         else:
             email_send.status = 'failed'
             email_send.error_message = f"SendGrid error: {response.status_code}"
+            current_app.logger.error(f"SendGrid error: {response.status_code}")
         
         db.session.commit()
+        current_app.logger.info("Database committed")
         
+        current_app.logger.info("=== EMAIL SEND REQUEST COMPLETED ===")
         return jsonify({
             'success': True,
             'message': 'Email sent successfully',
@@ -220,6 +281,9 @@ def send_email():
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error sending email: {str(e)}")
+        current_app.logger.error(f"Exception type: {type(e)}")
+        import traceback
+        current_app.logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @emails_bp.route('/track/pixel/<email_id>.png', methods=['GET'])
@@ -255,39 +319,28 @@ def track_email_open(email_id):
 
 @emails_bp.route('/webhook/inbound', methods=['POST'])
 def handle_inbound_email():
+    """Handle inbound emails from SendGrid webhook"""
     try:
+        current_app.logger.info("=== INBOUND EMAIL WEBHOOK ===")
+        
         # Get form data from SendGrid
-        form_data = request.form.to_dict()
+        form_data = request.form
+        current_app.logger.info(f"Webhook form data keys: {list(form_data.keys())}")
         
         # Extract email details
-        from_email = form_data.get('from', '')
         to_email = form_data.get('to', '')
+        from_email = form_data.get('from', '')
         subject = form_data.get('subject', '')
-        
-        # NEW: Parse content from raw email instead of expecting parsed fields
         raw_email = form_data.get('email', '')
-        if raw_email:
-            text_content, html_content = parse_email_content(raw_email)
-        else:
-            # Fallback to parsed fields if available
-            text_content = form_data.get('text', '')
-            html_content = form_data.get('html', '')
-        
-        # Extract headers for threading
-        headers = {}
-        for key, value in form_data.items():
-            if key.startswith('headers[') and key.endswith(']'):
-                header_name = key[8:-1]  # Remove 'headers[' and ']'
-                headers[header_name] = value
-        
-        message_id = headers.get('Message-ID', '')
-        in_reply_to = headers.get('In-Reply-To', '')
-        references = headers.get('References', '')
         
         current_app.logger.info(f"Received inbound email from {from_email} to {to_email}")
-        current_app.logger.info(f"Extracted content - Text: {len(text_content)} chars, HTML: {len(html_content)} chars")
+        current_app.logger.info(f"Subject: {subject}")
         
-        # Parse the to_email to extract contact ID
+        # Parse email content from raw MIME
+        text_content, html_content = parse_email_content(raw_email)
+        current_app.logger.info(f"Parsed content length - Text: {len(text_content)}, HTML: {len(html_content)}")
+        
+        # Extract contact ID from to_email
         # Format: replies+{contact_id}@nothubspot.app
         if '+' in to_email and '@nothubspot.app' in to_email:
             contact_id = to_email.split('+')[1].split('@')[0]
@@ -310,47 +363,41 @@ def handle_inbound_email():
         ).first()
         
         if not thread:
-            # Try to find thread by normalized subject
-            normalized_subject = normalize_subject(subject)
-            thread = EmailThread.query.filter(
-                EmailThread.tenant_id == contact.tenant_id,
-                EmailThread.contact_id == contact.id,
-                EmailThread.thread_key.like(f"%{normalized_subject}%")
-            ).first()
-        
-        if not thread:
-            current_app.logger.warning(f"Thread not found for subject: {subject}")
+            current_app.logger.warning(f"Thread not found for key: {thread_key}")
             return jsonify({'success': False, 'error': 'Thread not found'}), 404
         
-        # Create email reply record with parsed content
+        # Create email reply record
+        reply_id = str(uuid.uuid4())
         email_reply = EmailReply(
+            id=reply_id,
             tenant_id=contact.tenant_id,
             thread_id=thread.id,
             contact_id=contact.id,
             from_email=from_email,
             from_name=form_data.get('from_name', ''),
             subject=subject,
-            content_text=text_content,  # Now contains actual parsed content
-            content_html=html_content,  # Now contains actual parsed content
-            message_id=message_id,
-            in_reply_to=in_reply_to,
-            references=references,
-            webhook_data=form_data,
-            is_processed=True
+            content_text=text_content,
+            content_html=html_content,
+            message_id=form_data.get('message-id', ''),
+            in_reply_to=form_data.get('in-reply-to', ''),
+            references=form_data.get('references', ''),
+            received_at=datetime.utcnow(),
+            is_processed=True,
+            webhook_data=dict(form_data)
         )
         db.session.add(email_reply)
         
-        # Update thread activity
-        thread.last_activity_at = datetime.utcnow()
+        # Update thread
         thread.reply_count += 1
+        thread.last_activity_at = datetime.utcnow()
         
-        # Create interaction record for the reply
+        # Create interaction record
         interaction = Interaction(
             tenant_id=contact.tenant_id,
             contact_id=contact.id,
             type='email',
             subject=f"Email reply: {subject}",
-            content=text_content or html_content,
+            content=text_content,
             direction='inbound',
             status='completed',
             completed_at=datetime.utcnow()
@@ -360,27 +407,24 @@ def handle_inbound_email():
         db.session.commit()
         
         current_app.logger.info(f"Successfully processed inbound email reply for thread {thread.id}")
-        
-        return jsonify({
-            'success': True,
-            'message': 'Email reply processed successfully',
-            'reply_id': email_reply.id,
-            'thread_id': thread.id
-        })
+        return jsonify({'success': True, 'message': 'Email reply processed'})
         
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error processing inbound email: {str(e)}")
+        import traceback
+        current_app.logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @emails_bp.route('/threads/<thread_id>', methods=['GET'])
 @jwt_required()
 def get_email_thread(thread_id):
+    """Get complete email thread with all messages"""
     try:
         current_user_id = get_jwt_identity()
         current_user = User.query.get(current_user_id)
         
-        # Get the thread
+        # Get thread
         thread = EmailThread.query.filter_by(
             id=thread_id,
             tenant_id=current_user.tenant_id
@@ -389,50 +433,52 @@ def get_email_thread(thread_id):
         if not thread:
             return jsonify({'success': False, 'error': 'Thread not found'}), 404
         
-        # Get all emails and replies for this thread
-        emails = EmailSend.query.filter_by(thread_id=thread_id).all()
-        replies = EmailReply.query.filter_by(thread_id=thread_id).all()
+        # Get all emails in thread
+        sent_emails = EmailSend.query.filter_by(thread_id=thread_id).order_by(EmailSend.sent_at).all()
+        replies = EmailReply.query.filter_by(thread_id=thread_id).order_by(EmailReply.received_at).all()
         
         # Combine and sort by timestamp
-        thread_items = []
+        messages = []
         
-        for email in emails:
-            thread_items.append({
+        for email in sent_emails:
+            messages.append({
                 'id': email.id,
-                'type': 'email',
-                'direction': 'outbound',
-                'from_name': email.from_name,
+                'type': 'sent',
                 'from_email': email.from_email,
+                'from_name': email.from_name,
+                'to_email': email.to_email,
+                'to_name': email.to_name,
                 'subject': email.subject,
                 'content': email.content,
-                'timestamp': email.sent_at or email.created_at
+                'timestamp': email.sent_at.isoformat() if email.sent_at else email.created_at.isoformat(),
+                'status': email.status
             })
         
         for reply in replies:
-            thread_items.append({
+            messages.append({
                 'id': reply.id,
                 'type': 'reply',
-                'direction': 'inbound',
-                'from_name': reply.from_name,
                 'from_email': reply.from_email,
+                'from_name': reply.from_name,
                 'subject': reply.subject,
-                'content': reply.content_text or reply.content_html,
-                'timestamp': reply.received_at
+                'content': reply.content_text,
+                'timestamp': reply.received_at.isoformat(),
+                'status': 'received'
             })
         
         # Sort by timestamp
-        thread_items.sort(key=lambda x: x['timestamp'])
+        messages.sort(key=lambda x: x['timestamp'])
         
         return jsonify({
             'success': True,
             'thread': {
                 'id': thread.id,
                 'subject': thread.subject,
-                'created_at': thread.created_at,
-                'last_activity_at': thread.last_activity_at,
-                'reply_count': thread.reply_count
-            },
-            'items': thread_items
+                'contact_id': thread.contact_id,
+                'reply_count': thread.reply_count,
+                'last_activity_at': thread.last_activity_at.isoformat(),
+                'messages': messages
+            }
         })
         
     except Exception as e:
@@ -442,11 +488,12 @@ def get_email_thread(thread_id):
 @emails_bp.route('/threads/contact/<contact_id>', methods=['GET'])
 @jwt_required()
 def get_contact_threads(contact_id):
+    """Get all email threads for a contact"""
     try:
         current_user_id = get_jwt_identity()
         current_user = User.query.get(current_user_id)
         
-        # Get all threads for this contact
+        # Get all threads for contact
         threads = EmailThread.query.filter_by(
             contact_id=contact_id,
             tenant_id=current_user.tenant_id,
@@ -458,9 +505,9 @@ def get_contact_threads(contact_id):
             thread_list.append({
                 'id': thread.id,
                 'subject': thread.subject,
-                'created_at': thread.created_at,
-                'last_activity_at': thread.last_activity_at,
-                'reply_count': thread.reply_count
+                'reply_count': thread.reply_count,
+                'last_activity_at': thread.last_activity_at.isoformat(),
+                'created_at': thread.created_at.isoformat()
             })
         
         return jsonify({
@@ -470,81 +517,5 @@ def get_contact_threads(contact_id):
         
     except Exception as e:
         current_app.logger.error(f"Error getting contact threads: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@emails_bp.route('/<email_id>', methods=['GET'])
-@jwt_required()
-def get_email_details(email_id):
-    try:
-        current_user_id = get_jwt_identity()
-        current_user = User.query.get(current_user_id)
-        
-        email_send = EmailSend.query.filter_by(
-            id=email_id,
-            tenant_id=current_user.tenant_id
-        ).first()
-        
-        if not email_send:
-            return jsonify({'success': False, 'error': 'Email not found'}), 404
-        
-        return jsonify({
-            'success': True,
-            'data': {
-                'id': email_send.id,
-                'to_email': email_send.to_email,
-                'to_name': email_send.to_name,
-                'from_email': email_send.from_email,
-                'from_name': email_send.from_name,
-                'subject': email_send.subject,
-                'content': email_send.content,
-                'status': email_send.status,
-                'sent_at': email_send.sent_at,
-                'opens': email_send.opens,
-                'clicks': email_send.clicks,
-                'first_opened_at': email_send.first_opened_at,
-                'last_opened_at': email_send.last_opened_at
-            }
-        })
-        
-    except Exception as e:
-        current_app.logger.error(f"Error getting email details: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@emails_bp.route('/stats', methods=['GET'])
-@jwt_required()
-def get_email_stats():
-    try:
-        current_user_id = get_jwt_identity()
-        current_user = User.query.get(current_user_id)
-        
-        # Get email statistics
-        total_sent = EmailSend.query.filter_by(
-            tenant_id=current_user.tenant_id,
-            status='sent'
-        ).count()
-        
-        total_opens = db.session.query(db.func.sum(EmailSend.opens)).filter_by(
-            tenant_id=current_user.tenant_id,
-            status='sent'
-        ).scalar() or 0
-        
-        total_clicks = db.session.query(db.func.sum(EmailSend.clicks)).filter_by(
-            tenant_id=current_user.tenant_id,
-            status='sent'
-        ).scalar() or 0
-        
-        return jsonify({
-            'success': True,
-            'data': {
-                'total_sent': total_sent,
-                'total_opens': total_opens,
-                'total_clicks': total_clicks,
-                'open_rate': round((total_opens / total_sent * 100) if total_sent > 0 else 0, 1),
-                'click_rate': round((total_clicks / total_sent * 100) if total_sent > 0 else 0, 1)
-            }
-        })
-        
-    except Exception as e:
-        current_app.logger.error(f"Error getting email stats: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
