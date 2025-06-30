@@ -1,0 +1,20 @@
+# Railway deployment configuration for NotHubSpot CRM backend
+
+# Build command
+buildCommand = "pip install -r requirements.txt"
+
+# Start command  
+startCommand = "python src/main.py"
+
+# Environment variables needed:
+# DATABASE_URL - Railway will provide this automatically for PostgreSQL
+# JWT_SECRET_KEY - Generate a secure random key
+# FLASK_ENV - Set to "production"
+# CORS_ORIGINS - Set to your Netlify frontend URL
+
+[build]
+  command = "pip install -r requirements.txt"
+
+[start]
+  command = "python src/main.py"
+
