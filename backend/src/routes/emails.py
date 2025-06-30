@@ -20,27 +20,27 @@ class EmailService:
         self.from_email = os.environ.get('SENDGRID_FROM_EMAIL', 'noreply@nothubspot.app')
         self.from_name = os.environ.get('SENDGRID_FROM_NAME', 'NotHubSpot CRM')
         
-    def send_email(self, to_email, to_name, subject, html_content, text_content=None, reply_to_email=None, reply_to_name=None):
+    def send_email(self, to_email, to_name, subject, html_content, text_content=None, from_email=None, from_name=None):
         """Send email via SendGrid"""
         if not self.api_key:
             raise Exception("SendGrid API key not configured")
         
         try:
+            # Use provided from_email or fall back to default
+            sender_email = from_email or self.from_email
+            sender_name = from_name or self.from_name
+            
             # Create SendGrid mail object
-            from_email = Email(self.from_email, self.from_name)
+            from_email_obj = Email(sender_email, sender_name)
             to_email_obj = To(to_email, to_name)
             
             # Create mail object
             mail = Mail(
-                from_email=from_email,
+                from_email=from_email_obj,
                 to_emails=to_email_obj,
                 subject=subject,
                 html_content=html_content
             )
-            
-            # Add Reply-To header if provided
-            if reply_to_email:
-                mail.reply_to = Email(reply_to_email, reply_to_name or reply_to_email)
             
             # Add plain text version if provided
             if text_content:
@@ -126,7 +126,7 @@ def send_email():
         if not contact.email:
             return jsonify({'success': False, 'error': {'message': 'Contact has no email address'}}), 400
         
-        # Get current user for Reply-To
+        # Get current user for From address
         from src.models.user import User
         current_user = User.query.get(g.current_user_id)
         if not current_user:
@@ -167,8 +167,8 @@ def send_email():
             subject=data['subject'],
             html_content=tracked_content,
             text_content=data.get('text_content'),  # Optional plain text version
-            reply_to_email=current_user.email,      # Replies go to the user
-            reply_to_name=current_user.full_name    # User's name in Reply-To
+            from_email=current_user.email,          # Email comes FROM the user
+            from_name=current_user.full_name        # User's name as sender
         )
         
         if not send_result['success']:
