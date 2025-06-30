@@ -20,27 +20,30 @@ class EmailService:
         self.from_email = os.environ.get('SENDGRID_FROM_EMAIL', 'noreply@nothubspot.app')
         self.from_name = os.environ.get('SENDGRID_FROM_NAME', 'NotHubSpot CRM')
         
-    def send_email(self, to_email, to_name, subject, html_content, text_content=None, from_email=None, from_name=None):
+    def send_email(self, to_email, to_name, subject, html_content, text_content=None, reply_to_email=None, reply_to_name=None, custom_from_name=None):
         """Send email via SendGrid"""
         if not self.api_key:
             raise Exception("SendGrid API key not configured")
         
         try:
-            # Use provided from_email or fall back to default
-            sender_email = from_email or self.from_email
-            sender_name = from_name or self.from_name
+            # Use custom from name if provided, otherwise use default
+            from_name = custom_from_name or self.from_name
             
             # Create SendGrid mail object
-            from_email_obj = Email(sender_email, sender_name)
+            from_email = Email(self.from_email, from_name)
             to_email_obj = To(to_email, to_name)
             
             # Create mail object
             mail = Mail(
-                from_email=from_email_obj,
+                from_email=from_email,
                 to_emails=to_email_obj,
                 subject=subject,
                 html_content=html_content
             )
+            
+            # Add Reply-To header if provided
+            if reply_to_email:
+                mail.reply_to = Email(reply_to_email, reply_to_name or reply_to_email)
             
             # Add plain text version if provided
             if text_content:
@@ -160,6 +163,15 @@ def send_email():
         # Update email content with tracking
         email_send.content = tracked_content
         
+        # Create custom from name: "User Name (Company)" 
+        # Get user's company/tenant info for display
+        from src.models.user import Tenant
+        tenant = Tenant.query.get(g.current_tenant_id)
+        company_name = tenant.name if tenant else "CRM"
+        
+        # Format: "Eric LeBow (BMH)" 
+        custom_from_name = f"{current_user.full_name} ({company_name})"
+        
         # Send email via SendGrid
         send_result = email_service.send_email(
             to_email=contact.email,
@@ -167,8 +179,9 @@ def send_email():
             subject=data['subject'],
             html_content=tracked_content,
             text_content=data.get('text_content'),  # Optional plain text version
-            from_email=current_user.email,          # Email comes FROM the user
-            from_name=current_user.full_name        # User's name as sender
+            reply_to_email=current_user.email,      # Replies go to the user's actual email
+            reply_to_name=current_user.full_name,   # User's name in Reply-To
+            custom_from_name=custom_from_name       # "Eric LeBow (BMH)"
         )
         
         if not send_result['success']:
@@ -205,6 +218,7 @@ def send_email():
                 'email_send': email_send.to_dict(),
                 'pixel_token': pixel_token,
                 'sendgrid_message_id': send_result.get('message_id'),
+                'from_name': custom_from_name,
                 'message': 'Email sent successfully via SendGrid with tracking'
             }
         }), 201
