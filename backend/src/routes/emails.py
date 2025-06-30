@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, From, To, Subject, HtmlContent, PlainTextContent, ReplyTo
 from src.models.user import User, Contact, EmailSend, Interaction, EmailThread, EmailReply
-from src.database import db
+from src.models.user import db
 from datetime import datetime
 import uuid
 import os
