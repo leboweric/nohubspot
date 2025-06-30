@@ -67,7 +67,7 @@ function App() {
     <Router>
       <div className="min-h-screen bg-white">
         {!user ? (
-          <AuthPage onLogin={handleLogin} />Add commentMore actions
+          <AuthPage onLogin={handleLogin} />
         ) : (
           <Layout user={user} onLogout={handleLogout}>
             <Routes>
