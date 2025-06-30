@@ -7,8 +7,63 @@ import secrets
 import os
 import io
 from PIL import Image
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Email, To, Content
 
 emails_bp = Blueprint('emails', __name__)
+
+class EmailService:
+    """SendGrid email service for NotHubSpot CRM"""
+    
+    def __init__(self):
+        self.api_key = os.environ.get('SENDGRID_API_KEY')
+        self.from_email = os.environ.get('SENDGRID_FROM_EMAIL', 'noreply@nothubspot.app')
+        self.from_name = os.environ.get('SENDGRID_FROM_NAME', 'NotHubSpot CRM')
+        
+    def send_email(self, to_email, to_name, subject, html_content, text_content=None):
+        """Send email via SendGrid"""
+        if not self.api_key:
+            raise Exception("SendGrid API key not configured")
+        
+        try:
+            # Create SendGrid mail object
+            from_email = Email(self.from_email, self.from_name)
+            to_email_obj = To(to_email, to_name)
+            
+            # Create mail object
+            mail = Mail(
+                from_email=from_email,
+                to_emails=to_email_obj,
+                subject=subject,
+                html_content=html_content
+            )
+            
+            # Add plain text version if provided
+            if text_content:
+                mail.content = [
+                    Content("text/plain", text_content),
+                    Content("text/html", html_content)
+                ]
+            
+            # Send email
+            sg = SendGridAPIClient(api_key=self.api_key)
+            response = sg.send(mail)
+            
+            return {
+                'success': True,
+                'status_code': response.status_code,
+                'message_id': response.headers.get('X-Message-Id'),
+                'response': response.body
+            }
+            
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e)
+            }
+
+# Initialize email service
+email_service = EmailService()
 
 def require_auth(f):
     """Authentication middleware"""
@@ -89,11 +144,32 @@ def send_email():
         db.session.add(pixel)
         
         # Add tracking pixel to email content
-        pixel_url = f"{request.host_url}api/track/pixel/{pixel_token}.png"
+        pixel_url = f"{request.host_url}api/emails/track/pixel/{pixel_token}.png"
         tracked_content = data['content'] + f'<img src="{pixel_url}" width="1" height="1" style="display:none;">'
         
         # Update email content with tracking
         email_send.content = tracked_content
+        
+        # Send email via SendGrid
+        send_result = email_service.send_email(
+            to_email=contact.email,
+            to_name=contact.full_name,
+            subject=data['subject'],
+            html_content=tracked_content,
+            text_content=data.get('text_content')  # Optional plain text version
+        )
+        
+        if not send_result['success']:
+            db.session.rollback()
+            return jsonify({
+                'success': False, 
+                'error': {'message': f'Failed to send email: {send_result["error"]}'}
+            }), 500
+        
+        # Update email send record with SendGrid info
+        email_send.email_provider = 'sendgrid'
+        email_send.provider_message_id = send_result.get('message_id')
+        email_send.provider_status = 'sent'
         
         # Log interaction
         interaction = Interaction(
@@ -111,16 +187,13 @@ def send_email():
         
         db.session.commit()
         
-        # In a real implementation, you would integrate with email providers here
-        # For now, we'll just return the email data with tracking info
-        
         return jsonify({
             'success': True,
             'data': {
                 'email_send': email_send.to_dict(),
                 'pixel_token': pixel_token,
-                'tracked_content': tracked_content,
-                'message': 'Email prepared with tracking (integration with email provider needed)'
+                'sendgrid_message_id': send_result.get('message_id'),
+                'message': 'Email sent successfully via SendGrid with tracking'
             }
         }), 201
         
