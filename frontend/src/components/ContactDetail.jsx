@@ -17,7 +17,9 @@ import {
   Send,
   Eye,
   MousePointer,
-  Calendar
+  Calendar,
+  Trash2,
+  MoreVertical
 } from 'lucide-react'
 import { api } from '../lib/api'
 
@@ -28,7 +30,11 @@ export default function ContactDetail() {
   const [timeline, setTimeline] = useState([])
   const [loading, setLoading] = useState(true)
   const [emailDialogOpen, setEmailDialogOpen] = useState(false)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [sendingEmail, setSendingEmail] = useState(false)
+  const [updating, setUpdating] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -80,6 +86,56 @@ export default function ContactDetail() {
       console.error('Failed to send email:', error)
     } finally {
       setSendingEmail(false)
+    }
+  }
+
+  const handleEditContact = async (e) => {
+    e.preventDefault()
+    setUpdating(true)
+
+    const formData = new FormData(e.target)
+    const contactData = {
+      first_name: formData.get('first_name'),
+      last_name: formData.get('last_name'),
+      email: formData.get('email'),
+      phone: formData.get('phone'),
+      company: formData.get('company'),
+      job_title: formData.get('job_title'),
+      website: formData.get('website'),
+      address: formData.get('address'),
+      notes: formData.get('notes'),
+      status: formData.get('status')
+    }
+
+    try {
+      const response = await api.updateContact(id, contactData)
+      if (response.success) {
+        setEditDialogOpen(false)
+        setContact(response.data)
+        // Reload to get updated timeline
+        loadContactData()
+      }
+    } catch (error) {
+      console.error('Failed to update contact:', error)
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleDeleteContact = async () => {
+    setDeleting(true)
+
+    try {
+      const response = await api.deleteContact(id)
+      if (response.success) {
+        // Navigate back to contacts list
+        navigate('/contacts')
+      }
+    } catch (error) {
+      console.error('Failed to delete contact:', error)
+    } finally {
+      setDeleting(false)
+      setDeleteDialogOpen(false)
     }
   }
 
@@ -164,62 +220,237 @@ export default function ContactDetail() {
             </p>
           </div>
         </div>
-        <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-green-600 hover:bg-green-700" disabled={!contact.email}>
-              <Send className="mr-2 h-4 w-4" />
-              Send Email
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Send Email</DialogTitle>
-              <DialogDescription>
-                Send a tracked email to {contact.full_name || contact.email}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSendEmail} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="to">To</Label>
-                <Input id="to" value={contact.email} disabled />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="subject">Subject</Label>
-                <Input id="subject" name="subject" placeholder="Email subject" required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="content">Message</Label>
-                <Textarea 
-                  id="content" 
-                  name="content" 
-                  placeholder="Write your email message here..."
-                  rows={8}
-                  required 
-                />
-              </div>
-              <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
-                📊 This email will be automatically tracked for opens and clicks
-              </div>
+        
+        {/* Action Buttons */}
+        <div className="flex items-center space-x-2">
+          <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-green-600 hover:bg-green-700" disabled={!contact.email}>
+                <Send className="mr-2 h-4 w-4" />
+                Send Email
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Send Email</DialogTitle>
+                <DialogDescription>
+                  Send a tracked email to {contact.full_name || contact.email}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSendEmail} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="to">To</Label>
+                  <Input id="to" value={contact.email} disabled />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="subject">Subject</Label>
+                  <Input id="subject" name="subject" placeholder="Email subject" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="content">Message</Label>
+                  <Textarea 
+                    id="content" 
+                    name="content" 
+                    placeholder="Write your email message here..."
+                    rows={8}
+                    required 
+                  />
+                </div>
+                <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+                  📊 This email will be automatically tracked for opens and clicks
+                </div>
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setEmailDialogOpen(false)}
+                    disabled={sendingEmail}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="bg-green-600 hover:bg-green-700"
+                    disabled={sendingEmail}
+                  >
+                    {sendingEmail ? 'Sending...' : 'Send Email'}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Edit className="mr-2 h-4 w-4" />
+                Edit
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Edit Contact</DialogTitle>
+                <DialogDescription>
+                  Update contact information for {contact.full_name || contact.email}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleEditContact} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="first_name">First Name</Label>
+                    <Input 
+                      id="first_name" 
+                      name="first_name" 
+                      defaultValue={contact.first_name || ''} 
+                      placeholder="First name" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="last_name">Last Name</Label>
+                    <Input 
+                      id="last_name" 
+                      name="last_name" 
+                      defaultValue={contact.last_name || ''} 
+                      placeholder="Last name" 
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input 
+                    id="email" 
+                    name="email" 
+                    type="email" 
+                    defaultValue={contact.email || ''} 
+                    placeholder="email@example.com" 
+                    required 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input 
+                    id="phone" 
+                    name="phone" 
+                    defaultValue={contact.phone || ''} 
+                    placeholder="Phone number" 
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="company">Company</Label>
+                    <Input 
+                      id="company" 
+                      name="company" 
+                      defaultValue={contact.company || ''} 
+                      placeholder="Company name" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="job_title">Job Title</Label>
+                    <Input 
+                      id="job_title" 
+                      name="job_title" 
+                      defaultValue={contact.job_title || ''} 
+                      placeholder="Job title" 
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="website">Website</Label>
+                  <Input 
+                    id="website" 
+                    name="website" 
+                    defaultValue={contact.website || ''} 
+                    placeholder="https://example.com" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Textarea 
+                    id="address" 
+                    name="address" 
+                    defaultValue={contact.address || ''} 
+                    placeholder="Full address" 
+                    rows={2}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <select 
+                    id="status" 
+                    name="status" 
+                    defaultValue={contact.status || 'active'}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="prospect">Prospect</option>
+                    <option value="customer">Customer</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea 
+                    id="notes" 
+                    name="notes" 
+                    defaultValue={contact.notes || ''} 
+                    placeholder="Additional notes about this contact..." 
+                    rows={3}
+                  />
+                </div>
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setEditDialogOpen(false)}
+                    disabled={updating}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={updating}
+                  >
+                    {updating ? 'Updating...' : 'Update Contact'}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[400px]">
+              <DialogHeader>
+                <DialogTitle>Delete Contact</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete {contact.full_name || contact.email}? This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
               <div className="flex justify-end space-x-2 pt-4">
                 <Button 
-                  type="button" 
                   variant="outline" 
-                  onClick={() => setEmailDialogOpen(false)}
-                  disabled={sendingEmail}
+                  onClick={() => setDeleteDialogOpen(false)}
+                  disabled={deleting}
                 >
                   Cancel
                 </Button>
                 <Button 
-                  type="submit" 
-                  className="bg-green-600 hover:bg-green-700"
-                  disabled={sendingEmail}
+                  variant="destructive" 
+                  onClick={handleDeleteContact}
+                  disabled={deleting}
                 >
-                  {sendingEmail ? 'Sending...' : 'Send Email'}
+                  {deleting ? 'Deleting...' : 'Delete Contact'}
                 </Button>
               </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -239,6 +470,10 @@ export default function ContactDetail() {
                     inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1
                     ${contact.status === 'active' 
                       ? 'bg-green-100 text-green-800' 
+                      : contact.status === 'customer'
+                      ? 'bg-blue-100 text-blue-800'
+                      : contact.status === 'prospect'
+                      ? 'bg-yellow-100 text-yellow-800'
                       : 'bg-gray-100 text-gray-800'
                     }
                   `}>
