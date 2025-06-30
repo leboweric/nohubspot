@@ -5,6 +5,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from flask import Flask, send_from_directory
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager
 from src.models.user import db
 from src.routes.auth import auth_bp
 from src.routes.contacts import contacts_bp
@@ -16,6 +17,12 @@ app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'sta
 # Configuration
 app.config['SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'dev-secret-change-in-production')
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'dev-secret-change-in-production')
+app.config['JWT_TOKEN_LOCATION'] = ['headers']
+app.config['JWT_HEADER_NAME'] = 'Authorization'
+app.config['JWT_HEADER_TYPE'] = 'Bearer'
+
+# Initialize JWT
+jwt = JWTManager(app)
 
 # CORS configuration
 cors_origins = os.environ.get('CORS_ORIGINS', '*')
