@@ -84,7 +84,10 @@ export default function ContactDetail() {
   }
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    // Ensure the date string is treated as UTC by adding 'Z' if not present
+    const utcDate = new Date(dateString + (dateString.includes('Z') ? '' : 'Z'))
+    
+    return utcDate.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
