@@ -182,18 +182,32 @@ export default function ContactDetail() {
       if (isNaN(date.getTime())) return 'Invalid date'
       
       const now = new Date()
-      const diffInHours = (now - date) / (1000 * 60 * 60)
+      const diffInMs = now - date
+      const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
+      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
+      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
       
-      if (diffInHours < 1) {
+      if (diffInMinutes < 1) {
         return 'Just now'
+      } else if (diffInMinutes < 60) {
+        return `${diffInMinutes}m ago`
       } else if (diffInHours < 24) {
-        return `${Math.floor(diffInHours)}h ago`
-      } else if (diffInHours < 168) { // 7 days
-        return `${Math.floor(diffInHours / 24)}d ago`
+        return `${diffInHours}h ago`
+      } else if (diffInDays < 7) {
+        return `${diffInDays}d ago`
+      } else if (diffInDays < 30) {
+        const weeks = Math.floor(diffInDays / 7)
+        return `${weeks}w ago`
       } else {
-        return date.toLocaleDateString()
+        // For older dates, show the actual date
+        return date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+        })
       }
     } catch (error) {
+      console.error('Error formatting timestamp:', error)
       return 'Invalid date'
     }
   }
@@ -536,18 +550,18 @@ export default function ContactDetail() {
                     {threads.map((thread) => (
                       <div 
                         key={thread.id} 
-                        className="p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                        className="p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
                         onClick={() => handleViewThread(thread.id)}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium text-sm">{thread.subject}</h4>
-                          <Badge variant="secondary" className="text-xs">
-                            {thread.reply_count} replies
+                          <h4 className="font-medium text-sm truncate pr-2">{thread.subject}</h4>
+                          <Badge variant="secondary" className="text-xs flex-shrink-0">
+                            {thread.reply_count || 0} replies
                           </Badge>
                         </div>
                         <div className="flex items-center justify-between text-xs text-gray-500">
                           <span>Last activity: {formatTimestamp(thread.last_activity_at)}</span>
-                          <Reply className="h-3 w-3" />
+                          <Reply className="h-3 w-3 flex-shrink-0" />
                         </div>
                       </div>
                     ))}
@@ -633,6 +647,9 @@ export default function ContactDetail() {
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Email Thread</DialogTitle>
+            <DialogDescription>
+              {selectedThreadId && threads.find(t => t.id === selectedThreadId)?.subject}
+            </DialogDescription>
           </DialogHeader>
           {selectedThreadId && (
             <EmailThread threadId={selectedThreadId} />
