@@ -101,12 +101,16 @@ export default function ContactDetail() {
 
   const loadQuotes = async () => {
     try {
+      console.log('Loading quotes for contact:', id)
       const response = await api.getContactQuotes(id)
+      console.log('Quotes response:', response)
       if (response.success) {
-        setQuotes(response.quotes)
+        setQuotes(response.quotes || response.data || [])
       }
     } catch (error) {
       console.error('Failed to load quotes:', error)
+      // Don't fail the whole page if quotes fail to load
+      setQuotes([])
     }
   }
 
@@ -152,8 +156,11 @@ export default function ContactDetail() {
       notes: formData.get('notes')
     }
 
+    console.log('Creating quote with data:', quoteData)
+
     try {
       const response = await api.createQuote(quoteData)
+      console.log('Create quote response:', response)
       if (response.success) {
         setQuoteDialogOpen(false)
         e.target.reset()
@@ -162,6 +169,7 @@ export default function ContactDetail() {
       }
     } catch (error) {
       console.error('Failed to create quote:', error)
+      alert('Failed to create quote. Please try again.')
     } finally {
       setCreatingQuote(false)
     }
