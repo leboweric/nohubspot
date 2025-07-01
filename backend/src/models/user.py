@@ -393,7 +393,7 @@ class Interaction(db.Model):
     status = db.Column(db.String(50), default='completed')  # scheduled, completed, cancelled
     scheduled_at = db.Column(db.DateTime)
     completed_at = db.Column(db.DateTime)
-    metadata = db.Column(db.JSON)  # Store additional data like email_id, call_duration, etc.
+    interaction_metadata = db.Column(db.JSON)  # Store additional data like email_id, call_duration, etc.
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -413,7 +413,7 @@ class Interaction(db.Model):
             'status': self.status,
             'scheduled_at': self.scheduled_at.isoformat() if self.scheduled_at else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,
-            'metadata': self.metadata,
+            'metadata': self.interaction_metadata,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'user_name': self.user.full_name if self.user else None
