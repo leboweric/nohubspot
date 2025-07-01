@@ -189,6 +189,94 @@ class ApiClient {
     return this.request('/quotes/stats')
   }
 
+  // Document methods
+  async getContactDocuments(contactId) {
+    return this.request(`/documents/contact/${contactId}`)
+  }
+
+  async uploadDocument(contactId, formData) {
+    const token = localStorage.getItem('access_token')
+    const url = `${this.baseURL}/documents/contact/${contactId}/upload`
+    
+    const config = {
+      method: 'POST',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+        // Don't set Content-Type for FormData - browser will set it with boundary
+      },
+      body: formData,
+    }
+
+    try {
+      const response = await fetch(url, config)
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error?.message || `HTTP error! status: ${response.status}`)
+      }
+      
+      return data
+    } catch (error) {
+      console.error('Document upload failed:', error)
+      throw error
+    }
+  }
+
+  async getDocument(documentId) {
+    return this.request(`/documents/${documentId}`)
+  }
+
+  async updateDocument(documentId, documentData) {
+    return this.request(`/documents/${documentId}`, {
+      method: 'PUT',
+      body: JSON.stringify(documentData),
+    })
+  }
+
+  async updateDocumentStatus(documentId, status) {
+    return this.request(`/documents/${documentId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    })
+  }
+
+  async deleteDocument(documentId) {
+    return this.request(`/documents/${documentId}`, {
+      method: 'DELETE',
+    })
+  }
+
+  async downloadDocument(documentId) {
+    const token = localStorage.getItem('access_token')
+    const url = `${this.baseURL}/documents/${documentId}/download`
+    
+    const config = {
+      method: 'GET',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    }
+
+    try {
+      const response = await fetch(url, config)
+      
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error?.message || `HTTP error! status: ${response.status}`)
+      }
+      
+      // Return the response for blob handling
+      return response
+    } catch (error) {
+      console.error('Document download failed:', error)
+      throw error
+    }
+  }
+
+  async getDocumentStats() {
+    return this.request('/documents/stats')
+  }
+
   // Import methods
   async importContacts(formData) {
     const token = localStorage.getItem('access_token')
@@ -242,3 +330,4 @@ class ApiClient {
 }
 
 export const api = new ApiClient()
+
