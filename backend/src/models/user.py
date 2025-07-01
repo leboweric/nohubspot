@@ -365,7 +365,7 @@ class QuoteActivity(db.Model):
     quote_id = db.Column(db.String(36), db.ForeignKey('quotes.id'), nullable=False)
     activity_type = db.Column(db.String(50), nullable=False)  # created, sent, viewed, accepted, rejected, etc.
     description = db.Column(db.Text)
-    metadata = db.Column(db.JSON)
+    activity_metadata = db.Column(db.JSON)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def to_dict(self):
@@ -374,7 +374,7 @@ class QuoteActivity(db.Model):
             'quote_id': self.quote_id,
             'activity_type': self.activity_type,
             'description': self.description,
-            'metadata': self.metadata,
+            'metadata': self.activity_metadata,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
