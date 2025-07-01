@@ -265,6 +265,61 @@ def extract_email_content(form_data):
         if clean_html:
             return clean_html
     
+    # FIXED: Check the 'email' field which SendGrid uses for the full email content
+    email_field = form_data.get('email', '').strip()
+    if email_field:
+        current_app.logger.info(f"Found content in 'email' field: '{email_field[:200]}...'")
+        
+        # Try to extract just the reply content from the full email
+        import re
+        
+        # Split by lines and look for the actual reply content
+        lines = email_field.split('\n')
+        content_lines = []
+        
+        # Skip headers and look for content
+        in_content = False
+        for line in lines:
+            line = line.strip()
+            
+            # Skip empty lines at the start
+            if not line and not in_content:
+                continue
+                
+            # Skip common email headers
+            if line.startswith(('From:', 'To:', 'Subject:', 'Date:', 'Content-Type:', 'MIME-Version:', 'Message-ID:', 'X-')):
+                continue
+                
+            # Skip boundary markers
+            if line.startswith('--') and ('boundary' in line or len(line) > 20):
+                continue
+                
+            # If we find actual content, start collecting
+            if line and not line.startswith(('From:', 'To:', 'Subject:', 'Date:', 'Content-Type:', 'MIME-Version:')):
+                in_content = True
+                content_lines.append(line)
+                
+            # Stop at common signature markers
+            if line in ['--', '---'] or line.startswith('On ') and 'wrote:' in line:
+                break
+                
+        # Join the content lines
+        if content_lines:
+            content = ' '.join(content_lines)
+            # Clean up any remaining HTML
+            content = re.sub(r'<[^>]+>', '', content)
+            content = content.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
+            content = content.strip()
+            
+            if content and len(content) > 3:  # Ensure we have meaningful content
+                current_app.logger.info(f"Extracted content from email field: '{content[:100]}...'")
+                return content
+        
+        # If extraction failed, log the full email for debugging and return a portion
+        current_app.logger.warning(f"Could not extract content from email field. Full content: {email_field}")
+        # Return first 200 chars as fallback
+        return email_field[:200] + "..." if len(email_field) > 200 else email_field
+    
     # Try alternative field names that SendGrid might use
     for field_name in ['body', 'message', 'content', 'text_body', 'html_body']:
         content = form_data.get(field_name, '').strip()
