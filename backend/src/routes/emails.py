@@ -16,6 +16,7 @@ import email
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import quopri
+import html
 
 emails_bp = Blueprint('emails', __name__)
 
@@ -247,198 +248,277 @@ def send_email():
         }), 500
 
 def extract_email_content(form_data):
-    """Extract and clean email content from SendGrid webhook data"""
-    import re
+    """
+    Extract clean email reply content from SendGrid webhook data.
     
-    # Get text and HTML content first (these are clean if available)
+    This function handles the complex MIME parsing needed to extract just the 
+    user's reply text from SendGrid's webhook payload, ignoring headers,
+    signatures, and quoted content.
+    """
+    current_app.logger.info(f"Starting email extraction from form data keys: {list(form_data.keys())}")
+    
+    # PRIORITY 1: Try SendGrid's clean fields first
     text_content = form_data.get('text', '').strip()
     html_content = form_data.get('html', '').strip()
     
-    # If we have clean text content, use it
-    if text_content:
-        current_app.logger.info(f"Using clean text content: '{text_content[:100]}...'")
-        return text_content
+    if text_content and len(text_content) > 3:
+        cleaned = clean_reply_text(text_content)
+        if cleaned and len(cleaned) > 3:
+            current_app.logger.info(f"SUCCESS: Used SendGrid 'text' field: '{cleaned}'")
+            return cleaned
     
-    # If we have clean HTML content, strip HTML tags and use it
-    if html_content:
-        clean_html = re.sub(r'<[^>]+>', '', html_content)
-        clean_html = clean_html.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
-        clean_html = clean_html.strip()
-        if clean_html:
-            current_app.logger.info(f"Using clean HTML content: '{clean_html[:100]}...'")
-            return clean_html
+    if html_content and len(html_content) > 3:
+        plain_text = html_to_text(html_content)
+        cleaned = clean_reply_text(plain_text)
+        if cleaned and len(cleaned) > 3:
+            current_app.logger.info(f"SUCCESS: Used SendGrid 'html' field: '{cleaned}'")
+            return cleaned
     
-    # Parse the raw email field using Python's email library
-    email_field = form_data.get('email', '').strip()
-    if email_field:
-        current_app.logger.info(f"Parsing MIME email field (length: {len(email_field)})")
+    # PRIORITY 2: Parse the raw MIME email field
+    raw_email = form_data.get('email', '').strip()
+    if raw_email:
+        current_app.logger.info(f"Parsing raw MIME email (length: {len(raw_email)})")
         
         try:
-            # Parse the email using Python's email library
-            msg = email.message_from_string(email_field)
+            # Parse using Python's email library
+            msg = email.message_from_string(raw_email)
             
-            # Extract text content from multipart message
-            extracted_content = None
-            
+            # Extract content based on message structure
             if msg.is_multipart():
-                current_app.logger.info("Email is multipart, extracting text parts")
-                for part in msg.walk():
-                    content_type = part.get_content_type()
-                    content_disposition = str(part.get('Content-Disposition', ''))
-                    
-                    # Skip attachments
-                    if 'attachment' in content_disposition:
-                        continue
-                    
-                    # Look for text/plain content
-                    if content_type == 'text/plain':
-                        payload = part.get_payload(decode=True)
-                        if payload:
-                            try:
-                                # Decode the payload
-                                charset = part.get_content_charset() or 'utf-8'
-                                text = payload.decode(charset, errors='ignore')
-                                
-                                # Handle quoted-printable encoding
-                                if part.get('Content-Transfer-Encoding') == 'quoted-printable':
-                                    text = quopri.decodestring(text).decode(charset, errors='ignore')
-                                
-                                # Clean up the text
-                                text = text.strip()
-                                
-                                # Stop at common reply markers
-                                lines = text.split('\n')
-                                content_lines = []
-                                for line in lines:
-                                    line = line.strip()
-                                    # Stop at quoted reply markers
-                                    if line.startswith('On ') and ('wrote:' in line or 'at ' in line):
-                                        break
-                                    if line.startswith('>'):
-                                        break
-                                    if line and not line.startswith('--'):
-                                        content_lines.append(line)
-                                
-                                if content_lines:
-                                    extracted_content = ' '.join(content_lines).strip()
-                                    current_app.logger.info(f"Extracted from text/plain: '{extracted_content[:100]}...'")
-                                    break
-                            except Exception as e:
-                                current_app.logger.warning(f"Error decoding text/plain part: {e}")
-                                continue
-                    
-                    # If no text/plain found, try text/html
-                    elif content_type == 'text/html' and not extracted_content:
-                        payload = part.get_payload(decode=True)
-                        if payload:
-                            try:
-                                charset = part.get_content_charset() or 'utf-8'
-                                html = payload.decode(charset, errors='ignore')
-                                
-                                # Handle quoted-printable encoding
-                                if part.get('Content-Transfer-Encoding') == 'quoted-printable':
-                                    html = quopri.decodestring(html).decode(charset, errors='ignore')
-                                
-                                # Strip HTML tags
-                                text = re.sub(r'<[^>]+>', '', html)
-                                text = text.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
-                                text = re.sub(r'\s+', ' ', text).strip()
-                                
-                                # Stop at quoted reply markers
-                                lines = text.split('\n')
-                                content_lines = []
-                                for line in lines:
-                                    line = line.strip()
-                                    if line.startswith('On ') and ('wrote:' in line or 'at ' in line):
-                                        break
-                                    if line and not line.startswith('--'):
-                                        content_lines.append(line)
-                                
-                                if content_lines:
-                                    extracted_content = ' '.join(content_lines).strip()
-                                    current_app.logger.info(f"Extracted from text/html: '{extracted_content[:100]}...'")
-                            except Exception as e:
-                                current_app.logger.warning(f"Error decoding text/html part: {e}")
-                                continue
+                extracted_content = extract_from_multipart(msg)
             else:
-                # Single part message
-                current_app.logger.info("Email is single part")
-                payload = msg.get_payload(decode=True)
-                if payload:
-                    try:
-                        charset = msg.get_content_charset() or 'utf-8'
-                        text = payload.decode(charset, errors='ignore')
-                        
-                        # Handle quoted-printable encoding
-                        if msg.get('Content-Transfer-Encoding') == 'quoted-printable':
-                            text = quopri.decodestring(text).decode(charset, errors='ignore')
-                        
-                        text = text.strip()
-                        if text:
-                            extracted_content = text
-                            current_app.logger.info(f"Extracted from single part: '{extracted_content[:100]}...'")
-                    except Exception as e:
-                        current_app.logger.warning(f"Error decoding single part: {e}")
+                extracted_content = extract_from_single_part(msg)
             
             if extracted_content and len(extracted_content) > 3:
-                return extracted_content
-            
+                cleaned = clean_reply_text(extracted_content)
+                if cleaned and len(cleaned) > 3:
+                    current_app.logger.info(f"SUCCESS: Extracted from MIME: '{cleaned}'")
+                    return cleaned
+                    
         except Exception as e:
-            current_app.logger.error(f"Error parsing MIME email: {e}")
-        
-        # If MIME parsing failed, try simple text extraction
-        current_app.logger.warning("MIME parsing failed, trying simple extraction")
-        
-        # Look for text/plain content manually
-        if 'Content-Type: text/plain' in email_field:
-            # Find the text/plain section
-            parts = email_field.split('Content-Type: text/plain')
-            if len(parts) > 1:
-                text_part = parts[1]
-                # Find the actual content after headers
-                lines = text_part.split('\n')
-                content_lines = []
-                in_content = False
-                
-                for line in lines:
-                    line = line.strip()
-                    
-                    # Skip headers until we find content
-                    if not in_content:
-                        if line == '' or not (':' in line and not line.startswith(' ')):
-                            in_content = True
-                        continue
-                    
-                    # Stop at boundaries or quoted replies
-                    if line.startswith('--') or line.startswith('On ') and 'wrote:' in line:
-                        break
-                    
-                    if line and not line.startswith('>'):
-                        content_lines.append(line)
-                
-                if content_lines:
-                    content = ' '.join(content_lines).strip()
-                    # Decode quoted-printable if needed
-                    if '=' in content and content.count('=') > 2:
-                        try:
-                            content = quopri.decodestring(content.encode()).decode('utf-8', errors='ignore')
-                        except:
-                            pass
-                    
-                    if content and len(content) > 3:
-                        current_app.logger.info(f"Manual extraction successful: '{content[:100]}...'")
-                        return content
+            current_app.logger.error(f"MIME parsing failed: {e}")
+            
+            # FALLBACK: Manual text extraction from raw email
+            manual_content = manual_text_extraction(raw_email)
+            if manual_content and len(manual_content) > 3:
+                cleaned = clean_reply_text(manual_content)
+                if cleaned and len(cleaned) > 3:
+                    current_app.logger.info(f"SUCCESS: Manual extraction: '{cleaned}'")
+                    return cleaned
     
-    # Try alternative field names
-    for field_name in ['body', 'message', 'content', 'text_body', 'html_body', 'plain']:
+    # PRIORITY 3: Try alternative field names
+    for field_name in ['body', 'message', 'content', 'plain', 'text_body']:
         content = form_data.get(field_name, '').strip()
-        if content:
-            current_app.logger.info(f"Found content in field '{field_name}': '{content[:100]}...'")
-            return content
+        if content and len(content) > 3:
+            cleaned = clean_reply_text(content)
+            if cleaned and len(cleaned) > 3:
+                current_app.logger.info(f"SUCCESS: Found in '{field_name}': '{cleaned}'")
+                return cleaned
     
-    # If no content found
-    current_app.logger.warning(f"No email content found. Form data keys: {list(form_data.keys())}")
-    return "Email reply received (content not extracted)"
+    # If all else fails, return a default message
+    current_app.logger.warning("FAILED: Could not extract email content from any source")
+    return "Email reply received (content extraction failed)"
+
+def extract_from_multipart(msg):
+    """Extract content from multipart MIME message"""
+    current_app.logger.info("Processing multipart message")
+    
+    # First pass: Look for text/plain parts
+    for part in msg.walk():
+        if part.get_content_type() == 'text/plain':
+            content = decode_part_safely(part)
+            if content and len(content.strip()) > 3:
+                current_app.logger.info(f"Found text/plain content: '{content[:50]}...'")
+                return content
+    
+    # Second pass: Look for text/html parts if no plain text found
+    for part in msg.walk():
+        if part.get_content_type() == 'text/html':
+            content = decode_part_safely(part)
+            if content and len(content.strip()) > 3:
+                plain_content = html_to_text(content)
+                if plain_content and len(plain_content.strip()) > 3:
+                    current_app.logger.info(f"Found text/html content: '{plain_content[:50]}...'")
+                    return plain_content
+    
+    return None
+
+def extract_from_single_part(msg):
+    """Extract content from single-part MIME message"""
+    current_app.logger.info("Processing single-part message")
+    
+    content = decode_part_safely(msg)
+    if not content:
+        return None
+    
+    # If it's HTML, convert to text
+    if msg.get_content_type() == 'text/html':
+        content = html_to_text(content)
+    
+    return content if content and len(content.strip()) > 3 else None
+
+def decode_part_safely(part):
+    """Safely decode a MIME part with proper charset and encoding handling"""
+    try:
+        payload = part.get_payload(decode=True)
+        if not payload:
+            return None
+        
+        # Determine charset
+        charset = part.get_content_charset() or 'utf-8'
+        
+        # Decode bytes to string
+        try:
+            text = payload.decode(charset, errors='ignore')
+        except (UnicodeDecodeError, LookupError):
+            # Fallback charsets
+            for fallback_charset in ['utf-8', 'latin1', 'ascii']:
+                try:
+                    text = payload.decode(fallback_charset, errors='ignore')
+                    break
+                except:
+                    continue
+            else:
+                return None
+        
+        # Handle quoted-printable transfer encoding
+        transfer_encoding = part.get('Content-Transfer-Encoding', '').lower()
+        if transfer_encoding == 'quoted-printable':
+            try:
+                # Decode quoted-printable
+                text = quopri.decodestring(text.encode('utf-8')).decode('utf-8', errors='ignore')
+            except Exception as e:
+                current_app.logger.warning(f"Quoted-printable decode failed: {e}")
+        
+        return text.strip() if text else None
+        
+    except Exception as e:
+        current_app.logger.warning(f"Part decode failed: {e}")
+        return None
+
+def html_to_text(html_content):
+    """Convert HTML content to plain text"""
+    if not html_content:
+        return ""
+    
+    # Decode HTML entities
+    text = html.unescape(html_content)
+    
+    # Remove script and style elements
+    text = re.sub(r'<(script|style)[^>]*>.*?</\1>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    
+    # Replace common block elements with newlines
+    text = re.sub(r'<(div|p|br|hr)[^>]*>', '\n', text, flags=re.IGNORECASE)
+    
+    # Remove all remaining HTML tags
+    text = re.sub(r'<[^>]+>', '', text)
+    
+    # Clean up whitespace
+    text = re.sub(r'\s+', ' ', text)
+    
+    return text.strip()
+
+def manual_text_extraction(raw_email):
+    """Manual extraction fallback for when MIME parsing fails"""
+    current_app.logger.info("Attempting manual text extraction")
+    
+    # Look for text/plain sections
+    text_plain_pattern = r'Content-Type:\s*text/plain[^\r\n]*\r?\n\r?\n(.*?)(?=\r?\n--|\Z)'
+    matches = re.findall(text_plain_pattern, raw_email, re.DOTALL | re.IGNORECASE)
+    
+    for match in matches:
+        # Clean up the match
+        content = match.replace('\r\n', '\n').replace('\\n', '\n')
+        
+        # Decode quoted-printable if present
+        if '=' in content and content.count('=') > 2:
+            try:
+                content = quopri.decodestring(content.encode('utf-8')).decode('utf-8', errors='ignore')
+            except:
+                pass
+        
+        if content and len(content.strip()) > 3:
+            current_app.logger.info(f"Manual extraction found: '{content[:50]}...'")
+            return content.strip()
+    
+    return None
+
+def clean_reply_text(content):
+    """
+    Clean reply text by removing quoted content, signatures, and email artifacts.
+    
+    This is the core function that extracts just the user's actual reply.
+    """
+    if not content or len(content.strip()) < 3:
+        return ""
+    
+    # Split into lines for processing
+    lines = content.split('\n')
+    clean_lines = []
+    
+    for line in lines:
+        line = line.strip()
+        
+        # Skip empty lines at the beginning
+        if not clean_lines and not line:
+            continue
+        
+        # STOP CONDITIONS - These indicate end of actual reply content
+        
+        # Email headers (From:, To:, Subject:, etc.)
+        if re.match(r'^(From|To|Cc|Bcc|Subject|Date|Sent|Received):\s', line, re.IGNORECASE):
+            break
+        
+        # Quoted reply markers
+        if line.startswith('>') or line.startswith('&gt;'):
+            break
+        
+        # Common reply attribution lines
+        if re.match(r'^On\s+.+\s+wrote:?$', line, re.IGNORECASE):
+            break
+        
+        if re.match(r'^.+\s+wrote:?$', line, re.IGNORECASE) and len(line) > 20:
+            break
+        
+        # Email signatures
+        if line in ['--', '---'] or (line.startswith('--') and len(line) <= 5):
+            break
+        
+        # Mobile signatures
+        mobile_sigs = [
+            'sent from', 'get outlook', 'sent from my', 'this email',
+            'download', 'unsubscribe', 'privacy policy'
+        ]
+        if any(sig in line.lower() for sig in mobile_sigs):
+            break
+        
+        # Content-Transfer-Encoding artifacts (this was causing your issue!)
+        if 'content-transfer-encoding' in line.lower():
+            continue
+        
+        # MIME boundary markers
+        if line.startswith('--') and (len(line) > 10 and '=' in line):
+            break
+        
+        # Add the clean line
+        if line:
+            clean_lines.append(line)
+    
+    # Join the clean lines
+    result = ' '.join(clean_lines).strip()
+    
+    # Final cleanup
+    # Remove quoted-printable artifacts like =E2=80=AF
+    result = re.sub(r'=([A-F0-9]{2})', '', result)
+    
+    # Remove excessive whitespace
+    result = re.sub(r'\s+', ' ', result)
+    
+    # Remove common email artifacts
+    result = re.sub(r'Content-Type:[^\r\n]*', '', result, flags=re.IGNORECASE)
+    result = re.sub(r'Content-Transfer-Encoding:[^\r\n]*', '', result, flags=re.IGNORECASE)
+    
+    return result.strip() if len(result.strip()) > 3 else ""
 
 @emails_bp.route('/webhook/inbound', methods=['POST'])
 def handle_inbound_email():
@@ -455,8 +535,11 @@ def handle_inbound_email():
         to_email = form_data.get('to', '')
         subject = form_data.get('subject', '')
         
-        # FIXED: Better email content extraction with MIME parsing
+        # IMPROVED: Better email content extraction with proper encoding handling
         email_content = extract_email_content(form_data)
+        
+        # Log the extracted content for debugging
+        current_app.logger.info(f"Extracted email content: '{email_content[:200]}...'")
         
         # Extract headers for threading
         headers = {}
@@ -506,7 +589,7 @@ def handle_inbound_email():
             current_app.logger.warning(f"Thread not found for subject: {subject}")
             return jsonify({'success': False, 'error': 'Thread not found'}), 404
         
-        # Create email reply record - FIXED: Use 'references' instead of 'email_references'
+        # Create email reply record with cleaned content
         email_reply = EmailReply(
             tenant_id=contact.tenant_id,
             thread_id=thread.id,
@@ -514,11 +597,11 @@ def handle_inbound_email():
             from_email=from_email,
             from_name=form_data.get('from_name', ''),
             subject=subject,
-            content_text=form_data.get('text', ''),
-            content_html=form_data.get('html', ''),
+            content_text=email_content,  # Store the cleaned content here
+            content_html=form_data.get('html', ''),  # Keep original HTML if needed
             message_id=message_id,
             in_reply_to=in_reply_to,
-            references=references,  # FIXED: Changed from 'email_references' to 'references'
+            references=references,
             webhook_data=form_data,
             is_processed=True
         )
@@ -528,13 +611,13 @@ def handle_inbound_email():
         thread.last_activity_at = datetime.utcnow()
         thread.reply_count += 1
         
-        # FIXED: Create interaction record with properly extracted content
+        # Create interaction record with cleaned content
         interaction = Interaction(
             tenant_id=contact.tenant_id,
             contact_id=contact.id,
             type='email',
             subject=f"Email reply: {subject}",
-            content=email_content,  # FIXED: Use extracted content instead of raw form data
+            content=email_content,  # Use the cleaned content
             direction='inbound',
             status='completed',
             completed_at=datetime.utcnow()
@@ -549,7 +632,8 @@ def handle_inbound_email():
             'success': True,
             'message': 'Email reply processed successfully',
             'reply_id': email_reply.id,
-            'thread_id': thread.id
+            'thread_id': thread.id,
+            'extracted_content': email_content  # Include in response for debugging
         }), 200
         
     except Exception as e:
@@ -725,4 +809,3 @@ def get_email_stats():
             'success': False,
             'error': {'message': 'Internal server error'}
         }), 500
-
