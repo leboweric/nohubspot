@@ -1,4 +1,11 @@
 from flask import Blueprint, request, jsonify, current_app
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, From, To, Subject, HtmlContent
+from src.models.user import db, User, Contact, EmailSend, Interaction
+from datetime import datetime
+import uuid
+import os
 
 emails_bp = Blueprint('emails', __name__)
 
@@ -12,61 +19,129 @@ def emails_health():
     }), 200
 
 @emails_bp.route('/send', methods=['POST'])
+@jwt_required()  # ← FIXED: Added back the JWT decorator
 def send_email():
-    """Debug version to catch import/model errors"""
-    current_app.logger.info("=== EMAIL SEND DEBUG START ===")
+    """Send email with SendGrid"""
+    current_app.logger.info("=== EMAIL SEND START ===")
     
     try:
-        current_app.logger.info("Step 1: Getting request data")
         data = request.get_json()
         current_app.logger.info(f"Request data: {data}")
         
-        current_app.logger.info("Step 2: Testing JWT import")
-        from flask_jwt_extended import jwt_required, get_jwt_identity
-        current_app.logger.info("JWT import successful")
-        
-        current_app.logger.info("Step 3: Testing database imports")
-        from src.models.user import db, User, Contact
-        current_app.logger.info("Basic models imported successfully")
-        
-        current_app.logger.info("Step 4: Testing EmailSend import")
-        from src.models.user import EmailSend
-        current_app.logger.info("EmailSend imported successfully")
-        
-        current_app.logger.info("Step 5: Testing Interaction import")
-        from src.models.user import Interaction
-        current_app.logger.info("Interaction imported successfully")
-        
-        current_app.logger.info("Step 6: Testing SendGrid imports")
-        from sendgrid import SendGridAPIClient
-        from sendgrid.helpers.mail import Mail, From, To, Subject, HtmlContent
-        current_app.logger.info("SendGrid imports successful")
-        
-        current_app.logger.info("Step 7: Testing other imports")
-        from datetime import datetime
-        import uuid
-        import os
-        current_app.logger.info("Other imports successful")
-        
-        current_app.logger.info("Step 8: Testing JWT token")
         current_user_id = get_jwt_identity()
         current_app.logger.info(f"Current user ID: {current_user_id}")
         
-        current_app.logger.info("Step 9: All imports and basic operations successful")
+        # Validate required fields
+        required_fields = ['contact_id', 'to', 'subject', 'content']
+        for field in required_fields:
+            if field not in data:
+                current_app.logger.error(f"Missing field: {field}")
+                return jsonify({'success': False, 'error': f'Missing required field: {field}'}), 400
+        
+        current_app.logger.info("Validation passed")
+        
+        # Get current user
+        current_user = User.query.get(current_user_id)
+        if not current_user:
+            current_app.logger.error("User not found")
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+        current_app.logger.info(f"User found: {current_user.email}")
+        
+        # Get contact
+        contact = Contact.query.filter_by(
+            id=data['contact_id'],
+            tenant_id=current_user.tenant_id
+        ).first()
+        
+        if not contact:
+            current_app.logger.error("Contact not found")
+            return jsonify({'success': False, 'error': 'Contact not found'}), 404
+        
+        current_app.logger.info(f"Contact found: {contact.email}")
+        
+        # Create email record
+        email_id = str(uuid.uuid4())
+        current_app.logger.info(f"Creating email record: {email_id}")
+        
+        email_send = EmailSend(
+            id=email_id,
+            tenant_id=current_user.tenant_id,
+            user_id=current_user.id,
+            contact_id=contact.id,
+            to_email=data['to'],
+            to_name=contact.full_name,
+            from_email=current_user.email,
+            from_name=f"{current_user.full_name} ({current_user.company})" if current_user.company else current_user.full_name,
+            subject=data['subject'],
+            content=data['content'],
+            status='sending'
+        )
+        db.session.add(email_send)
+        current_app.logger.info("Email record created")
+        
+        # Create interaction record
+        interaction = Interaction(
+            tenant_id=current_user.tenant_id,
+            contact_id=contact.id,
+            type='email',
+            subject=f"Email sent: {data['subject']}",
+            content=data['content'],
+            direction='outbound',
+            status='completed',
+            completed_at=datetime.utcnow()
+        )
+        db.session.add(interaction)
+        current_app.logger.info("Interaction record created")
+        
+        # Send email via SendGrid
+        sendgrid_api_key = os.environ.get('SENDGRID_API_KEY')
+        if not sendgrid_api_key:
+            current_app.logger.error("SendGrid API key not found")
+            return jsonify({'success': False, 'error': 'SendGrid API key not configured'}), 500
+        
+        current_app.logger.info("Preparing SendGrid message")
+        message = Mail(
+            from_email=From(current_user.email, email_send.from_name),
+            to_emails=To(data['to'], contact.full_name),
+            subject=Subject(data['subject']),
+            html_content=HtmlContent(data['content'])
+        )
+        
+        current_app.logger.info("Sending email via SendGrid")
+        sg = SendGridAPIClient(api_key=sendgrid_api_key)
+        response = sg.send(message)
+        
+        current_app.logger.info(f"SendGrid response: {response.status_code}")
+        
+        if response.status_code in [200, 202]:
+            email_send.status = 'sent'
+            email_send.sent_at = datetime.utcnow()
+            email_send.sendgrid_message_id = response.headers.get('X-Message-Id', '')
+            current_app.logger.info("Email sent successfully")
+        else:
+            email_send.status = 'failed'
+            email_send.error_message = f"SendGrid error: {response.status_code}"
+            current_app.logger.error(f"SendGrid error: {response.status_code}")
+        
+        db.session.commit()
+        current_app.logger.info("Database committed")
+        
         return jsonify({
             'success': True,
-            'message': 'All debugging steps passed',
-            'user_id': current_user_id
+            'message': 'Email sent successfully',
+            'email_id': email_id
         })
         
     except Exception as e:
-        current_app.logger.error(f"ERROR at step: {str(e)}")
-        current_app.logger.error(f"Exception type: {type(e)}")
+        db.session.rollback()
+        current_app.logger.error(f"Error sending email: {str(e)}")
         import traceback
         current_app.logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @emails_bp.route('/threads/<thread_id>', methods=['GET'])
+@jwt_required()
 def get_email_thread(thread_id):
     """Placeholder thread endpoint"""
     return jsonify({
@@ -75,6 +150,7 @@ def get_email_thread(thread_id):
     }), 200
 
 @emails_bp.route('/threads/contact/<contact_id>', methods=['GET'])
+@jwt_required()
 def get_contact_threads(contact_id):
     """Placeholder contact threads endpoint"""
     return jsonify({
@@ -83,14 +159,29 @@ def get_contact_threads(contact_id):
     }), 200
 
 @emails_bp.route('/stats', methods=['GET'])
+@jwt_required()
 def get_email_stats():
     """Get email statistics"""
-    return jsonify({
-        'success': True,
-        'stats': {
-            'total_sent': 0,
-            'total_opened': 0,
-            'total_clicked': 0
-        }
-    }), 200
+    try:
+        current_user_id = get_jwt_identity()
+        current_user = User.query.get(current_user_id)
+        
+        # Get basic email stats
+        total_sent = EmailSend.query.filter_by(
+            tenant_id=current_user.tenant_id,
+            status='sent'
+        ).count()
+        
+        return jsonify({
+            'success': True,
+            'stats': {
+                'total_sent': total_sent,
+                'total_opened': 0,  # Placeholder
+                'total_clicked': 0  # Placeholder
+            }
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error getting email stats: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
