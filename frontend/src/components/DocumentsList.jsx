@@ -1,14 +1,15 @@
 import React, { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu'
-import {
+import { 
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -20,55 +21,75 @@ import {
 } from '@/components/ui/alert-dialog'
 import { 
   FileText, 
-  Download, 
-  MoreVertical, 
-  Trash2, 
-  Eye, 
-  Send, 
-  CheckCircle, 
+  Image, 
+  FileSpreadsheet,
+  Presentation,
+  File,
+  MoreVertical,
+  Download,
+  Edit,
+  Trash2,
+  Send,
+  Eye,
+  CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  AlertCircle
 } from 'lucide-react'
-import { api } from '@/lib/api'
+import { api } from '../lib/api'
 
-const statusConfig = {
-  draft: { 
-    label: 'Draft', 
-    color: 'bg-gray-100 text-gray-800', 
-    icon: Clock 
-  },
-  sent: { 
-    label: 'Sent', 
-    color: 'bg-blue-100 text-blue-800', 
-    icon: Send 
-  },
-  viewed: { 
-    label: 'Viewed', 
-    color: 'bg-yellow-100 text-yellow-800', 
-    icon: Eye 
-  },
-  signed: { 
-    label: 'Signed', 
-    color: 'bg-green-100 text-green-800', 
-    icon: CheckCircle 
-  },
-  rejected: { 
-    label: 'Rejected', 
-    color: 'bg-red-100 text-red-800', 
-    icon: XCircle 
+const getFileIcon = (mimeType, fileType) => {
+  if (mimeType?.startsWith('image/')) {
+    return Image
+  } else if (mimeType?.includes('sheet') || mimeType?.includes('excel')) {
+    return FileSpreadsheet
+  } else if (mimeType?.includes('presentation') || mimeType?.includes('powerpoint')) {
+    return Presentation
+  } else {
+    return FileText
   }
 }
 
-const typeConfig = {
-  quote: { label: 'Quote', color: 'bg-purple-100 text-purple-800' },
-  proposal: { label: 'Proposal', color: 'bg-blue-100 text-blue-800' },
-  contract: { label: 'Contract', color: 'bg-green-100 text-green-800' },
-  presentation: { label: 'Presentation', color: 'bg-orange-100 text-orange-800' },
-  image: { label: 'Image', color: 'bg-pink-100 text-pink-800' },
-  other: { label: 'Other', color: 'bg-gray-100 text-gray-800' }
+const getStatusBadge = (status) => {
+  const statusConfig = {
+    draft: { label: 'Draft', variant: 'secondary', icon: Clock },
+    sent: { label: 'Sent', variant: 'default', icon: Send },
+    viewed: { label: 'Viewed', variant: 'outline', icon: Eye },
+    signed: { label: 'Signed', variant: 'default', icon: CheckCircle },
+    rejected: { label: 'Rejected', variant: 'destructive', icon: XCircle }
+  }
+  
+  const config = statusConfig[status] || statusConfig.draft
+  const Icon = config.icon
+  
+  return (
+    <Badge variant={config.variant} className="flex items-center space-x-1">
+      <Icon className="h-3 w-3" />
+      <span>{config.label}</span>
+    </Badge>
+  )
 }
 
-function formatFileSize(bytes) {
+const getFileTypeBadge = (fileType) => {
+  const typeConfig = {
+    quote: { label: 'Quote', className: 'bg-blue-100 text-blue-800' },
+    proposal: { label: 'Proposal', className: 'bg-green-100 text-green-800' },
+    contract: { label: 'Contract', className: 'bg-purple-100 text-purple-800' },
+    presentation: { label: 'Presentation', className: 'bg-orange-100 text-orange-800' },
+    image: { label: 'Image', className: 'bg-pink-100 text-pink-800' },
+    other: { label: 'Other', className: 'bg-gray-100 text-gray-800' }
+  }
+  
+  const config = typeConfig[fileType] || typeConfig.other
+  
+  return (
+    <Badge variant="outline" className={config.className}>
+      {config.label}
+    </Badge>
+  )
+}
+
+const formatFileSize = (bytes) => {
   if (bytes === 0) return '0 Bytes'
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
@@ -76,7 +97,7 @@ function formatFileSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-function formatDate(dateString) {
+const formatDate = (dateString) => {
   if (!dateString) return 'N/A'
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -118,18 +139,19 @@ export default function DocumentsList({ documents, onDocumentUpdate, onDocumentD
     
     try {
       const response = await api.updateDocumentStatus(documentId, newStatus)
-      if (response.success) {
+      if (response.success && onDocumentUpdate) {
         onDocumentUpdate(response.data)
       }
     } catch (error) {
-      console.error('Failed to update document status:', error)
+      console.error('Status update failed:', error)
+      // You might want to show a toast notification here
     } finally {
       setUpdatingStatus(prev => ({ ...prev, [documentId]: false }))
     }
   }
 
-  const handleDeleteClick = (doc) => {
-    setDocumentToDelete(doc)
+  const handleDeleteClick = (document) => {
+    setDocumentToDelete(document)
     setDeleteDialogOpen(true)
   }
 
@@ -137,138 +159,162 @@ export default function DocumentsList({ documents, onDocumentUpdate, onDocumentD
     if (!documentToDelete) return
     
     try {
-      await api.deleteDocument(documentToDelete.id)
-      onDocumentDelete(documentToDelete.id)
+      const response = await api.deleteDocument(documentToDelete.id)
+      if (response.success && onDocumentDelete) {
+        onDocumentDelete(documentToDelete.id)
+      }
+    } catch (error) {
+      console.error('Delete failed:', error)
+      // You might want to show a toast notification here
+    } finally {
       setDeleteDialogOpen(false)
       setDocumentToDelete(null)
-    } catch (error) {
-      console.error('Failed to delete document:', error)
     }
   }
 
   if (!documents || documents.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        <FileText className="mx-auto h-12 w-12 mb-4 text-gray-300" />
-        <p>No documents uploaded yet</p>
-        <p className="text-sm">Upload your first quote, proposal, or contract to get started.</p>
-      </div>
+      <Card>
+        <CardContent className="p-6 text-center">
+          <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No documents yet</h3>
+          <p className="text-gray-500">Upload your first quote, proposal, or contract to get started.</p>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
     <>
-      <div className="space-y-4">
-        {documents.map((doc) => {
-          const statusInfo = statusConfig[doc.status] || statusConfig.draft
-          const typeInfo = typeConfig[doc.file_type] || typeConfig.other
-          const StatusIcon = statusInfo.icon
-
+      <div className="space-y-3">
+        {documents.map((document) => {
+          const FileIcon = getFileIcon(document.mime_type, document.file_type)
+          const isUpdating = updatingStatus[document.id]
+          
           return (
-            <Card key={doc.id} className="hover:shadow-md transition-shadow">
+            <Card key={document.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-3 flex-1">
-                    <div className="p-2 bg-blue-50 rounded-lg">
-                      <FileText className="h-6 w-6 text-blue-600" />
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h4 className="font-medium text-gray-900 truncate">
-                          {doc.title}
-                        </h4>
-                        <Badge className={typeInfo.color}>
-                          {typeInfo.label}
-                        </Badge>
-                      </div>
-                      
-                      <p className="text-sm text-gray-600 mb-2">
-                        {doc.original_filename}
-                      </p>
-                      
-                      <div className="flex items-center space-x-4 text-xs text-gray-500">
-                        <span>Size: {formatFileSize(doc.file_size)}</span>
-                        <span>Uploaded: {formatDate(doc.uploaded_at)}</span>
-                        {doc.uploader_name && (
-                          <span>By: {doc.uploader_name}</span>
-                        )}
-                      </div>
-                      
-                      {doc.description && (
-                        <p className="text-sm text-gray-600 mt-2">
-                          {doc.description}
-                        </p>
-                      )}
-                    </div>
+                <div className="flex items-start space-x-4">
+                  {/* File Icon */}
+                  <div className="flex-shrink-0">
+                    <FileIcon className="h-8 w-8 text-blue-500" />
                   </div>
                   
-                  <div className="flex items-center space-x-2 ml-4">
-                    <Badge className={`${statusInfo.color} flex items-center space-x-1`}>
-                      <StatusIcon className="h-3 w-3" />
-                      <span>{statusInfo.label}</span>
-                    </Badge>
+                  {/* Document Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-gray-900 truncate">
+                          {document.title}
+                        </h4>
+                        <p className="text-xs text-gray-500 truncate">
+                          {document.original_filename}
+                        </p>
+                        <div className="flex items-center space-x-2 mt-1">
+                          {getFileTypeBadge(document.file_type)}
+                          {getStatusBadge(document.status)}
+                        </div>
+                      </div>
+                      
+                      {/* Actions */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleDownload(document)}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                          </DropdownMenuItem>
+                          
+                          <DropdownMenuSeparator />
+                          
+                          {document.status === 'draft' && (
+                            <DropdownMenuItem 
+                              onClick={() => handleStatusUpdate(document.id, 'sent')}
+                              disabled={isUpdating}
+                            >
+                              <Send className="h-4 w-4 mr-2" />
+                              Mark as Sent
+                            </DropdownMenuItem>
+                          )}
+                          
+                          {document.status === 'sent' && (
+                            <DropdownMenuItem 
+                              onClick={() => handleStatusUpdate(document.id, 'viewed')}
+                              disabled={isUpdating}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Mark as Viewed
+                            </DropdownMenuItem>
+                          )}
+                          
+                          {(document.status === 'viewed' || document.status === 'sent') && (
+                            <>
+                              <DropdownMenuItem 
+                                onClick={() => handleStatusUpdate(document.id, 'signed')}
+                                disabled={isUpdating}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Mark as Signed
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleStatusUpdate(document.id, 'rejected')}
+                                disabled={isUpdating}
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Mark as Rejected
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          
+                          <DropdownMenuSeparator />
+                          
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteClick(document)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                     
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleDownload(doc)}>
-                          <Download className="h-4 w-4 mr-2" />
-                          Download
-                        </DropdownMenuItem>
-                        
-                        {doc.status === 'draft' && (
-                          <DropdownMenuItem 
-                            onClick={() => handleStatusUpdate(doc.id, 'sent')}
-                            disabled={updatingStatus[doc.id]}
-                          >
-                            <Send className="h-4 w-4 mr-2" />
-                            Mark as Sent
-                          </DropdownMenuItem>
+                    {/* Document Details */}
+                    <div className="mt-2 text-xs text-gray-500 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span>Size: {formatFileSize(document.file_size)}</span>
+                        <span>Uploaded: {formatDate(document.uploaded_at)}</span>
+                      </div>
+                      
+                      {document.description && (
+                        <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                          {document.description}
+                        </p>
+                      )}
+                      
+                      {document.user && (
+                        <p className="text-xs text-gray-500">
+                          Uploaded by: {document.user.full_name}
+                        </p>
+                      )}
+                      
+                      {/* Status Timestamps */}
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                        {document.sent_at && (
+                          <span>Sent: {formatDate(document.sent_at)}</span>
                         )}
-                        
-                        {doc.status === 'sent' && (
-                          <DropdownMenuItem 
-                            onClick={() => handleStatusUpdate(doc.id, 'viewed')}
-                            disabled={updatingStatus[doc.id]}
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            Mark as Viewed
-                          </DropdownMenuItem>
+                        {document.viewed_at && (
+                          <span>Viewed: {formatDate(document.viewed_at)}</span>
                         )}
-                        
-                        {(doc.status === 'viewed' || doc.status === 'sent') && (
-                          <>
-                            <DropdownMenuItem 
-                              onClick={() => handleStatusUpdate(doc.id, 'signed')}
-                              disabled={updatingStatus[doc.id]}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Mark as Signed
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleStatusUpdate(doc.id, 'rejected')}
-                              disabled={updatingStatus[doc.id]}
-                            >
-                              <XCircle className="h-4 w-4 mr-2" />
-                              Mark as Rejected
-                            </DropdownMenuItem>
-                          </>
+                        {document.signed_at && (
+                          <span>Signed: {formatDate(document.signed_at)}</span>
                         )}
-                        
-                        <DropdownMenuItem 
-                          onClick={() => handleDeleteClick(doc)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -277,6 +323,7 @@ export default function DocumentsList({ documents, onDocumentUpdate, onDocumentD
         })}
       </div>
 
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
