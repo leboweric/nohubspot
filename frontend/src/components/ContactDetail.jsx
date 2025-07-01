@@ -22,7 +22,10 @@ import {
   Trash2,
   MessageSquare,
   Reply,
-  Clock
+  Clock,
+  X,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react'
 import { api } from '../lib/api'
 import EmailThread from './EmailThread'
@@ -42,6 +45,8 @@ export default function ContactDetail() {
   const [sendingEmail, setSendingEmail] = useState(false)
   const [updating, setUpdating] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [replyingTo, setReplyingTo] = useState(null)
+  const [sendingReply, setSendingReply] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -129,6 +134,34 @@ export default function ContactDetail() {
     }
   }
 
+  const handleSendReply = async (e) => {
+    e.preventDefault()
+    setSendingReply(true)
+
+    const formData = new FormData(e.target)
+    const replyData = {
+      contact_id: id,
+      to: contact.email,
+      subject: `Re: ${replyingTo.subject}`,
+      content: formData.get('reply_content'),
+    }
+
+    try {
+      const response = await api.sendEmail(replyData)
+      if (response.success) {
+        setReplyingTo(null)
+        e.target.reset()
+        // Reload timeline and threads to show the new reply
+        loadContactData()
+        loadEmailThreads()
+      }
+    } catch (error) {
+      console.error('Failed to send reply:', error)
+    } finally {
+      setSendingReply(false)
+    }
+  }
+
   const handleEditContact = async (e) => {
     e.preventDefault()
     setUpdating(true)
@@ -177,6 +210,14 @@ export default function ContactDetail() {
     console.log('Opening thread dialog for threadId:', threadId)
     setSelectedThreadId(threadId)
     setThreadDialogOpen(true)
+  }
+
+  const handleReplyClick = (item) => {
+    if (replyingTo?.id === item.id) {
+      setReplyingTo(null) // Close if already open
+    } else {
+      setReplyingTo(item) // Open reply form for this item
+    }
   }
 
   const formatTimestamp = (timestamp) => {
@@ -294,6 +335,37 @@ export default function ContactDetail() {
       default:
         return <Calendar className="h-4 w-4" />
     }
+  }
+
+  const getDirectionBadge = (item) => {
+    if (item.direction === 'outbound') {
+      return (
+        <Badge className="bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200">
+          Email Sent
+        </Badge>
+      )
+    } else {
+      return (
+        <Badge className="bg-green-100 text-green-700 border-green-200 hover:bg-green-200">
+          Email Received
+        </Badge>
+      )
+    }
+  }
+
+  const getStatusBadge = (status) => {
+    if (status === 'completed') {
+      return (
+        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+          Completed
+        </Badge>
+      )
+    }
+    return (
+      <Badge className="bg-gray-100 text-gray-700 border-gray-200">
+        {status}
+      </Badge>
+    )
   }
 
   if (loading) {
@@ -591,7 +663,7 @@ export default function ContactDetail() {
                       >
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-medium text-sm truncate pr-2">{thread.subject}</h4>
-                          <Badge variant="secondary" className="text-xs flex-shrink-0">
+                          <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 text-xs flex-shrink-0">
                             {thread.reply_count || 0} replies
                           </Badge>
                         </div>
@@ -617,51 +689,123 @@ export default function ContactDetail() {
                 {timeline.length > 0 ? (
                   <div className="space-y-4">
                     {timeline.map((item) => (
-                      <div key={item.id} className="flex items-start space-x-3 p-4 border rounded-lg">
-                        <div className="flex-shrink-0 mt-1">
-                          {getActivityIcon(item.type)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-gray-900">
-                              {getDisplaySubject(item)}
-                            </p>
-                            <div className="flex items-center space-x-2">
-                              {item.type === 'email' && item.opens > 0 && (
-                                <div className="flex items-center space-x-1 text-xs text-green-600">
-                                  <Eye className="h-3 w-3" />
-                                  <span>{item.opens} opens</span>
+                      <div key={item.id}>
+                        <div className="flex items-start space-x-3 p-4 border rounded-lg">
+                          <div className="flex-shrink-0 mt-1">
+                            {getActivityIcon(item.type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm font-medium text-gray-900">
+                                {getDisplaySubject(item)}
+                              </p>
+                              <div className="flex items-center space-x-2">
+                                {item.type === 'email' && item.opens > 0 && (
+                                  <div className="flex items-center space-x-1 text-xs text-green-600">
+                                    <Eye className="h-3 w-3" />
+                                    <span>{item.opens} opens</span>
+                                  </div>
+                                )}
+                                {item.type === 'email' && item.clicks > 0 && (
+                                  <div className="flex items-center space-x-1 text-xs text-blue-600">
+                                    <MousePointer className="h-3 w-3" />
+                                    <span>{item.clicks} clicks</span>
+                                  </div>
+                                )}
+                                <div className="flex items-center space-x-1 text-xs text-gray-500">
+                                  <Clock className="h-3 w-3" />
+                                  <span>{formatTimestamp(getDisplayTimestamp(item))}</span>
                                 </div>
-                              )}
-                              {item.type === 'email' && item.clicks > 0 && (
-                                <div className="flex items-center space-x-1 text-xs text-blue-600">
-                                  <MousePointer className="h-3 w-3" />
-                                  <span>{item.clicks} clicks</span>
-                                </div>
-                              )}
-                              <div className="flex items-center space-x-1 text-xs text-gray-500">
-                                <Clock className="h-3 w-3" />
-                                <span>{formatTimestamp(getDisplayTimestamp(item))}</span>
                               </div>
                             </div>
-                          </div>
-                          <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">
-                            {getDisplayContent(item)}
-                          </p>
-                          <div className="flex items-center space-x-2 mt-2">
-                            <Badge variant={item.direction === 'outbound' ? 'default' : 'secondary'}>
-                              {item.direction === 'outbound' ? 'Sent' : 'Received'}
-                            </Badge>
-                            <Badge variant="outline">
-                              {item.type}
-                            </Badge>
-                            {item.status && (
-                              <Badge variant={item.status === 'completed' ? 'default' : 'secondary'}>
-                                {item.status}
-                              </Badge>
-                            )}
+                            <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">
+                              {getDisplayContent(item)}
+                            </p>
+                            <div className="flex items-center justify-between mt-3">
+                              <div className="flex items-center space-x-2">
+                                {getDirectionBadge(item)}
+                                <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+                                  {item.type}
+                                </Badge>
+                              </div>
+                              
+                              {/* Reply Button - Only show for inbound emails */}
+                              {item.type === 'email' && item.direction === 'inbound' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleReplyClick(item)}
+                                  className="ml-2"
+                                >
+                                  <Reply className="h-3 w-3 mr-1" />
+                                  Reply
+                                  {replyingTo?.id === item.id ? (
+                                    <ChevronUp className="h-3 w-3 ml-1" />
+                                  ) : (
+                                    <ChevronDown className="h-3 w-3 ml-1" />
+                                  )}
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </div>
+
+                        {/* Inline Reply Form */}
+                        {replyingTo?.id === item.id && (
+                          <div className="ml-8 mt-2 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <form onSubmit={handleSendReply} className="space-y-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-sm font-medium text-blue-900">
+                                  Reply to: {item.subject}
+                                </h4>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setReplyingTo(null)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              <div>
+                                <Label htmlFor="reply_content" className="text-sm text-blue-900">
+                                  Your Reply
+                                </Label>
+                                <Textarea
+                                  id="reply_content"
+                                  name="reply_content"
+                                  required
+                                  rows={4}
+                                  placeholder="Type your reply..."
+                                  className="bg-white border-blue-300 focus:border-blue-500"
+                                />
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2 text-xs text-blue-600">
+                                  <Eye className="h-3 w-3" />
+                                  <span>Reply will be tracked for opens and clicks</span>
+                                </div>
+                                <div className="flex space-x-2">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setReplyingTo(null)}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    type="submit"
+                                    size="sm"
+                                    disabled={sendingReply}
+                                  >
+                                    {sendingReply ? 'Sending...' : 'Send Reply'}
+                                  </Button>
+                                </div>
+                              </div>
+                            </form>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
