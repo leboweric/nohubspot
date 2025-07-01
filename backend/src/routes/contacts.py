@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app, g
-from src.models.user import db, Contact, Interaction, User, Quote
+from src.models.user import db, Contact, Interaction, User
 from datetime import datetime, timedelta
 from functools import wraps
 import jwt
@@ -308,9 +308,8 @@ def delete_contact(contact_id):
         if not contact:
             return jsonify({'success': False, 'message': 'Contact not found'}), 404
         
-        # Delete associated interactions and quotes
+        # Delete associated interactions (removed quote deletion for now)
         Interaction.query.filter_by(contact_id=contact_id).delete()
-        Quote.query.filter_by(contact_id=contact_id).delete()
         
         # Delete the contact
         db.session.delete(contact)
@@ -345,11 +344,11 @@ def get_contact_timeline(contact_id):
             tenant_id=tenant_id
         ).order_by(Interaction.created_at.desc()).all()
         
-        # Get quotes and their activities
-        quotes = Quote.query.filter_by(
-            contact_id=contact_id,
-            tenant_id=tenant_id
-        ).all()
+        # TEMPORARILY DISABLED: Get quotes and their activities
+        # quotes = Quote.query.filter_by(
+        #     contact_id=contact_id,
+        #     tenant_id=tenant_id
+        # ).all()
         
         timeline_data = []
         
@@ -370,21 +369,21 @@ def get_contact_timeline(contact_id):
                 'updated_at': interaction.updated_at.isoformat() if interaction.updated_at else None
             })
         
-        # Add quotes to timeline
-        for quote in quotes:
-            timeline_data.append({
-                'id': f'quote_{quote.id}',
-                'type': 'quote',
-                'direction': 'outbound',
-                'subject': quote.title,
-                'content': quote.description or '',
-                'quote_status': quote.status,
-                'quote_amount': float(quote.amount) if quote.amount else 0,
-                'quote_number': quote.quote_number,
-                'created_at': quote.created_at.isoformat() if quote.created_at else None,
-                'completed_at': quote.created_at.isoformat() if quote.created_at else None,
-                'updated_at': quote.updated_at.isoformat() if quote.updated_at else None
-            })
+        # TEMPORARILY DISABLED: Add quotes to timeline
+        # for quote in quotes:
+        #     timeline_data.append({
+        #         'id': f'quote_{quote.id}',
+        #         'type': 'quote',
+        #         'direction': 'outbound',
+        #         'subject': quote.title,
+        #         'content': quote.description or '',
+        #         'quote_status': quote.status,
+        #         'quote_amount': float(quote.amount) if quote.amount else 0,
+        #         'quote_number': quote.quote_number,
+        #         'created_at': quote.created_at.isoformat() if quote.created_at else None,
+        #         'completed_at': quote.created_at.isoformat() if quote.created_at else None,
+        #         'updated_at': quote.updated_at.isoformat() if quote.updated_at else None
+        #     })
         
         # Sort by created_at descending
         timeline_data.sort(key=lambda x: x.get('created_at', ''), reverse=True)
