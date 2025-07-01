@@ -157,21 +157,18 @@ def send_email():
             thread_id=thread.id,  # Link to thread
             subject=data['subject'],
             content=data['content'],
-            email_provider='manual'  # For now, manual sending
+            from_email=email_service.from_email,
+            to_email=contact.email
         )
         db.session.add(email_send)
         db.session.flush()  # Get email_send ID
-        
-        # Update thread if this is the first email
-        if not thread.first_email_id:
-            thread.first_email_id = email_send.id
         
         # Create tracking pixel
         pixel_token = secrets.token_urlsafe(32)
         pixel = EmailPixel(
             tenant_id=g.current_tenant_id,
             email_send_id=email_send.id,
-            pixel_token=pixel_token
+            tracking_token=pixel_token
         )
         db.session.add(pixel)
         
@@ -209,10 +206,11 @@ def send_email():
         
         # Store external message ID if available
         if send_result.get('message_id'):
-            email_send.external_message_id = send_result['message_id']
+            email_send.sendgrid_message_id = send_result['message_id']
         
         # Update thread activity
-        thread.last_activity_at = datetime.utcnow()
+        thread.last_message_at = datetime.utcnow()
+        thread.message_count += 1
         
         # Create interaction record
         interaction = Interaction(
@@ -599,21 +597,15 @@ def handle_inbound_email():
             thread_id=thread.id,
             contact_id=contact.id,
             from_email=from_email,
-            from_name=form_data.get('from_name', ''),
             subject=subject,
-            content_text=email_content,  # Store the cleaned content here
-            content_html=form_data.get('html', ''),  # Keep original HTML if needed
-            message_id=message_id,
-            in_reply_to=in_reply_to,
-            references=references,
-            webhook_data=form_data,
-            is_processed=True
+            content=email_content,  # Store the cleaned content here
+            message_id=message_id
         )
         db.session.add(email_reply)
         
         # Update thread activity
-        thread.last_activity_at = datetime.utcnow()
-        thread.reply_count += 1
+        thread.last_message_at = datetime.utcnow()
+        thread.message_count += 1
         
         # Create interaction record with cleaned content
         interaction = Interaction(
@@ -676,7 +668,7 @@ def get_thread(thread_id):
                 'id': email.id,
                 'subject': email.subject,
                 'content': email.content,
-                'timestamp': email.sent_at.isoformat(),
+                'timestamp': email.sent_at.isoformat() if email.sent_at else email.created_at.isoformat(),
                 'direction': 'outbound'
             })
         
@@ -685,10 +677,9 @@ def get_thread(thread_id):
                 'type': 'reply',
                 'id': reply.id,
                 'subject': reply.subject,
-                'content': reply.content_text or reply.content_html,
+                'content': reply.content,
                 'from_email': reply.from_email,
-                'from_name': reply.from_name,
-                'timestamp': reply.received_at.isoformat(),
+                'timestamp': reply.received_at.isoformat() if reply.received_at else reply.created_at.isoformat(),
                 'direction': 'inbound'
             })
         
@@ -716,7 +707,12 @@ def get_contact_threads(contact_id):
         threads = EmailThread.query.filter_by(
             contact_id=contact_id,
             tenant_id=g.current_tenant_id
-        ).order_by(EmailThread.last_activity_at.desc()).all()
+        ).order_by(EmailThread.last_message_at.desc()).all()
+        
+        # Add reply count to each thread
+        for thread in threads:
+            thread.reply_count = EmailReply.query.filter_by(thread_id=thread.id).count()
+            thread.last_activity_at = thread.last_message_at
         
         return jsonify({
             'success': True,
@@ -735,26 +731,18 @@ def track_email_open(pixel_token):
     """Track email opens via tracking pixel"""
     try:
         # Find the pixel
-        pixel = EmailPixel.query.filter_by(pixel_token=pixel_token).first()
+        pixel = EmailPixel.query.filter_by(tracking_token=pixel_token).first()
         
         if pixel:
-            # Check if this is a unique open (first time from this IP)
+            # Record the open
             ip_address = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR'))
             user_agent = request.headers.get('User-Agent', '')
             
-            existing_open = EmailOpen.query.filter_by(
-                pixel_id=pixel.id,
-                ip_address=ip_address
-            ).first()
-            
-            is_unique = existing_open is None
-            
-            # Record the open
             email_open = EmailOpen(
-                pixel_id=pixel.id,
+                tenant_id=pixel.tenant_id,
+                email_send_id=pixel.email_send_id,
                 ip_address=ip_address,
-                user_agent=user_agent,
-                is_unique=is_unique
+                user_agent=user_agent
             )
             db.session.add(email_open)
             db.session.commit()
@@ -779,37 +767,36 @@ def track_email_open(pixel_token):
 @emails_bp.route('/stats', methods=['GET'])
 @require_auth
 def get_email_stats():
-    """Get email statistics for the tenant"""
+    """Get email statistics for dashboard"""
     try:
-        # Get email counts
-        total_sent = EmailSend.query.filter_by(tenant_id=g.current_tenant_id).count()
+        tenant_id = g.current_tenant_id
         
-        # Get open counts
-        total_opens = db.session.query(EmailOpen).join(EmailPixel).join(EmailSend).filter(
-            EmailSend.tenant_id == g.current_tenant_id
+        # Get basic email stats - using only columns that exist
+        total_emails = EmailSend.query.filter_by(tenant_id=tenant_id).count()
+        
+        # Get recent emails (last 30 days)
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        recent_emails = EmailSend.query.filter(
+            EmailSend.tenant_id == tenant_id,
+            EmailSend.created_at >= thirty_days_ago
         ).count()
         
-        unique_opens = db.session.query(EmailOpen).join(EmailPixel).join(EmailSend).filter(
-            EmailSend.tenant_id == g.current_tenant_id,
-            EmailOpen.is_unique == True
+        # Get open count using simple approach
+        total_opens = EmailOpen.query.join(EmailPixel).join(EmailSend).filter(
+            EmailSend.tenant_id == tenant_id
         ).count()
         
         # Calculate open rate
-        open_rate = (unique_opens / total_sent * 100) if total_sent > 0 else 0
+        open_rate = (total_opens / total_emails * 100) if total_emails > 0 else 0
         
         return jsonify({
             'success': True,
-            'stats': {
-                'total_sent': total_sent,
-                'total_opens': total_opens,
-                'unique_opens': unique_opens,
-                'open_rate': round(open_rate, 2)
+            'data': {
+                'total_emails': total_emails,
+                'recent_emails': recent_emails,
+                'open_rate': round(open_rate, 1)
             }
-        }), 200
-        
+        })
     except Exception as e:
-        current_app.logger.error(f"Error getting email stats: {e}")
-        return jsonify({
-            'success': False,
-            'error': {'message': 'Internal server error'}
-        }), 500
+        current_app.logger.error(f'Error getting email stats: {str(e)}')
+        return jsonify({'success': False, 'message': 'Failed to get email stats'}), 500
