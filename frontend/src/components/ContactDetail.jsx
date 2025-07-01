@@ -36,6 +36,8 @@ import {
 } from 'lucide-react'
 import { api } from '../lib/api'
 import EmailThread from './EmailThread'
+import DocumentUpload from './DocumentUpload'
+import DocumentsList from './DocumentsList'
 
 export default function ContactDetail() {
   const { id } = useParams()
@@ -43,6 +45,7 @@ export default function ContactDetail() {
   const [contact, setContact] = useState(null)
   const [timeline, setTimeline] = useState([])
   const [threads, setThreads] = useState([])
+  const [documents, setDocuments] = useState([])
   const [loading, setLoading] = useState(true)
   const [emailDialogOpen, setEmailDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -59,6 +62,7 @@ export default function ContactDetail() {
     if (id) {
       loadContactData()
       loadEmailThreads()
+      loadDocuments()
     }
   }, [id])
 
@@ -94,6 +98,19 @@ export default function ContactDetail() {
       console.error('Failed to load email threads:', error)
       // Don't fail if threads don't load
       setThreads([])
+    }
+  }
+
+  const loadDocuments = async () => {
+    try {
+      const response = await api.getContactDocuments(id)
+      if (response.success) {
+        setDocuments(response.data || [])
+      }
+    } catch (error) {
+      console.error('Failed to load documents:', error)
+      // Don't fail if documents don't load
+      setDocuments([])
     }
   }
 
@@ -206,6 +223,23 @@ export default function ContactDetail() {
     }
   }
 
+  const handleDocumentUpload = (newDocument) => {
+    setDocuments(prev => [newDocument, ...prev])
+    loadContactData() // Refresh timeline to show document upload activity
+  }
+
+  const handleDocumentUpdate = (updatedDocument) => {
+    setDocuments(prev => 
+      prev.map(doc => doc.id === updatedDocument.id ? updatedDocument : doc)
+    )
+    loadContactData() // Refresh timeline to show status change activity
+  }
+
+  const handleDocumentDelete = (documentId) => {
+    setDocuments(prev => prev.filter(doc => doc.id !== documentId))
+    loadContactData() // Refresh timeline to show deletion activity
+  }
+
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return 'Unknown time'
     
@@ -282,13 +316,29 @@ export default function ContactDetail() {
         return <Phone className="h-4 w-4" />
       case 'meeting':
         return <Calendar className="h-4 w-4" />
+      case 'document':
+        return <FileText className="h-4 w-4" />
       default:
         return <Calendar className="h-4 w-4" />
     }
   }
 
   const getDirectionBadge = (item) => {
-    if (item.direction === 'outbound') {
+    if (item.type === 'document') {
+      const statusColors = {
+        draft: 'bg-gray-100 text-gray-700 border-gray-200',
+        sent: 'bg-blue-100 text-blue-700 border-blue-200',
+        viewed: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+        signed: 'bg-green-100 text-green-700 border-green-200',
+        rejected: 'bg-red-100 text-red-700 border-red-200'
+      }
+      const statusColor = statusColors[item.status] || statusColors.draft
+      return (
+        <Badge className={`${statusColor} hover:bg-opacity-80`}>
+          Document {item.status?.charAt(0).toUpperCase() + item.status?.slice(1)}
+        </Badge>
+      )
+    } else if (item.direction === 'outbound') {
       return (
         <Badge className="bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200">
           Email Sent
@@ -618,6 +668,35 @@ export default function ContactDetail() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Documents Section */}
+            <Card className="mt-6">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center space-x-2">
+                    <FileText className="h-5 w-5" />
+                    <span>Documents</span>
+                  </CardTitle>
+                  <DocumentUpload 
+                    contactId={id} 
+                    onUploadSuccess={handleDocumentUpload}
+                    trigger={
+                      <Button size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Upload
+                      </Button>
+                    }
+                  />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <DocumentsList 
+                  documents={documents}
+                  onDocumentUpdate={handleDocumentUpdate}
+                  onDocumentDelete={handleDocumentDelete}
+                />
+              </CardContent>
+            </Card>
           </div>
 
           {/* Activity Timeline */}
@@ -765,3 +844,4 @@ export default function ContactDetail() {
     </div>
   )
 }
+
