@@ -2,7 +2,6 @@ import os
 import sys
 # DON'T CHANGE THIS !!!
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
 from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
@@ -11,6 +10,7 @@ from src.routes.auth import auth_bp
 from src.routes.contacts import contacts_bp
 from src.routes.emails import emails_bp
 from src.routes.import_contacts import import_bp
+from src.routes.quotes import quotes_bp
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 
@@ -28,6 +28,7 @@ jwt = JWTManager(app)
 cors_origins = os.environ.get('CORS_ORIGINS', '*')
 if cors_origins != '*':
     cors_origins = cors_origins.split(',')
+
 CORS(app, origins=cors_origins, supports_credentials=True)
 
 # Register blueprints
@@ -35,6 +36,7 @@ app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(contacts_bp, url_prefix='/api/contacts')
 app.register_blueprint(emails_bp, url_prefix='/api/emails')
 app.register_blueprint(import_bp, url_prefix='/api/import')
+app.register_blueprint(quotes_bp, url_prefix='/api/quotes')
 
 # Database configuration
 # Use PostgreSQL on Railway, SQLite for local development
@@ -68,7 +70,7 @@ def serve(path):
     static_folder_path = app.static_folder
     if static_folder_path is None:
         return "Static folder not configured", 404
-
+    
     if path != "" and os.path.exists(os.path.join(static_folder_path, path)):
         return send_from_directory(static_folder_path, path)
     else:
@@ -82,4 +84,3 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_ENV') != 'production'
     app.run(host='0.0.0.0', port=port, debug=debug)
-
