@@ -11,7 +11,7 @@ import mimetypes
 documents_bp = Blueprint('documents', __name__)
 
 # Configuration
-UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads', 'documents')
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'uploads', 'documents')
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
 ALLOWED_EXTENSIONS = {
     'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 
@@ -203,10 +203,10 @@ def upload_document(contact_id):
         current_app.logger.error(f"Error uploading document: {e}")
         return jsonify({'success': False, 'error': {'message': str(e)}}), 500
 
-@documents_bp.route('/<document_id>', methods=['GET'])
+@documents_bp.route('/<document_id>/download', methods=['GET'])
 @require_auth
-def get_document(document_id):
-    """Get a specific document"""
+def download_document(document_id):
+    """Download a document"""
     try:
         document = ContactDocument.query.filter_by(
             id=document_id,
@@ -216,50 +216,26 @@ def get_document(document_id):
         if not document:
             return jsonify({'success': False, 'error': {'message': 'Document not found'}}), 404
         
-        return jsonify({
-            'success': True,
-            'data': document.to_dict()
-        })
+        # Check if file exists
+        if not os.path.exists(document.file_path):
+            return jsonify({'success': False, 'error': {'message': 'File not found on disk'}}), 404
+        
+        # Update viewed timestamp if not already viewed
+        if not document.viewed_at:
+            document.viewed_at = datetime.utcnow()
+            if document.status == 'sent':
+                document.status = 'viewed'
+            db.session.commit()
+        
+        return send_file(
+            document.file_path,
+            as_attachment=True,
+            download_name=document.original_filename,
+            mimetype=document.mime_type
+        )
         
     except Exception as e:
-        current_app.logger.error(f"Error getting document: {e}")
-        return jsonify({'success': False, 'error': {'message': str(e)}}), 500
-
-@documents_bp.route('/<document_id>', methods=['PUT'])
-@require_auth
-def update_document(document_id):
-    """Update document metadata"""
-    try:
-        document = ContactDocument.query.filter_by(
-            id=document_id,
-            tenant_id=g.current_tenant_id
-        ).first()
-        
-        if not document:
-            return jsonify({'success': False, 'error': {'message': 'Document not found'}}), 404
-        
-        data = request.get_json()
-        
-        # Update allowed fields
-        if 'title' in data:
-            document.title = data['title']
-        if 'description' in data:
-            document.description = data['description']
-        if 'file_type' in data:
-            document.file_type = data['file_type']
-        if 'notes' in data:
-            document.notes = data['notes']
-        
-        document.updated_at = datetime.utcnow()
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'data': document.to_dict()
-        })
-        
-    except Exception as e:
-        current_app.logger.error(f"Error updating document: {e}")
+        current_app.logger.error(f"Error downloading document: {e}")
         return jsonify({'success': False, 'error': {'message': str(e)}}), 500
 
 @documents_bp.route('/<document_id>/status', methods=['PUT'])
@@ -302,7 +278,7 @@ def update_document_status(document_id):
             user_id=g.current_user_id,
             type='document',
             subject=f'Document status updated: {document.title}',
-            content=f'Status changed from {old_status} to {new_status}',
+            content=f'Status changed from "{old_status}" to "{new_status}"',
             direction='outbound',
             status='completed',
             completed_at=datetime.utcnow()
@@ -316,13 +292,14 @@ def update_document_status(document_id):
         })
         
     except Exception as e:
+        db.session.rollback()
         current_app.logger.error(f"Error updating document status: {e}")
         return jsonify({'success': False, 'error': {'message': str(e)}}), 500
 
-@documents_bp.route('/<document_id>/download', methods=['GET'])
+@documents_bp.route('/<document_id>', methods=['PUT'])
 @require_auth
-def download_document(document_id):
-    """Download a document"""
+def update_document(document_id):
+    """Update document metadata"""
     try:
         document = ContactDocument.query.filter_by(
             id=document_id,
@@ -332,18 +309,31 @@ def download_document(document_id):
         if not document:
             return jsonify({'success': False, 'error': {'message': 'Document not found'}}), 404
         
-        if not os.path.exists(document.file_path):
-            return jsonify({'success': False, 'error': {'message': 'File not found on disk'}}), 404
+        data = request.get_json()
         
-        return send_file(
-            document.file_path,
-            as_attachment=True,
-            download_name=document.original_filename,
-            mimetype=document.mime_type
-        )
+        # Update allowed fields
+        if 'title' in data:
+            document.title = data['title']
+        if 'description' in data:
+            document.description = data['description']
+        if 'file_type' in data:
+            valid_types = ['quote', 'proposal', 'contract', 'presentation', 'image', 'other']
+            if data['file_type'] in valid_types:
+                document.file_type = data['file_type']
+        if 'notes' in data:
+            document.notes = data['notes']
+        
+        document.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'data': document.to_dict()
+        })
         
     except Exception as e:
-        current_app.logger.error(f"Error downloading document: {e}")
+        db.session.rollback()
+        current_app.logger.error(f"Error updating document: {e}")
         return jsonify({'success': False, 'error': {'message': str(e)}}), 500
 
 @documents_bp.route('/<document_id>', methods=['DELETE'])
@@ -384,6 +374,7 @@ def delete_document(document_id):
         return jsonify({'success': True, 'message': 'Document deleted successfully'})
         
     except Exception as e:
+        db.session.rollback()
         current_app.logger.error(f"Error deleting document: {e}")
         return jsonify({'success': False, 'error': {'message': str(e)}}), 500
 
