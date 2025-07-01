@@ -25,7 +25,14 @@ import {
   Clock,
   X,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  FileText,
+  DollarSign,
+  Plus,
+  Download,
+  CheckCircle,
+  XCircle,
+  AlertCircle
 } from 'lucide-react'
 import { api } from '../lib/api'
 import EmailThread from './EmailThread'
@@ -36,22 +43,26 @@ export default function ContactDetail() {
   const [contact, setContact] = useState(null)
   const [timeline, setTimeline] = useState([])
   const [threads, setThreads] = useState([])
+  const [quotes, setQuotes] = useState([])
   const [loading, setLoading] = useState(true)
   const [emailDialogOpen, setEmailDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [threadDialogOpen, setThreadDialogOpen] = useState(false)
+  const [quoteDialogOpen, setQuoteDialogOpen] = useState(false)
   const [selectedThreadId, setSelectedThreadId] = useState(null)
   const [sendingEmail, setSendingEmail] = useState(false)
   const [updating, setUpdating] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [replyingTo, setReplyingTo] = useState(null)
   const [sendingReply, setSendingReply] = useState(false)
+  const [creatingQuote, setCreatingQuote] = useState(false)
 
   useEffect(() => {
     if (id) {
       loadContactData()
       loadEmailThreads()
+      loadQuotes()
     }
   }, [id])
 
@@ -67,25 +78,7 @@ export default function ContactDetail() {
       }
 
       if (timelineResponse.success) {
-        // DEBUG: Log the timeline data to see what we're getting
         console.log('Timeline API Response:', timelineResponse.data)
-        timelineResponse.data.forEach((item, index) => {
-          console.log(`Timeline Item ${index}:`, {
-            id: item.id,
-            type: item.type,
-            subject: item.subject,
-            content: item.content,
-            direction: item.direction,
-            status: item.status,
-            created_at: item.created_at,
-            completed_at: item.completed_at,
-            updated_at: item.updated_at,
-            // Add debug for timestamp parsing
-            parsed_created_at: item.created_at ? new Date(item.created_at) : null,
-            parsed_completed_at: item.completed_at ? new Date(item.completed_at) : null,
-            parsed_updated_at: item.updated_at ? new Date(item.updated_at) : null
-          })
-        })
         setTimeline(timelineResponse.data)
       }
     } catch (error) {
@@ -106,6 +99,17 @@ export default function ContactDetail() {
     }
   }
 
+  const loadQuotes = async () => {
+    try {
+      const response = await api.getContactQuotes(id)
+      if (response.success) {
+        setQuotes(response.quotes)
+      }
+    } catch (error) {
+      console.error('Failed to load quotes:', error)
+    }
+  }
+
   const handleSendEmail = async (e) => {
     e.preventDefault()
     setSendingEmail(true)
@@ -123,7 +127,6 @@ export default function ContactDetail() {
       if (response.success) {
         setEmailDialogOpen(false)
         e.target.reset()
-        // Reload timeline and threads to show the new email
         loadContactData()
         loadEmailThreads()
       }
@@ -131,6 +134,36 @@ export default function ContactDetail() {
       console.error('Failed to send email:', error)
     } finally {
       setSendingEmail(false)
+    }
+  }
+
+  const handleCreateQuote = async (e) => {
+    e.preventDefault()
+    setCreatingQuote(true)
+
+    const formData = new FormData(e.target)
+    const quoteData = {
+      contact_id: id,
+      title: formData.get('title'),
+      description: formData.get('description'),
+      amount: parseFloat(formData.get('amount')) || 0,
+      currency: formData.get('currency') || 'USD',
+      valid_until: formData.get('valid_until') || null,
+      notes: formData.get('notes')
+    }
+
+    try {
+      const response = await api.createQuote(quoteData)
+      if (response.success) {
+        setQuoteDialogOpen(false)
+        e.target.reset()
+        loadContactData()
+        loadQuotes()
+      }
+    } catch (error) {
+      console.error('Failed to create quote:', error)
+    } finally {
+      setCreatingQuote(false)
     }
   }
 
@@ -151,7 +184,6 @@ export default function ContactDetail() {
       if (response.success) {
         setReplyingTo(null)
         e.target.reset()
-        // Reload timeline and threads to show the new reply
         loadContactData()
         loadEmailThreads()
       }
@@ -182,7 +214,7 @@ export default function ContactDetail() {
       const response = await api.updateContact(id, contactData)
       if (response.success) {
         setEditDialogOpen(false)
-        loadContactData() // Reload to show updated data
+        loadContactData()
       }
     } catch (error) {
       console.error('Failed to update contact:', error)
@@ -197,7 +229,7 @@ export default function ContactDetail() {
     try {
       const response = await api.deleteContact(id)
       if (response.success) {
-        navigate('/contacts') // Navigate back to contacts list
+        navigate('/contacts')
       }
     } catch (error) {
       console.error('Failed to delete contact:', error)
@@ -207,57 +239,45 @@ export default function ContactDetail() {
   }
 
   const handleViewThread = (threadId) => {
-    console.log('Opening thread dialog for threadId:', threadId)
     setSelectedThreadId(threadId)
     setThreadDialogOpen(true)
   }
 
   const handleReplyClick = (item) => {
     if (replyingTo?.id === item.id) {
-      setReplyingTo(null) // Close if already open
+      setReplyingTo(null)
     } else {
-      setReplyingTo(item) // Open reply form for this item
+      setReplyingTo(item)
+    }
+  }
+
+  const handleQuoteAction = async (quoteId, action, data = {}) => {
+    try {
+      let response
+      if (action === 'send') {
+        response = await api.sendQuote(quoteId)
+      } else if (action === 'status') {
+        response = await api.updateQuoteStatus(quoteId, data)
+      }
+      
+      if (response.success) {
+        loadQuotes()
+        loadContactData()
+      }
+    } catch (error) {
+      console.error(`Failed to ${action} quote:`, error)
     }
   }
 
   const formatTimestamp = (timestamp) => {
-    if (!timestamp) {
-      console.log('formatTimestamp: No timestamp provided')
-      return 'Unknown time'
-    }
+    if (!timestamp) return 'Unknown time'
     
     try {
-      // Handle different timestamp formats
-      let date
-      if (typeof timestamp === 'string') {
-        // If it contains 'T', it's likely ISO format
-        if (timestamp.includes('T')) {
-          date = new Date(timestamp)
-        } else {
-          // Try parsing as-is
-          date = new Date(timestamp)
-        }
-      } else {
-        date = new Date(timestamp)
-      }
-      
-      console.log('formatTimestamp input:', timestamp, 'parsed date:', date, 'isValid:', !isNaN(date.getTime()))
-      
-      if (isNaN(date.getTime())) {
-        console.log('formatTimestamp: Invalid date')
-        return 'Invalid date'
-      }
+      const date = new Date(timestamp)
+      if (isNaN(date.getTime())) return 'Invalid date'
       
       const now = new Date()
       const diffInMs = now.getTime() - date.getTime()
-      
-      console.log('formatTimestamp calc:', {
-        now: now.toISOString(),
-        date: date.toISOString(),
-        diffInMs,
-        diffInMinutes: Math.floor(diffInMs / (1000 * 60))
-      })
-      
       const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
       const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
       const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
@@ -274,7 +294,6 @@ export default function ContactDetail() {
         const weeks = Math.floor(diffInDays / 7)
         return `${weeks}w ago`
       } else {
-        // For older dates, show the actual date
         return date.toLocaleDateString('en-US', {
           month: 'short',
           day: 'numeric',
@@ -288,28 +307,20 @@ export default function ContactDetail() {
   }
 
   const getDisplayTimestamp = (item) => {
-    // Try different timestamp fields in order of preference
-    const timestamp = item.completed_at || item.created_at || item.updated_at || null
-    console.log('getDisplayTimestamp for item:', item.id, 'selected timestamp:', timestamp)
-    return timestamp
+    return item.completed_at || item.created_at || item.updated_at || null
   }
 
   const getDisplayContent = (item) => {
-    console.log('Getting display content for item:', item)
-    
-    // Try different content fields
     let content = item.content || item.content_text || item.content_html || ''
     
     if (!content || content.trim() === '') {
       return `${item.type} ${item.direction || ''} - ${item.subject || 'No subject'}`
     }
     
-    // Strip HTML tags if it's HTML content
     if (content.includes('<') && content.includes('>')) {
       content = content.replace(/<[^>]*>/g, '')
     }
     
-    // Truncate long content
     if (content.length > 300) {
       content = content.substring(0, 300) + '...'
     }
@@ -328,6 +339,8 @@ export default function ContactDetail() {
     switch (type) {
       case 'email':
         return <Mail className="h-4 w-4" />
+      case 'quote':
+        return <FileText className="h-4 w-4" />
       case 'call':
         return <Phone className="h-4 w-4" />
       case 'meeting':
@@ -338,6 +351,10 @@ export default function ContactDetail() {
   }
 
   const getDirectionBadge = (item) => {
+    if (item.type === 'quote') {
+      return getQuoteBadge(item)
+    }
+    
     if (item.direction === 'outbound') {
       return (
         <Badge className="bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200">
@@ -353,17 +370,45 @@ export default function ContactDetail() {
     }
   }
 
-  const getStatusBadge = (status) => {
-    if (status === 'completed') {
-      return (
-        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
-          Completed
-        </Badge>
-      )
+  const getQuoteBadge = (item) => {
+    const status = item.quote_status || 'draft'
+    const direction = item.direction || 'outbound'
+    
+    if (direction === 'outbound') {
+      if (status === 'draft') {
+        return <Badge className="bg-gray-100 text-gray-700 border-gray-200">Quote Created</Badge>
+      } else if (status === 'sent') {
+        return <Badge className="bg-orange-100 text-orange-700 border-orange-200">Quote Sent</Badge>
+      }
+    } else {
+      if (item.subject?.includes('viewed')) {
+        return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">Quote Viewed</Badge>
+      } else if (item.subject?.includes('accepted')) {
+        return <Badge className="bg-green-100 text-green-700 border-green-200">Quote Accepted</Badge>
+      } else if (item.subject?.includes('rejected')) {
+        return <Badge className="bg-red-100 text-red-700 border-red-200">Quote Rejected</Badge>
+      }
     }
+    
+    return <Badge className="bg-purple-100 text-purple-700 border-purple-200">Quote</Badge>
+  }
+
+  const getQuoteStatusBadge = (status) => {
+    const statusConfig = {
+      draft: { color: 'bg-gray-100 text-gray-700 border-gray-200', icon: AlertCircle },
+      sent: { color: 'bg-orange-100 text-orange-700 border-orange-200', icon: Send },
+      viewed: { color: 'bg-yellow-100 text-yellow-700 border-yellow-200', icon: Eye },
+      accepted: { color: 'bg-green-100 text-green-700 border-green-200', icon: CheckCircle },
+      rejected: { color: 'bg-red-100 text-red-700 border-red-200', icon: XCircle }
+    }
+    
+    const config = statusConfig[status] || statusConfig.draft
+    const Icon = config.icon
+    
     return (
-      <Badge className="bg-gray-100 text-gray-700 border-gray-200">
-        {status}
+      <Badge className={`${config.color} flex items-center space-x-1`}>
+        <Icon className="h-3 w-3" />
+        <span>{status.charAt(0).toUpperCase() + status.slice(1)}</span>
       </Badge>
     )
   }
@@ -467,6 +512,93 @@ export default function ContactDetail() {
                       </Button>
                       <Button type="submit" disabled={sendingEmail}>
                         {sendingEmail ? 'Sending...' : 'Send Email'}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={quoteDialogOpen} onOpenChange={setQuoteDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Create Quote
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Create Quote</DialogTitle>
+                    <DialogDescription>
+                      Create a new quote/proposal for {contact.full_name}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleCreateQuote} className="space-y-4">
+                    <div>
+                      <Label htmlFor="title">Quote Title</Label>
+                      <Input
+                        id="title"
+                        name="title"
+                        required
+                        placeholder="Website Development Project"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        name="description"
+                        rows={3}
+                        placeholder="Project description..."
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="amount">Amount</Label>
+                        <Input
+                          id="amount"
+                          name="amount"
+                          type="number"
+                          step="0.01"
+                          placeholder="5000.00"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="currency">Currency</Label>
+                        <Input
+                          id="currency"
+                          name="currency"
+                          defaultValue="USD"
+                          placeholder="USD"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="valid_until">Valid Until</Label>
+                      <Input
+                        id="valid_until"
+                        name="valid_until"
+                        type="date"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="notes">Notes</Label>
+                      <Textarea
+                        id="notes"
+                        name="notes"
+                        rows={2}
+                        placeholder="Internal notes..."
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2 text-sm text-purple-600">
+                      <FileText className="h-4 w-4" />
+                      <span>Quote will be saved as draft and can be sent later</span>
+                    </div>
+                    <div className="flex justify-end space-x-2">
+                      <Button type="button" variant="outline" onClick={() => setQuoteDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button type="submit" disabled={creatingQuote}>
+                        {creatingQuote ? 'Creating...' : 'Create Quote'}
                       </Button>
                     </div>
                   </form>
@@ -644,6 +776,65 @@ export default function ContactDetail() {
               </CardContent>
             </Card>
 
+            {/* Quotes & Proposals */}
+            {quotes.length > 0 && (
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <FileText className="h-5 w-5" />
+                    <span>Quotes & Proposals</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {quotes.map((quote) => (
+                      <div 
+                        key={quote.id} 
+                        className="p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium text-sm truncate pr-2">{quote.title}</h4>
+                          {getQuoteStatusBadge(quote.status)}
+                        </div>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-2 text-sm text-gray-600">
+                            <DollarSign className="h-3 w-3" />
+                            <span>${quote.amount?.toLocaleString() || '0'}</span>
+                            <span>•</span>
+                            <span>{quote.quote_number}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>Created: {formatTimestamp(quote.created_at)}</span>
+                          <div className="flex items-center space-x-2">
+                            {quote.status === 'draft' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-xs"
+                                onClick={() => handleQuoteAction(quote.id, 'send')}
+                              >
+                                <Send className="h-3 w-3 mr-1" />
+                                Send
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 px-2 text-xs"
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Email Conversations */}
             {threads.length > 0 && (
               <Card className="mt-6">
@@ -712,6 +903,12 @@ export default function ContactDetail() {
                                     <span>{item.clicks} clicks</span>
                                   </div>
                                 )}
+                                {item.type === 'quote' && item.quote_amount && (
+                                  <div className="flex items-center space-x-1 text-xs text-purple-600">
+                                    <DollarSign className="h-3 w-3" />
+                                    <span>${item.quote_amount.toLocaleString()}</span>
+                                  </div>
+                                )}
                                 <div className="flex items-center space-x-1 text-xs text-gray-500">
                                   <Clock className="h-3 w-3" />
                                   <span>{formatTimestamp(getDisplayTimestamp(item))}</span>
@@ -724,9 +921,6 @@ export default function ContactDetail() {
                             <div className="flex items-center justify-between mt-3">
                               <div className="flex items-center space-x-2">
                                 {getDirectionBadge(item)}
-                                <Badge className="bg-purple-100 text-purple-700 border-purple-200">
-                                  {item.type}
-                                </Badge>
                               </div>
                               
                               {/* Reply Button - Only show for inbound emails */}
@@ -813,7 +1007,7 @@ export default function ContactDetail() {
                   <div className="text-center py-8">
                     <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No activity yet</h3>
-                    <p className="text-gray-600">Start by sending an email to this contact.</p>
+                    <p className="text-gray-600">Start by sending an email or creating a quote for this contact.</p>
                   </div>
                 )}
               </CardContent>
