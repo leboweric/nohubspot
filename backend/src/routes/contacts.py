@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app, g
-from src.models.user import db, Contact, Interaction, User
+from src.models.user import db, Contact, Interaction, User, Quote
 from datetime import datetime, timedelta
 from functools import wraps
 import jwt
@@ -260,7 +260,7 @@ def delete_contact(contact_id):
 @contacts_bp.route('/<contact_id>/timeline', methods=['GET'])
 @require_auth
 def get_contact_timeline(contact_id):
-    """Get contact interaction timeline"""
+    """Get contact interaction timeline including quotes"""
     try:
         contact = Contact.query.filter_by(
             id=contact_id,
@@ -270,34 +270,142 @@ def get_contact_timeline(contact_id):
         if not contact:
             return jsonify({'success': False, 'error': {'message': 'Contact not found'}}), 404
         
-        # Get interactions
+        # Get all interactions for this contact
         interactions = Interaction.query.filter_by(
             contact_id=contact_id,
             tenant_id=g.current_tenant_id
         ).order_by(Interaction.created_at.desc()).all()
         
-        timeline = []
+        # Also get quote-related activities for better timeline integration
+        quote_activities = []
+        quotes = Quote.query.filter_by(
+            contact_id=contact_id,
+            tenant_id=g.current_tenant_id
+        ).all()
+        
+        for quote in quotes:
+            # Add quote creation to timeline
+            quote_activities.append({
+                'id': f"quote-{quote.id}",
+                'type': 'quote',
+                'subject': f"Quote created: {quote.title}",
+                'content': f"Quote {quote.quote_number} created for ${float(quote.amount) if quote.amount else 0}",
+                'direction': 'outbound',
+                'status': 'completed',
+                'created_at': quote.created_at.isoformat() if quote.created_at else None,
+                'completed_at': quote.created_at.isoformat() if quote.created_at else None,
+                'updated_at': quote.updated_at.isoformat() if quote.updated_at else None,
+                'quote_id': quote.id,
+                'quote_status': quote.status,
+                'quote_amount': float(quote.amount) if quote.amount else 0
+            })
+            
+            # Add sent activity if sent
+            if quote.sent_at:
+                quote_activities.append({
+                    'id': f"quote-sent-{quote.id}",
+                    'type': 'quote',
+                    'subject': f"Quote sent: {quote.title}",
+                    'content': f"Quote {quote.quote_number} sent for ${float(quote.amount) if quote.amount else 0}",
+                    'direction': 'outbound',
+                    'status': 'completed',
+                    'created_at': quote.sent_at.isoformat(),
+                    'completed_at': quote.sent_at.isoformat(),
+                    'updated_at': quote.sent_at.isoformat(),
+                    'quote_id': quote.id,
+                    'quote_status': quote.status,
+                    'quote_amount': float(quote.amount) if quote.amount else 0
+                })
+            
+            # Add viewed activity if viewed
+            if quote.viewed_at:
+                quote_activities.append({
+                    'id': f"quote-viewed-{quote.id}",
+                    'type': 'quote',
+                    'subject': f"Quote viewed: {quote.title}",
+                    'content': f"Quote {quote.quote_number} was viewed",
+                    'direction': 'inbound',
+                    'status': 'completed',
+                    'created_at': quote.viewed_at.isoformat(),
+                    'completed_at': quote.viewed_at.isoformat(),
+                    'updated_at': quote.viewed_at.isoformat(),
+                    'quote_id': quote.id,
+                    'quote_status': quote.status,
+                    'quote_amount': float(quote.amount) if quote.amount else 0
+                })
+            
+            # Add accepted/rejected activity if responded
+            if quote.accepted_at:
+                quote_activities.append({
+                    'id': f"quote-accepted-{quote.id}",
+                    'type': 'quote',
+                    'subject': f"Quote accepted: {quote.title}",
+                    'content': f"Quote {quote.quote_number} was accepted! 🎉",
+                    'direction': 'inbound',
+                    'status': 'completed',
+                    'created_at': quote.accepted_at.isoformat(),
+                    'completed_at': quote.accepted_at.isoformat(),
+                    'updated_at': quote.accepted_at.isoformat(),
+                    'quote_id': quote.id,
+                    'quote_status': quote.status,
+                    'quote_amount': float(quote.amount) if quote.amount else 0
+                })
+            elif quote.rejected_at:
+                quote_activities.append({
+                    'id': f"quote-rejected-{quote.id}",
+                    'type': 'quote',
+                    'subject': f"Quote rejected: {quote.title}",
+                    'content': f"Quote {quote.quote_number} was rejected" + (f": {quote.rejection_reason}" if quote.rejection_reason else ""),
+                    'direction': 'inbound',
+                    'status': 'completed',
+                    'created_at': quote.rejected_at.isoformat(),
+                    'completed_at': quote.rejected_at.isoformat(),
+                    'updated_at': quote.rejected_at.isoformat(),
+                    'quote_id': quote.id,
+                    'quote_status': quote.status,
+                    'quote_amount': float(quote.amount) if quote.amount else 0
+                })
+        
+        # Convert interactions to dict format
+        interaction_data = []
         for interaction in interactions:
-            item = interaction.to_dict()
+            interaction_dict = {
+                'id': interaction.id,
+                'type': interaction.type,
+                'subject': interaction.subject,
+                'content': interaction.content,
+                'direction': interaction.direction,
+                'status': interaction.status,
+                'created_at': interaction.created_at.isoformat() if interaction.created_at else None,
+                'completed_at': interaction.completed_at.isoformat() if interaction.completed_at else None,
+                'updated_at': interaction.updated_at.isoformat() if interaction.updated_at else None
+            }
             
             # Add user info
             if interaction.user_id:
                 user = User.query.get(interaction.user_id)
                 if user:
-                    item['user'] = {
+                    interaction_dict['user'] = {
                         'id': user.id,
                         'full_name': user.full_name,
                         'email': user.email
                     }
             
-            timeline.append(item)
+            interaction_data.append(interaction_dict)
+        
+        # Combine interactions and quote activities
+        all_activities = interaction_data + quote_activities
+        
+        # Sort by created_at timestamp (most recent first)
+        all_activities.sort(key=lambda x: x['created_at'] or '1970-01-01T00:00:00', reverse=True)
         
         return jsonify({
             'success': True,
-            'data': timeline
+            'data': all_activities
         })
         
     except Exception as e:
+        current_app.logger.error(f"Error getting contact timeline: {e}")
         return jsonify({'success': False, 'error': {'message': str(e)}}), 500
 
 @contacts_bp.route('/stats', methods=['GET'])
@@ -332,4 +440,3 @@ def get_contact_stats():
         
     except Exception as e:
         return jsonify({'success': False, 'error': {'message': str(e)}}), 500
-
