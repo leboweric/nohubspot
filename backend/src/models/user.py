@@ -3,6 +3,7 @@ from datetime import datetime
 import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 import re
+from decimal import Decimal
 
 db = SQLAlchemy()
 
@@ -203,6 +204,136 @@ class ContactTag(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
+# Quote Management
+class Quote(db.Model):
+    __tablename__ = 'quotes'
+    
+    id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
+    tenant_id = db.Column(db.String(36), db.ForeignKey('tenants.id'), nullable=False)
+    contact_id = db.Column(db.String(36), db.ForeignKey('contacts.id'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    quote_number = db.Column(db.String(50), nullable=False)
+    title = db.Column(db.String(255))
+    description = db.Column(db.Text)
+    amount = db.Column(db.Numeric(12, 2))
+    currency = db.Column(db.String(3), default='USD')
+    status = db.Column(db.String(50), default='draft')
+    valid_until = db.Column(db.DateTime)
+    file_url = db.Column(db.String(500))
+    file_name = db.Column(db.String(255))
+    file_size = db.Column(db.Integer)
+    external_quote_id = db.Column(db.String(255))
+    sent_at = db.Column(db.DateTime)
+    viewed_at = db.Column(db.DateTime)
+    responded_at = db.Column(db.DateTime)
+    accepted_at = db.Column(db.DateTime)
+    rejected_at = db.Column(db.DateTime)
+    rejection_reason = db.Column(db.Text)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    tenant = db.relationship('Tenant', backref='quotes')
+    contact = db.relationship('Contact', backref='quotes')
+    user = db.relationship('User', backref='quotes')
+    line_items = db.relationship('QuoteLineItem', backref='quote', cascade='all, delete-orphan')
+    activities = db.relationship('QuoteActivity', backref='quote', cascade='all, delete-orphan')
+    
+    # Unique constraint
+    __table_args__ = (
+        db.UniqueConstraint('tenant_id', 'quote_number', name='quotes_quote_number_tenant_unique'),
+    )
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'tenant_id': self.tenant_id,
+            'contact_id': self.contact_id,
+            'user_id': self.user_id,
+            'quote_number': self.quote_number,
+            'title': self.title,
+            'description': self.description,
+            'amount': float(self.amount) if self.amount else None,
+            'currency': self.currency,
+            'status': self.status,
+            'valid_until': self.valid_until.isoformat() if self.valid_until else None,
+            'file_url': self.file_url,
+            'file_name': self.file_name,
+            'file_size': self.file_size,
+            'external_quote_id': self.external_quote_id,
+            'sent_at': self.sent_at.isoformat() if self.sent_at else None,
+            'viewed_at': self.viewed_at.isoformat() if self.viewed_at else None,
+            'responded_at': self.responded_at.isoformat() if self.responded_at else None,
+            'accepted_at': self.accepted_at.isoformat() if self.accepted_at else None,
+            'rejected_at': self.rejected_at.isoformat() if self.rejected_at else None,
+            'rejection_reason': self.rejection_reason,
+            'notes': self.notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'contact_name': self.contact.full_name if self.contact else None,
+            'user_name': self.user.full_name if self.user else None,
+            'line_items': [item.to_dict() for item in self.line_items] if self.line_items else [],
+            'total_line_items': sum(float(item.total_price) for item in self.line_items) if self.line_items else 0
+        }
+
+
+class QuoteLineItem(db.Model):
+    __tablename__ = 'quote_line_items'
+    
+    id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
+    quote_id = db.Column(db.String(36), db.ForeignKey('quotes.id'), nullable=False)
+    description = db.Column(db.String(500), nullable=False)
+    quantity = db.Column(db.Numeric(10, 2), default=1)
+    unit_price = db.Column(db.Numeric(12, 2), nullable=False)
+    total_price = db.Column(db.Numeric(12, 2), nullable=False)
+    sort_order = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'quote_id': self.quote_id,
+            'description': self.description,
+            'quantity': float(self.quantity) if self.quantity else 0,
+            'unit_price': float(self.unit_price) if self.unit_price else 0,
+            'total_price': float(self.total_price) if self.total_price else 0,
+            'sort_order': self.sort_order,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class QuoteActivity(db.Model):
+    __tablename__ = 'quote_activities'
+    
+    id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
+    tenant_id = db.Column(db.String(36), db.ForeignKey('tenants.id'), nullable=False)
+    quote_id = db.Column(db.String(36), db.ForeignKey('quotes.id'), nullable=False)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'))
+    activity_type = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.Text)
+    ip_address = db.Column(db.String(45))
+    user_agent = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    tenant = db.relationship('Tenant')
+    user = db.relationship('User')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'tenant_id': self.tenant_id,
+            'quote_id': self.quote_id,
+            'user_id': self.user_id,
+            'activity_type': self.activity_type,
+            'description': self.description,
+            'ip_address': self.ip_address,
+            'user_agent': self.user_agent,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'user_name': self.user.full_name if self.user else None
+        }
+
 # Interaction Tracking
 class Interaction(db.Model):
     __tablename__ = 'interactions'
@@ -211,7 +342,7 @@ class Interaction(db.Model):
     tenant_id = db.Column(db.String(36), db.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=False)
     contact_id = db.Column(db.String(36), db.ForeignKey('contacts.id', ondelete='CASCADE'), nullable=False)
     user_id = db.Column(db.String(36), db.ForeignKey('users.id'))
-    type = db.Column(db.String(50), nullable=False)  # email, call, meeting, note, task
+    type = db.Column(db.String(50), nullable=False)  # email, call, meeting, note, task, quote
     subject = db.Column(db.String(255))
     content = db.Column(db.Text)
     direction = db.Column(db.String(20))  # inbound, outbound
@@ -492,4 +623,3 @@ def parse_references_header(references):
     # Extract message IDs from References header
     message_ids = re.findall(r'<([^>]+)>', references)
     return message_ids
-
