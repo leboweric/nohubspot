@@ -216,6 +216,24 @@ def download_document(document_id):
         if not document:
             return jsonify({'success': False, 'error': {'message': 'Document not found'}}), 404
         
+        # Debug logging
+        current_app.logger.info(f"Download request for document: {document.title}")
+        current_app.logger.info(f"File path from database: {document.file_path}")
+        current_app.logger.info(f"File exists check: {os.path.exists(document.file_path)}")
+        current_app.logger.info(f"Current working directory: {os.getcwd()}")
+        current_app.logger.info(f"UPLOAD_FOLDER: {UPLOAD_FOLDER}")
+        
+        # List files in the expected directory
+        try:
+            expected_dir = os.path.dirname(document.file_path)
+            if os.path.exists(expected_dir):
+                files_in_dir = os.listdir(expected_dir)
+                current_app.logger.info(f"Files in directory {expected_dir}: {files_in_dir}")
+            else:
+                current_app.logger.info(f"Directory does not exist: {expected_dir}")
+        except Exception as e:
+            current_app.logger.error(f"Error listing directory: {e}")
+        
         # Check if file exists
         if not os.path.exists(document.file_path):
             return jsonify({'success': False, 'error': {'message': 'File not found on disk'}}), 404
