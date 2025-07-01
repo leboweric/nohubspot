@@ -165,7 +165,7 @@ def upload_document(contact_id):
             tenant_id=g.current_tenant_id,
             contact_id=contact_id,
             user_id=g.current_user_id,
-            filename=unique_filename,
+            stored_filename=unique_filename,
             original_filename=original_filename,
             file_path=file_path,
             file_size=file_size,
@@ -186,7 +186,7 @@ def upload_document(contact_id):
             user_id=g.current_user_id,
             type='document',
             subject=f'Document uploaded: {document.title}',
-            content=f'Uploaded {file_type} document: {original_filename} ({document.file_size_formatted})',
+            content=f'Uploaded {file_type} document: {original_filename} ({file_size} bytes)',
             direction='outbound',
             status='completed',
             completed_at=datetime.utcnow()
@@ -200,14 +200,13 @@ def upload_document(contact_id):
         }), 201
         
     except Exception as e:
-        db.session.rollback()
         current_app.logger.error(f"Error uploading document: {e}")
         return jsonify({'success': False, 'error': {'message': str(e)}}), 500
 
 @documents_bp.route('/<document_id>', methods=['GET'])
 @require_auth
 def get_document(document_id):
-    """Get document details"""
+    """Get a specific document"""
     try:
         document = ContactDocument.query.filter_by(
             id=document_id,
@@ -224,105 +223,6 @@ def get_document(document_id):
         
     except Exception as e:
         current_app.logger.error(f"Error getting document: {e}")
-        return jsonify({'success': False, 'error': {'message': str(e)}}), 500
-
-@documents_bp.route('/<document_id>/download', methods=['GET'])
-@require_auth
-def download_document(document_id):
-    """Download a document"""
-    try:
-        document = ContactDocument.query.filter_by(
-            id=document_id,
-            tenant_id=g.current_tenant_id
-        ).first()
-        
-        if not document:
-            return jsonify({'success': False, 'error': {'message': 'Document not found'}}), 404
-        
-        # Check if file exists
-        if not os.path.exists(document.file_path):
-            return jsonify({'success': False, 'error': {'message': 'File not found on disk'}}), 404
-        
-        # Update viewed timestamp if not already viewed
-        if not document.viewed_at:
-            document.viewed_at = datetime.utcnow()
-            if document.status == 'sent':
-                document.status = 'viewed'
-            db.session.commit()
-        
-        return send_file(
-            document.file_path,
-            as_attachment=True,
-            download_name=document.original_filename,
-            mimetype=document.mime_type
-        )
-        
-    except Exception as e:
-        current_app.logger.error(f"Error downloading document: {e}")
-        return jsonify({'success': False, 'error': {'message': str(e)}}), 500
-
-@documents_bp.route('/<document_id>/status', methods=['PUT'])
-@require_auth
-def update_document_status(document_id):
-    """Update document status"""
-    try:
-        document = ContactDocument.query.filter_by(
-            id=document_id,
-            tenant_id=g.current_tenant_id
-        ).first()
-        
-        if not document:
-            return jsonify({'success': False, 'error': {'message': 'Document not found'}}), 404
-        
-        data = request.get_json()
-        new_status = data.get('status')
-        
-        if not new_status:
-            return jsonify({'success': False, 'error': {'message': 'Status is required'}}), 400
-        
-        valid_statuses = ['draft', 'sent', 'viewed', 'signed', 'rejected']
-        if new_status not in valid_statuses:
-            return jsonify({
-                'success': False, 
-                'error': {'message': f'Invalid status. Valid options: {", ".join(valid_statuses)}'}
-            }), 400
-        
-        # Update status and timestamps
-        old_status = document.status
-        document.status = new_status
-        
-        if new_status == 'sent' and not document.sent_at:
-            document.sent_at = datetime.utcnow()
-        elif new_status == 'viewed' and not document.viewed_at:
-            document.viewed_at = datetime.utcnow()
-        elif new_status == 'signed' and not document.signed_at:
-            document.signed_at = datetime.utcnow()
-        
-        db.session.commit()
-        
-        # Log interaction
-        interaction = Interaction(
-            tenant_id=g.current_tenant_id,
-            contact_id=document.contact_id,
-            user_id=g.current_user_id,
-            type='document',
-            subject=f'Document status updated: {document.title}',
-            content=f'Status changed from "{old_status}" to "{new_status}"',
-            direction='outbound',
-            status='completed',
-            completed_at=datetime.utcnow()
-        )
-        db.session.add(interaction)
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'data': document.to_dict()
-        })
-        
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(f"Error updating document status: {e}")
         return jsonify({'success': False, 'error': {'message': str(e)}}), 500
 
 @documents_bp.route('/<document_id>', methods=['PUT'])
@@ -346,9 +246,9 @@ def update_document(document_id):
         if 'description' in data:
             document.description = data['description']
         if 'file_type' in data:
-            valid_types = ['quote', 'proposal', 'contract', 'presentation', 'image', 'other']
-            if data['file_type'] in valid_types:
-                document.file_type = data['file_type']
+            document.file_type = data['file_type']
+        if 'notes' in data:
+            document.notes = data['notes']
         
         document.updated_at = datetime.utcnow()
         db.session.commit()
@@ -359,8 +259,91 @@ def update_document(document_id):
         })
         
     except Exception as e:
-        db.session.rollback()
         current_app.logger.error(f"Error updating document: {e}")
+        return jsonify({'success': False, 'error': {'message': str(e)}}), 500
+
+@documents_bp.route('/<document_id>/status', methods=['PUT'])
+@require_auth
+def update_document_status(document_id):
+    """Update document status"""
+    try:
+        document = ContactDocument.query.filter_by(
+            id=document_id,
+            tenant_id=g.current_tenant_id
+        ).first()
+        
+        if not document:
+            return jsonify({'success': False, 'error': {'message': 'Document not found'}}), 404
+        
+        data = request.get_json()
+        new_status = data.get('status')
+        
+        if new_status not in ['draft', 'sent', 'viewed', 'signed', 'rejected']:
+            return jsonify({'success': False, 'error': {'message': 'Invalid status'}}), 400
+        
+        old_status = document.status
+        document.status = new_status
+        document.updated_at = datetime.utcnow()
+        
+        # Update status timestamps
+        if new_status == 'sent' and not document.sent_at:
+            document.sent_at = datetime.utcnow()
+        elif new_status == 'viewed' and not document.viewed_at:
+            document.viewed_at = datetime.utcnow()
+        elif new_status == 'signed' and not document.signed_at:
+            document.signed_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        # Log status change
+        interaction = Interaction(
+            tenant_id=g.current_tenant_id,
+            contact_id=document.contact_id,
+            user_id=g.current_user_id,
+            type='document',
+            subject=f'Document status updated: {document.title}',
+            content=f'Status changed from {old_status} to {new_status}',
+            direction='outbound',
+            status='completed',
+            completed_at=datetime.utcnow()
+        )
+        db.session.add(interaction)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'data': document.to_dict()
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error updating document status: {e}")
+        return jsonify({'success': False, 'error': {'message': str(e)}}), 500
+
+@documents_bp.route('/<document_id>/download', methods=['GET'])
+@require_auth
+def download_document(document_id):
+    """Download a document"""
+    try:
+        document = ContactDocument.query.filter_by(
+            id=document_id,
+            tenant_id=g.current_tenant_id
+        ).first()
+        
+        if not document:
+            return jsonify({'success': False, 'error': {'message': 'Document not found'}}), 404
+        
+        if not os.path.exists(document.file_path):
+            return jsonify({'success': False, 'error': {'message': 'File not found on disk'}}), 404
+        
+        return send_file(
+            document.file_path,
+            as_attachment=True,
+            download_name=document.original_filename,
+            mimetype=document.mime_type
+        )
+        
+    except Exception as e:
+        current_app.logger.error(f"Error downloading document: {e}")
         return jsonify({'success': False, 'error': {'message': str(e)}}), 500
 
 @documents_bp.route('/<document_id>', methods=['DELETE'])
@@ -380,72 +363,55 @@ def delete_document(document_id):
         if os.path.exists(document.file_path):
             os.remove(document.file_path)
         
-        # Delete database record
-        contact_id = document.contact_id
-        document_title = document.title
-        
-        db.session.delete(document)
-        db.session.commit()
-        
-        # Log interaction
+        # Log deletion
         interaction = Interaction(
             tenant_id=g.current_tenant_id,
-            contact_id=contact_id,
+            contact_id=document.contact_id,
             user_id=g.current_user_id,
             type='document',
-            subject=f'Document deleted: {document_title}',
-            content=f'Document "{document_title}" was deleted',
+            subject=f'Document deleted: {document.title}',
+            content=f'Deleted {document.file_type} document: {document.original_filename}',
             direction='outbound',
             status='completed',
             completed_at=datetime.utcnow()
         )
         db.session.add(interaction)
+        
+        # Delete from database
+        db.session.delete(document)
         db.session.commit()
         
-        return jsonify({
-            'success': True,
-            'data': {'message': 'Document deleted successfully'}
-        })
+        return jsonify({'success': True, 'message': 'Document deleted successfully'})
         
     except Exception as e:
-        db.session.rollback()
         current_app.logger.error(f"Error deleting document: {e}")
         return jsonify({'success': False, 'error': {'message': str(e)}}), 500
 
 @documents_bp.route('/stats', methods=['GET'])
 @require_auth
 def get_document_stats():
-    """Get document statistics for dashboard"""
+    """Get document statistics"""
     try:
-        # Total documents
         total_documents = ContactDocument.query.filter_by(tenant_id=g.current_tenant_id).count()
         
-        # Documents by status
-        draft_count = ContactDocument.query.filter_by(tenant_id=g.current_tenant_id, status='draft').count()
-        sent_count = ContactDocument.query.filter_by(tenant_id=g.current_tenant_id, status='sent').count()
-        viewed_count = ContactDocument.query.filter_by(tenant_id=g.current_tenant_id, status='viewed').count()
-        signed_count = ContactDocument.query.filter_by(tenant_id=g.current_tenant_id, status='signed').count()
+        # Count by status
+        status_counts = db.session.query(
+            ContactDocument.status,
+            db.func.count(ContactDocument.id)
+        ).filter_by(tenant_id=g.current_tenant_id).group_by(ContactDocument.status).all()
         
-        # Documents by type
-        quotes_count = ContactDocument.query.filter_by(tenant_id=g.current_tenant_id, file_type='quote').count()
-        proposals_count = ContactDocument.query.filter_by(tenant_id=g.current_tenant_id, file_type='proposal').count()
-        contracts_count = ContactDocument.query.filter_by(tenant_id=g.current_tenant_id, file_type='contract').count()
+        # Count by type
+        type_counts = db.session.query(
+            ContactDocument.file_type,
+            db.func.count(ContactDocument.id)
+        ).filter_by(tenant_id=g.current_tenant_id).group_by(ContactDocument.file_type).all()
         
         return jsonify({
             'success': True,
             'data': {
                 'total_documents': total_documents,
-                'by_status': {
-                    'draft': draft_count,
-                    'sent': sent_count,
-                    'viewed': viewed_count,
-                    'signed': signed_count
-                },
-                'by_type': {
-                    'quotes': quotes_count,
-                    'proposals': proposals_count,
-                    'contracts': contracts_count
-                }
+                'by_status': {status: count for status, count in status_counts},
+                'by_type': {file_type: count for file_type, count in type_counts}
             }
         })
         
