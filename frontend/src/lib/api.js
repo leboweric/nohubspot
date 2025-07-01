@@ -103,12 +103,13 @@ class ApiClient {
     })
   }
 
+  // FIXED: Correct email thread endpoints
   async getEmailThread(threadId) {
-    return this.request(`/emails/thread/${threadId}`)
+    return this.request(`/emails/threads/${threadId}`)
   }
 
   async getContactThreads(contactId) {
-    return this.request(`/emails/threads?contact_id=${contactId}`)
+    return this.request(`/emails/threads/contact/${contactId}`)
   }
 
   // Quote methods
@@ -191,3 +192,4 @@ class ApiClient {
 }
 
 export const api = new ApiClient()
+
