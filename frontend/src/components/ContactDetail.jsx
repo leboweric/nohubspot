@@ -159,20 +159,53 @@ export default function ContactDetail() {
     setThreadDialogOpen(true)
   }
 
+  // FIXED: Better timestamp handling
   const formatTimestamp = (timestamp) => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diffInHours = (now - date) / (1000 * 60 * 60)
+    if (!timestamp) return 'Unknown time'
     
-    if (diffInHours < 1) {
-      return 'Just now'
-    } else if (diffInHours < 24) {
-      return `${Math.floor(diffInHours)}h ago`
-    } else if (diffInHours < 168) { // 7 days
-      return `${Math.floor(diffInHours / 24)}d ago`
-    } else {
-      return date.toLocaleDateString()
+    try {
+      const date = new Date(timestamp)
+      if (isNaN(date.getTime())) return 'Invalid date'
+      
+      const now = new Date()
+      const diffInHours = (now - date) / (1000 * 60 * 60)
+      
+      if (diffInHours < 1) {
+        return 'Just now'
+      } else if (diffInHours < 24) {
+        return `${Math.floor(diffInHours)}h ago`
+      } else if (diffInHours < 168) { // 7 days
+        return `${Math.floor(diffInHours / 24)}d ago`
+      } else {
+        return date.toLocaleDateString()
+      }
+    } catch (error) {
+      return 'Invalid date'
     }
+  }
+
+  // FIXED: Better timestamp selection
+  const getDisplayTimestamp = (item) => {
+    // Try different timestamp fields in order of preference
+    return item.completed_at || item.created_at || item.updated_at || null
+  }
+
+  // FIXED: Better content display
+  const getDisplayContent = (item) => {
+    if (!item.content || item.content.trim() === '') {
+      return `${item.type} ${item.direction || ''} - ${item.subject || 'No subject'}`
+    }
+    // Truncate long content
+    const content = item.content.length > 200 ? item.content.substring(0, 200) + '...' : item.content
+    return content
+  }
+
+  // FIXED: Better subject display
+  const getDisplaySubject = (item) => {
+    if (item.subject && item.subject.trim() !== '') {
+      return item.subject
+    }
+    return `${item.type.charAt(0).toUpperCase() + item.type.slice(1)} ${item.direction || ''}`
   }
 
   const getActivityIcon = (type) => {
@@ -203,7 +236,10 @@ export default function ContactDetail() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Contact not found</h2>
           <p className="text-gray-600 mb-4">The contact you're looking for doesn't exist.</p>
           <Link to="/contacts">
-            <Button>Back to Contacts</Button>
+            <Button>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Contacts
+            </Button>
           </Link>
         </div>
       </div>
@@ -218,7 +254,7 @@ export default function ContactDetail() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Link to="/contacts">
-                <Button variant="ghost" size="sm">
+                <Button variant="outline" size="sm">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Contacts
                 </Button>
@@ -230,7 +266,7 @@ export default function ContactDetail() {
                 <p className="text-gray-600">{contact.company}</p>
               </div>
             </div>
-            <div className="flex space-x-2">
+            <div className="flex items-center space-x-2">
               <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
                 <DialogTrigger asChild>
                   <Button>
@@ -238,7 +274,7 @@ export default function ContactDetail() {
                     Send Email
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-md">
                   <DialogHeader>
                     <DialogTitle>Send Email</DialogTitle>
                     <DialogDescription>
@@ -395,7 +431,7 @@ export default function ContactDetail() {
                     Delete
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-md">
                   <DialogHeader>
                     <DialogTitle>Delete Contact</DialogTitle>
                     <DialogDescription>
@@ -425,24 +461,24 @@ export default function ContactDetail() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center space-x-3">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                  <Mail className="h-4 w-4 text-gray-400" />
                   <span>{contact.email}</span>
                 </div>
                 {contact.phone && (
                   <div className="flex items-center space-x-3">
-                    <Phone className="h-5 w-5 text-gray-400" />
+                    <Phone className="h-4 w-4 text-gray-400" />
                     <span>{contact.phone}</span>
                   </div>
                 )}
                 {contact.company && (
                   <div className="flex items-center space-x-3">
-                    <Building className="h-5 w-5 text-gray-400" />
+                    <Building className="h-4 w-4 text-gray-400" />
                     <span>{contact.company}</span>
                   </div>
                 )}
                 {contact.website && (
                   <div className="flex items-center space-x-3">
-                    <Globe className="h-5 w-5 text-gray-400" />
+                    <Globe className="h-4 w-4 text-gray-400" />
                     <a href={contact.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                       {contact.website}
                     </a>
@@ -450,7 +486,7 @@ export default function ContactDetail() {
                 )}
                 {contact.address && (
                   <div className="flex items-center space-x-3">
-                    <MapPin className="h-5 w-5 text-gray-400" />
+                    <MapPin className="h-4 w-4 text-gray-400" />
                     <span>{contact.address}</span>
                   </div>
                 )}
@@ -458,12 +494,6 @@ export default function ContactDetail() {
                   <p className="text-sm text-gray-500">Created {new Date(contact.created_at).toLocaleDateString()}</p>
                   <p className="text-sm text-gray-500">Updated {new Date(contact.updated_at).toLocaleDateString()}</p>
                 </div>
-                {contact.notes && (
-                  <div className="pt-4 border-t">
-                    <h4 className="font-medium text-gray-900 mb-2">Notes</h4>
-                    <p className="text-sm text-gray-600">{contact.notes}</p>
-                  </div>
-                )}
               </CardContent>
             </Card>
 
@@ -471,30 +501,28 @@ export default function ContactDetail() {
             {threads.length > 0 && (
               <Card className="mt-6">
                 <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <MessageSquare className="h-5 w-5 mr-2" />
-                    Email Conversations
+                  <CardTitle className="flex items-center space-x-2">
+                    <MessageSquare className="h-5 w-5" />
+                    <span>Email Conversations</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     {threads.map((thread) => (
-                      <div
-                        key={thread.id}
-                        className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                      <div 
+                        key={thread.id} 
+                        className="p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
                         onClick={() => handleViewThread(thread.id)}
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-2">
                           <h4 className="font-medium text-sm">{thread.subject}</h4>
                           <Badge variant="secondary" className="text-xs">
-                            {thread.reply_count} {thread.reply_count === 1 ? 'reply' : 'replies'}
+                            {thread.reply_count} replies
                           </Badge>
                         </div>
-                        <div className="flex items-center justify-between mt-1">
-                          <span className="text-xs text-gray-500">
-                            Last activity: {formatTimestamp(thread.last_activity_at)}
-                          </span>
-                          <Reply className="h-3 w-3 text-gray-400" />
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>Last activity: {formatTimestamp(thread.last_activity_at)}</span>
+                          <Reply className="h-3 w-3" />
                         </div>
                       </div>
                     ))}
@@ -504,99 +532,88 @@ export default function ContactDetail() {
             )}
           </div>
 
-          {/* Timeline */}
+          {/* Activity Timeline */}
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
                 <CardTitle>Activity Timeline</CardTitle>
               </CardHeader>
               <CardContent>
-                {timeline.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No activity yet</p>
-                    <p className="text-sm text-gray-400">Send an email or add a note to get started</p>
-                  </div>
-                ) : (
+                {timeline.length > 0 ? (
                   <div className="space-y-4">
-                    {timeline.map((item, index) => (
-                      <div key={index} className="flex space-x-3">
-                        <div className="flex-shrink-0">
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            {getActivityIcon(item.type)}
-                          </div>
+                    {timeline.map((item) => (
+                      <div key={item.id} className="flex items-start space-x-3 p-4 border rounded-lg">
+                        <div className="flex-shrink-0 mt-1">
+                          {getActivityIcon(item.type)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <p className="text-sm font-medium text-gray-900">
-                              {item.title}
+                              {getDisplaySubject(item)}
                             </p>
                             <div className="flex items-center space-x-2">
-                              {item.status && (
-                                <Badge 
-                                  variant={
-                                    item.status === 'sent' ? 'default' :
-                                    item.status === 'opened' ? 'secondary' :
-                                    item.status === 'clicked' ? 'destructive' :
-                                    'outline'
-                                  }
-                                  className="text-xs"
-                                >
-                                  {item.status}
-                                </Badge>
+                              {item.type === 'email' && item.opens > 0 && (
+                                <div className="flex items-center space-x-1 text-xs text-green-600">
+                                  <Eye className="h-3 w-3" />
+                                  <span>{item.opens} opens</span>
+                                </div>
                               )}
-                              <span className="text-xs text-gray-500 flex items-center">
-                                <Clock className="h-3 w-3 mr-1" />
-                                {formatTimestamp(item.timestamp)}
-                              </span>
+                              {item.type === 'email' && item.clicks > 0 && (
+                                <div className="flex items-center space-x-1 text-xs text-blue-600">
+                                  <MousePointer className="h-3 w-3" />
+                                  <span>{item.clicks} clicks</span>
+                                </div>
+                              )}
+                              <div className="flex items-center space-x-1 text-xs text-gray-500">
+                                <Clock className="h-3 w-3" />
+                                <span>{formatTimestamp(getDisplayTimestamp(item))}</span>
+                              </div>
                             </div>
                           </div>
-                          {item.description && (
-                            <p className="text-sm text-gray-600 mt-1">
-                              {item.description}
-                            </p>
-                          )}
-                          {item.metadata && (
-                            <div className="mt-2 flex flex-wrap gap-2">
-                              {item.metadata.opens > 0 && (
-                                <div className="flex items-center text-xs text-gray-500">
-                                  <Eye className="h-3 w-3 mr-1" />
-                                  {item.metadata.opens} opens
-                                </div>
-                              )}
-                              {item.metadata.clicks > 0 && (
-                                <div className="flex items-center text-xs text-gray-500">
-                                  <MousePointer className="h-3 w-3 mr-1" />
-                                  {item.metadata.clicks} clicks
-                                </div>
-                              )}
-                            </div>
-                          )}
+                          <p className="text-sm text-gray-600 mt-1">
+                            {getDisplayContent(item)}
+                          </p>
+                          <div className="flex items-center space-x-2 mt-2">
+                            <Badge variant={item.direction === 'outbound' ? 'default' : 'secondary'}>
+                              {item.direction === 'outbound' ? 'Sent' : 'Received'}
+                            </Badge>
+                            <Badge variant="outline">
+                              {item.type}
+                            </Badge>
+                            {item.status && (
+                              <Badge variant={item.status === 'completed' ? 'default' : 'secondary'}>
+                                {item.status}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No activity yet</h3>
+                    <p className="text-gray-600">Start by sending an email to this contact.</p>
                   </div>
                 )}
               </CardContent>
             </Card>
           </div>
         </div>
-
-        {/* Email Thread Dialog */}
-        <Dialog open={threadDialogOpen} onOpenChange={setThreadDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Email Conversation</DialogTitle>
-              <DialogDescription>
-                Complete email thread with replies
-              </DialogDescription>
-            </DialogHeader>
-            {selectedThreadId && (
-              <EmailThread threadId={selectedThreadId} />
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
+
+      {/* Email Thread Dialog */}
+      <Dialog open={threadDialogOpen} onOpenChange={setThreadDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Email Thread</DialogTitle>
+          </DialogHeader>
+          {selectedThreadId && (
+            <EmailThread threadId={selectedThreadId} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
