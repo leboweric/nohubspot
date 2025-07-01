@@ -205,7 +205,7 @@ class ContactTag(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
-# Contact Documents
+# Contact Documents - WITH PERSISTENT STORAGE
 class ContactDocument(db.Model):
     __tablename__ = 'contact_documents'
     
@@ -217,7 +217,8 @@ class ContactDocument(db.Model):
     description = db.Column(db.Text)
     original_filename = db.Column(db.String(255), nullable=False)
     stored_filename = db.Column(db.String(255), nullable=False)
-    file_path = db.Column(db.String(500), nullable=False)
+    file_path = db.Column(db.String(500), nullable=True)  # Keep for backward compatibility
+    file_data = db.Column(db.LargeBinary, nullable=False)  # NEW: Store actual file content
     file_type = db.Column(db.String(50), nullable=False)  # quote, proposal, contract, presentation, image, other
     mime_type = db.Column(db.String(100))
     file_size = db.Column(db.BigInteger, nullable=False)
@@ -361,50 +362,43 @@ class QuoteActivity(db.Model):
     __tablename__ = 'quote_activities'
     
     id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
-    tenant_id = db.Column(db.String(36), db.ForeignKey('tenants.id'), nullable=False)
     quote_id = db.Column(db.String(36), db.ForeignKey('quotes.id'), nullable=False)
-    user_id = db.Column(db.String(36), db.ForeignKey('users.id'))
-    activity_type = db.Column(db.String(50), nullable=False)
+    activity_type = db.Column(db.String(50), nullable=False)  # created, sent, viewed, accepted, rejected, etc.
     description = db.Column(db.Text)
-    ip_address = db.Column(db.String(45))
-    user_agent = db.Column(db.Text)
+    metadata = db.Column(db.JSON)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    tenant = db.relationship('Tenant')
-    user = db.relationship('User')
     
     def to_dict(self):
         return {
             'id': self.id,
-            'tenant_id': self.tenant_id,
             'quote_id': self.quote_id,
-            'user_id': self.user_id,
             'activity_type': self.activity_type,
             'description': self.description,
-            'ip_address': self.ip_address,
-            'user_agent': self.user_agent,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'user_name': self.user.full_name if self.user else None
+            'metadata': self.metadata,
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
-# Interaction Tracking
+# Activity/Interaction Tracking
 class Interaction(db.Model):
     __tablename__ = 'interactions'
     
     id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
     tenant_id = db.Column(db.String(36), db.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=False)
     contact_id = db.Column(db.String(36), db.ForeignKey('contacts.id', ondelete='CASCADE'), nullable=False)
-    user_id = db.Column(db.String(36), db.ForeignKey('users.id'))
-    type = db.Column(db.String(50), nullable=False)  # email, call, meeting, note, task, quote, document
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    type = db.Column(db.String(50), nullable=False)  # email, call, meeting, note, task, document
     subject = db.Column(db.String(255))
     content = db.Column(db.Text)
     direction = db.Column(db.String(20))  # inbound, outbound
-    status = db.Column(db.String(50))  # completed, scheduled, cancelled
+    status = db.Column(db.String(50), default='completed')  # scheduled, completed, cancelled
     scheduled_at = db.Column(db.DateTime)
     completed_at = db.Column(db.DateTime)
+    metadata = db.Column(db.JSON)  # Store additional data like email_id, call_duration, etc.
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='interactions')
     
     def to_dict(self):
         return {
@@ -419,8 +413,10 @@ class Interaction(db.Model):
             'status': self.status,
             'scheduled_at': self.scheduled_at.isoformat() if self.scheduled_at else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+            'metadata': self.metadata,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'user_name': self.user.full_name if self.user else None
         }
 
 # Task Management
@@ -429,9 +425,9 @@ class Task(db.Model):
     
     id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
     tenant_id = db.Column(db.String(36), db.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=False)
-    contact_id = db.Column(db.String(36), db.ForeignKey('contacts.id', ondelete='CASCADE'))
-    user_id = db.Column(db.String(36), db.ForeignKey('users.id'))
-    assigned_to = db.Column(db.String(36), db.ForeignKey('users.id'))
+    contact_id = db.Column(db.String(36), db.ForeignKey('contacts.id', ondelete='CASCADE'), nullable=True)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    assigned_to = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=True)
     title = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text)
     priority = db.Column(db.String(20), default='medium')  # low, medium, high, urgent
@@ -440,6 +436,10 @@ class Task(db.Model):
     completed_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', foreign_keys=[user_id], backref='created_tasks')
+    assignee = db.relationship('User', foreign_keys=[assigned_to], backref='assigned_tasks')
     
     def to_dict(self):
         return {
@@ -455,26 +455,28 @@ class Task(db.Model):
             'due_date': self.due_date.isoformat() if self.due_date else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'creator_name': self.user.full_name if self.user else None,
+            'assignee_name': self.assignee.full_name if self.assignee else None,
+            'contact_name': self.contact.full_name if self.contact else None
         }
 
-# Email Management
+# Email System Models
 class EmailSend(db.Model):
     __tablename__ = 'email_sends'
     
     id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
     tenant_id = db.Column(db.String(36), db.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=False)
     contact_id = db.Column(db.String(36), db.ForeignKey('contacts.id', ondelete='CASCADE'), nullable=False)
-    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
-    thread_id = db.Column(db.String(36), db.ForeignKey('email_threads.id'))
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    thread_id = db.Column(db.String(36), db.ForeignKey('email_threads.id', ondelete='CASCADE'), nullable=True)
+    sendgrid_message_id = db.Column(db.String(255), unique=True)
     subject = db.Column(db.String(255), nullable=False)
-    content_text = db.Column(db.Text)
-    content_html = db.Column(db.Text)
-    to_email = db.Column(db.String(255), nullable=False)
+    content = db.Column(db.Text, nullable=False)
     from_email = db.Column(db.String(255), nullable=False)
-    sendgrid_message_id = db.Column(db.String(255))
-    status = db.Column(db.String(50), default='pending')  # pending, sent, delivered, bounced, failed
-    sent_at = db.Column(db.DateTime)
+    to_email = db.Column(db.String(255), nullable=False)
+    status = db.Column(db.String(50), default='sent')  # sent, delivered, opened, clicked, bounced, failed
+    sent_at = db.Column(db.DateTime, default=datetime.utcnow)
     delivered_at = db.Column(db.DateTime)
     opened_at = db.Column(db.DateTime)
     clicked_at = db.Column(db.DateTime)
@@ -484,7 +486,7 @@ class EmailSend(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    thread = db.relationship('EmailThread', backref='email_sends')
+    user = db.relationship('User', backref='sent_emails')
     
     def to_dict(self):
         return {
@@ -493,12 +495,11 @@ class EmailSend(db.Model):
             'contact_id': self.contact_id,
             'user_id': self.user_id,
             'thread_id': self.thread_id,
-            'subject': self.subject,
-            'content_text': self.content_text,
-            'content_html': self.content_html,
-            'to_email': self.to_email,
-            'from_email': self.from_email,
             'sendgrid_message_id': self.sendgrid_message_id,
+            'subject': self.subject,
+            'content': self.content,
+            'from_email': self.from_email,
+            'to_email': self.to_email,
             'status': self.status,
             'sent_at': self.sent_at.isoformat() if self.sent_at else None,
             'delivered_at': self.delivered_at.isoformat() if self.delivered_at else None,
@@ -507,7 +508,9 @@ class EmailSend(db.Model):
             'bounced_at': self.bounced_at.isoformat() if self.bounced_at else None,
             'bounce_reason': self.bounce_reason,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'sender_name': self.user.full_name if self.user else None,
+            'contact_name': self.contact.full_name if self.contact else None
         }
 
 class EmailThread(db.Model):
@@ -516,27 +519,31 @@ class EmailThread(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
     tenant_id = db.Column(db.String(36), db.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=False)
     contact_id = db.Column(db.String(36), db.ForeignKey('contacts.id', ondelete='CASCADE'), nullable=False)
+    thread_key = db.Column(db.String(255), nullable=False)  # Normalized subject + email for grouping
     subject = db.Column(db.String(255), nullable=False)
-    thread_key = db.Column(db.String(255))  # For grouping related emails
-    reply_count = db.Column(db.Integer, default=0)
-    last_activity_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_message_at = db.Column(db.DateTime, default=datetime.utcnow)
+    message_count = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    replies = db.relationship('EmailReply', backref='thread', lazy=True, cascade='all, delete-orphan')
+    email_sends = db.relationship('EmailSend', backref='thread', lazy=True)
+    email_replies = db.relationship('EmailReply', backref='thread', lazy=True)
+    
+    __table_args__ = (db.UniqueConstraint('tenant_id', 'thread_key', name='unique_tenant_thread'),)
     
     def to_dict(self):
         return {
             'id': self.id,
             'tenant_id': self.tenant_id,
             'contact_id': self.contact_id,
-            'subject': self.subject,
             'thread_key': self.thread_key,
-            'reply_count': self.reply_count,
-            'last_activity_at': self.last_activity_at.isoformat() if self.last_activity_at else None,
+            'subject': self.subject,
+            'last_message_at': self.last_message_at.isoformat() if self.last_message_at else None,
+            'message_count': self.message_count,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'contact_name': self.contact.full_name if self.contact else None
         }
 
 class EmailReply(db.Model):
@@ -546,15 +553,15 @@ class EmailReply(db.Model):
     tenant_id = db.Column(db.String(36), db.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=False)
     contact_id = db.Column(db.String(36), db.ForeignKey('contacts.id', ondelete='CASCADE'), nullable=False)
     thread_id = db.Column(db.String(36), db.ForeignKey('email_threads.id', ondelete='CASCADE'), nullable=False)
-    subject = db.Column(db.String(255))
-    content_text = db.Column(db.Text)
-    content_html = db.Column(db.Text)
+    original_send_id = db.Column(db.String(36), db.ForeignKey('email_sends.id', ondelete='CASCADE'), nullable=True)
+    message_id = db.Column(db.String(255))  # Email Message-ID header
+    subject = db.Column(db.String(255), nullable=False)
+    content = db.Column(db.Text, nullable=False)
     from_email = db.Column(db.String(255), nullable=False)
     to_email = db.Column(db.String(255), nullable=False)
-    message_id = db.Column(db.String(255))
-    in_reply_to = db.Column(db.String(255))
-    webhook_data = db.Column(db.JSON)
     received_at = db.Column(db.DateTime, default=datetime.utcnow)
+    processed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    raw_headers = db.Column(db.JSON)  # Store original email headers
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def to_dict(self):
@@ -563,18 +570,18 @@ class EmailReply(db.Model):
             'tenant_id': self.tenant_id,
             'contact_id': self.contact_id,
             'thread_id': self.thread_id,
+            'original_send_id': self.original_send_id,
+            'message_id': self.message_id,
             'subject': self.subject,
-            'content_text': self.content_text,
-            'content_html': self.content_html,
+            'content': self.content,
             'from_email': self.from_email,
             'to_email': self.to_email,
-            'message_id': self.message_id,
-            'in_reply_to': self.in_reply_to,
-            'webhook_data': self.webhook_data,
             'received_at': self.received_at.isoformat() if self.received_at else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'processed_at': self.processed_at.isoformat() if self.processed_at else None,
+            'raw_headers': self.raw_headers,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'contact_name': self.contact.full_name if self.contact else None
         }
-
 
 # Email Tracking Models
 class EmailPixel(db.Model):
@@ -583,18 +590,18 @@ class EmailPixel(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
     tenant_id = db.Column(db.String(36), db.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=False)
     email_send_id = db.Column(db.String(36), db.ForeignKey('email_sends.id', ondelete='CASCADE'), nullable=False)
-    pixel_token = db.Column(db.String(255), unique=True, nullable=False)
+    tracking_token = db.Column(db.String(255), unique=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
-    email_send = db.relationship('EmailSend', backref='tracking_pixel')
+    email_send = db.relationship('EmailSend', backref='tracking_pixels')
     
     def to_dict(self):
         return {
             'id': self.id,
             'tenant_id': self.tenant_id,
             'email_send_id': self.email_send_id,
-            'pixel_token': self.pixel_token,
+            'tracking_token': self.tracking_token,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
@@ -604,10 +611,9 @@ class EmailOpen(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
     tenant_id = db.Column(db.String(36), db.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=False)
     email_send_id = db.Column(db.String(36), db.ForeignKey('email_sends.id', ondelete='CASCADE'), nullable=False)
-    ip_address = db.Column(db.String(45))
+    ip_address = db.Column(db.String(45))  # IPv6 compatible
     user_agent = db.Column(db.Text)
     opened_at = db.Column(db.DateTime, default=datetime.utcnow)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
     email_send = db.relationship('EmailSend', backref='opens')
@@ -619,8 +625,7 @@ class EmailOpen(db.Model):
             'email_send_id': self.email_send_id,
             'ip_address': self.ip_address,
             'user_agent': self.user_agent,
-            'opened_at': self.opened_at.isoformat() if self.opened_at else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'opened_at': self.opened_at.isoformat() if self.opened_at else None
         }
 
 class EmailClick(db.Model):
@@ -630,10 +635,9 @@ class EmailClick(db.Model):
     tenant_id = db.Column(db.String(36), db.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=False)
     email_send_id = db.Column(db.String(36), db.ForeignKey('email_sends.id', ondelete='CASCADE'), nullable=False)
     url = db.Column(db.Text, nullable=False)
-    ip_address = db.Column(db.String(45))
+    ip_address = db.Column(db.String(45))  # IPv6 compatible
     user_agent = db.Column(db.Text)
     clicked_at = db.Column(db.DateTime, default=datetime.utcnow)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
     email_send = db.relationship('EmailSend', backref='clicks')
@@ -646,100 +650,70 @@ class EmailClick(db.Model):
             'url': self.url,
             'ip_address': self.ip_address,
             'user_agent': self.user_agent,
-            'clicked_at': self.clicked_at.isoformat() if self.clicked_at else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'clicked_at': self.clicked_at.isoformat() if self.clicked_at else None
         }
-
-
 
 # Email Threading Utility Functions
 def normalize_subject(subject):
-    """
-    Normalize email subject for thread grouping by removing common prefixes
-    and standardizing the format for consistent thread matching.
-    """
+    """Remove Re:, Fwd: prefixes for consistent thread grouping"""
     if not subject:
         return ""
     
-    # Convert to lowercase for case-insensitive matching
-    normalized = subject.lower().strip()
+    # Remove common prefixes (case insensitive)
+    prefixes = ['re:', 'fwd:', 'fw:', 'reply:', 'forward:']
+    normalized = subject.strip()
     
-    # Remove common email prefixes (Re:, Fwd:, etc.)
-    prefixes = ['re:', 'fwd:', 'fw:', 'forward:', 'reply:', 'response:']
-    for prefix in prefixes:
-        while normalized.startswith(prefix):
-            normalized = normalized[len(prefix):].strip()
+    while True:
+        original = normalized
+        for prefix in prefixes:
+            if normalized.lower().startswith(prefix):
+                normalized = normalized[len(prefix):].strip()
+                break
+        if normalized == original:
+            break
     
-    # Remove extra whitespace and normalize
-    normalized = re.sub(r'\s+', ' ', normalized).strip()
-    
-    return normalized
+    return normalized[:200]  # Limit length for database
 
 def generate_thread_key(subject, email_address):
-    """
-    Generate a unique thread key for email grouping based on normalized subject
-    and email address. This ensures emails with the same subject to/from the
-    same contact are grouped together.
-    """
-    if not subject or not email_address:
-        return None
-    
-    # Normalize the subject to handle Re:, Fwd: prefixes
+    """Generate a unique key for email thread grouping"""
     normalized_subject = normalize_subject(subject)
-    
-    # Normalize email address
     normalized_email = email_address.lower().strip()
     
-    # Create a consistent thread key
-    thread_key = f"{normalized_email}:{normalized_subject}"
-    
-    # Truncate if too long (database field limit)
-    if len(thread_key) > 255:
-        thread_key = thread_key[:255]
-    
-    return thread_key
+    # Create a consistent key for grouping
+    thread_key = f"{normalized_subject}|{normalized_email}"
+    return thread_key[:255]  # Limit length for database
 
 def extract_message_id_from_headers(headers_dict):
-    """
-    Extract Message-ID from email headers for thread tracking.
-    This helps maintain proper email threading relationships.
-    """
+    """Extract Message-ID from email headers"""
     if not headers_dict:
         return None
     
     # Try different possible header names
-    message_id_headers = ['Message-ID', 'message-id', 'Message-Id', 'message_id']
+    possible_keys = ['Message-ID', 'message-id', 'Message-Id', 'MESSAGE-ID']
     
-    for header_name in message_id_headers:
-        message_id = headers_dict.get(header_name)
-        if message_id:
+    for key in possible_keys:
+        if key in headers_dict:
+            message_id = headers_dict[key]
             # Clean up the message ID (remove < > brackets if present)
-            message_id = message_id.strip()
             if message_id.startswith('<') and message_id.endswith('>'):
                 message_id = message_id[1:-1]
-            return message_id
+            return message_id[:255]  # Limit length for database
     
     return None
 
 def parse_references_header(references_header):
-    """
-    Parse the References header from email to extract related message IDs
-    for proper thread reconstruction.
-    """
+    """Parse References header to extract message IDs for thread reconstruction"""
     if not references_header:
         return []
     
-    # References header contains space-separated message IDs
-    references = references_header.strip().split()
-    
-    # Clean up each reference (remove < > brackets)
-    cleaned_references = []
-    for ref in references:
+    # Split by whitespace and clean up message IDs
+    message_ids = []
+    for ref in references_header.split():
         ref = ref.strip()
         if ref.startswith('<') and ref.endswith('>'):
             ref = ref[1:-1]
-        if ref:  # Only add non-empty references
-            cleaned_references.append(ref)
+        if ref:
+            message_ids.append(ref)
     
-    return cleaned_references
+    return message_ids
 
