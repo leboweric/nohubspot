@@ -242,6 +242,42 @@ def send_email():
             'error': {'message': 'Internal server error'}
         }), 500
 
+def extract_email_content(form_data):
+    """Extract and clean email content from SendGrid webhook data"""
+    # Get text and HTML content
+    text_content = form_data.get('text', '').strip()
+    html_content = form_data.get('html', '').strip()
+    
+    # Log what we received for debugging
+    current_app.logger.info(f"Webhook content - text: '{text_content[:100]}...', html: '{html_content[:100]}...'")
+    
+    # If we have text content, use it
+    if text_content:
+        return text_content
+    
+    # If we have HTML content, strip HTML tags and use it
+    if html_content:
+        # Simple HTML tag removal
+        import re
+        clean_html = re.sub(r'<[^>]+>', '', html_content)
+        clean_html = clean_html.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
+        clean_html = clean_html.strip()
+        if clean_html:
+            return clean_html
+    
+    # Try alternative field names that SendGrid might use
+    for field_name in ['body', 'message', 'content', 'text_body', 'html_body']:
+        content = form_data.get(field_name, '').strip()
+        if content:
+            current_app.logger.info(f"Found content in field '{field_name}': '{content[:100]}...'")
+            return content
+    
+    # If no content found, log all form data for debugging
+    current_app.logger.warning(f"No email content found. Form data keys: {list(form_data.keys())}")
+    
+    # Return a fallback message
+    return f"Email reply received (content not extracted)"
+
 @emails_bp.route('/webhook/inbound', methods=['POST'])
 def handle_inbound_email():
     """Handle incoming email replies via SendGrid webhook"""
@@ -249,12 +285,16 @@ def handle_inbound_email():
         # Get form data from SendGrid webhook
         form_data = request.form.to_dict()
         
+        # Log the webhook data for debugging
+        current_app.logger.info(f"Webhook form data keys: {list(form_data.keys())}")
+        
         # Extract email details
         from_email = form_data.get('from', '')
         to_email = form_data.get('to', '')
         subject = form_data.get('subject', '')
-        text_content = form_data.get('text', '')
-        html_content = form_data.get('html', '')
+        
+        # FIXED: Better email content extraction
+        email_content = extract_email_content(form_data)
         
         # Extract headers for threading
         headers = {}
@@ -312,8 +352,8 @@ def handle_inbound_email():
             from_email=from_email,
             from_name=form_data.get('from_name', ''),
             subject=subject,
-            content_text=text_content,
-            content_html=html_content,
+            content_text=form_data.get('text', ''),
+            content_html=form_data.get('html', ''),
             message_id=message_id,
             in_reply_to=in_reply_to,
             references=references,  # FIXED: Changed from 'email_references' to 'references'
@@ -326,13 +366,13 @@ def handle_inbound_email():
         thread.last_activity_at = datetime.utcnow()
         thread.reply_count += 1
         
-        # Create interaction record for the reply
+        # FIXED: Create interaction record with properly extracted content
         interaction = Interaction(
             tenant_id=contact.tenant_id,
             contact_id=contact.id,
             type='email',
             subject=f"Email reply: {subject}",
-            content=text_content or html_content,
+            content=email_content,  # FIXED: Use extracted content instead of raw form data
             direction='inbound',
             status='completed',
             completed_at=datetime.utcnow()
