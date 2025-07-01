@@ -9,8 +9,8 @@ from src.models.user import db
 from src.routes.auth import auth_bp
 from src.routes.contacts import contacts_bp
 from src.routes.emails import emails_bp
-from src.routes.import_contacts import import_bp
 from src.routes.quotes import quotes_bp
+from src.routes.import_contacts import import_bp
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 
@@ -24,19 +24,32 @@ app.config['JWT_HEADER_TYPE'] = 'Bearer'
 # Initialize JWT
 jwt = JWTManager(app)
 
-# CORS configuration
-cors_origins = os.environ.get('CORS_ORIGINS', '*')
-if cors_origins != '*':
+# CORS configuration - Fixed for redirect issues
+cors_origins = os.environ.get('CORS_ORIGINS', '')
+if cors_origins != '':
     cors_origins = cors_origins.split(',')
+    CORS(app, 
+         origins=cors_origins, 
+         supports_credentials=True,
+         allow_headers=['Content-Type', 'Authorization'],
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
+else:
+    # Development CORS
+    CORS(app, 
+         origins=['http://localhost:3000', 'http://localhost:5173', 'https://nothubspot.app', 'https://www.nothubspot.app'], 
+         supports_credentials=True,
+         allow_headers=['Content-Type', 'Authorization'],
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
-CORS(app, origins=cors_origins, supports_credentials=True)
-
-# Register blueprints
+# Register blueprints with strict_slashes=False to avoid redirect issues
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(contacts_bp, url_prefix='/api/contacts')
 app.register_blueprint(emails_bp, url_prefix='/api/emails')
-app.register_blueprint(import_bp, url_prefix='/api/import')
 app.register_blueprint(quotes_bp, url_prefix='/api/quotes')
+app.register_blueprint(import_bp, url_prefix='/api/import')
+
+# Set strict_slashes=False for the entire app to prevent redirect issues
+app.url_map.strict_slashes = False
 
 # Database configuration
 # Use PostgreSQL on Railway, SQLite for local development
