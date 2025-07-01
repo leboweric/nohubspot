@@ -62,6 +62,21 @@ export default function ContactDetail() {
       }
 
       if (timelineResponse.success) {
+        // DEBUG: Log the timeline data to see what we're getting
+        console.log('Timeline API Response:', timelineResponse.data)
+        timelineResponse.data.forEach((item, index) => {
+          console.log(`Timeline Item ${index}:`, {
+            id: item.id,
+            type: item.type,
+            subject: item.subject,
+            content: item.content,
+            direction: item.direction,
+            status: item.status,
+            created_at: item.created_at,
+            completed_at: item.completed_at,
+            updated_at: item.updated_at
+          })
+        })
         setTimeline(timelineResponse.data)
       }
     } catch (error) {
@@ -159,7 +174,6 @@ export default function ContactDetail() {
     setThreadDialogOpen(true)
   }
 
-  // FIXED: Better timestamp handling
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return 'Unknown time'
     
@@ -184,23 +198,34 @@ export default function ContactDetail() {
     }
   }
 
-  // FIXED: Better timestamp selection
   const getDisplayTimestamp = (item) => {
     // Try different timestamp fields in order of preference
     return item.completed_at || item.created_at || item.updated_at || null
   }
 
-  // FIXED: Better content display
   const getDisplayContent = (item) => {
-    if (!item.content || item.content.trim() === '') {
+    console.log('Getting display content for item:', item)
+    
+    // Try different content fields
+    let content = item.content || item.content_text || item.content_html || ''
+    
+    if (!content || content.trim() === '') {
       return `${item.type} ${item.direction || ''} - ${item.subject || 'No subject'}`
     }
+    
+    // Strip HTML tags if it's HTML content
+    if (content.includes('<') && content.includes('>')) {
+      content = content.replace(/<[^>]*>/g, '')
+    }
+    
     // Truncate long content
-    const content = item.content.length > 200 ? item.content.substring(0, 200) + '...' : item.content
+    if (content.length > 300) {
+      content = content.substring(0, 300) + '...'
+    }
+    
     return content
   }
 
-  // FIXED: Better subject display
   const getDisplaySubject = (item) => {
     if (item.subject && item.subject.trim() !== '') {
       return item.subject
@@ -570,7 +595,7 @@ export default function ContactDetail() {
                               </div>
                             </div>
                           </div>
-                          <p className="text-sm text-gray-600 mt-1">
+                          <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">
                             {getDisplayContent(item)}
                           </p>
                           <div className="flex items-center space-x-2 mt-2">
