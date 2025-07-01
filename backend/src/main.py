@@ -11,6 +11,7 @@ from src.routes.contacts import contacts_bp
 from src.routes.emails import emails_bp
 from src.routes.quotes import quotes_bp
 from src.routes.import_contacts import import_bp
+from src.routes.documents import documents_bp
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 
@@ -47,6 +48,7 @@ app.register_blueprint(contacts_bp, url_prefix='/api/contacts')
 app.register_blueprint(emails_bp, url_prefix='/api/emails')
 app.register_blueprint(quotes_bp, url_prefix='/api/quotes')
 app.register_blueprint(import_bp, url_prefix='/api/import')
+app.register_blueprint(documents_bp, url_prefix='/api/documents')
 
 # Set strict_slashes=False for the entire app to prevent redirect issues
 app.url_map.strict_slashes = False
@@ -97,3 +99,4 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_ENV') != 'production'
     app.run(host='0.0.0.0', port=port, debug=debug)
+
