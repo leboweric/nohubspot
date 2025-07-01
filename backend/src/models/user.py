@@ -650,3 +650,96 @@ class EmailClick(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
+
+
+# Email Threading Utility Functions
+def normalize_subject(subject):
+    """
+    Normalize email subject for thread grouping by removing common prefixes
+    and standardizing the format for consistent thread matching.
+    """
+    if not subject:
+        return ""
+    
+    # Convert to lowercase for case-insensitive matching
+    normalized = subject.lower().strip()
+    
+    # Remove common email prefixes (Re:, Fwd:, etc.)
+    prefixes = ['re:', 'fwd:', 'fw:', 'forward:', 'reply:', 'response:']
+    for prefix in prefixes:
+        while normalized.startswith(prefix):
+            normalized = normalized[len(prefix):].strip()
+    
+    # Remove extra whitespace and normalize
+    normalized = re.sub(r'\s+', ' ', normalized).strip()
+    
+    return normalized
+
+def generate_thread_key(subject, email_address):
+    """
+    Generate a unique thread key for email grouping based on normalized subject
+    and email address. This ensures emails with the same subject to/from the
+    same contact are grouped together.
+    """
+    if not subject or not email_address:
+        return None
+    
+    # Normalize the subject to handle Re:, Fwd: prefixes
+    normalized_subject = normalize_subject(subject)
+    
+    # Normalize email address
+    normalized_email = email_address.lower().strip()
+    
+    # Create a consistent thread key
+    thread_key = f"{normalized_email}:{normalized_subject}"
+    
+    # Truncate if too long (database field limit)
+    if len(thread_key) > 255:
+        thread_key = thread_key[:255]
+    
+    return thread_key
+
+def extract_message_id_from_headers(headers_dict):
+    """
+    Extract Message-ID from email headers for thread tracking.
+    This helps maintain proper email threading relationships.
+    """
+    if not headers_dict:
+        return None
+    
+    # Try different possible header names
+    message_id_headers = ['Message-ID', 'message-id', 'Message-Id', 'message_id']
+    
+    for header_name in message_id_headers:
+        message_id = headers_dict.get(header_name)
+        if message_id:
+            # Clean up the message ID (remove < > brackets if present)
+            message_id = message_id.strip()
+            if message_id.startswith('<') and message_id.endswith('>'):
+                message_id = message_id[1:-1]
+            return message_id
+    
+    return None
+
+def parse_references_header(references_header):
+    """
+    Parse the References header from email to extract related message IDs
+    for proper thread reconstruction.
+    """
+    if not references_header:
+        return []
+    
+    # References header contains space-separated message IDs
+    references = references_header.strip().split()
+    
+    # Clean up each reference (remove < > brackets)
+    cleaned_references = []
+    for ref in references:
+        ref = ref.strip()
+        if ref.startswith('<') and ref.endswith('>'):
+            ref = ref[1:-1]
+        if ref:  # Only add non-empty references
+            cleaned_references.append(ref)
+    
+    return cleaned_references
+
