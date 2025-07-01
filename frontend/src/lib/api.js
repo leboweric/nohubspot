@@ -68,6 +68,10 @@ class ApiClient {
     return this.request('/contacts')
   }
 
+  async getContactStats() {
+    return this.request('/contacts/stats')
+  }
+
   async getContact(id) {
     return this.request(`/contacts/${id}`)
   }
