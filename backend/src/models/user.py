@@ -575,3 +575,78 @@ class EmailReply(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
+
+# Email Tracking Models
+class EmailPixel(db.Model):
+    __tablename__ = 'email_pixels'
+    
+    id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
+    tenant_id = db.Column(db.String(36), db.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=False)
+    email_send_id = db.Column(db.String(36), db.ForeignKey('email_sends.id', ondelete='CASCADE'), nullable=False)
+    pixel_token = db.Column(db.String(255), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    email_send = db.relationship('EmailSend', backref='tracking_pixel')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'tenant_id': self.tenant_id,
+            'email_send_id': self.email_send_id,
+            'pixel_token': self.pixel_token,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+class EmailOpen(db.Model):
+    __tablename__ = 'email_opens'
+    
+    id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
+    tenant_id = db.Column(db.String(36), db.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=False)
+    email_send_id = db.Column(db.String(36), db.ForeignKey('email_sends.id', ondelete='CASCADE'), nullable=False)
+    ip_address = db.Column(db.String(45))
+    user_agent = db.Column(db.Text)
+    opened_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    email_send = db.relationship('EmailSend', backref='opens')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'tenant_id': self.tenant_id,
+            'email_send_id': self.email_send_id,
+            'ip_address': self.ip_address,
+            'user_agent': self.user_agent,
+            'opened_at': self.opened_at.isoformat() if self.opened_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+class EmailClick(db.Model):
+    __tablename__ = 'email_clicks'
+    
+    id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
+    tenant_id = db.Column(db.String(36), db.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=False)
+    email_send_id = db.Column(db.String(36), db.ForeignKey('email_sends.id', ondelete='CASCADE'), nullable=False)
+    url = db.Column(db.Text, nullable=False)
+    ip_address = db.Column(db.String(45))
+    user_agent = db.Column(db.Text)
+    clicked_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    email_send = db.relationship('EmailSend', backref='clicks')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'tenant_id': self.tenant_id,
+            'email_send_id': self.email_send_id,
+            'url': self.url,
+            'ip_address': self.ip_address,
+            'user_agent': self.user_agent,
+            'clicked_at': self.clicked_at.isoformat() if self.clicked_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
