@@ -57,6 +57,12 @@ class ApiClient {
     return this.request('/auth/me')
   }
 
+  async logout() {
+    return this.request('/auth/logout', {
+      method: 'POST',
+    })
+  }
+
   // Contact methods
   async getContacts() {
     return this.request('/contacts')
@@ -103,13 +109,34 @@ class ApiClient {
     })
   }
 
-  // FIXED: Correct email thread endpoints
+  async getEmailStats() {
+    return this.request('/emails/stats')
+  }
+
+  async getEmailThreads() {
+    return this.request('/emails/threads')
+  }
+
   async getEmailThread(threadId) {
     return this.request(`/emails/threads/${threadId}`)
   }
 
   async getContactThreads(contactId) {
     return this.request(`/emails/threads/contact/${contactId}`)
+  }
+
+  async markEmailOpened(emailId, trackingData) {
+    return this.request(`/emails/${emailId}/open`, {
+      method: 'POST',
+      body: JSON.stringify(trackingData),
+    })
+  }
+
+  async markEmailClicked(emailId, trackingData) {
+    return this.request(`/emails/${emailId}/click`, {
+      method: 'POST',
+      body: JSON.stringify(trackingData),
+    })
   }
 
   // Quote methods
@@ -189,7 +216,29 @@ class ApiClient {
       throw error
     }
   }
+
+  // Additional utility methods
+  async getAnalytics(timeframe = '30d') {
+    return this.request(`/analytics?timeframe=${timeframe}`)
+  }
+
+  async searchContacts(query) {
+    return this.request(`/contacts?search=${encodeURIComponent(query)}`)
+  }
+
+  async bulkUpdateContacts(contactIds, updateData) {
+    return this.request('/contacts/bulk-update', {
+      method: 'PUT',
+      body: JSON.stringify({
+        contact_ids: contactIds,
+        update_data: updateData,
+      }),
+    })
+  }
+
+  async exportContacts(format = 'csv') {
+    return this.request(`/contacts/export?format=${format}`)
+  }
 }
 
 export const api = new ApiClient()
-
