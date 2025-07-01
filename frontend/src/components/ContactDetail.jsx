@@ -74,7 +74,11 @@ export default function ContactDetail() {
             status: item.status,
             created_at: item.created_at,
             completed_at: item.completed_at,
-            updated_at: item.updated_at
+            updated_at: item.updated_at,
+            // Add debug for timestamp parsing
+            parsed_created_at: item.created_at ? new Date(item.created_at) : null,
+            parsed_completed_at: item.completed_at ? new Date(item.completed_at) : null,
+            parsed_updated_at: item.updated_at ? new Date(item.updated_at) : null
           })
         })
         setTimeline(timelineResponse.data)
@@ -170,19 +174,49 @@ export default function ContactDetail() {
   }
 
   const handleViewThread = (threadId) => {
+    console.log('Opening thread dialog for threadId:', threadId)
     setSelectedThreadId(threadId)
     setThreadDialogOpen(true)
   }
 
   const formatTimestamp = (timestamp) => {
-    if (!timestamp) return 'Unknown time'
+    if (!timestamp) {
+      console.log('formatTimestamp: No timestamp provided')
+      return 'Unknown time'
+    }
     
     try {
-      const date = new Date(timestamp)
-      if (isNaN(date.getTime())) return 'Invalid date'
+      // Handle different timestamp formats
+      let date
+      if (typeof timestamp === 'string') {
+        // If it contains 'T', it's likely ISO format
+        if (timestamp.includes('T')) {
+          date = new Date(timestamp)
+        } else {
+          // Try parsing as-is
+          date = new Date(timestamp)
+        }
+      } else {
+        date = new Date(timestamp)
+      }
+      
+      console.log('formatTimestamp input:', timestamp, 'parsed date:', date, 'isValid:', !isNaN(date.getTime()))
+      
+      if (isNaN(date.getTime())) {
+        console.log('formatTimestamp: Invalid date')
+        return 'Invalid date'
+      }
       
       const now = new Date()
-      const diffInMs = now - date
+      const diffInMs = now.getTime() - date.getTime()
+      
+      console.log('formatTimestamp calc:', {
+        now: now.toISOString(),
+        date: date.toISOString(),
+        diffInMs,
+        diffInMinutes: Math.floor(diffInMs / (1000 * 60))
+      })
+      
       const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
       const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
       const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
@@ -214,7 +248,9 @@ export default function ContactDetail() {
 
   const getDisplayTimestamp = (item) => {
     // Try different timestamp fields in order of preference
-    return item.completed_at || item.created_at || item.updated_at || null
+    const timestamp = item.completed_at || item.created_at || item.updated_at || null
+    console.log('getDisplayTimestamp for item:', item.id, 'selected timestamp:', timestamp)
+    return timestamp
   }
 
   const getDisplayContent = (item) => {
@@ -659,4 +695,3 @@ export default function ContactDetail() {
     </div>
   )
 }
-
