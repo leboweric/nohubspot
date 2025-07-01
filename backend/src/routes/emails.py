@@ -244,94 +244,114 @@ def send_email():
 
 def extract_email_content(form_data):
     """Extract and clean email content from SendGrid webhook data"""
-    # Get text and HTML content
+    import re
+    
+    # Get text and HTML content first (these are clean if available)
     text_content = form_data.get('text', '').strip()
     html_content = form_data.get('html', '').strip()
     
-    # Log what we received for debugging
-    current_app.logger.info(f"Webhook content - text: '{text_content[:100]}...', html: '{html_content[:100]}...'")
-    
-    # If we have text content, use it
+    # If we have clean text content, use it
     if text_content:
         return text_content
     
-    # If we have HTML content, strip HTML tags and use it
+    # If we have clean HTML content, strip HTML tags and use it
     if html_content:
-        # Simple HTML tag removal
-        import re
         clean_html = re.sub(r'<[^>]+>', '', html_content)
         clean_html = clean_html.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
         clean_html = clean_html.strip()
         if clean_html:
             return clean_html
     
-    # FIXED: Check the 'email' field which SendGrid uses for the full email content
+    # Parse the raw email field
     email_field = form_data.get('email', '').strip()
     if email_field:
-        current_app.logger.info(f"Found content in 'email' field: '{email_field[:200]}...'")
+        current_app.logger.info(f"Parsing raw email field (length: {len(email_field)})")
         
-        # Try to extract just the reply content from the full email
-        import re
-        
-        # Split by lines and look for the actual reply content
+        # Split email into lines
         lines = email_field.split('\n')
-        content_lines = []
         
-        # Skip headers and look for content
-        in_content = False
-        for line in lines:
+        # Find the start of the actual message content
+        content_start = -1
+        in_headers = True
+        
+        for i, line in enumerate(lines):
             line = line.strip()
             
-            # Skip empty lines at the start
-            if not line and not in_content:
+            # Skip empty lines in headers
+            if not line and in_headers:
                 continue
                 
-            # Skip common email headers
-            if line.startswith(('From:', 'To:', 'Subject:', 'Date:', 'Content-Type:', 'MIME-Version:', 'Message-ID:', 'X-')):
-                continue
-                
-            # Skip boundary markers
-            if line.startswith('--') and ('boundary' in line or len(line) > 20):
-                continue
-                
-            # If we find actual content, start collecting
-            if line and not line.startswith(('From:', 'To:', 'Subject:', 'Date:', 'Content-Type:', 'MIME-Version:')):
-                in_content = True
-                content_lines.append(line)
-                
-            # Stop at common signature markers
-            if line in ['--', '---'] or line.startswith('On ') and 'wrote:' in line:
+            # Check if we're still in headers
+            if in_headers:
+                # Headers have format "Header-Name: value" or start with whitespace (continuation)
+                if ':' in line and not line.startswith(' ') and not line.startswith('\t'):
+                    # This is a header line
+                    continue
+                elif line.startswith(' ') or line.startswith('\t'):
+                    # This is a header continuation
+                    continue
+                elif not line:
+                    # Empty line marks end of headers
+                    in_headers = False
+                    continue
+                else:
+                    # We found content
+                    in_headers = False
+                    content_start = i
+                    break
+            else:
+                # We're past headers, this is content
+                content_start = i
                 break
-                
-        # Join the content lines
-        if content_lines:
-            content = ' '.join(content_lines)
-            # Clean up any remaining HTML
-            content = re.sub(r'<[^>]+>', '', content)
-            content = content.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
-            content = content.strip()
-            
-            if content and len(content) > 3:  # Ensure we have meaningful content
-                current_app.logger.info(f"Extracted content from email field: '{content[:100]}...'")
-                return content
         
-        # If extraction failed, log the full email for debugging and return a portion
-        current_app.logger.warning(f"Could not extract content from email field. Full content: {email_field}")
-        # Return first 200 chars as fallback
-        return email_field[:200] + "..." if len(email_field) > 200 else email_field
+        # Extract content lines
+        if content_start >= 0:
+            content_lines = []
+            for i in range(content_start, len(lines)):
+                line = lines[i].strip()
+                
+                # Stop at common email signature markers
+                if line in ['--', '---'] or line.startswith('On ') and 'wrote:' in line:
+                    break
+                    
+                # Stop at quoted reply markers
+                if line.startswith('>') or line.startswith('On ') and 'at ' in line and 'wrote:' in line:
+                    break
+                    
+                # Add non-empty lines
+                if line:
+                    content_lines.append(line)
+            
+            # Join content and clean it up
+            if content_lines:
+                content = ' '.join(content_lines)
+                
+                # Remove any remaining HTML tags
+                content = re.sub(r'<[^>]+>', '', content)
+                
+                # Clean up HTML entities
+                content = content.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
+                
+                # Clean up extra whitespace
+                content = re.sub(r'\s+', ' ', content).strip()
+                
+                if content and len(content) > 3:
+                    current_app.logger.info(f"Successfully extracted content: '{content[:100]}...'")
+                    return content
+        
+        # If parsing failed, log for debugging
+        current_app.logger.warning(f"Failed to parse email content. First 500 chars: {email_field[:500]}")
     
-    # Try alternative field names that SendGrid might use
-    for field_name in ['body', 'message', 'content', 'text_body', 'html_body']:
+    # Try alternative field names
+    for field_name in ['body', 'message', 'content', 'text_body', 'html_body', 'plain']:
         content = form_data.get(field_name, '').strip()
         if content:
             current_app.logger.info(f"Found content in field '{field_name}': '{content[:100]}...'")
             return content
     
-    # If no content found, log all form data for debugging
+    # If no content found
     current_app.logger.warning(f"No email content found. Form data keys: {list(form_data.keys())}")
-    
-    # Return a fallback message
-    return f"Email reply received (content not extracted)"
+    return "Email reply received (content not extracted)"
 
 @emails_bp.route('/webhook/inbound', methods=['POST'])
 def handle_inbound_email():
