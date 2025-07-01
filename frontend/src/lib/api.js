@@ -10,71 +10,35 @@ class ApiClient {
     const token = localStorage.getItem('access_token')
     
     const config = {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         ...(token && { Authorization: `Bearer ${token}` }),
-        ...options.headers,
       },
       ...options,
+      headers: {
+        ...options.headers,
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
     }
 
     try {
       const response = await fetch(url, config)
       const data = await response.json()
       
-      // Handle token expiration
-      if (response.status === 401 && data.error?.message === 'Token expired') {
-        const refreshed = await this.refreshToken()
-        if (refreshed) {
-          // Retry the original request with new token
-          const newToken = localStorage.getItem('access_token')
-          config.headers.Authorization = `Bearer ${newToken}`
-          const retryResponse = await fetch(url, config)
-          return await retryResponse.json()
-        } else {
-          // Refresh failed, redirect to login
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('refresh_token')
-          window.location.reload()
-          return { success: false, error: { message: 'Session expired' } }
-        }
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP error! status: ${response.status}`)
       }
       
       return data
     } catch (error) {
       console.error('API request failed:', error)
-      return { success: false, error: { message: 'Network error' } }
+      throw error
     }
   }
 
-  async refreshToken() {
-    const refreshToken = localStorage.getItem('refresh_token')
-    if (!refreshToken) return false
-
-    try {
-      const response = await fetch(`${this.baseURL}/auth/refresh`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ refresh_token: refreshToken }),
-      })
-
-      const data = await response.json()
-      
-      if (data.success && data.access_token) {
-        localStorage.setItem('access_token', data.access_token)
-        return true
-      }
-      
-      return false
-    } catch (error) {
-      console.error('Token refresh failed:', error)
-      return false
-    }
-  }
-
-  // Auth endpoints
+  // Auth methods
   async login(credentials) {
     return this.request('/auth/login', {
       method: 'POST',
@@ -93,9 +57,9 @@ class ApiClient {
     return this.request('/auth/me')
   }
 
-  // Contact endpoints
+  // Contact methods
   async getContacts() {
-    return this.request('/contacts/')
+    return this.request('/contacts')
   }
 
   async getContact(id) {
@@ -103,7 +67,7 @@ class ApiClient {
   }
 
   async createContact(contactData) {
-    return this.request('/contacts/', {
+    return this.request('/contacts', {
       method: 'POST',
       body: JSON.stringify(contactData),
     })
@@ -126,15 +90,7 @@ class ApiClient {
     return this.request(`/contacts/${id}/timeline`)
   }
 
-  async getContactStats() {
-    return this.request('/contacts/stats')
-  }
-
-  async getRecentContacts() {
-    return this.request('/contacts/?limit=5&sort=created_at&order=desc')
-  }
-
-  // Email endpoints
+  // Email methods
   async sendEmail(emailData) {
     return this.request('/emails/send', {
       method: 'POST',
@@ -142,23 +98,91 @@ class ApiClient {
     })
   }
 
-  async getEmailDetails(id) {
-    return this.request(`/emails/${id}`)
-  }
-
-  async getEmailStats() {
-    return this.request('/emails/stats')
-  }
-
-  // NEW: Email thread endpoints
   async getEmailThread(threadId) {
-    return this.request(`/emails/threads/${threadId}`)
+    return this.request(`/emails/thread/${threadId}`)
   }
 
   async getContactThreads(contactId) {
-    return this.request(`/emails/threads/contact/${contactId}`)
+    return this.request(`/emails/threads?contact_id=${contactId}`)
+  }
+
+  // Quote methods
+  async getQuotes() {
+    return this.request('/quotes')
+  }
+
+  async getQuote(id) {
+    return this.request(`/quotes/${id}`)
+  }
+
+  async getContactQuotes(contactId) {
+    return this.request(`/quotes/contact/${contactId}`)
+  }
+
+  async createQuote(quoteData) {
+    return this.request('/quotes', {
+      method: 'POST',
+      body: JSON.stringify(quoteData),
+    })
+  }
+
+  async updateQuote(id, quoteData) {
+    return this.request(`/quotes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(quoteData),
+    })
+  }
+
+  async deleteQuote(id) {
+    return this.request(`/quotes/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  async sendQuote(id) {
+    return this.request(`/quotes/${id}/send`, {
+      method: 'POST',
+    })
+  }
+
+  async updateQuoteStatus(id, statusData) {
+    return this.request(`/quotes/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify(statusData),
+    })
+  }
+
+  async getQuoteStats() {
+    return this.request('/quotes/stats')
+  }
+
+  // Import methods
+  async importContacts(formData) {
+    const token = localStorage.getItem('access_token')
+    const url = `${this.baseURL}/import/contacts`
+    
+    const config = {
+      method: 'POST',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: formData, // FormData for file upload
+    }
+
+    try {
+      const response = await fetch(url, config)
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP error! status: ${response.status}`)
+      }
+      
+      return data
+    } catch (error) {
+      console.error('Import request failed:', error)
+      throw error
+    }
   }
 }
 
 export const api = new ApiClient()
-
