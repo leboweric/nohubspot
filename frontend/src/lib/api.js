@@ -90,6 +90,11 @@ class ApiClient {
     return this.request(`/contacts/${id}/timeline`)
   }
 
+  // Dashboard/Stats methods
+  async getContactStats() {
+    return this.request('/contacts/stats')
+  }
+
   // Email methods
   async sendEmail(emailData) {
     return this.request('/emails/send', {
