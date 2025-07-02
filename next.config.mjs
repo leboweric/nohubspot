@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Ensure static export works properly
+  trailingSlash: true,
+  // Add output for better Railway compatibility
+  output: 'standalone',
   eslint: {
     ignoreDuringBuilds: true,
   },
