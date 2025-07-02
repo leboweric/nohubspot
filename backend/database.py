@@ -4,17 +4,26 @@ from sqlalchemy.orm import sessionmaker
 import os
 
 # Railway PostgreSQL connection - configured for your database
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL",
-    "postgresql://postgres:password@switchback.proxy.rlwy.net:27597/railway"
-)
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if not DATABASE_URL:
+    print("❌ DATABASE_URL environment variable not found!")
+    # Fallback for local development
+    DATABASE_URL = "postgresql://postgres:password@localhost:5432/nohubspot"
+
+print(f"🔗 Connecting to database: {DATABASE_URL[:50]}...")
 
 # Fix for Railway's postgres:// URL format
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+try:
+    engine = create_engine(DATABASE_URL, echo=False)  # Set echo=True for SQL debugging
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    print("✅ Database engine created successfully")
+except Exception as e:
+    print(f"❌ Failed to create database engine: {e}")
+    raise
 
 Base = declarative_base()
 

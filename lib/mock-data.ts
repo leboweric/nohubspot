@@ -1,0 +1,245 @@
+// Export mock data for server actions
+export const companies = [
+  {
+    id: "1",
+    name: "Acme Corporation",
+    industry: "Technology",
+    website: "https://acme.example.com",
+    description: "A leading technology company specializing in innovative solutions.",
+    address: "123 Tech Lane, San Francisco, CA 94107",
+    status: "Active",
+    notes: "Key account with multiple ongoing projects.",
+    contactCount: 3,
+    attachmentCount: 2,
+    createdAt: "2023-01-15T08:30:00Z",
+  },
+  {
+    id: "2",
+    name: "Globex Industries",
+    industry: "Manufacturing",
+    website: "https://globex.example.com",
+    description: "Manufacturing company focused on sustainable products.",
+    address: "456 Factory Blvd, Detroit, MI 48201",
+    status: "Active",
+    contactCount: 2,
+    attachmentCount: 1,
+    createdAt: "2023-02-20T10:15:00Z",
+  },
+  {
+    id: "3",
+    name: "Initech LLC",
+    industry: "Finance",
+    website: "https://initech.example.com",
+    description: "Financial services provider for small businesses and startups.",
+    address: "789 Finance Ave, New York, NY 10004",
+    status: "Lead",
+    contactCount: 1,
+    attachmentCount: 0,
+    createdAt: "2023-03-10T14:45:00Z",
+  },
+]
+
+export const contacts = [
+  {
+    id: "1",
+    firstName: "John",
+    lastName: "Smith",
+    email: "john.smith@acme.example.com",
+    phone: "+1 (555) 123-4567",
+    title: "CTO",
+    companyId: "1",
+    companyName: "Acme Corporation",
+    status: "Active",
+    notes: "Key decision maker for technology purchases.",
+    createdAt: "2023-01-20T09:00:00Z",
+  },
+  {
+    id: "2",
+    firstName: "Sarah",
+    lastName: "Johnson",
+    email: "sarah.j@acme.example.com",
+    phone: "+1 (555) 987-6543",
+    title: "Marketing Director",
+    companyId: "1",
+    companyName: "Acme Corporation",
+    status: "Active",
+    createdAt: "2023-01-25T11:30:00Z",
+  },
+  {
+    id: "3",
+    firstName: "Michael",
+    lastName: "Brown",
+    email: "michael.b@globex.example.com",
+    phone: "+1 (555) 456-7890",
+    title: "CEO",
+    companyId: "2",
+    companyName: "Globex Industries",
+    status: "Active",
+    notes: "Interested in expanding partnership.",
+    createdAt: "2023-02-22T13:15:00Z",
+  },
+  {
+    id: "4",
+    firstName: "Emily",
+    lastName: "Davis",
+    email: "emily.d@initech.example.com",
+    title: "CFO",
+    companyId: "3",
+    companyName: "Initech LLC",
+    status: "Lead",
+    createdAt: "2023-03-15T10:45:00Z",
+  },
+]
+
+export const emailThreads = [
+  {
+    id: "1",
+    subject: "Proposal for Q3 Project",
+    contactId: "1",
+    preview: "I'd like to discuss the proposal for our upcoming Q3 project...",
+    messageCount: 3,
+    createdAt: "2023-04-10T09:30:00Z",
+    messages: [
+      {
+        id: "1-1",
+        threadId: "1",
+        sender: "John Smith",
+        content:
+          "Hi there,\n\nI'd like to discuss the proposal for our upcoming Q3 project. Do you have time this week to go over the details?\n\nBest,\nJohn",
+        direction: "incoming",
+        timestamp: "2023-04-10T09:30:00Z",
+      },
+      {
+        id: "1-2",
+        threadId: "1",
+        sender: "Sales Rep",
+        content:
+          "Hi John,\n\nI'm available Wednesday afternoon or Thursday morning. Let me know what works best for you.\n\nI've attached our initial proposal document for your review.\n\nRegards,\nSales Rep",
+        direction: "outgoing",
+        timestamp: "2023-04-10T11:45:00Z",
+        attachments: [
+          {
+            id: "a1",
+            name: "Acme_Q3_Proposal_v1.pdf",
+            url: "#",
+          },
+        ],
+      },
+      {
+        id: "1-3",
+        threadId: "1",
+        sender: "John Smith",
+        content: "Wednesday at 2pm works for me. I'll review the proposal before our call.\n\nThanks,\nJohn",
+        direction: "incoming",
+        timestamp: "2023-04-10T14:20:00Z",
+      },
+    ],
+  },
+  {
+    id: "2",
+    subject: "Product Demo Request",
+    contactId: "2",
+    preview: "I'm interested in scheduling a demo of your latest product...",
+    messageCount: 2,
+    createdAt: "2023-04-15T13:45:00Z",
+    messages: [
+      {
+        id: "2-1",
+        threadId: "2",
+        sender: "Sarah Johnson",
+        content:
+          "Hello,\n\nI'm interested in scheduling a demo of your latest product for our marketing team. We're looking to implement a new solution in the next quarter.\n\nCould you provide some available times?\n\nThanks,\nSarah",
+        direction: "incoming",
+        timestamp: "2023-04-15T13:45:00Z",
+      },
+      {
+        id: "2-2",
+        threadId: "2",
+        sender: "Sales Rep",
+        content:
+          "Hi Sarah,\n\nThank you for your interest! I'd be happy to schedule a demo for your team.\n\nWe have availability next Monday at 10am or Tuesday at 2pm. The demo typically takes about 45 minutes.\n\nPlease let me know which time works best, and I'll send a calendar invite.\n\nBest regards,\nSales Rep",
+        direction: "outgoing",
+        timestamp: "2023-04-15T15:30:00Z",
+      },
+    ],
+  },
+]
+
+export const attachments = [
+  {
+    id: "1",
+    name: "Acme_Q3_Proposal_v1.pdf",
+    description: "Initial proposal for Q3 project",
+    size: 2457600, // 2.4 MB
+    type: "application/pdf",
+    url: "#",
+    companyId: "1",
+    uploadedAt: "2023-04-10T11:30:00Z",
+    uploadedBy: "Sales Rep",
+  },
+  {
+    id: "2",
+    name: "Acme_Service_Agreement.docx",
+    description: "Service agreement template",
+    size: 1536000, // 1.5 MB
+    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    url: "#",
+    companyId: "1",
+    uploadedAt: "2023-04-12T14:15:00Z",
+    uploadedBy: "Sales Rep",
+  },
+  {
+    id: "3",
+    name: "Globex_Manufacturing_Specs.xlsx",
+    description: "Manufacturing specifications",
+    size: 3145728, // 3 MB
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    url: "#",
+    companyId: "2",
+    uploadedAt: "2023-04-18T09:45:00Z",
+    uploadedBy: "Sales Rep",
+  },
+]
+
+export const activities = [
+  {
+    id: "1",
+    title: "Email Sent",
+    description: "Sent proposal to John Smith",
+    type: "email",
+    entityId: "1-2",
+    date: "2023-04-10T11:45:00Z",
+  },
+  {
+    id: "2",
+    title: "Contact Added",
+    description: "Added Sarah Johnson as a new contact",
+    type: "contact",
+    entityId: "2",
+    date: "2023-01-25T11:30:00Z",
+  },
+  {
+    id: "3",
+    title: "Attachment Uploaded",
+    description: "Uploaded Acme_Service_Agreement.docx",
+    type: "attachment",
+    entityId: "2",
+    date: "2023-04-12T14:15:00Z",
+  },
+  {
+    id: "4",
+    title: "Email Received",
+    description: "Received email from Sarah Johnson",
+    type: "email",
+    entityId: "2-1",
+    date: "2023-04-15T13:45:00Z",
+  },
+  {
+    id: "5",
+    title: "Company Added",
+    description: "Added Initech LLC as a new company",
+    type: "company",
+    entityId: "3",
+    date: "2023-03-10T14:45:00Z",
+  },
+]
