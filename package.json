@@ -1,38 +1,42 @@
-he Problem:
-Your repository had both frontend (Next.js) and backend (Python) files mixed together. Railway got confused about what type of app to deploy.
-🤖 Railway's Confusion:
-Railway saw: requirements.txt + package.json
-Railway thought: "Is this Python or Node.js??"
-Railway chose: Python (wrong choice)
-Railway tried: python commands
-Your app needed: Node.js
-Result: "python: command not found" ❌
-🛠️ My Solution:
-I created a clean, frontend-only version by removing the conflicting Python files:
-Files I Removed:
-❌ requirements.txt (Python dependencies)
-❌ Procfile (Python startup script)
-❌ railway.json (Python config)
-❌ src/ folder (Python backend)
-Files I Kept (Your Entire CRM):
-✅ package.json (Node.js config)
-✅ app/ folder (all your CRM pages)
-✅ components/ (all UI components)
-✅ lib/ (your frontend code and data)
-🎯 The Result:
-Railway now sees: Only package.json
-Railway thinks: "This is clearly a Next.js app!"
-Railway chooses: Node.js (correct choice)
-Railway runs: npm install, npm build, npm start
-Result: "Application ready!" ✅
-📊 What You Get:
-Same CRM interface - identical design and functionality
-Same pages - dashboard, companies, contacts, activities
-Same user experience - nothing changed from your perspective
-But now it deploys successfully on Railway!
-🚀 Your Next Step:
-Download the clean package I provided
-Replace your repository code with the clean version
-Push to GitHub
-Railway will automatically redeploy successfully
-Your CRM is exactly the same, just without the deployment conflicts! 🎉
+{
+  "name": "nohubspot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A simple CRM system for managing companies and contacts - the HubSpot alternative",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@radix-ui/react-avatar": "^1.0.4",
+    "@radix-ui/react-label": "^2.0.2",
+    "@radix-ui/react-select": "^2.0.0",
+    "@radix-ui/react-slot": "^1.0.2",
+    "@radix-ui/react-tabs": "^1.0.4",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
+    "lucide-react": "^0.363.0",
+    "next": "14.2.16",
+    "react": "^18",
+    "react-dom": "^18",
+    "tailwind-merge": "^2.2.2",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.0.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.1.0",
+    "postcss": "^8",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}
