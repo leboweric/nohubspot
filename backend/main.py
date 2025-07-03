@@ -619,7 +619,7 @@ async def cleanup_tenant(tenant_slug: str, db: Session = Depends(get_db)):
         else:
             counts["attachments"] = 0
         
-        # Delete in order
+        # Delete in order, handling foreign key constraints
         db.query(Activity).filter(Activity.tenant_id == tenant_id).delete()
         db.query(UserInvite).filter(UserInvite.tenant_id == tenant_id).delete()
         db.query(EmailSignature).filter(EmailSignature.tenant_id == tenant_id).delete()
@@ -627,6 +627,12 @@ async def cleanup_tenant(tenant_slug: str, db: Session = Depends(get_db)):
         db.query(Task).filter(Task.tenant_id == tenant_id).delete()
         db.query(Contact).filter(Contact.tenant_id == tenant_id).delete()
         db.query(Company).filter(Company.tenant_id == tenant_id).delete()
+        
+        # Handle the circular reference: clear created_by before deleting users
+        db.query(Tenant).filter(Tenant.id == tenant_id).update({"created_by": None})
+        db.commit()  # Commit this change first
+        
+        # Now we can delete users
         db.query(User).filter(User.tenant_id == tenant_id).delete()
         
         # Finally delete the tenant
