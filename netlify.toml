@@ -1,6 +1,6 @@
 [build]
-  # Build command for Next.js
-  command = "npm ci && npm run build"
+  # Build command for Next.js with npm version handling
+  command = "npm install --legacy-peer-deps && npm run build"
   
   # Directory where the built files are located
   publish = ".next"
@@ -9,8 +9,11 @@
   base = "."
 
 [build.environment]
-  # Node.js version
-  NODE_VERSION = "18"
+  # Node.js version - using LTS version that's compatible with npm
+  NODE_VERSION = "20"
+  
+  # Ensure npm version compatibility
+  NPM_VERSION = "10"
   
   # Use npm instead of pnpm
   NPM_FLAGS = "--production=false"
