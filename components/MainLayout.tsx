@@ -86,7 +86,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 
                 <button
                   onClick={handleLogout}
-                  className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                  className="text-sm text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1 rounded transition-colors"
                 >
                   Sign out
                 </button>
@@ -126,6 +126,36 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     {item.name}
                   </Link>
                 ))}
+                
+                {/* Mobile user info and logout */}
+                <div className="border-t pt-3 mt-3">
+                  {user && (
+                    <div className="flex items-center space-x-3 px-2 py-2">
+                      <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                        <span className="text-sm font-medium text-blue-600">
+                          {user.first_name?.[0] || user.email[0].toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-900">
+                          {user.first_name} {user.last_name}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {user.role === 'owner' ? 'Owner' : 
+                           user.role === 'admin' ? 'Admin' : 
+                           user.role === 'user' ? 'User' : 'Read Only'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-2 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+                  >
+                    Sign out
+                  </button>
+                </div>
               </div>
             </div>
           )}

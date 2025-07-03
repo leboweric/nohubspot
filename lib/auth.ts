@@ -170,6 +170,12 @@ export async function authenticatedFetch(
 export function logout(): void {
   clearAuthState()
   if (typeof window !== 'undefined') {
-    window.location.href = '/auth/login'
+    // Redirect to main domain for logout
+    const orgSlug = getOrganizationSlug()
+    if (orgSlug) {
+      window.location.href = 'https://nothubspot.app/auth/login'
+    } else {
+      window.location.href = '/auth/login'
+    }
   }
 }
