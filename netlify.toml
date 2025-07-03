@@ -26,3 +26,17 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Handle subdomain routing - all subdomains should serve the same app
+[[redirects]]
+  from = "https://*.nothubspot.app/*"
+  to = "https://*.nothubspot.app/index.html"
+  status = 200
+  force = false
+
+# Domain aliases - tell Netlify to accept all subdomains
+[build.processing]
+  skip_processing = false
+
+[build.processing.html]
+  pretty_urls = true
