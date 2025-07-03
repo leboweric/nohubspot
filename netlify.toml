@@ -1,6 +1,6 @@
 [build]
-  # Use Next.js plugin for proper Netlify integration
-  command = "npm install --legacy-peer-deps && npm run build && npm run export"
+  # Use Next.js with static export for Netlify
+  command = "npm install --legacy-peer-deps && npm run build"
   
   # Directory where the built files are located
   publish = "out"
