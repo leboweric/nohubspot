@@ -1,6 +1,13 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 from datetime import datetime
+from enum import Enum
+
+class UserRole(str, Enum):
+    OWNER = "owner"
+    ADMIN = "admin"
+    USER = "user"
+    READONLY = "readonly"
 
 # Base schemas for common fields
 class TimestampMixin(BaseModel):
@@ -209,6 +216,92 @@ class BulkUploadResult(BaseModel):
     error_count: int
     total_count: int
     errors: List[str] = Field(default_factory=list)
+
+# Tenant schemas
+class TenantBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    
+class TenantCreate(TenantBase):
+    pass
+
+class TenantResponse(TenantBase):
+    id: int
+    slug: str
+    plan: str
+    is_active: bool
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+# User schemas
+class UserBase(BaseModel):
+    email: EmailStr
+    first_name: Optional[str] = Field(None, max_length=100)
+    last_name: Optional[str] = Field(None, max_length=100)
+    role: UserRole = UserRole.USER
+
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=8)
+    tenant_id: Optional[int] = None  # For invite-based registration
+
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
+    company_name: str = Field(..., min_length=1, max_length=255)
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserResponse(UserBase):
+    id: int
+    tenant_id: int
+    is_active: bool
+    email_verified: bool
+    last_login: Optional[datetime] = None
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class UserUpdate(BaseModel):
+    first_name: Optional[str] = Field(None, max_length=100)
+    last_name: Optional[str] = Field(None, max_length=100)
+    role: Optional[UserRole] = None
+
+# User invite schemas
+class UserInviteCreate(BaseModel):
+    email: EmailStr
+    role: UserRole = UserRole.USER
+
+class UserInviteResponse(BaseModel):
+    id: int
+    tenant_id: int
+    email: str
+    role: UserRole
+    status: str
+    expires_at: datetime
+    created_at: datetime
+    inviter: UserResponse
+    
+    class Config:
+        from_attributes = True
+
+class UserInviteAccept(BaseModel):
+    invite_code: str
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
+    password: str = Field(..., min_length=8)
+
+# Token schemas
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    user: UserResponse
+    tenant: TenantResponse
 
 # Dashboard schemas
 class DashboardStats(BaseModel):
