@@ -47,7 +47,7 @@ from auth import (
 print("🔨 Starting database initialization...")
 
 # TEMPORARY: Force recreate tables to fix schema issues
-FORCE_RECREATE = True  # Set to True only when you need to reset the database
+FORCE_RECREATE = False  # Set to True only when you need to reset the database
 
 try:
     if FORCE_RECREATE:

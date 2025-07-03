@@ -58,19 +58,8 @@ export default function LoginPage() {
       localStorage.setItem("user", JSON.stringify(data.user))
       localStorage.setItem("tenant", JSON.stringify(data.tenant))
 
-      // Redirect to appropriate URL based on organization
-      if (orgSlug && data.tenant.slug === orgSlug) {
-        // If accessing via organization subdomain, redirect to that subdomain
-        if (getOrganizationSlug()) {
-          router.push("/dashboard")
-        } else {
-          // Redirect to organization subdomain
-          window.location.href = `https://${data.tenant.slug}.nothubspot.app/dashboard`
-        }
-      } else {
-        // Default redirect to dashboard
-        router.push("/dashboard")
-      }
+      // Redirect to dashboard on main domain (until DNS is configured)
+      router.push("/dashboard")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed")
     } finally {
