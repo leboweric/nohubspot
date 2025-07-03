@@ -9,28 +9,29 @@ export const useEmailSignature = () => {
   const [isLoaded, setIsLoaded] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  // Load signature from API
+  // Load signature from API - TEMPORARILY DISABLED FOR DEBUGGING
   useEffect(() => {
     const loadSignature = async () => {
       try {
         setLoading(true)
-        const apiSignature = await signatureAPI.get('default')
-        if (apiSignature) {
-          // Convert API signature to component signature
-          const componentSignature: EmailSignature = {
-            name: apiSignature.name || "",
-            title: apiSignature.title || "",
-            company: apiSignature.company || "",
-            phone: apiSignature.phone || "",
-            email: apiSignature.email || "",
-            website: apiSignature.website || "",
-            includeImage: false, // Not in API yet
-            imageUrl: "", // Not in API yet
-            custom_text: apiSignature.custom_text || "",
-            enabled: apiSignature.enabled
-          }
-          setSignature(componentSignature)
-        }
+        console.log('SignatureManager: Loading signature - TEMPORARILY DISABLED')
+        // const apiSignature = await signatureAPI.get('default')
+        // if (apiSignature) {
+        //   // Convert API signature to component signature
+        //   const componentSignature: EmailSignature = {
+        //     name: apiSignature.name || "",
+        //     title: apiSignature.title || "",
+        //     company: apiSignature.company || "",
+        //     phone: apiSignature.phone || "",
+        //     email: apiSignature.email || "",
+        //     website: apiSignature.website || "",
+        //     includeImage: false, // Not in API yet
+        //     imageUrl: "", // Not in API yet
+        //     custom_text: apiSignature.custom_text || "",
+        //     enabled: apiSignature.enabled
+        //   }
+        //   setSignature(componentSignature)
+        // }
       } catch (error) {
         console.error('Failed to load email signature:', error)
       } finally {
