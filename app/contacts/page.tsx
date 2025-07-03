@@ -175,55 +175,57 @@ export default function ContactsPage() {
             </div>
           </div>
         ) : (
-          <table className="w-full">
-          <thead>
-            <tr className="border-b">
-              <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Name</th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Email</th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Phone</th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Company</th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Status</th>
-              <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {filteredContacts.map((contact) => (
-              <tr key={contact.id} className="hover:bg-accent/50 transition-colors">
-                <td className="px-6 py-4">
-                  <div>
-                    <div className="font-medium">{contact.first_name} {contact.last_name}</div>
-                    <div className="text-sm text-muted-foreground">{contact.title || 'No title'}</div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-sm">{contact.email}</td>
-                <td className="px-6 py-4 text-sm">{contact.phone || "-"}</td>
-                <td className="px-6 py-4 text-sm">{contact.company_name || 'N/A'}</td>
-                <td className="px-6 py-4">
-                  <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
-                    contact.status === "Active" 
-                      ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400" 
-                      : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                  }`}>
-                    {contact.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm">
-                  <a href={`/contacts/${contact.id}`} className="text-primary hover:underline">
-                    View
-                  </a>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-          </table>
-          
-          {filteredContacts.length === 0 && !loading && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                {searchTerm ? `No contacts found matching "${searchTerm}"` : "No contacts yet. Add your first contact to get started."}
-              </p>
-            </div>
-          )}
+          <>
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Name</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Email</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Phone</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Company</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Status</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {filteredContacts.map((contact) => (
+                  <tr key={contact.id} className="hover:bg-accent/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div>
+                        <div className="font-medium">{contact.first_name} {contact.last_name}</div>
+                        <div className="text-sm text-muted-foreground">{contact.title || 'No title'}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm">{contact.email}</td>
+                    <td className="px-6 py-4 text-sm">{contact.phone || "-"}</td>
+                    <td className="px-6 py-4 text-sm">{contact.company_name || 'N/A'}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                        contact.status === "Active" 
+                          ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400" 
+                          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                      }`}>
+                        {contact.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <a href={`/contacts/${contact.id}`} className="text-primary hover:underline">
+                        View
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            {filteredContacts.length === 0 && !loading && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">
+                  {searchTerm ? `No contacts found matching "${searchTerm}"` : "No contacts yet. Add your first contact to get started."}
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
