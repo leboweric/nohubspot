@@ -18,8 +18,8 @@
   # Use npm instead of pnpm
   NPM_FLAGS = "--production=false"
   
-  # API base URL for production (you'll need to update this to your backend URL)
-  NEXT_PUBLIC_API_URL = "https://your-backend-url.com"
+  # API base URL for production - Railway backend
+  NEXT_PUBLIC_API_URL = "https://nohubspot-production.up.railway.app"
 
 # Handle client-side routing for SPA
 [[redirects]]
