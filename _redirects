@@ -1,2 +1,4 @@
-# Handle SPA routing for all domains including subdomains
-/*    /index.html   200
+# Handle subdomain routing
+# All subdomains should serve the main app  
+https://*.nothubspot.app/*  https://nothubspot.app/:splat  200
+http://*.nothubspot.app/*   https://nothubspot.app/:splat  200
