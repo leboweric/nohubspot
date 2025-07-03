@@ -47,10 +47,54 @@ from auth import (
 # Create database tables with error handling
 print("🔨 Starting database initialization...")
 
+# Database migration function
+def migrate_tenant_to_organization(db_engine):
+    """Migrate from tenant_id to organization_id columns"""
+    print("🔄 Checking for database migrations...")
+    
+    with db_engine.connect() as conn:
+        try:
+            # Check if we need to migrate from tenants to organizations table
+            result = conn.execute(text("""
+                SELECT table_name FROM information_schema.tables 
+                WHERE table_schema = 'public' AND table_name = 'tenants'
+            """))
+            
+            if result.fetchone():
+                print("🔄 Migrating tenants table to organizations...")
+                # Rename tenants table to organizations
+                conn.execute(text("ALTER TABLE tenants RENAME TO organizations"))
+                print("  ✅ Renamed tenants table to organizations")
+            
+            # Check and migrate tenant_id columns to organization_id
+            tables_to_migrate = ['users', 'companies', 'contacts', 'email_threads', 'tasks', 'activities', 'email_signatures', 'user_invites']
+            
+            for table_name in tables_to_migrate:
+                # Check if table exists and has tenant_id column
+                result = conn.execute(text(f"""
+                    SELECT column_name FROM information_schema.columns 
+                    WHERE table_schema = 'public' AND table_name = '{table_name}' AND column_name = 'tenant_id'
+                """))
+                
+                if result.fetchone():
+                    print(f"🔄 Migrating {table_name}.tenant_id to organization_id...")
+                    conn.execute(text(f"ALTER TABLE {table_name} RENAME COLUMN tenant_id TO organization_id"))
+                    print(f"  ✅ Migrated {table_name}.tenant_id to organization_id")
+            
+            conn.commit()
+            print("✅ Database migration completed successfully")
+            
+        except Exception as e:
+            print(f"⚠️  Migration error: {e}")
+            conn.rollback()
+
 # TEMPORARY: Force recreate tables to fix schema issues
 FORCE_RECREATE = False  # Set to True only when you need to reset the database
 
 try:
+    # Run migration first
+    migrate_tenant_to_organization(engine)
+    
     if FORCE_RECREATE:
         print("⚠️  FORCE RECREATE MODE - Dropping all tables...")
         from sqlalchemy import text

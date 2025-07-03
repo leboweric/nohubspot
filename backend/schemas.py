@@ -301,7 +301,7 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     user: UserResponse
-    tenant: TenantResponse
+    organization: OrganizationResponse
 
 # Dashboard schemas
 class DashboardStats(BaseModel):
