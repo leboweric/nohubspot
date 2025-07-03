@@ -25,10 +25,21 @@ async function apiRequest<T>(
     
     // Handle authentication errors
     if (response.status === 401) {
-      // Don't auto-logout for signature endpoint to prevent login loops
-      const isSignatureEndpoint = url.includes('/api/signature')
+      // Don't auto-logout for data fetching endpoints to prevent login loops
+      // Only auto-logout for critical auth operations
+      const isDataEndpoint = url.includes('/api/signature') || 
+                            url.includes('/api/contacts') || 
+                            url.includes('/api/companies') || 
+                            url.includes('/api/tasks') || 
+                            url.includes('/api/activities') ||
+                            url.includes('/api/dashboard')
       
-      if (!isSignatureEndpoint) {
+      const isCriticalAuthEndpoint = url.includes('/api/auth/') || 
+                                   url.includes('/api/users') || 
+                                   url.includes('/api/invites')
+      
+      // Only auto-logout for critical auth operations, not data fetching
+      if (isCriticalAuthEndpoint && !isDataEndpoint) {
         clearAuthState()
         if (typeof window !== 'undefined') {
           window.location.href = '/auth/login'
