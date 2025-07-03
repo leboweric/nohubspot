@@ -22,14 +22,12 @@ export default function AuthGuard({
 
   useEffect(() => {
     const auth = getAuthState()
-    console.log('AuthGuard - pathname:', pathname, 'auth:', auth)
     setAuthState(auth)
     setLoading(false)
 
     // Skip auth check for auth pages
     if (pathname.startsWith('/auth/')) {
       if (auth.isAuthenticated) {
-        console.log('AuthGuard - Authenticated user on auth page, redirecting to dashboard')
         // If user is authenticated and on auth page, redirect to dashboard
         router.push('/dashboard')
       }
@@ -38,14 +36,12 @@ export default function AuthGuard({
 
     // Redirect to login if not authenticated and auth is required
     if (requireAuth && !auth.isAuthenticated) {
-      console.log('AuthGuard - Not authenticated, redirecting to login')
       router.push('/auth/login')
       return
     }
 
     // Check admin permissions
     if (adminOnly && auth.user && !['owner', 'admin'].includes(auth.user.role)) {
-      console.log('AuthGuard - Not admin, redirecting to dashboard')
       router.push('/dashboard')
       return
     }
