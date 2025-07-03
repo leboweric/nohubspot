@@ -33,7 +33,7 @@ from crud import (
 print("🔨 Starting database initialization...")
 
 # TEMPORARY: Force recreate tables to fix schema issues
-FORCE_RECREATE = True  # Set to False after first successful deployment
+FORCE_RECREATE = False  # Set to True only when you need to reset the database
 
 try:
     if FORCE_RECREATE:
