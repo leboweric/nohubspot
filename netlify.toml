@@ -1,6 +1,6 @@
 [build]
   # Build command for Next.js
-  command = "npm run build"
+  command = "npm ci && npm run build"
   
   # Directory where the built files are located
   publish = ".next"
@@ -11,6 +11,9 @@
 [build.environment]
   # Node.js version
   NODE_VERSION = "18"
+  
+  # Use npm instead of pnpm
+  NPM_FLAGS = "--production=false"
   
   # API base URL for production (you'll need to update this to your backend URL)
   NEXT_PUBLIC_API_URL = "https://your-backend-url.com"
