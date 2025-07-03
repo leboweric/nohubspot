@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import TaskList from "@/components/tasks/TaskList"
 import TaskCreate from "@/components/tasks/TaskCreate"
 import { TaskStats } from "@/components/tasks/types"
-import { taskAPI, Task, TaskCreate, handleAPIError } from "@/lib/api"
+import { taskAPI, Task, TaskCreate as TaskCreateType, handleAPIError } from "@/lib/api"
 
 
 export default function TasksPage() {
@@ -65,7 +65,7 @@ export default function TasksPage() {
   const handleCreateTask = async (taskData: Omit<Task, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       // Convert frontend field names to backend field names
-      const apiTaskData: TaskCreate = {
+      const apiTaskData: TaskCreateType = {
         title: taskData.title,
         description: taskData.description,
         status: taskData.status,
