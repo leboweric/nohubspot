@@ -1,0 +1,35 @@
+[build]
+  # Build command for Next.js
+  command = "npm run build"
+  
+  # Directory where the built files are located
+  publish = ".next"
+  
+  # Base directory for the build (root of the project)
+  base = "."
+
+[build.environment]
+  # Node.js version
+  NODE_VERSION = "18"
+  
+  # API base URL for production (you'll need to update this to your backend URL)
+  NEXT_PUBLIC_API_URL = "https://your-backend-url.com"
+
+# Redirect rules for client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  conditions = {Role = ["not", "admin"]}
+
+# API routes should not be redirected
+[[redirects]]
+  from = "/api/*"
+  to = "/api/:splat"
+  status = 200
+
+# Static files
+[[redirects]]
+  from = "/_next/*"
+  to = "/_next/:splat"
+  status = 200
