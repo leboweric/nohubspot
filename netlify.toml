@@ -21,22 +21,8 @@
   # API base URL for production - Railway backend
   NEXT_PUBLIC_API_URL = "https://nohubspot-production.up.railway.app"
 
-# Handle subdomain routing - all subdomains should serve the same app
+# Handle client-side routing for SPA
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  conditions = {Domain = ["*.nothubspot.app"]}
-
-# Handle main domain routing
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
-# Domain aliases - tell Netlify to accept all subdomains
-[build.processing]
-  skip_processing = false
-
-[build.processing.html]
-  pretty_urls = true
