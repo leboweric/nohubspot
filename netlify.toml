@@ -1,6 +1,6 @@
 [build]
   # Use Next.js with static export for Netlify
-  command = "npm install --legacy-peer-deps && npm run build"
+  command = "npm install --legacy-peer-deps && npm run build && cp _redirects out/_redirects"
   
   # Directory where the built files are located
   publish = "out"
@@ -20,9 +20,3 @@
   
   # API base URL for production - Railway backend
   NEXT_PUBLIC_API_URL = "https://nohubspot-production.up.railway.app"
-
-# Handle client-side routing for SPA
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
