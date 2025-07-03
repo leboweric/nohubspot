@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 export default function InviteAcceptPage() {
-  const params = useParams()
   const router = useRouter()
-  const inviteCode = params.code as string
+  const searchParams = useSearchParams()
+  const inviteCode = searchParams.get('code')
   
   const [formData, setFormData] = useState({
     firstName: "",
@@ -16,30 +16,17 @@ export default function InviteAcceptPage() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [inviteInfo, setInviteInfo] = useState<any>(null)
   const [checking, setChecking] = useState(true)
 
   useEffect(() => {
     // Validate invite code on page load
-    validateInviteCode()
-  }, [inviteCode])
-
-  const validateInviteCode = async () => {
     if (!inviteCode) {
       setError("Invalid invitation link")
       setChecking(false)
       return
     }
-
-    try {
-      // Note: We don't have a validate endpoint, so we'll just proceed to the form
-      // In a real implementation, you might want to add an endpoint to validate invite codes
-      setChecking(false)
-    } catch (err) {
-      setError("Invalid or expired invitation")
-      setChecking(false)
-    }
-  }
+    setChecking(false)
+  }, [inviteCode])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -91,8 +78,8 @@ export default function InviteAcceptPage() {
       localStorage.setItem("user", JSON.stringify(data.user))
       localStorage.setItem("tenant", JSON.stringify(data.tenant))
 
-      // Redirect to dashboard
-      router.push("/dashboard")
+      // Redirect to organization subdomain
+      window.location.href = `https://${data.tenant.slug}.nothubspot.app/dashboard`
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to accept invitation")
     } finally {

@@ -32,6 +32,26 @@ export interface AuthState {
 }
 
 /**
+ * Get organization slug from URL or headers
+ */
+export function getOrganizationSlug(): string | null {
+  if (typeof window === 'undefined') {
+    return null
+  }
+  
+  // Check for subdomain in current URL
+  const hostname = window.location.hostname
+  if (hostname.includes('nothubspot.app')) {
+    const parts = hostname.split('.')
+    if (parts.length > 2 && parts[0] !== 'www') {
+      return parts[0]
+    }
+  }
+  
+  return null
+}
+
+/**
  * Get authentication state from localStorage
  */
 export function getAuthState(): AuthState {

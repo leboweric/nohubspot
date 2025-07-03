@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { getAuthState, type AuthState } from "@/lib/auth"
+import { getAuthState, getOrganizationSlug, type AuthState } from "@/lib/auth"
 
 interface AuthGuardProps {
   children: React.ReactNode
@@ -22,20 +22,36 @@ export default function AuthGuard({
 
   useEffect(() => {
     const auth = getAuthState()
+    const orgSlug = getOrganizationSlug()
     setAuthState(auth)
     setLoading(false)
 
     // Skip auth check for auth pages
     if (pathname.startsWith('/auth/')) {
       if (auth.isAuthenticated) {
-        router.push('/dashboard')
+        // If user is authenticated and on auth page, redirect to their org subdomain
+        if (auth.tenant && auth.tenant.slug !== orgSlug) {
+          window.location.href = `https://${auth.tenant.slug}.nothubspot.app/dashboard`
+        } else {
+          router.push('/dashboard')
+        }
       }
       return
     }
 
+    // Check if user is accessing the correct organization subdomain
+    if (requireAuth && auth.isAuthenticated && orgSlug && auth.tenant) {
+      if (auth.tenant.slug !== orgSlug) {
+        // User is authenticated but accessing wrong org subdomain
+        window.location.href = `https://${auth.tenant.slug}.nothubspot.app${pathname}`
+        return
+      }
+    }
+
     // Redirect to login if not authenticated and auth is required
     if (requireAuth && !auth.isAuthenticated) {
-      router.push('/auth/login')
+      const loginUrl = orgSlug ? `/auth/login?org=${orgSlug}` : '/auth/login'
+      router.push(loginUrl)
       return
     }
 
