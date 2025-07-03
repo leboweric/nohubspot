@@ -62,6 +62,13 @@ const contacts = [
   }
 ]
 
+// Required for static export
+export async function generateStaticParams() {
+  return contacts.map((contact) => ({
+    id: contact.id,
+  }))
+}
+
 export default function ContactDetailPage({ params }: { params: { id: string } }) {
   // Get contact from base contacts or new contacts
   const getContact = () => {

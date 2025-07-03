@@ -42,6 +42,13 @@ const companies = [
   }
 ]
 
+// Required for static export
+export async function generateStaticParams() {
+  return companies.map((company) => ({
+    id: company.id,
+  }))
+}
+
 export default function CompanyDetailPage({ params }: { params: { id: string } }) {
   const company = companies.find(c => c.id === params.id)
   const fileInputRef = useRef<HTMLInputElement>(null)

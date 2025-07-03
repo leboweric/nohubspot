@@ -31,6 +31,13 @@ const companies = [
   }
 ]
 
+// Required for static export
+export async function generateStaticParams() {
+  return companies.map((company) => ({
+    id: company.id,
+  }))
+}
+
 export default function EditCompanyPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const company = companies.find(c => c.id === params.id)
