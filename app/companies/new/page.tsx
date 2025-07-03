@@ -2,9 +2,12 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { INDUSTRIES } from "@/lib/constants"
+import { companyAPI, CompanyCreate, handleAPIError } from "@/lib/api"
 
 export default function NewCompanyPage() {
   const router = useRouter()
+  const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     industry: "",
@@ -13,11 +16,27 @@ export default function NewCompanyPage() {
     status: "Lead"
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Send data to backend API
-    console.log("Form submitted:", formData)
-    router.push("/companies")
+    
+    try {
+      setLoading(true)
+      const companyData: CompanyCreate = {
+        name: formData.name,
+        industry: formData.industry || undefined,
+        website: formData.website || undefined,
+        description: formData.description || undefined,
+        status: formData.status
+      }
+      
+      await companyAPI.create(companyData)
+      router.push("/companies")
+    } catch (err) {
+      console.error('Failed to create company:', err)
+      alert(`Failed to create company: ${handleAPIError(err)}`)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -54,14 +73,20 @@ export default function NewCompanyPage() {
           <label htmlFor="industry" className="block text-sm font-medium mb-2">
             Industry
           </label>
-          <input
-            type="text"
+          <select
             id="industry"
             name="industry"
             value={formData.industry}
             onChange={handleChange}
             className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+          >
+            <option value="">Select an industry</option>
+            {INDUSTRIES.map((industry) => (
+              <option key={industry} value={industry}>
+                {industry}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>
@@ -113,9 +138,10 @@ export default function NewCompanyPage() {
         <div className="flex gap-4">
           <button
             type="submit"
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+            disabled={loading}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
-            Add Company
+            {loading ? "Adding..." : "Add Company"}
           </button>
           <button
             type="button"

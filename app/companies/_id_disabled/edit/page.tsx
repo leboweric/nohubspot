@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { INDUSTRIES } from "@/lib/constants"
 
 const companies = [
   {
@@ -112,14 +113,20 @@ export default function EditCompanyPage({ params }: { params: { id: string } }) 
           <label htmlFor="industry" className="block text-sm font-medium mb-2">
             Industry
           </label>
-          <input
-            type="text"
+          <select
             id="industry"
             name="industry"
             value={formData.industry}
             onChange={handleChange}
             className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+          >
+            <option value="">Select an industry</option>
+            {INDUSTRIES.map((industry) => (
+              <option key={industry} value={industry}>
+                {industry}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>
