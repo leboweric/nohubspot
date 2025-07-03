@@ -379,6 +379,57 @@ async def get_organization_users(
     """Get all users in the organization"""
     return get_users_by_organization(db, current_user.organization_id, skip, limit)
 
+# TEMPORARY: Cleanup endpoint for development
+@app.delete("/api/admin/cleanup/organization/{org_name}")
+async def cleanup_organization(
+    org_name: str,
+    db: Session = Depends(get_db)
+):
+    """Delete organization and all associated data (TEMPORARY CLEANUP)"""
+    try:
+        # Find the organization
+        organization = db.query(Organization).filter(
+            Organization.name.ilike(f"%{org_name}%")
+        ).first()
+        
+        if not organization:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Organization containing '{org_name}' not found"
+            )
+        
+        org_id = organization.id
+        org_full_name = organization.name
+        
+        # Delete all associated data (cascade should handle this, but being explicit)
+        db.query(Company).filter(Company.organization_id == org_id).delete()
+        db.query(Contact).filter(Contact.organization_id == org_id).delete()
+        db.query(Task).filter(Task.organization_id == org_id).delete()
+        db.query(EmailThread).filter(EmailThread.organization_id == org_id).delete()
+        db.query(Activity).filter(Activity.organization_id == org_id).delete()
+        db.query(EmailSignature).filter(EmailSignature.organization_id == org_id).delete()
+        db.query(UserInvite).filter(UserInvite.organization_id == org_id).delete()
+        
+        # Delete users
+        users_deleted = db.query(User).filter(User.organization_id == org_id).delete()
+        
+        # Delete the organization
+        db.delete(organization)
+        db.commit()
+        
+        return {
+            "message": f"Successfully deleted organization '{org_full_name}' and {users_deleted} associated users",
+            "organization_id": org_id,
+            "users_deleted": users_deleted
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Cleanup failed: {str(e)}"
+        )
+
 # Dashboard endpoints
 @app.get("/api/dashboard/stats", response_model=DashboardStats)
 async def get_dashboard_statistics(db: Session = Depends(get_db)):
