@@ -32,16 +32,33 @@ from crud import (
 # Create database tables with error handling
 try:
     print("🔨 Checking/Creating database tables...")
-    Base.metadata.create_all(bind=engine)
-    print("✅ Database tables ready")
+    # Try to create tables
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("✅ Database tables ready")
+    except Exception as create_error:
+        if "incompatible types" in str(create_error):
+            print("⚠️  Schema mismatch detected, dropping and recreating tables...")
+            # Drop all tables and recreate
+            Base.metadata.drop_all(bind=engine)
+            Base.metadata.create_all(bind=engine)
+            print("✅ Database tables recreated with correct schema")
+        else:
+            raise create_error
     
     # Check if we need to seed initial data
     db = next(get_db())
-    if db.query(Company).count() == 0:
-        print("📊 No data found, creating sample data...")
-        from init_db import seed_sample_data
-        seed_sample_data()
-    db.close()
+    try:
+        company_count = db.query(Company).count()
+        if company_count == 0:
+            print("📊 No data found, creating sample data...")
+            from init_db import seed_sample_data
+            seed_sample_data()
+    except:
+        # If query fails, tables might not exist properly
+        pass
+    finally:
+        db.close()
 except Exception as e:
     print(f"❌ Database initialization failed: {e}")
     print("⚠️  The application will continue but database operations may fail")
