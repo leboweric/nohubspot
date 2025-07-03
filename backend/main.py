@@ -112,7 +112,7 @@ def migrate_tenant_to_organization(db_engine):
             conn.rollback()
 
 # TEMPORARY: Force recreate tables to fix schema issues
-FORCE_RECREATE = False  # Set to True only when you need to reset the database
+FORCE_RECREATE = True  # Set to True only when you need to reset the database
 
 try:
     # Run migration first
