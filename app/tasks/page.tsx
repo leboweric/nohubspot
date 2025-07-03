@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import AuthGuard from "@/components/AuthGuard"
+import MainLayout from "@/components/MainLayout"
 import TaskList from "@/components/tasks/TaskList"
 import TaskCreate from "@/components/tasks/TaskCreate"
 import { TaskStats } from "@/components/tasks/types"
@@ -152,7 +154,9 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AuthGuard>
+      <MainLayout>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -277,6 +281,8 @@ export default function TasksPage() {
         onClose={() => setShowCreateTask(false)}
         onSave={handleCreateTask}
       />
-    </div>
+        </div>
+      </MainLayout>
+    </AuthGuard>
   )
 }

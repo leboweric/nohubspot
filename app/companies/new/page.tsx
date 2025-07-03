@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import AuthGuard from "@/components/AuthGuard"
+import MainLayout from "@/components/MainLayout"
 import { INDUSTRIES } from "@/lib/constants"
 import { companyAPI, CompanyCreate, handleAPIError } from "@/lib/api"
 
@@ -47,7 +49,9 @@ export default function NewCompanyPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AuthGuard>
+      <MainLayout>
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold">Add New Company</h1>
         <p className="text-muted-foreground mt-1">Enter company information below</p>
@@ -152,6 +156,8 @@ export default function NewCompanyPage() {
           </button>
         </div>
       </form>
-    </div>
+        </div>
+      </MainLayout>
+    </AuthGuard>
   )
 }

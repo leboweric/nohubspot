@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import AuthGuard from "@/components/AuthGuard"
+import MainLayout from "@/components/MainLayout"
 import BulkUpload, { BulkUploadData, FieldMapping } from "@/components/upload/BulkUpload"
 import { contactAPI, Contact, ContactCreate, handleAPIError } from "@/lib/api"
 
@@ -124,7 +126,9 @@ export default function ContactsPage() {
   ]
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AuthGuard>
+      <MainLayout>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-semibold">Contacts</h1>
@@ -238,6 +242,8 @@ export default function ContactsPage() {
         requiredFields={['firstName', 'lastName', 'email']}
         availableFields={contactFields}
       />
-    </div>
+        </div>
+      </MainLayout>
+    </AuthGuard>
   )
 }
