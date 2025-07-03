@@ -410,7 +410,11 @@ async def cleanup_organization(
         db.query(EmailSignature).filter(EmailSignature.organization_id == org_id).delete()
         db.query(UserInvite).filter(UserInvite.organization_id == org_id).delete()
         
-        # Delete users
+        # Clear the created_by foreign key reference first
+        organization.created_by = None
+        db.commit()
+        
+        # Now delete users
         users_deleted = db.query(User).filter(User.organization_id == org_id).delete()
         
         # Delete the organization
