@@ -31,10 +31,20 @@ from crud import (
 
 # Create database tables with error handling
 try:
+    print("🔨 Checking/Creating database tables...")
     Base.metadata.create_all(bind=engine)
-    print("✅ Database tables created successfully")
+    print("✅ Database tables ready")
+    
+    # Check if we need to seed initial data
+    db = next(get_db())
+    if db.query(Company).count() == 0:
+        print("📊 No data found, creating sample data...")
+        from init_db import seed_sample_data
+        seed_sample_data()
+    db.close()
 except Exception as e:
-    print(f"❌ Database connection failed: {e}")
+    print(f"❌ Database initialization failed: {e}")
+    print("⚠️  The application will continue but database operations may fail")
 
 app = FastAPI(
     title="NotHubSpot CRM API",
