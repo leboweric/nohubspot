@@ -1,9 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Configure for static export on Netlify
-  output: 'export',
+  // Configure for standalone deployment instead of static export
+  output: 'standalone',
   trailingSlash: true,
-  skipTrailingSlashRedirect: true,
   eslint: {
     ignoreDuringBuilds: true,
   },

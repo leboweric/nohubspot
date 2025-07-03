@@ -2,8 +2,8 @@
   # Build command for Next.js with npm version handling
   command = "npm install --legacy-peer-deps && npm run build"
   
-  # Directory where the built files are located - Next.js exports to 'out' folder
-  publish = "out"
+  # Directory where the built files are located - Next.js standalone builds to '.next'
+  publish = ".next"
   
   # Base directory for the build (root of the project)
   base = "."

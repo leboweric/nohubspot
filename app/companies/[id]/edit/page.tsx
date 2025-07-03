@@ -31,13 +31,6 @@ const companies = [
   }
 ]
 
-// Required for static export
-export async function generateStaticParams() {
-  return companies.map((company) => ({
-    id: company.id,
-  }))
-}
-
 export default function EditCompanyPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const company = companies.find(c => c.id === params.id)
@@ -78,7 +71,6 @@ export default function EditCompanyPage({ params }: { params: { id: string } }) 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Send data to backend API
     console.log("Form submitted:", formData)
     router.push(`/companies/${params.id}`)
   }
