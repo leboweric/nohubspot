@@ -1,6 +1,6 @@
 [build]
   # Use standard Next.js build with Netlify auto-detection
-  command = "npm install --legacy-peer-deps && npm run build && cp public/_redirects ./_redirects"
+  command = "npm install --legacy-peer-deps && npm run build && cp public/_redirects .next/_redirects"
   
   # Base directory for the build (root of the project)
   base = "."
