@@ -1,9 +1,9 @@
 [build]
-  # Build command for Next.js with npm version handling
-  command = "npm install --legacy-peer-deps && npm run build"
+  # Use Next.js plugin for proper Netlify integration
+  command = "npm install --legacy-peer-deps && npm run build && npm run export"
   
-  # Directory where the built files are located - Next.js standalone builds to '.next'
-  publish = ".next"
+  # Directory where the built files are located
+  publish = "out"
   
   # Base directory for the build (root of the project)
   base = "."
@@ -21,8 +21,8 @@
   # API base URL for production (you'll need to update this to your backend URL)
   NEXT_PUBLIC_API_URL = "https://your-backend-url.com"
 
-# Handle client-side routing for Next.js static export
+# Handle client-side routing for SPA
 [[redirects]]
   from = "/*"
-  to = "/404.html"
-  status = 404
+  to = "/index.html"
+  status = 200
