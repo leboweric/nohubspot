@@ -1,9 +1,6 @@
 [build]
-  # Use Next.js with Netlify runtime (enables middleware and API routes)
-  command = "npm install --legacy-peer-deps && npm run build && cp _redirects .next/_redirects"
-  
-  # Explicitly set publish directory for Next.js
-  publish = ".next"
+  # Use standard Next.js build with Netlify auto-detection
+  command = "npm install --legacy-peer-deps && npm run build"
   
   # Base directory for the build (root of the project)
   base = "."
