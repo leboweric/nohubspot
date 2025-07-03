@@ -31,27 +31,48 @@ from crud import (
 
 # Create database tables with error handling
 try:
-    print("🔨 Initializing database...")
-    print("🗑️  Dropping all existing tables...")
-    # Drop all tables to ensure clean state
-    Base.metadata.drop_all(bind=engine)
-    print("✅ Old tables dropped")
+    print("🔨 Checking database...")
     
-    print("🔨 Creating fresh tables...")
-    # Create all tables with correct schema
-    Base.metadata.create_all(bind=engine)
-    print("✅ Database tables created successfully")
-    
-    # Seed initial data
-    db = next(get_db())
+    # Try to create tables (will skip if they already exist)
     try:
-        print("📊 Creating sample data...")
-        from init_db import seed_sample_data
-        seed_sample_data()
-    except Exception as seed_error:
-        print(f"⚠️  Sample data creation failed: {seed_error}")
-    finally:
-        db.close()
+        Base.metadata.create_all(bind=engine)
+        print("✅ Database tables ready")
+        
+        # Check if we have data
+        db = next(get_db())
+        try:
+            company_count = db.query(Company).count()
+            print(f"📊 Found {company_count} companies in database")
+            
+            # Only seed if empty
+            if company_count == 0:
+                print("📊 No data found, creating sample data...")
+                from init_db import seed_sample_data
+                seed_sample_data()
+        except Exception as query_error:
+            print(f"⚠️  Query failed: {query_error}")
+        finally:
+            db.close()
+            
+    except Exception as create_error:
+        # Only drop tables if there's a schema conflict
+        if "foreign key constraint" in str(create_error) or "incompatible types" in str(create_error):
+            print("⚠️  Schema conflict detected!")
+            print("🗑️  Dropping and recreating tables (ONE TIME FIX)...")
+            Base.metadata.drop_all(bind=engine)
+            Base.metadata.create_all(bind=engine)
+            print("✅ Tables recreated with correct schema")
+            
+            # Seed sample data after recreation
+            db = next(get_db())
+            try:
+                from init_db import seed_sample_data
+                seed_sample_data()
+            finally:
+                db.close()
+        else:
+            raise create_error
+            
 except Exception as e:
     print(f"❌ Database initialization failed: {e}")
     print("⚠️  The application will continue but database operations may fail")
