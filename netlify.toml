@@ -10,15 +10,17 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Subdomain redirects - configured directly in netlify.toml
+# Use Netlify's specific wildcard syntax
 [[redirects]]
-  from = "https://*.nothubspot.app/*"
+  from = "https://:subdomain.nothubspot.app/*"
   to = "https://nothubspot.app/:splat"
   status = 200
   force = true
+  conditions = {Host = [":subdomain.nothubspot.app"]}
 
 [[redirects]]
-  from = "http://*.nothubspot.app/*"
+  from = "http://:subdomain.nothubspot.app/*"
   to = "https://nothubspot.app/:splat"
   status = 200
   force = true
+  conditions = {Host = [":subdomain.nothubspot.app"]}
