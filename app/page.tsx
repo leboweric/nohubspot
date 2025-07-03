@@ -23,10 +23,11 @@ export default function HomePage() {
   }
 
   // Redirect authenticated users to dashboard
-  if (isAuthenticated) {
-    window.location.href = '/dashboard'
-    return null
-  }
+  // Temporarily disabled for debugging
+  // if (isAuthenticated) {
+  //   window.location.href = '/dashboard'
+  //   return null
+  // }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
