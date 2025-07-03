@@ -47,7 +47,7 @@ from auth import (
 print("🔨 Starting database initialization...")
 
 # TEMPORARY: Force recreate tables to fix schema issues
-FORCE_RECREATE = False  # Set to True only when you need to reset the database
+FORCE_RECREATE = True  # Set to True only when you need to reset the database
 
 try:
     if FORCE_RECREATE:
@@ -87,17 +87,17 @@ try:
         print(f"📊 Found {company_count} companies in database")
         
         if company_count == 0:
-            print("📊 Seeding sample data...")
-            from init_db import seed_sample_data
-            seed_sample_data()
+            print("📊 Skipping sample data seeding for now...")
+            # from init_db import seed_sample_data
+            # seed_sample_data()
     except Exception as query_error:
         print(f"⚠️  Query failed: {query_error}")
-        print("📊 Attempting to seed sample data anyway...")
-        try:
-            from init_db import seed_sample_data
-            seed_sample_data()
-        except Exception as seed_error:
-            print(f"❌ Seeding failed: {seed_error}")
+        print("📊 Skipping seeding due to query error...")
+        # try:
+        #     from init_db import seed_sample_data
+        #     seed_sample_data()
+        # except Exception as seed_error:
+        #     print(f"❌ Seeding failed: {seed_error}")
     finally:
         db.close()
         

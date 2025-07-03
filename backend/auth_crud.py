@@ -6,7 +6,7 @@ from sqlalchemy import and_
 from typing import Optional, List
 from datetime import datetime, timedelta
 
-from models import Tenant, User, UserInvite, InviteStatus, UserRole
+from models import Tenant, User, UserInvite
 from schemas import TenantCreate, UserCreate, UserRegister, UserInviteCreate, UserInviteAccept
 from auth import get_password_hash, create_tenant_slug, generate_invite_code
 
@@ -77,7 +77,7 @@ def register_user_with_tenant(db: Session, user_data: UserRegister) -> tuple[Use
         password=user_data.password,
         first_name=user_data.first_name,
         last_name=user_data.last_name,
-        role=UserRole.OWNER
+        role="owner"
     )
     
     user = create_user(db, user_create, tenant.id)
@@ -126,7 +126,7 @@ def create_user_invite(db: Session, invite: UserInviteCreate, tenant_id: int, in
         role=invite.role,
         invite_code=invite_code,
         invited_by=invited_by_id,
-        status=InviteStatus.PENDING,
+        status="pending",
         expires_at=expires_at
     )
     
@@ -139,7 +139,7 @@ def get_invite_by_code(db: Session, invite_code: str) -> Optional[UserInvite]:
     """Get invite by code"""
     return db.query(UserInvite).filter(
         UserInvite.invite_code == invite_code,
-        UserInvite.status == InviteStatus.PENDING,
+        UserInvite.status == "pending",
         UserInvite.expires_at > datetime.utcnow()
     ).first()
 
@@ -167,7 +167,7 @@ def accept_user_invite(db: Session, invite_accept: UserInviteAccept) -> tuple[Us
     user = create_user(db, user_create, invite.tenant_id)
     
     # Mark invite as accepted
-    invite.status = InviteStatus.ACCEPTED
+    invite.status = "accepted"
     invite.accepted_at = datetime.utcnow()
     
     db.commit()
@@ -185,11 +185,11 @@ def revoke_invite(db: Session, invite_id: int, tenant_id: int) -> bool:
     invite = db.query(UserInvite).filter(
         UserInvite.id == invite_id,
         UserInvite.tenant_id == tenant_id,
-        UserInvite.status == InviteStatus.PENDING
+        UserInvite.status == "pending"
     ).first()
     
     if invite:
-        invite.status = InviteStatus.EXPIRED
+        invite.status = "expired"
         db.commit()
         return True
     
