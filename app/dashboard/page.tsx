@@ -1,179 +1,116 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Building2, Users, Mail, FileText, Plus, TrendingUp, Activity } from "lucide-react"
+"use client"
+
+import { useState } from "react"
+import EmailCompose, { EmailMessage } from "@/components/email/EmailCompose"
 
 export default function DashboardPage() {
+  const [showEmailCompose, setShowEmailCompose] = useState(false)
+  
+  const stats = [
+    { label: "Companies", value: 3, change: "+1 from last month" },
+    { label: "Contacts", value: 4, change: "+2 from last month" },
+    { label: "Email Threads", value: 2, change: "Active conversations" },
+    { label: "Attachments", value: 3, change: "Documents stored" }
+  ]
+
+  const recentActivity = [
+    { action: "Email sent to John Smith", time: "2 hours ago" },
+    { action: "Added Sarah Johnson as contact", time: "1 day ago" },
+    { action: "Uploaded service agreement", time: "2 days ago" }
+  ]
+
+  const handleEmailSent = (email: EmailMessage) => {
+    setShowEmailCompose(false)
+    // Could add to recent activity here
+    console.log("Email sent from dashboard:", email)
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Building2 className="h-8 w-8 text-blue-600" />
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              NoHubSpot
-            </span>
-          </div>
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/dashboard" className="text-blue-600 font-medium">
-              Dashboard
-            </Link>
-            <Link href="/companies" className="text-gray-600 hover:text-blue-600">
-              Companies
-            </Link>
-            <Link href="/contacts" className="text-gray-600 hover:text-blue-600">
-              Contacts
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back!</h1>
-          <p className="text-gray-600">Here's what's happening with your business today.</p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-blue-100">Total Companies</CardTitle>
-              <Building2 className="h-4 w-4 text-blue-200" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">3</div>
-              <p className="text-xs text-blue-200">+1 from last month</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-100">Total Contacts</CardTitle>
-              <Users className="h-4 w-4 text-green-200" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">4</div>
-              <p className="text-xs text-green-200">+2 from last month</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-purple-100">Email Threads</CardTitle>
-              <Mail className="h-4 w-4 text-purple-200" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">2</div>
-              <p className="text-xs text-purple-200">Active conversations</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-orange-100">Attachments</CardTitle>
-              <FileText className="h-4 w-4 text-orange-200" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">3</div>
-              <p className="text-xs text-orange-200">Documents stored</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5 text-blue-600" />
-                Quick Actions
-              </CardTitle>
-              <CardDescription>Get started with common tasks</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Link href="/companies/new">
-                <Button className="w-full justify-start bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200">
-                  <Building2 className="mr-2 h-4 w-4" />
-                  Add New Company
-                </Button>
-              </Link>
-              <Link href="/contacts/new">
-                <Button className="w-full justify-start bg-green-50 text-green-700 hover:bg-green-100 border border-green-200">
-                  <Users className="mr-2 h-4 w-4" />
-                  Add New Contact
-                </Button>
-              </Link>
-              <Button className="w-full justify-start bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200">
-                <Mail className="mr-2 h-4 w-4" />
-                Send Email
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5 text-green-600" />
-                Recent Activity
-              </CardTitle>
-              <CardDescription>Latest updates from your CRM</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Email sent to John Smith</p>
-                  <p className="text-xs text-gray-500">2 hours ago</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Added Sarah Johnson as contact</p>
-                  <p className="text-xs text-gray-500">1 day ago</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Uploaded service agreement</p>
-                  <p className="text-xs text-gray-500">2 days ago</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Performance Overview */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-blue-600" />
-              Performance Overview
-            </CardTitle>
-            <CardDescription>Your CRM metrics at a glance</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600 mb-1">75%</div>
-                <div className="text-sm text-gray-600">Active Companies</div>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600 mb-1">100%</div>
-                <div className="text-sm text-gray-600">Response Rate</div>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600 mb-1">2.5</div>
-                <div className="text-sm text-gray-600">Avg. Emails/Contact</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <p className="text-muted-foreground mt-1">Welcome back. Here's your CRM overview.</p>
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {stats.map((stat, index) => {
+          const colors = [
+            'bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-100',
+            'bg-green-50 border-green-200 text-green-900 dark:bg-green-950 dark:border-green-800 dark:text-green-100',
+            'bg-purple-50 border-purple-200 text-purple-900 dark:bg-purple-950 dark:border-purple-800 dark:text-purple-100',
+            'bg-orange-50 border-orange-200 text-orange-900 dark:bg-orange-950 dark:border-orange-800 dark:text-orange-100'
+          ]
+          
+          return (
+            <div key={index} className={`bg-card border rounded-lg p-6 transition-all hover:shadow-md ${colors[index]}`}>
+              <div className="text-sm font-medium text-muted-foreground">{stat.label}</div>
+              <div className="mt-2 flex items-baseline">
+                <span className="text-3xl font-bold">{stat.value}</span>
+              </div>
+              <div className="mt-2 text-xs text-muted-foreground">{stat.change}</div>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+          <h2 className="text-lg font-semibold mb-6 flex items-center">
+            <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+            Quick Actions
+          </h2>
+          <div className="space-y-3">
+            <a href="/companies/new" className="block w-full text-left px-4 py-3 border border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all group">
+              <div className="flex items-center">
+                <span className="text-blue-600 mr-3">🏢</span>
+                <span className="group-hover:text-blue-700">Add New Company</span>
+              </div>
+            </a>
+            <a href="/contacts/new" className="block w-full text-left px-4 py-3 border border-green-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-all group">
+              <div className="flex items-center">
+                <span className="text-green-600 mr-3">👤</span>
+                <span className="group-hover:text-green-700">Add New Contact</span>
+              </div>
+            </a>
+            <button 
+              onClick={() => setShowEmailCompose(true)}
+              className="block w-full text-left px-4 py-3 border border-purple-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-all group"
+            >
+              <div className="flex items-center">
+                <span className="text-purple-600 mr-3">✉️</span>
+                <span className="group-hover:text-purple-700">Send Email</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+          <h2 className="text-lg font-semibold mb-6 flex items-center">
+            <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+            Recent Activity
+          </h2>
+          <div className="space-y-4">
+            {recentActivity.map((activity, index) => (
+              <div key={index} className="flex items-start space-x-4 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{activity.action}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Email Compose Modal */}
+      <EmailCompose
+        isOpen={showEmailCompose}
+        onClose={() => setShowEmailCompose(false)}
+        onSend={handleEmailSent}
+        senderName={process.env.NEXT_PUBLIC_DEFAULT_SENDER_NAME || "Sales Rep"}
+        senderEmail={process.env.NEXT_PUBLIC_DEFAULT_SENDER_EMAIL || "sales@company.com"}
+      />
     </div>
   )
 }

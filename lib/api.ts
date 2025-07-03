@@ -1,0 +1,405 @@
+// API client for NotHubSpot CRM backend
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+
+// Generic API request function
+async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const url = `${API_BASE_URL}${endpoint}`
+  
+  const config: RequestInit = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  }
+
+  try {
+    const response = await fetch(url, config)
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.detail || `API Error: ${response.status}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error(`API request failed: ${endpoint}`, error)
+    throw error
+  }
+}
+
+// Company API functions
+export interface Company {
+  id: number
+  name: string
+  industry?: string
+  website?: string
+  description?: string
+  address?: string
+  status: string
+  contact_count: number
+  attachment_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface CompanyCreate {
+  name: string
+  industry?: string
+  website?: string
+  description?: string
+  address?: string
+  status?: string
+}
+
+export interface CompanyUpdate {
+  name?: string
+  industry?: string
+  website?: string
+  description?: string
+  address?: string
+  status?: string
+}
+
+export const companyAPI = {
+  // Get all companies
+  getAll: (params?: {
+    skip?: number
+    limit?: number
+    search?: string
+    status?: string
+  }): Promise<Company[]> => {
+    const searchParams = new URLSearchParams()
+    if (params?.skip) searchParams.append('skip', params.skip.toString())
+    if (params?.limit) searchParams.append('limit', params.limit.toString())
+    if (params?.search) searchParams.append('search', params.search)
+    if (params?.status) searchParams.append('status', params.status)
+    
+    return apiRequest(`/api/companies?${searchParams}`)
+  },
+
+  // Get single company
+  getById: (id: number): Promise<Company> => 
+    apiRequest(`/api/companies/${id}`),
+
+  // Create company
+  create: (data: CompanyCreate): Promise<Company> =>
+    apiRequest('/api/companies', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Update company
+  update: (id: number, data: CompanyUpdate): Promise<Company> =>
+    apiRequest(`/api/companies/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // Delete company
+  delete: (id: number): Promise<{ message: string }> =>
+    apiRequest(`/api/companies/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // Bulk upload
+  bulkUpload: (companies: CompanyCreate[]): Promise<{
+    success_count: number
+    error_count: number
+    total_count: number
+    errors: string[]
+  }> =>
+    apiRequest('/api/companies/bulk', {
+      method: 'POST',
+      body: JSON.stringify(companies),
+    }),
+}
+
+// Contact API functions
+export interface Contact {
+  id: number
+  first_name: string
+  last_name: string
+  email: string
+  phone?: string
+  title?: string
+  company_id?: number
+  company_name?: string
+  status: string
+  notes?: string
+  created_at: string
+  updated_at: string
+  last_activity: string
+}
+
+export interface ContactCreate {
+  first_name: string
+  last_name: string
+  email: string
+  phone?: string
+  title?: string
+  company_id?: number
+  company_name?: string
+  status?: string
+  notes?: string
+}
+
+export interface ContactUpdate {
+  first_name?: string
+  last_name?: string
+  email?: string
+  phone?: string
+  title?: string
+  company_id?: number
+  company_name?: string
+  status?: string
+  notes?: string
+}
+
+export const contactAPI = {
+  // Get all contacts
+  getAll: (params?: {
+    skip?: number
+    limit?: number
+    search?: string
+    company_id?: number
+    status?: string
+  }): Promise<Contact[]> => {
+    const searchParams = new URLSearchParams()
+    if (params?.skip) searchParams.append('skip', params.skip.toString())
+    if (params?.limit) searchParams.append('limit', params.limit.toString())
+    if (params?.search) searchParams.append('search', params.search)
+    if (params?.company_id) searchParams.append('company_id', params.company_id.toString())
+    if (params?.status) searchParams.append('status', params.status)
+    
+    return apiRequest(`/api/contacts?${searchParams}`)
+  },
+
+  // Get single contact
+  getById: (id: number): Promise<Contact> => 
+    apiRequest(`/api/contacts/${id}`),
+
+  // Create contact
+  create: (data: ContactCreate): Promise<Contact> =>
+    apiRequest('/api/contacts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Update contact
+  update: (id: number, data: ContactUpdate): Promise<Contact> =>
+    apiRequest(`/api/contacts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // Delete contact
+  delete: (id: number): Promise<{ message: string }> =>
+    apiRequest(`/api/contacts/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // Bulk upload
+  bulkUpload: (contacts: ContactCreate[]): Promise<{
+    success_count: number
+    error_count: number
+    total_count: number
+    errors: string[]
+  }> =>
+    apiRequest('/api/contacts/bulk', {
+      method: 'POST',
+      body: JSON.stringify(contacts),
+    }),
+}
+
+// Task API functions
+export interface Task {
+  id: number
+  title: string
+  description?: string
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled'
+  priority: 'low' | 'medium' | 'high' | 'urgent'
+  due_date?: string
+  assigned_to?: string
+  contact_id?: number
+  contact_name?: string
+  company_id?: number
+  company_name?: string
+  type: 'call' | 'email' | 'meeting' | 'follow_up' | 'demo' | 'proposal' | 'other'
+  tags: string[]
+  completed_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface TaskCreate {
+  title: string
+  description?: string
+  status?: 'pending' | 'in_progress' | 'completed' | 'cancelled'
+  priority?: 'low' | 'medium' | 'high' | 'urgent'
+  due_date?: string
+  assigned_to?: string
+  contact_id?: number
+  contact_name?: string
+  company_id?: number
+  company_name?: string
+  type?: 'call' | 'email' | 'meeting' | 'follow_up' | 'demo' | 'proposal' | 'other'
+  tags?: string[]
+}
+
+export interface TaskUpdate {
+  title?: string
+  description?: string
+  status?: 'pending' | 'in_progress' | 'completed' | 'cancelled'
+  priority?: 'low' | 'medium' | 'high' | 'urgent'
+  due_date?: string
+  assigned_to?: string
+  contact_id?: number
+  contact_name?: string
+  company_id?: number
+  company_name?: string
+  type?: 'call' | 'email' | 'meeting' | 'follow_up' | 'demo' | 'proposal' | 'other'
+  tags?: string[]
+}
+
+export const taskAPI = {
+  // Get all tasks
+  getAll: (params?: {
+    skip?: number
+    limit?: number
+    search?: string
+    status?: string
+    priority?: string
+    contact_id?: number
+    company_id?: number
+  }): Promise<Task[]> => {
+    const searchParams = new URLSearchParams()
+    if (params?.skip) searchParams.append('skip', params.skip.toString())
+    if (params?.limit) searchParams.append('limit', params.limit.toString())
+    if (params?.search) searchParams.append('search', params.search)
+    if (params?.status) searchParams.append('status', params.status)
+    if (params?.priority) searchParams.append('priority', params.priority)
+    if (params?.contact_id) searchParams.append('contact_id', params.contact_id.toString())
+    if (params?.company_id) searchParams.append('company_id', params.company_id.toString())
+    
+    return apiRequest(`/api/tasks?${searchParams}`)
+  },
+
+  // Get single task
+  getById: (id: number): Promise<Task> => 
+    apiRequest(`/api/tasks/${id}`),
+
+  // Create task
+  create: (data: TaskCreate): Promise<Task> =>
+    apiRequest('/api/tasks', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Update task
+  update: (id: number, data: TaskUpdate): Promise<Task> =>
+    apiRequest(`/api/tasks/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // Delete task
+  delete: (id: number): Promise<{ message: string }> =>
+    apiRequest(`/api/tasks/${id}`, {
+      method: 'DELETE',
+    }),
+}
+
+// Email Signature API functions
+export interface EmailSignature {
+  id: number
+  user_id: string
+  name?: string
+  title?: string
+  company?: string
+  phone?: string
+  email?: string
+  website?: string
+  custom_text?: string
+  enabled: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface EmailSignatureCreate {
+  name?: string
+  title?: string
+  company?: string
+  phone?: string
+  email?: string
+  website?: string
+  custom_text?: string
+  enabled?: boolean
+}
+
+export const signatureAPI = {
+  // Get signature
+  get: (user_id: string = 'default'): Promise<EmailSignature | null> =>
+    apiRequest(`/api/signature?user_id=${user_id}`),
+
+  // Create or update signature
+  createOrUpdate: (data: EmailSignatureCreate, user_id: string = 'default'): Promise<EmailSignature> =>
+    apiRequest(`/api/signature?user_id=${user_id}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+}
+
+// Dashboard API functions
+export interface DashboardStats {
+  total_companies: number
+  total_contacts: number
+  total_tasks: number
+  total_email_threads: number
+  active_companies: number
+  active_contacts: number
+  pending_tasks: number
+  overdue_tasks: number
+}
+
+export interface Activity {
+  id: number
+  title: string
+  description?: string
+  type: string
+  entity_id?: string
+  created_by?: string
+  created_at: string
+}
+
+export const dashboardAPI = {
+  // Get dashboard stats
+  getStats: (): Promise<DashboardStats> =>
+    apiRequest('/api/dashboard/stats'),
+
+  // Get recent activities
+  getActivities: (limit: number = 10): Promise<Activity[]> =>
+    apiRequest(`/api/activities?limit=${limit}`),
+}
+
+// Error handling utility
+export class APIError extends Error {
+  constructor(message: string, public status?: number) {
+    super(message)
+    this.name = 'APIError'
+  }
+}
+
+// Helper function to handle API errors consistently
+export const handleAPIError = (error: unknown): string => {
+  if (error instanceof APIError) {
+    return error.message
+  }
+  if (error instanceof Error) {
+    return error.message
+  }
+  return 'An unexpected error occurred'
+}
