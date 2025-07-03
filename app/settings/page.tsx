@@ -18,7 +18,7 @@ export default function SettingsPage() {
   const [users, setUsers] = useState<any[]>([])
   const [invites, setInvites] = useState<any[]>([])
   const { signature, saveSignature } = useEmailSignature()
-  const { user, tenant } = getAuthState()
+  const { user, organization } = getAuthState()
 
   useEffect(() => {
     if (isAdmin(user)) {
@@ -150,19 +150,19 @@ export default function SettingsPage() {
             <div>
               <label className="block text-sm font-medium mb-1">Organization Name</label>
               <div className="px-3 py-2 bg-muted rounded-md text-sm">
-                {tenant?.name || 'Loading...'}
+                {organization?.name || 'Loading...'}
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Organization ID</label>
               <div className="px-3 py-2 bg-muted rounded-md text-sm font-mono">
-                {tenant?.slug || 'Loading...'}
+                {organization?.slug || 'Loading...'}
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Plan</label>
               <div className="px-3 py-2 bg-muted rounded-md text-sm">
-                {tenant?.plan || 'Free'} Plan
+                {organization?.plan || 'Free'} Plan
               </div>
             </div>
           </div>
@@ -362,7 +362,7 @@ export default function SettingsPage() {
       {showInviteForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Invite User to {tenant?.name}</h3>
+            <h3 className="text-lg font-semibold mb-4">Invite User to {organization?.name}</h3>
             <form onSubmit={handleSendInvite}>
               <div className="space-y-4">
                 <div>

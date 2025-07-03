@@ -53,12 +53,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     ))}
                   </div>
 
-                  {tenant && !orgSlug && (
-                    <div className="hidden md:flex items-center space-x-2 text-sm text-gray-500">
-                      <span>•</span>
-                      <span>{tenant.name}</span>
-                    </div>
-                  )}
                 </>
               )}
             </div>
