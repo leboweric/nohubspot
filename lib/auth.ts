@@ -136,6 +136,7 @@ export async function authenticatedFetch(
 
   // If unauthorized, clear auth state and redirect to login
   if (response.status === 401) {
+    console.log('Auth failed for URL:', url, 'Status:', response.status)
     clearAuthState()
     if (typeof window !== 'undefined') {
       window.location.href = '/auth/login'
