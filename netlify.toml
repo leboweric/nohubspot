@@ -1,7 +1,6 @@
 [build]
-  # Explicit Next.js build command and publish directory
-  command = "npm run build && cp _redirects .next/_redirects"
-  publish = ".next"
+  # Let Next.js handle the build and file copying
+  command = "npm run build"
 
 [build.environment]
   # Node.js version - using LTS version that's compatible with npm
