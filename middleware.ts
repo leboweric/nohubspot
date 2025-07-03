@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
   const host = request.headers.get('host') || ''
+  const originalHost = request.headers.get('x-forwarded-host') || host
   
   // Skip middleware for static files and API routes
   if (
@@ -15,7 +16,8 @@ export function middleware(request: NextRequest) {
   }
 
   // Handle subdomain routing for organizations
-  const subdomain = getSubdomain(host)
+  // Check both the current host and the original forwarded host
+  const subdomain = getSubdomain(originalHost) || getSubdomain(host)
   
   if (subdomain && subdomain !== 'www') {
     // This is an organization subdomain (e.g., acme.nothubspot.app)
@@ -23,34 +25,11 @@ export function middleware(request: NextRequest) {
     const response = NextResponse.next()
     response.headers.set('x-organization-slug', subdomain)
     
-    // If user is not on the main domain auth flow, redirect to login with org context
-    if (!pathname.startsWith('/dashboard') && !pathname.startsWith('/companies') && 
-        !pathname.startsWith('/contacts') && !pathname.startsWith('/tasks') && 
-        !pathname.startsWith('/settings') && pathname !== '/') {
-      const loginUrl = new URL('/auth/login', request.url)
-      loginUrl.searchParams.set('org', subdomain)
-      return NextResponse.redirect(loginUrl)
-    }
-    
     return response
   }
 
-  // If on main domain (nothubspot.app) and accessing app routes without auth
-  if (!subdomain || subdomain === 'www') {
-    // Allow access to auth pages and home page
-    if (pathname.startsWith('/auth/') || pathname === '/') {
-      return NextResponse.next()
-    }
-    
-    // For protected routes on main domain, redirect to home page
-    // Users should access the app via their organization subdomain
-    if (pathname.startsWith('/dashboard') || pathname.startsWith('/companies') || 
-        pathname.startsWith('/contacts') || pathname.startsWith('/tasks') || 
-        pathname.startsWith('/settings')) {
-      return NextResponse.redirect(new URL('/', request.url))
-    }
-  }
-
+  // On main domain - allow access to all routes
+  // The authentication will be handled by the AuthGuard components
   return NextResponse.next()
 }
 
