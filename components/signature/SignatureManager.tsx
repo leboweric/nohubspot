@@ -41,9 +41,7 @@ export const useEmailSignature = () => {
       }
     }
 
-    // Add a small delay to ensure auth is fully established
-    const timeoutId = setTimeout(loadSignature, 1000)
-    return () => clearTimeout(timeoutId)
+    loadSignature()
   }, [])
 
   // Save signature to API

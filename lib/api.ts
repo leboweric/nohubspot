@@ -25,9 +25,14 @@ async function apiRequest<T>(
     
     // Handle authentication errors
     if (response.status === 401) {
-      clearAuthState()
-      if (typeof window !== 'undefined') {
-        window.location.href = '/auth/login'
+      // Don't auto-logout for signature endpoint to prevent login loops
+      const isSignatureEndpoint = url.includes('/api/signature')
+      
+      if (!isSignatureEndpoint) {
+        clearAuthState()
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth/login'
+        }
       }
       throw new APIError('Authentication required', 401)
     }
