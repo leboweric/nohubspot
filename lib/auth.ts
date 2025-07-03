@@ -7,7 +7,7 @@ export interface User {
   email: string
   first_name?: string
   last_name?: string
-  tenant_id: number
+  organization_id: number
   role: 'owner' | 'admin' | 'user' | 'readonly'
   is_active: boolean
   email_verified: boolean
@@ -15,7 +15,7 @@ export interface User {
   created_at: string
 }
 
-export interface Tenant {
+export interface Organization {
   id: number
   slug: string
   name: string
@@ -26,30 +26,11 @@ export interface Tenant {
 
 export interface AuthState {
   user: User | null
-  tenant: Tenant | null
+  organization: Organization | null
   token: string | null
   isAuthenticated: boolean
 }
 
-/**
- * Get organization slug from URL or headers
- */
-export function getOrganizationSlug(): string | null {
-  if (typeof window === 'undefined') {
-    return null
-  }
-  
-  // Check for subdomain in current URL
-  const hostname = window.location.hostname
-  if (hostname.includes('nothubspot.app')) {
-    const parts = hostname.split('.')
-    if (parts.length > 2 && parts[0] !== 'www') {
-      return parts[0]
-    }
-  }
-  
-  return null
-}
 
 /**
  * Get authentication state from localStorage
@@ -58,7 +39,7 @@ export function getAuthState(): AuthState {
   if (typeof window === 'undefined') {
     return {
       user: null,
-      tenant: null,
+      organization: null,
       token: null,
       isAuthenticated: false
     }
@@ -67,12 +48,12 @@ export function getAuthState(): AuthState {
   try {
     const token = localStorage.getItem('auth_token')
     const user = localStorage.getItem('user')
-    const tenant = localStorage.getItem('tenant')
+    const organization = localStorage.getItem('organization')
 
-    if (!token || !user || !tenant) {
+    if (!token || !user || !organization) {
       return {
         user: null,
-        tenant: null,
+        organization: null,
         token: null,
         isAuthenticated: false
       }
@@ -80,7 +61,7 @@ export function getAuthState(): AuthState {
 
     return {
       user: JSON.parse(user),
-      tenant: JSON.parse(tenant),
+      organization: JSON.parse(organization),
       token,
       isAuthenticated: true
     }
@@ -88,7 +69,7 @@ export function getAuthState(): AuthState {
     console.error('Error parsing auth state:', error)
     return {
       user: null,
-      tenant: null,
+      organization: null,
       token: null,
       isAuthenticated: false
     }
@@ -102,7 +83,7 @@ export function clearAuthState(): void {
   if (typeof window !== 'undefined') {
     localStorage.removeItem('auth_token')
     localStorage.removeItem('user')
-    localStorage.removeItem('tenant')
+    localStorage.removeItem('organization')
   }
 }
 
@@ -170,12 +151,6 @@ export async function authenticatedFetch(
 export function logout(): void {
   clearAuthState()
   if (typeof window !== 'undefined') {
-    // Redirect to main domain for logout
-    const orgSlug = getOrganizationSlug()
-    if (orgSlug) {
-      window.location.href = 'https://nothubspot.app/auth/login'
-    } else {
-      window.location.href = '/auth/login'
-    }
+    window.location.href = '/auth/login'
   }
 }

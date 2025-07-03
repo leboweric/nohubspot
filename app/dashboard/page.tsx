@@ -1,12 +1,21 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import EmailCompose, { EmailMessage } from "@/components/email/EmailCompose"
+import { getAuthState } from "@/lib/auth"
 
 export default function DashboardPage() {
   const [showEmailCompose, setShowEmailCompose] = useState(false)
+  const [organizationName, setOrganizationName] = useState("")
+  
+  useEffect(() => {
+    const { organization } = getAuthState()
+    if (organization) {
+      setOrganizationName(organization.name)
+    }
+  }, [])
   
   const stats = [
     { label: "Companies", value: 3, change: "+1 from last month" },
@@ -32,7 +41,7 @@ export default function DashboardPage() {
       <MainLayout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <h1 className="text-2xl font-semibold">{organizationName} Dashboard</h1>
         <p className="text-muted-foreground mt-1">Welcome back. Here's your CRM overview.</p>
       </div>
 

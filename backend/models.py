@@ -18,8 +18,8 @@ class InviteStatus(enum.Enum):
     ACCEPTED = "accepted"
     EXPIRED = "expired"
 
-class Tenant(Base):
-    __tablename__ = "tenants"
+class Organization(Base):
+    __tablename__ = "organizations"
     
     id = Column(Integer, primary_key=True, index=True)
     slug = Column(String(100), unique=True, nullable=False, index=True)  # URL identifier
@@ -32,9 +32,9 @@ class Tenant(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
-    users = relationship("User", back_populates="tenant", foreign_keys="User.tenant_id")
-    companies = relationship("Company", back_populates="tenant", cascade="all, delete-orphan")
-    contacts = relationship("Contact", back_populates="tenant", cascade="all, delete-orphan")
+    users = relationship("User", back_populates="organization", foreign_keys="User.organization_id")
+    companies = relationship("Company", back_populates="organization", cascade="all, delete-orphan")
+    contacts = relationship("Contact", back_populates="organization", cascade="all, delete-orphan")
 
 class User(Base):
     __tablename__ = "users"
@@ -44,7 +44,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     first_name = Column(String(100))
     last_name = Column(String(100))
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
     role = Column(String(20), default="user")
     is_active = Column(Boolean, default=True)
     email_verified = Column(Boolean, default=False)
@@ -53,15 +53,15 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
-    tenant = relationship("Tenant", back_populates="users", foreign_keys=[tenant_id])
-    created_tenants = relationship("Tenant", foreign_keys="Tenant.created_by")
+    organization = relationship("Organization", back_populates="users", foreign_keys=[organization_id])
+    created_organizations = relationship("Organization", foreign_keys="Organization.created_by")
     invites_sent = relationship("UserInvite", foreign_keys="UserInvite.invited_by", back_populates="inviter")
 
 class UserInvite(Base):
     __tablename__ = "user_invites"
     
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
     email = Column(String(255), nullable=False)
     role = Column(String(20), default="user")
     invite_code = Column(String(100), unique=True, nullable=False)
@@ -72,7 +72,7 @@ class UserInvite(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships
-    tenant = relationship("Tenant")
+    organization = relationship("Organization")
     inviter = relationship("User", back_populates="invites_sent")
 
 class Company(Base):
@@ -92,7 +92,7 @@ class Company(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
-    tenant = relationship("Tenant", back_populates="companies")
+    organization = relationship("Organization", back_populates="companies")
     contacts = relationship("Contact", back_populates="company_rel", cascade="all, delete-orphan")
     attachments = relationship("Attachment", back_populates="company_rel", cascade="all, delete-orphan")
     activities = relationship("Activity", foreign_keys="Activity.entity_id", 
@@ -118,7 +118,7 @@ class Contact(Base):
     last_activity = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships
-    tenant = relationship("Tenant", back_populates="contacts")
+    organization = relationship("Organization", back_populates="contacts")
     company_rel = relationship("Company", back_populates="contacts")
     email_threads = relationship("EmailThread", back_populates="contact", cascade="all, delete-orphan")
     tasks = relationship("Task", back_populates="contact", cascade="all, delete-orphan")

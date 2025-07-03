@@ -12,7 +12,7 @@ import secrets
 import string
 
 from database import get_db
-from models import User, Tenant
+from models import User, Organization
 
 # Configuration
 SECRET_KEY = "your-secret-key-here"  # TODO: Move to environment variable
@@ -60,16 +60,16 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: int = payload.get("sub")
-        tenant_id: int = payload.get("tenant_id")
+        organization_id: int = payload.get("organization_id")
         
-        if user_id is None or tenant_id is None:
+        if user_id is None or organization_id is None:
             raise credentials_exception
     except JWTError:
         raise credentials_exception
     
     user = db.query(User).filter(
         User.id == user_id,
-        User.tenant_id == tenant_id,
+        User.organization_id == organization_id,
         User.is_active == True
     ).first()
     
@@ -97,8 +97,8 @@ async def get_current_admin_user(current_user: User = Depends(get_current_active
         )
     return current_user
 
-def create_tenant_slug(name: str) -> str:
-    """Create a URL-safe slug from tenant name"""
+def create_organization_slug(name: str) -> str:
+    """Create a URL-safe slug from organization name"""
     # Remove special characters and replace spaces with hyphens
     slug = "".join(c if c.isalnum() or c == " " else "" for c in name.lower())
     slug = "-".join(slug.split())

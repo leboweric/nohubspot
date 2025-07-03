@@ -9,7 +9,7 @@ import uvicorn
 from datetime import datetime, timedelta
 
 from database import get_db, engine
-from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Tenant, User, UserInvite
+from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite
 from schemas import (
     CompanyCreate, CompanyResponse, CompanyUpdate,
     ContactCreate, ContactResponse, ContactUpdate,
@@ -18,7 +18,7 @@ from schemas import (
     EmailMessageCreate, AttachmentResponse,
     EmailSignatureCreate, EmailSignatureResponse, EmailSignatureUpdate,
     ActivityResponse, DashboardStats, BulkUploadResult,
-    TenantCreate, TenantResponse, UserRegister, UserLogin, UserResponse,
+    OrganizationCreate, OrganizationResponse, UserRegister, UserLogin, UserResponse,
     UserInviteCreate, UserInviteResponse, UserInviteAccept, Token
 )
 from crud import (
@@ -33,10 +33,10 @@ from crud import (
     get_dashboard_stats
 )
 from auth_crud import (
-    create_tenant, get_tenant_by_slug, get_tenant_by_id,
-    create_user, register_user_with_tenant, get_user_by_email,
+    create_organization, get_organization_by_slug, get_organization_by_id,
+    create_user, register_user_with_organization, get_user_by_email,
     create_user_invite, get_invite_by_code, accept_user_invite,
-    get_tenant_invites, revoke_invite, get_users_by_tenant
+    get_organization_invites, revoke_invite, get_users_by_organization
 )
 from auth import (
     verify_password, create_access_token, get_current_user, 
@@ -169,13 +169,13 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
         )
     
     try:
-        # Create user and tenant
-        user, tenant = register_user_with_tenant(db, user_data)
+        # Create user and organization
+        user, organization = register_user_with_organization(db, user_data)
         
         # Create access token
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            data={"sub": user.id, "tenant_id": tenant.id}, 
+            data={"sub": user.id, "organization_id": organization.id}, 
             expires_delta=access_token_expires
         )
         
@@ -183,7 +183,7 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
             "access_token": access_token,
             "token_type": "bearer",
             "user": user,
-            "tenant": tenant
+            "organization": organization
         }
     except Exception as e:
         raise HTTPException(
@@ -203,9 +203,9 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Get tenant
-    tenant = get_tenant_by_id(db, user.tenant_id)
-    if not tenant:
+    # Get organization
+    organization = get_organization_by_id(db, user.organization_id)
+    if not organization:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Organization not found"
@@ -214,7 +214,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     # Create access token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.id, "tenant_id": user.tenant_id}, 
+        data={"sub": user.id, "organization_id": user.organization_id}, 
         expires_delta=access_token_expires
     )
     
@@ -222,7 +222,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         "access_token": access_token,
         "token_type": "bearer",
         "user": user,
-        "tenant": tenant
+        "organization": organization
     }
 
 @app.get("/api/auth/me", response_model=UserResponse)
@@ -238,15 +238,15 @@ async def create_invite(
     db: Session = Depends(get_db)
 ):
     """Create a user invitation (admin only)"""
-    # Check if user already exists in the tenant
-    existing_user = get_user_by_email(db, invite.email, current_user.tenant_id)
+    # Check if user already exists in the organization
+    existing_user = get_user_by_email(db, invite.email, current_user.organization_id)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User already exists in this organization"
         )
     
-    return create_user_invite(db, invite, current_user.tenant_id, current_user.id)
+    return create_user_invite(db, invite, current_user.organization_id, current_user.id)
 
 @app.get("/api/invites", response_model=List[UserInviteResponse])
 async def get_invites(
@@ -256,7 +256,7 @@ async def get_invites(
     db: Session = Depends(get_db)
 ):
     """Get all invitations for the organization (admin only)"""
-    return get_tenant_invites(db, current_user.tenant_id, skip, limit)
+    return get_organization_invites(db, current_user.organization_id, skip, limit)
 
 @app.post("/api/invites/accept", response_model=Token)
 async def accept_invite(invite_accept: UserInviteAccept, db: Session = Depends(get_db)):
@@ -264,13 +264,13 @@ async def accept_invite(invite_accept: UserInviteAccept, db: Session = Depends(g
     try:
         user, invite = accept_user_invite(db, invite_accept)
         
-        # Get tenant
-        tenant = get_tenant_by_id(db, user.tenant_id)
+        # Get organization
+        organization = get_organization_by_id(db, user.organization_id)
         
         # Create access token
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            data={"sub": user.id, "tenant_id": user.tenant_id}, 
+            data={"sub": user.id, "organization_id": user.organization_id}, 
             expires_delta=access_token_expires
         )
         
@@ -278,7 +278,7 @@ async def accept_invite(invite_accept: UserInviteAccept, db: Session = Depends(g
             "access_token": access_token,
             "token_type": "bearer",
             "user": user,
-            "tenant": tenant
+            "organization": organization
         }
     except ValueError as e:
         raise HTTPException(
@@ -293,7 +293,7 @@ async def revoke_user_invite(
     db: Session = Depends(get_db)
 ):
     """Revoke a pending invitation (admin only)"""
-    success = revoke_invite(db, invite_id, current_user.tenant_id)
+    success = revoke_invite(db, invite_id, current_user.organization_id)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -310,7 +310,7 @@ async def get_organization_users(
     db: Session = Depends(get_db)
 ):
     """Get all users in the organization"""
-    return get_users_by_tenant(db, current_user.tenant_id, skip, limit)
+    return get_users_by_organization(db, current_user.organization_id, skip, limit)
 
 # Dashboard endpoints
 @app.get("/api/dashboard/stats", response_model=DashboardStats)
@@ -328,7 +328,7 @@ async def create_new_company(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    db_company = create_company(db, company, current_user.tenant_id)
+    db_company = create_company(db, company, current_user.organization_id)
     
     # Create activity log
     create_activity(
@@ -337,7 +337,7 @@ async def create_new_company(
         description=f"Added {company.name} as a new company",
         type="company",
         entity_id=str(db_company.id),
-        tenant_id=current_user.tenant_id
+        organization_id=current_user.organization_id
     )
     
     return db_company
@@ -351,7 +351,7 @@ async def read_companies(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    return get_companies(db, current_user.tenant_id, skip=skip, limit=limit, search=search, status=status)
+    return get_companies(db, current_user.organization_id, skip=skip, limit=limit, search=search, status=status)
 
 @app.get("/api/companies/{company_id}", response_model=CompanyResponse)
 async def read_company(
@@ -359,7 +359,7 @@ async def read_company(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    company = get_company(db, company_id, current_user.tenant_id)
+    company = get_company(db, company_id, current_user.organization_id)
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
     return company
@@ -510,7 +510,7 @@ async def get_user_signature(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    return get_email_signature(db, current_user.id, current_user.tenant_id)
+    return get_email_signature(db, current_user.id, current_user.organization_id)
 
 @app.post("/api/signature", response_model=EmailSignatureResponse)
 async def create_or_update_signature(
@@ -518,7 +518,7 @@ async def create_or_update_signature(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    return create_or_update_email_signature(db, signature, current_user.id, current_user.tenant_id)
+    return create_or_update_email_signature(db, signature, current_user.id, current_user.organization_id)
 
 # Bulk upload endpoints
 @app.post("/api/companies/bulk", response_model=BulkUploadResult)

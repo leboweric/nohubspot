@@ -217,14 +217,14 @@ class BulkUploadResult(BaseModel):
     total_count: int
     errors: List[str] = Field(default_factory=list)
 
-# Tenant schemas
-class TenantBase(BaseModel):
+# Organization schemas
+class OrganizationBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     
-class TenantCreate(TenantBase):
+class OrganizationCreate(OrganizationBase):
     pass
 
-class TenantResponse(TenantBase):
+class OrganizationResponse(OrganizationBase):
     id: int
     slug: str
     plan: str
@@ -243,7 +243,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8)
-    tenant_id: Optional[int] = None  # For invite-based registration
+    organization_id: Optional[int] = None  # For invite-based registration
 
 class UserRegister(BaseModel):
     email: EmailStr
@@ -258,7 +258,7 @@ class UserLogin(BaseModel):
 
 class UserResponse(UserBase):
     id: int
-    tenant_id: int
+    organization_id: int
     is_active: bool
     email_verified: bool
     last_login: Optional[datetime] = None
@@ -279,7 +279,7 @@ class UserInviteCreate(BaseModel):
 
 class UserInviteResponse(BaseModel):
     id: int
-    tenant_id: int
+    organization_id: int
     email: str
     role: UserRole
     status: str

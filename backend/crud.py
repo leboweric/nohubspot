@@ -15,8 +15,8 @@ from schemas import (
 )
 
 # Company CRUD operations
-def create_company(db: Session, company: CompanyCreate, tenant_id: int) -> Company:
-    db_company = Company(**company.dict(), tenant_id=tenant_id)
+def create_company(db: Session, company: CompanyCreate, organization_id: int) -> Company:
+    db_company = Company(**company.dict(), organization_id=organization_id)
     db.add(db_company)
     db.commit()
     db.refresh(db_company)
@@ -24,13 +24,13 @@ def create_company(db: Session, company: CompanyCreate, tenant_id: int) -> Compa
 
 def get_companies(
     db: Session, 
-    tenant_id: int,
+    organization_id: int,
     skip: int = 0, 
     limit: int = 100, 
     search: Optional[str] = None,
     status: Optional[str] = None
 ) -> List[Company]:
-    query = db.query(Company).filter(Company.tenant_id == tenant_id)
+    query = db.query(Company).filter(Company.organization_id == organization_id)
     
     if search:
         search_filter = f"%{search}%"
@@ -47,14 +47,14 @@ def get_companies(
     
     return query.order_by(desc(Company.created_at)).offset(skip).limit(limit).all()
 
-def get_company(db: Session, company_id: int, tenant_id: int) -> Optional[Company]:
+def get_company(db: Session, company_id: int, organization_id: int) -> Optional[Company]:
     return db.query(Company).filter(
         Company.id == company_id,
-        Company.tenant_id == tenant_id
+        Company.organization_id == organization_id
     ).first()
 
-def update_company(db: Session, company_id: int, company_update: CompanyUpdate, tenant_id: int) -> Optional[Company]:
-    db_company = get_company(db, company_id, tenant_id)
+def update_company(db: Session, company_id: int, company_update: CompanyUpdate, organization_id: int) -> Optional[Company]:
+    db_company = get_company(db, company_id, organization_id)
     if not db_company:
         return None
     
@@ -66,8 +66,8 @@ def update_company(db: Session, company_id: int, company_update: CompanyUpdate, 
     db.refresh(db_company)
     return db_company
 
-def delete_company(db: Session, company_id: int, tenant_id: int) -> bool:
-    db_company = get_company(db, company_id, tenant_id)
+def delete_company(db: Session, company_id: int, organization_id: int) -> bool:
+    db_company = get_company(db, company_id, organization_id)
     if not db_company:
         return False
     
@@ -76,15 +76,15 @@ def delete_company(db: Session, company_id: int, tenant_id: int) -> bool:
     return True
 
 # Contact CRUD operations
-def create_contact(db: Session, contact: ContactCreate, tenant_id: int) -> Contact:
-    db_contact = Contact(**contact.dict(), tenant_id=tenant_id)
+def create_contact(db: Session, contact: ContactCreate, organization_id: int) -> Contact:
+    db_contact = Contact(**contact.dict(), organization_id=organization_id)
     db.add(db_contact)
     db.commit()
     db.refresh(db_contact)
     
     # Update company contact count if company_id is provided
     if db_contact.company_id:
-        company = get_company(db, db_contact.company_id, tenant_id)
+        company = get_company(db, db_contact.company_id, organization_id)
         if company:
             company.contact_count += 1
             db.commit()
@@ -93,14 +93,14 @@ def create_contact(db: Session, contact: ContactCreate, tenant_id: int) -> Conta
 
 def get_contacts(
     db: Session,
-    tenant_id: int,
+    organization_id: int,
     skip: int = 0,
     limit: int = 100,
     search: Optional[str] = None,
     company_id: Optional[int] = None,
     status: Optional[str] = None
 ) -> List[Contact]:
-    query = db.query(Contact).filter(Contact.tenant_id == tenant_id)
+    query = db.query(Contact).filter(Contact.organization_id == organization_id)
     
     if search:
         search_filter = f"%{search}%"
@@ -122,14 +122,14 @@ def get_contacts(
     
     return query.order_by(desc(Contact.last_activity)).offset(skip).limit(limit).all()
 
-def get_contact(db: Session, contact_id: int, tenant_id: int) -> Optional[Contact]:
+def get_contact(db: Session, contact_id: int, organization_id: int) -> Optional[Contact]:
     return db.query(Contact).filter(
         Contact.id == contact_id,
-        Contact.tenant_id == tenant_id
+        Contact.organization_id == organization_id
     ).first()
 
-def update_contact(db: Session, contact_id: int, contact_update: ContactUpdate, tenant_id: int) -> Optional[Contact]:
-    db_contact = get_contact(db, contact_id, tenant_id)
+def update_contact(db: Session, contact_id: int, contact_update: ContactUpdate, organization_id: int) -> Optional[Contact]:
+    db_contact = get_contact(db, contact_id, organization_id)
     if not db_contact:
         return None
     
@@ -147,12 +147,12 @@ def update_contact(db: Session, contact_id: int, contact_update: ContactUpdate, 
     new_company_id = db_contact.company_id
     if old_company_id != new_company_id:
         if old_company_id:
-            old_company = get_company(db, old_company_id, tenant_id)
+            old_company = get_company(db, old_company_id, organization_id)
             if old_company and old_company.contact_count > 0:
                 old_company.contact_count -= 1
         
         if new_company_id:
-            new_company = get_company(db, new_company_id, tenant_id)
+            new_company = get_company(db, new_company_id, organization_id)
             if new_company:
                 new_company.contact_count += 1
         
@@ -161,14 +161,14 @@ def update_contact(db: Session, contact_id: int, contact_update: ContactUpdate, 
     db.refresh(db_contact)
     return db_contact
 
-def delete_contact(db: Session, contact_id: int, tenant_id: int) -> bool:
-    db_contact = get_contact(db, contact_id, tenant_id)
+def delete_contact(db: Session, contact_id: int, organization_id: int) -> bool:
+    db_contact = get_contact(db, contact_id, organization_id)
     if not db_contact:
         return False
     
     # Update company contact count
     if db_contact.company_id:
-        company = get_company(db, db_contact.company_id, tenant_id)
+        company = get_company(db, db_contact.company_id, organization_id)
         if company and company.contact_count > 0:
             company.contact_count -= 1
     
@@ -177,8 +177,8 @@ def delete_contact(db: Session, contact_id: int, tenant_id: int) -> bool:
     return True
 
 # Task CRUD operations
-def create_task(db: Session, task: TaskCreate, tenant_id: int) -> Task:
-    db_task = Task(**task.dict(), tenant_id=tenant_id)
+def create_task(db: Session, task: TaskCreate, organization_id: int) -> Task:
+    db_task = Task(**task.dict(), organization_id=organization_id)
     db.add(db_task)
     db.commit()
     db.refresh(db_task)
@@ -186,7 +186,7 @@ def create_task(db: Session, task: TaskCreate, tenant_id: int) -> Task:
 
 def get_tasks(
     db: Session,
-    tenant_id: int,
+    organization_id: int,
     skip: int = 0,
     limit: int = 100,
     search: Optional[str] = None,
@@ -195,7 +195,7 @@ def get_tasks(
     contact_id: Optional[int] = None,
     company_id: Optional[int] = None
 ) -> List[Task]:
-    query = db.query(Task).filter(Task.tenant_id == tenant_id)
+    query = db.query(Task).filter(Task.organization_id == organization_id)
     
     if search:
         search_filter = f"%{search}%"
@@ -222,14 +222,14 @@ def get_tasks(
     
     return query.order_by(desc(Task.created_at)).offset(skip).limit(limit).all()
 
-def get_task(db: Session, task_id: int, tenant_id: int) -> Optional[Task]:
+def get_task(db: Session, task_id: int, organization_id: int) -> Optional[Task]:
     return db.query(Task).filter(
         Task.id == task_id,
-        Task.tenant_id == tenant_id
+        Task.organization_id == organization_id
     ).first()
 
-def update_task(db: Session, task_id: int, task_update: TaskUpdate, tenant_id: int) -> Optional[Task]:
-    db_task = get_task(db, task_id, tenant_id)
+def update_task(db: Session, task_id: int, task_update: TaskUpdate, organization_id: int) -> Optional[Task]:
+    db_task = get_task(db, task_id, organization_id)
     if not db_task:
         return None
     
@@ -247,8 +247,8 @@ def update_task(db: Session, task_id: int, task_update: TaskUpdate, tenant_id: i
     db.refresh(db_task)
     return db_task
 
-def delete_task(db: Session, task_id: int, tenant_id: int) -> bool:
-    db_task = get_task(db, task_id, tenant_id)
+def delete_task(db: Session, task_id: int, organization_id: int) -> bool:
+    db_task = get_task(db, task_id, organization_id)
     if not db_task:
         return False
     
@@ -257,8 +257,8 @@ def delete_task(db: Session, task_id: int, tenant_id: int) -> bool:
     return True
 
 # Email Thread CRUD operations
-def create_email_thread(db: Session, thread: EmailThreadCreate, tenant_id: int) -> EmailThread:
-    db_thread = EmailThread(**thread.dict(), tenant_id=tenant_id)
+def create_email_thread(db: Session, thread: EmailThreadCreate, organization_id: int) -> EmailThread:
+    db_thread = EmailThread(**thread.dict(), organization_id=organization_id)
     db.add(db_thread)
     db.commit()
     db.refresh(db_thread)
@@ -266,26 +266,26 @@ def create_email_thread(db: Session, thread: EmailThreadCreate, tenant_id: int) 
 
 def get_email_threads(
     db: Session,
-    tenant_id: int,
+    organization_id: int,
     skip: int = 0,
     limit: int = 100,
     contact_id: Optional[int] = None
 ) -> List[EmailThread]:
-    query = db.query(EmailThread).filter(EmailThread.tenant_id == tenant_id)
+    query = db.query(EmailThread).filter(EmailThread.organization_id == organization_id)
     
     if contact_id:
         query = query.filter(EmailThread.contact_id == contact_id)
     
     return query.order_by(desc(EmailThread.updated_at)).offset(skip).limit(limit).all()
 
-def add_email_message(db: Session, message: EmailMessageCreate, tenant_id: int) -> EmailMessage:
-    db_message = EmailMessage(**message.dict(), tenant_id=tenant_id)
+def add_email_message(db: Session, message: EmailMessageCreate, organization_id: int) -> EmailMessage:
+    db_message = EmailMessage(**message.dict(), organization_id=organization_id)
     db.add(db_message)
     
     # Update thread message count and preview - ensure thread belongs to same tenant
     thread = db.query(EmailThread).filter(
         EmailThread.id == message.thread_id,
-        EmailThread.tenant_id == tenant_id
+        EmailThread.organization_id == organization_id
     ).first()
     if thread:
         thread.message_count += 1
@@ -297,14 +297,14 @@ def add_email_message(db: Session, message: EmailMessageCreate, tenant_id: int) 
     return db_message
 
 # Attachment CRUD operations
-def create_attachment(db: Session, attachment: AttachmentCreate, tenant_id: int) -> Attachment:
-    db_attachment = Attachment(**attachment.dict(), tenant_id=tenant_id)
+def create_attachment(db: Session, attachment: AttachmentCreate, organization_id: int) -> Attachment:
+    db_attachment = Attachment(**attachment.dict(), organization_id=organization_id)
     db.add(db_attachment)
     db.commit()
     
     # Update company attachment count
     if db_attachment.company_id:
-        company = get_company(db, db_attachment.company_id, tenant_id)
+        company = get_company(db, db_attachment.company_id, organization_id)
         if company:
             company.attachment_count += 1
             db.commit()
@@ -314,12 +314,12 @@ def create_attachment(db: Session, attachment: AttachmentCreate, tenant_id: int)
 
 def get_attachments(
     db: Session,
-    tenant_id: int,
+    organization_id: int,
     skip: int = 0,
     limit: int = 100,
     company_id: Optional[int] = None
 ) -> List[Attachment]:
-    query = db.query(Attachment).filter(Attachment.tenant_id == tenant_id)
+    query = db.query(Attachment).filter(Attachment.organization_id == organization_id)
     
     if company_id:
         query = query.filter(Attachment.company_id == company_id)
@@ -332,7 +332,7 @@ def create_activity(
     title: str,
     description: str,
     type: str,
-    tenant_id: int,
+    organization_id: int,
     entity_id: Optional[str] = None,
     created_by: Optional[str] = None
 ) -> Activity:
@@ -343,29 +343,29 @@ def create_activity(
         entity_id=entity_id,
         created_by=created_by
     )
-    db_activity = Activity(**activity_data.dict(), tenant_id=tenant_id)
+    db_activity = Activity(**activity_data.dict(), organization_id=organization_id)
     db.add(db_activity)
     db.commit()
     db.refresh(db_activity)
     return db_activity
 
-def get_recent_activities(db: Session, tenant_id: int, limit: int = 10) -> List[Activity]:
-    return db.query(Activity).filter(Activity.tenant_id == tenant_id).order_by(desc(Activity.created_at)).limit(limit).all()
+def get_recent_activities(db: Session, organization_id: int, limit: int = 10) -> List[Activity]:
+    return db.query(Activity).filter(Activity.organization_id == organization_id).order_by(desc(Activity.created_at)).limit(limit).all()
 
 # Email Signature CRUD operations
-def get_email_signature(db: Session, user_id: int, tenant_id: int) -> Optional[EmailSignature]:
+def get_email_signature(db: Session, user_id: int, organization_id: int) -> Optional[EmailSignature]:
     return db.query(EmailSignature).filter(
         EmailSignature.user_id == user_id,
-        EmailSignature.tenant_id == tenant_id
+        EmailSignature.organization_id == organization_id
     ).first()
 
 def create_or_update_email_signature(
     db: Session, 
     signature_data: EmailSignatureCreate, 
     user_id: int,
-    tenant_id: int
+    organization_id: int
 ) -> EmailSignature:
-    existing_signature = get_email_signature(db, user_id, tenant_id)
+    existing_signature = get_email_signature(db, user_id, organization_id)
     
     if existing_signature:
         # Update existing signature
@@ -378,17 +378,17 @@ def create_or_update_email_signature(
         return existing_signature
     else:
         # Create new signature
-        db_signature = EmailSignature(**signature_data.dict(), user_id=user_id, tenant_id=tenant_id)
+        db_signature = EmailSignature(**signature_data.dict(), user_id=user_id, organization_id=organization_id)
         db.add(db_signature)
         db.commit()
         db.refresh(db_signature)
         return db_signature
 
 # Bulk operations
-def bulk_create_companies(db: Session, companies: List[CompanyCreate], tenant_id: int) -> List[Company]:
+def bulk_create_companies(db: Session, companies: List[CompanyCreate], organization_id: int) -> List[Company]:
     db_companies = []
     for company_data in companies:
-        db_company = Company(**company_data.dict(), tenant_id=tenant_id)
+        db_company = Company(**company_data.dict(), organization_id=organization_id)
         db.add(db_company)
         db_companies.append(db_company)
     
@@ -398,10 +398,10 @@ def bulk_create_companies(db: Session, companies: List[CompanyCreate], tenant_id
     
     return db_companies
 
-def bulk_create_contacts(db: Session, contacts: List[ContactCreate], tenant_id: int) -> List[Contact]:
+def bulk_create_contacts(db: Session, contacts: List[ContactCreate], organization_id: int) -> List[Contact]:
     db_contacts = []
     for contact_data in contacts:
-        db_contact = Contact(**contact_data.dict(), tenant_id=tenant_id)
+        db_contact = Contact(**contact_data.dict(), organization_id=organization_id)
         db.add(db_contact)
         db_contacts.append(db_contact)
     
@@ -415,7 +415,7 @@ def bulk_create_contacts(db: Session, contacts: List[ContactCreate], tenant_id: 
         db.refresh(contact)
     
     for company_id, count in company_counts.items():
-        company = get_company(db, company_id, tenant_id)
+        company = get_company(db, company_id, organization_id)
         if company:
             company.contact_count += count
     
@@ -425,22 +425,22 @@ def bulk_create_contacts(db: Session, contacts: List[ContactCreate], tenant_id: 
     return db_contacts
 
 # Dashboard statistics
-def get_dashboard_stats(db: Session, tenant_id: int) -> DashboardStats:
-    total_companies = db.query(Company).filter(Company.tenant_id == tenant_id).count()
-    total_contacts = db.query(Contact).filter(Contact.tenant_id == tenant_id).count()
-    total_tasks = db.query(Task).filter(Task.tenant_id == tenant_id).count()
-    total_email_threads = db.query(EmailThread).filter(EmailThread.tenant_id == tenant_id).count()
+def get_dashboard_stats(db: Session, organization_id: int) -> DashboardStats:
+    total_companies = db.query(Company).filter(Company.organization_id == organization_id).count()
+    total_contacts = db.query(Contact).filter(Contact.organization_id == organization_id).count()
+    total_tasks = db.query(Task).filter(Task.organization_id == organization_id).count()
+    total_email_threads = db.query(EmailThread).filter(EmailThread.organization_id == organization_id).count()
     
     active_companies = db.query(Company).filter(
-        Company.tenant_id == tenant_id,
+        Company.organization_id == organization_id,
         Company.status == "Active"
     ).count()
     active_contacts = db.query(Contact).filter(
-        Contact.tenant_id == tenant_id,
+        Contact.organization_id == organization_id,
         Contact.status == "Active"
     ).count()
     pending_tasks = db.query(Task).filter(
-        Task.tenant_id == tenant_id,
+        Task.organization_id == organization_id,
         Task.status == "pending"
     ).count()
     
@@ -448,7 +448,7 @@ def get_dashboard_stats(db: Session, tenant_id: int) -> DashboardStats:
     current_time = datetime.utcnow()
     overdue_tasks = db.query(Task).filter(
         and_(
-            Task.tenant_id == tenant_id,
+            Task.organization_id == organization_id,
             Task.due_date < current_time,
             Task.status != "completed"
         )

@@ -1,27 +1,17 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
-import { getOrganizationSlug } from "@/lib/auth"
+import { useRouter } from "next/navigation"
 
 export default function LoginPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [formData, setFormData] = useState({
     email: "",
     password: ""
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [orgSlug, setOrgSlug] = useState<string | null>(null)
-
-  useEffect(() => {
-    // Get organization slug from URL params or subdomain
-    const orgParam = searchParams.get('org')
-    const subdomainSlug = getOrganizationSlug()
-    setOrgSlug(orgParam || subdomainSlug)
-  }, [searchParams])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -56,21 +46,10 @@ export default function LoginPage() {
       // Store authentication data
       localStorage.setItem("auth_token", data.access_token)
       localStorage.setItem("user", JSON.stringify(data.user))
-      localStorage.setItem("tenant", JSON.stringify(data.tenant))
+      localStorage.setItem("organization", JSON.stringify(data.organization))
 
-      // Redirect to appropriate URL based on organization
-      if (orgSlug && data.tenant.slug === orgSlug) {
-        // If accessing via organization subdomain, redirect to that subdomain
-        if (getOrganizationSlug()) {
-          router.push("/dashboard")
-        } else {
-          // Redirect to organization subdomain
-          window.location.href = `https://${data.tenant.slug}.nothubspot.app/dashboard`
-        }
-      } else {
-        // Redirect to organization subdomain
-        window.location.href = `https://${data.tenant.slug}.nothubspot.app/dashboard`
-      }
+      // Redirect to dashboard on same domain
+      router.push("/dashboard")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed")
     } finally {
@@ -88,10 +67,10 @@ export default function LoginPage() {
             </svg>
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {orgSlug ? `Sign in to ${orgSlug}` : 'Sign in to your account'}
+            Sign in to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            {orgSlug ? `Access your ${orgSlug} organization` : 'Welcome back to NotHubSpot'}
+            Welcome back to NotHubSpot
           </p>
         </div>
         

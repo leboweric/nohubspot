@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { getAuthState, logout, isAdmin, getOrganizationSlug } from "@/lib/auth"
+import { getAuthState, logout, isAdmin } from "@/lib/auth"
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -11,8 +11,7 @@ interface MainLayoutProps {
 export default function MainLayout({ children }: MainLayoutProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const { user, tenant, isAuthenticated } = getAuthState()
-  const orgSlug = getOrganizationSlug()
+  const { user, organization, isAuthenticated } = getAuthState()
 
   const handleLogout = () => {
     logout()
@@ -33,7 +32,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
               <Link href="/dashboard" className="text-xl font-semibold text-blue-600">
-                {orgSlug ? orgSlug : 'NotHubSpot'}
+                {organization ? organization.name : 'NotHubSpot'}
               </Link>
               
               {isAuthenticated && (

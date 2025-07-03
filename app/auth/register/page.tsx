@@ -66,10 +66,10 @@ export default function RegisterPage() {
       // Store authentication data
       localStorage.setItem("auth_token", data.access_token)
       localStorage.setItem("user", JSON.stringify(data.user))
-      localStorage.setItem("tenant", JSON.stringify(data.tenant))
+      localStorage.setItem("organization", JSON.stringify(data.organization))
 
-      // Redirect to organization subdomain
-      window.location.href = `https://${data.tenant.slug}.nothubspot.app/dashboard`
+      // Redirect to dashboard on same domain
+      router.push("/dashboard")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed")
     } finally {
