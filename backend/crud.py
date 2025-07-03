@@ -353,7 +353,7 @@ def get_recent_activities(db: Session, tenant_id: int, limit: int = 10) -> List[
     return db.query(Activity).filter(Activity.tenant_id == tenant_id).order_by(desc(Activity.created_at)).limit(limit).all()
 
 # Email Signature CRUD operations
-def get_email_signature(db: Session, tenant_id: int, user_id: str = "default") -> Optional[EmailSignature]:
+def get_email_signature(db: Session, user_id: int, tenant_id: int) -> Optional[EmailSignature]:
     return db.query(EmailSignature).filter(
         EmailSignature.user_id == user_id,
         EmailSignature.tenant_id == tenant_id
@@ -362,10 +362,10 @@ def get_email_signature(db: Session, tenant_id: int, user_id: str = "default") -
 def create_or_update_email_signature(
     db: Session, 
     signature_data: EmailSignatureCreate, 
-    tenant_id: int,
-    user_id: str = "default"
+    user_id: int,
+    tenant_id: int
 ) -> EmailSignature:
-    existing_signature = get_email_signature(db, tenant_id, user_id)
+    existing_signature = get_email_signature(db, user_id, tenant_id)
     
     if existing_signature:
         # Update existing signature

@@ -68,13 +68,8 @@ export default function RegisterPage() {
       localStorage.setItem("user", JSON.stringify(data.user))
       localStorage.setItem("tenant", JSON.stringify(data.tenant))
 
-      // Try subdomain first, fallback to main domain if it doesn't work
-      try {
-        window.location.href = `https://${data.tenant.slug}.nothubspot.app/dashboard`
-      } catch (error) {
-        // Fallback to main domain if subdomain fails
-        router.push('/dashboard')
-      }
+      // Redirect to main domain for now (subdomain has Netlify issues)
+      router.push('/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed")
     } finally {

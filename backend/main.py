@@ -506,16 +506,19 @@ async def delete_existing_task(task_id: int, db: Session = Depends(get_db)):
 
 # Email Signature endpoints
 @app.get("/api/signature", response_model=Optional[EmailSignatureResponse])
-async def get_user_signature(user_id: str = "default", db: Session = Depends(get_db)):
-    return get_email_signature(db, user_id)
+async def get_user_signature(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    return get_email_signature(db, current_user.id, current_user.tenant_id)
 
 @app.post("/api/signature", response_model=EmailSignatureResponse)
 async def create_or_update_signature(
     signature: EmailSignatureCreate,
-    user_id: str = "default",
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    return create_or_update_email_signature(db, signature, user_id)
+    return create_or_update_email_signature(db, signature, current_user.id, current_user.tenant_id)
 
 # Bulk upload endpoints
 @app.post("/api/companies/bulk", response_model=BulkUploadResult)
