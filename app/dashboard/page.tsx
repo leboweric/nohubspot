@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import AuthGuard from "@/components/AuthGuard"
+import MainLayout from "@/components/MainLayout"
 import EmailCompose, { EmailMessage } from "@/components/email/EmailCompose"
 
 export default function DashboardPage() {
@@ -26,7 +28,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AuthGuard>
+      <MainLayout>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold">Dashboard</h1>
         <p className="text-muted-foreground mt-1">Welcome back. Here's your CRM overview.</p>
@@ -111,6 +115,8 @@ export default function DashboardPage() {
         senderName={process.env.NEXT_PUBLIC_DEFAULT_SENDER_NAME || "Sales Rep"}
         senderEmail={process.env.NEXT_PUBLIC_DEFAULT_SENDER_EMAIL || "sales@company.com"}
       />
-    </div>
+        </div>
+      </MainLayout>
+    </AuthGuard>
   )
 }

@@ -1,4 +1,6 @@
 // API client for NotHubSpot CRM backend
+import { getAuthHeaders, clearAuthState } from './auth'
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
 // Generic API request function
@@ -7,10 +9,12 @@ async function apiRequest<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`
+  const authHeaders = getAuthHeaders()
   
   const config: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders,
       ...options.headers,
     },
     ...options,
@@ -19,15 +23,27 @@ async function apiRequest<T>(
   try {
     const response = await fetch(url, config)
     
+    // Handle authentication errors
+    if (response.status === 401) {
+      clearAuthState()
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth/login'
+      }
+      throw new APIError('Authentication required', 401)
+    }
+    
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.detail || `API Error: ${response.status}`)
+      throw new APIError(errorData.detail || `API Error: ${response.status}`, response.status)
     }
 
     return await response.json()
   } catch (error) {
+    if (error instanceof APIError) {
+      throw error
+    }
     console.error(`API request failed: ${endpoint}`, error)
-    throw error
+    throw new APIError(error instanceof Error ? error.message : 'Network error')
   }
 }
 
