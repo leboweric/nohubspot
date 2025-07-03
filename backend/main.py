@@ -47,7 +47,7 @@ from auth import (
 print("🔨 Starting database initialization...")
 
 # TEMPORARY: Force recreate tables to fix schema issues
-FORCE_RECREATE = False  # Set to True only when you need to reset the database
+FORCE_RECREATE = True  # Set to True only when you need to reset the database
 
 try:
     if FORCE_RECREATE:
@@ -56,20 +56,29 @@ try:
         
         # Drop all tables with CASCADE to handle foreign keys
         with engine.connect() as conn:
-            # Get all table names
-            result = conn.execute(text("""
-                SELECT tablename FROM pg_tables 
-                WHERE schemaname = 'public'
-            """))
-            tables = [row[0] for row in result]
-            
-            # Drop each table with CASCADE
-            for table in tables:
-                try:
-                    conn.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
-                    print(f"  Dropped table: {table}")
-                except Exception as e:
-                    print(f"  Failed to drop {table}: {e}")
+            try:
+                # More aggressive approach: drop all tables at once
+                conn.execute(text("DROP SCHEMA public CASCADE"))
+                conn.execute(text("CREATE SCHEMA public"))
+                conn.execute(text("GRANT ALL ON SCHEMA public TO postgres"))
+                conn.execute(text("GRANT ALL ON SCHEMA public TO public"))
+                print("  ✅ Dropped and recreated public schema")
+            except Exception as e:
+                print(f"  Schema drop failed, trying table-by-table: {e}")
+                # Fallback to individual table drops
+                result = conn.execute(text("""
+                    SELECT tablename FROM pg_tables 
+                    WHERE schemaname = 'public'
+                """))
+                tables = [row[0] for row in result]
+                
+                # Drop each table with CASCADE
+                for table in tables:
+                    try:
+                        conn.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
+                        print(f"  Dropped table: {table}")
+                    except Exception as table_error:
+                        print(f"  Failed to drop {table}: {table_error}")
             
             conn.commit()
         
