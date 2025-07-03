@@ -1,0 +1,222 @@
+from pydantic import BaseModel, EmailStr, Field
+from typing import Optional, List
+from datetime import datetime
+
+# Base schemas for common fields
+class TimestampMixin(BaseModel):
+    created_at: datetime
+    updated_at: datetime
+
+# Company schemas
+class CompanyBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    industry: Optional[str] = Field(None, max_length=100)
+    website: Optional[str] = Field(None, max_length=255)
+    description: Optional[str] = None
+    address: Optional[str] = None
+    status: str = Field(default="Active", max_length=50)
+
+class CompanyCreate(CompanyBase):
+    pass
+
+class CompanyUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
+    industry: Optional[str] = Field(None, max_length=100)
+    website: Optional[str] = Field(None, max_length=255)
+    description: Optional[str] = None
+    address: Optional[str] = None
+    status: Optional[str] = Field(None, max_length=50)
+
+class CompanyResponse(CompanyBase, TimestampMixin):
+    id: int
+    contact_count: int
+    attachment_count: int
+    
+    class Config:
+        from_attributes = True
+
+# Contact schemas
+class ContactBase(BaseModel):
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
+    email: EmailStr
+    phone: Optional[str] = Field(None, max_length=50)
+    title: Optional[str] = Field(None, max_length=100)
+    company_id: Optional[int] = None
+    company_name: Optional[str] = Field(None, max_length=255)
+    status: str = Field(default="Active", max_length=50)
+    notes: Optional[str] = None
+
+class ContactCreate(ContactBase):
+    pass
+
+class ContactUpdate(BaseModel):
+    first_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    last_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = Field(None, max_length=50)
+    title: Optional[str] = Field(None, max_length=100)
+    company_id: Optional[int] = None
+    company_name: Optional[str] = Field(None, max_length=255)
+    status: Optional[str] = Field(None, max_length=50)
+    notes: Optional[str] = None
+
+class ContactResponse(ContactBase, TimestampMixin):
+    id: int
+    last_activity: datetime
+    
+    class Config:
+        from_attributes = True
+
+# Task schemas
+class TaskBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=500)
+    description: Optional[str] = None
+    status: str = Field(default="pending", max_length=50)
+    priority: str = Field(default="medium", max_length=50)
+    due_date: Optional[datetime] = None
+    assigned_to: Optional[str] = Field(None, max_length=255)
+    contact_id: Optional[int] = None
+    contact_name: Optional[str] = Field(None, max_length=255)
+    company_id: Optional[int] = None
+    company_name: Optional[str] = Field(None, max_length=255)
+    type: str = Field(default="other", max_length=50)
+    tags: Optional[List[str]] = Field(default_factory=list)
+
+class TaskCreate(TaskBase):
+    pass
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=500)
+    description: Optional[str] = None
+    status: Optional[str] = Field(None, max_length=50)
+    priority: Optional[str] = Field(None, max_length=50)
+    due_date: Optional[datetime] = None
+    assigned_to: Optional[str] = Field(None, max_length=255)
+    contact_id: Optional[int] = None
+    contact_name: Optional[str] = Field(None, max_length=255)
+    company_id: Optional[int] = None
+    company_name: Optional[str] = Field(None, max_length=255)
+    type: Optional[str] = Field(None, max_length=50)
+    tags: Optional[List[str]] = None
+
+class TaskResponse(TaskBase, TimestampMixin):
+    id: int
+    completed_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+
+# Email schemas
+class EmailThreadBase(BaseModel):
+    subject: str = Field(..., min_length=1, max_length=500)
+    contact_id: int
+
+class EmailThreadCreate(EmailThreadBase):
+    pass
+
+class EmailThreadResponse(EmailThreadBase, TimestampMixin):
+    id: int
+    message_count: int
+    preview: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+class EmailMessageBase(BaseModel):
+    sender: str = Field(..., max_length=255)
+    content: str = Field(..., min_length=1)
+    direction: str = Field(..., max_length=20)
+
+class EmailMessageCreate(EmailMessageBase):
+    thread_id: int
+    message_id: Optional[str] = Field(None, max_length=255)
+
+class EmailMessageResponse(EmailMessageBase):
+    id: int
+    thread_id: int
+    message_id: Optional[str] = None
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+# Attachment schemas
+class AttachmentBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    file_size: Optional[int] = None
+    file_type: Optional[str] = Field(None, max_length=100)
+    file_url: Optional[str] = Field(None, max_length=500)
+    company_id: Optional[int] = None
+    uploaded_by: Optional[str] = Field(None, max_length=255)
+
+class AttachmentCreate(AttachmentBase):
+    pass
+
+class AttachmentResponse(AttachmentBase):
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+# Activity schemas
+class ActivityBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    type: str = Field(..., max_length=50)
+    entity_id: Optional[str] = Field(None, max_length=50)
+    created_by: Optional[str] = Field(None, max_length=255)
+
+class ActivityCreate(ActivityBase):
+    pass
+
+class ActivityResponse(ActivityBase):
+    id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+# Email Signature schemas
+class EmailSignatureBase(BaseModel):
+    name: Optional[str] = Field(None, max_length=255)
+    title: Optional[str] = Field(None, max_length=255)
+    company: Optional[str] = Field(None, max_length=255)
+    phone: Optional[str] = Field(None, max_length=50)
+    email: Optional[str] = Field(None, max_length=255)
+    website: Optional[str] = Field(None, max_length=255)
+    custom_text: Optional[str] = None
+    enabled: bool = Field(default=True)
+
+class EmailSignatureCreate(EmailSignatureBase):
+    pass
+
+class EmailSignatureUpdate(EmailSignatureBase):
+    pass
+
+class EmailSignatureResponse(EmailSignatureBase, TimestampMixin):
+    id: int
+    user_id: str
+    
+    class Config:
+        from_attributes = True
+
+# Bulk upload schemas
+class BulkUploadResult(BaseModel):
+    success_count: int
+    error_count: int
+    total_count: int
+    errors: List[str] = Field(default_factory=list)
+
+# Dashboard schemas
+class DashboardStats(BaseModel):
+    total_companies: int
+    total_contacts: int
+    total_tasks: int
+    total_email_threads: int
+    active_companies: int
+    active_contacts: int
+    pending_tasks: int
+    overdue_tasks: int

@@ -8,8 +8,8 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 
 if not DATABASE_URL:
     print("❌ DATABASE_URL environment variable not found!")
-    # Fallback for local development
-    DATABASE_URL = "postgresql://postgres:password@localhost:5432/nohubspot"
+    # Fallback for local development - use SQLite
+    DATABASE_URL = "sqlite:///./nohubspot.db"
 
 print(f"🔗 Connecting to database: {DATABASE_URL[:50]}...")
 
