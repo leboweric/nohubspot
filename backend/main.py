@@ -30,49 +30,63 @@ from crud import (
 )
 
 # Create database tables with error handling
+print("🔨 Starting database initialization...")
+
+# TEMPORARY: Force recreate tables to fix schema issues
+FORCE_RECREATE = True  # Set to False after first successful deployment
+
 try:
-    print("🔨 Checking database...")
-    
-    # Try to create tables (will skip if they already exist)
-    try:
-        Base.metadata.create_all(bind=engine)
-        print("✅ Database tables ready")
+    if FORCE_RECREATE:
+        print("⚠️  FORCE RECREATE MODE - Dropping all tables...")
+        from sqlalchemy import text
         
-        # Check if we have data
-        db = next(get_db())
+        # Drop all tables with CASCADE to handle foreign keys
+        with engine.connect() as conn:
+            # Get all table names
+            result = conn.execute(text("""
+                SELECT tablename FROM pg_tables 
+                WHERE schemaname = 'public'
+            """))
+            tables = [row[0] for row in result]
+            
+            # Drop each table with CASCADE
+            for table in tables:
+                try:
+                    conn.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
+                    print(f"  Dropped table: {table}")
+                except Exception as e:
+                    print(f"  Failed to drop {table}: {e}")
+            
+            conn.commit()
+        
+        print("✅ All tables dropped")
+    
+    # Create all tables
+    print("🔨 Creating tables...")
+    Base.metadata.create_all(bind=engine)
+    print("✅ Database tables created successfully")
+    
+    # Check if we need to seed data
+    db = next(get_db())
+    try:
+        company_count = db.query(Company).count()
+        print(f"📊 Found {company_count} companies in database")
+        
+        if company_count == 0:
+            print("📊 Seeding sample data...")
+            from init_db import seed_sample_data
+            seed_sample_data()
+    except Exception as query_error:
+        print(f"⚠️  Query failed: {query_error}")
+        print("📊 Attempting to seed sample data anyway...")
         try:
-            company_count = db.query(Company).count()
-            print(f"📊 Found {company_count} companies in database")
-            
-            # Only seed if empty
-            if company_count == 0:
-                print("📊 No data found, creating sample data...")
-                from init_db import seed_sample_data
-                seed_sample_data()
-        except Exception as query_error:
-            print(f"⚠️  Query failed: {query_error}")
-        finally:
-            db.close()
-            
-    except Exception as create_error:
-        # Only drop tables if there's a schema conflict
-        if "foreign key constraint" in str(create_error) or "incompatible types" in str(create_error):
-            print("⚠️  Schema conflict detected!")
-            print("🗑️  Dropping and recreating tables (ONE TIME FIX)...")
-            Base.metadata.drop_all(bind=engine)
-            Base.metadata.create_all(bind=engine)
-            print("✅ Tables recreated with correct schema")
-            
-            # Seed sample data after recreation
-            db = next(get_db())
-            try:
-                from init_db import seed_sample_data
-                seed_sample_data()
-            finally:
-                db.close()
-        else:
-            raise create_error
-            
+            from init_db import seed_sample_data
+            seed_sample_data()
+        except Exception as seed_error:
+            print(f"❌ Seeding failed: {seed_error}")
+    finally:
+        db.close()
+        
 except Exception as e:
     print(f"❌ Database initialization failed: {e}")
     print("⚠️  The application will continue but database operations may fail")
