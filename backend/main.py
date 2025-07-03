@@ -81,6 +81,29 @@ def migrate_tenant_to_organization(db_engine):
                     conn.execute(text(f"ALTER TABLE {table_name} RENAME COLUMN tenant_id TO organization_id"))
                     print(f"  ✅ Migrated {table_name}.tenant_id to organization_id")
             
+            # Update foreign key constraints that still reference tenants table
+            print("🔄 Updating foreign key constraints...")
+            try:
+                # Get all foreign key constraints that reference the old tenants table
+                fk_result = conn.execute(text("""
+                    SELECT tc.table_name, tc.constraint_name, kcu.column_name
+                    FROM information_schema.table_constraints tc
+                    JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name
+                    JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name
+                    WHERE tc.constraint_type = 'FOREIGN KEY' AND ccu.table_name = 'tenants'
+                """))
+                
+                for row in fk_result:
+                    table_name, constraint_name, column_name = row
+                    print(f"🔄 Updating FK constraint {constraint_name} in {table_name}...")
+                    # Drop old constraint and create new one
+                    conn.execute(text(f"ALTER TABLE {table_name} DROP CONSTRAINT IF EXISTS {constraint_name}"))
+                    conn.execute(text(f"ALTER TABLE {table_name} ADD CONSTRAINT {constraint_name} FOREIGN KEY ({column_name}) REFERENCES organizations(id)"))
+                    print(f"  ✅ Updated FK constraint {constraint_name}")
+                    
+            except Exception as fk_error:
+                print(f"  ⚠️  FK constraint update info: {fk_error}")
+            
             conn.commit()
             print("✅ Database migration completed successfully")
             

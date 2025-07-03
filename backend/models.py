@@ -33,8 +33,8 @@ class Organization(Base):
     
     # Relationships
     users = relationship("User", back_populates="organization", foreign_keys="User.organization_id")
-    companies = relationship("Company", back_populates="organization", cascade="all, delete-orphan")
-    contacts = relationship("Contact", back_populates="organization", cascade="all, delete-orphan")
+    companies = relationship("Company", back_populates="organization", foreign_keys="Company.organization_id", cascade="all, delete-orphan")
+    contacts = relationship("Contact", back_populates="organization", foreign_keys="Contact.organization_id", cascade="all, delete-orphan")
 
 class User(Base):
     __tablename__ = "users"
@@ -79,7 +79,7 @@ class Company(Base):
     __tablename__ = "companies"
     
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
     name = Column(String(255), nullable=False, index=True)
     industry = Column(String(100))
     website = Column(String(255))
@@ -92,7 +92,7 @@ class Company(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
-    organization = relationship("Organization", back_populates="companies")
+    organization = relationship("Organization", back_populates="companies", foreign_keys=[organization_id])
     contacts = relationship("Contact", back_populates="company_rel", cascade="all, delete-orphan")
     attachments = relationship("Attachment", back_populates="company_rel", cascade="all, delete-orphan")
     activities = relationship("Activity", foreign_keys="Activity.entity_id", 
@@ -103,7 +103,7 @@ class Contact(Base):
     __tablename__ = "contacts"
     
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
     email = Column(String(255), nullable=False, index=True)
@@ -118,7 +118,7 @@ class Contact(Base):
     last_activity = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships
-    organization = relationship("Organization", back_populates="contacts")
+    organization = relationship("Organization", back_populates="contacts", foreign_keys=[organization_id])
     company_rel = relationship("Company", back_populates="contacts")
     email_threads = relationship("EmailThread", back_populates="contact", cascade="all, delete-orphan")
     tasks = relationship("Task", back_populates="contact", cascade="all, delete-orphan")
@@ -130,7 +130,7 @@ class EmailThread(Base):
     __tablename__ = "email_threads"
     
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
     subject = Column(String(500), nullable=False)
     contact_id = Column(Integer, ForeignKey("contacts.id"), nullable=False)
     message_count = Column(Integer, default=0)
@@ -160,7 +160,7 @@ class Task(Base):
     __tablename__ = "tasks"
     
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
     title = Column(String(500), nullable=False)
     description = Column(Text)
     status = Column(String(50), default="pending")  # pending, in_progress, completed, cancelled
@@ -200,7 +200,7 @@ class Activity(Base):
     __tablename__ = "activities"
     
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
     title = Column(String(255), nullable=False)
     description = Column(Text)
     type = Column(String(50), nullable=False)  # company, contact, email, task, attachment
@@ -212,7 +212,7 @@ class EmailSignature(Base):
     __tablename__ = "email_signatures"
     
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String(255))
     title = Column(String(255))
