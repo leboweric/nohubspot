@@ -32,7 +32,7 @@ class Organization(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
-    users = relationship("User", back_populates="organization")
+    users = relationship("User", back_populates="organization", foreign_keys="User.organization_id")
     companies = relationship("Company", back_populates="organization", cascade="all, delete-orphan")
     contacts = relationship("Contact", back_populates="organization", cascade="all, delete-orphan")
 
@@ -53,7 +53,7 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
-    organization = relationship("Organization", back_populates="users")
+    organization = relationship("Organization", back_populates="users", foreign_keys=[organization_id])
     created_organizations = relationship("Organization", foreign_keys="Organization.created_by")
     invites_sent = relationship("UserInvite", foreign_keys="UserInvite.invited_by", back_populates="inviter")
 
