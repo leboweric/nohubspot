@@ -1,6 +1,7 @@
 [build]
-  # Let Netlify auto-detect Next.js and handle the build
-  base = "."
+  # Explicit Next.js build command and publish directory
+  command = "npm run build && cp _redirects .next/_redirects"
+  publish = ".next"
 
 [build.environment]
   # Node.js version - using LTS version that's compatible with npm
@@ -14,3 +15,7 @@
   
   # API base URL for production - Railway backend
   NEXT_PUBLIC_API_URL = "https://nohubspot-production.up.railway.app"
+
+# Force Netlify to treat this as a Next.js SSR app with serverless functions
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
