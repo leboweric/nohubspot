@@ -1,9 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Ensure static export works properly
+  // Configure for static export on Netlify
+  output: 'export',
   trailingSlash: true,
-  // Add output for better Railway compatibility
-  output: 'standalone',
+  skipTrailingSlashRedirect: true,
   eslint: {
     ignoreDuringBuilds: true,
   },
