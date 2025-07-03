@@ -571,6 +571,156 @@ async def bulk_upload_contacts(contacts: List[ContactCreate], db: Session = Depe
             errors=[str(e)]
         )
 
+# Development/Admin endpoints
+@app.delete("/api/admin/cleanup/tenant/{tenant_slug}")
+async def cleanup_tenant(tenant_slug: str, db: Session = Depends(get_db)):
+    """
+    Clean up a specific tenant and all associated data
+    WARNING: This permanently deletes all data for the tenant
+    """
+    try:
+        # Get the tenant
+        tenant = get_tenant_by_slug(db, tenant_slug)
+        if not tenant:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Tenant with slug '{tenant_slug}' not found"
+            )
+        
+        tenant_id = tenant.id
+        
+        # Delete all associated data in correct order (foreign key constraints)
+        # Count records before deletion for reporting
+        counts = {
+            "activities": db.query(Activity).filter(Activity.tenant_id == tenant_id).count(),
+            "user_invites": db.query(UserInvite).filter(UserInvite.tenant_id == tenant_id).count(),
+            "email_signatures": db.query(EmailSignature).filter(EmailSignature.tenant_id == tenant_id).count(),
+            "email_threads": db.query(EmailThread).filter(EmailThread.tenant_id == tenant_id).count(),
+            "tasks": db.query(Task).filter(Task.tenant_id == tenant_id).count(),
+            "contacts": db.query(Contact).filter(Contact.tenant_id == tenant_id).count(),
+            "companies": db.query(Company).filter(Company.tenant_id == tenant_id).count(),
+            "users": db.query(User).filter(User.tenant_id == tenant_id).count(),
+        }
+        
+        # Delete email messages (via email threads)
+        email_thread_ids = [t.id for t in db.query(EmailThread).filter(EmailThread.tenant_id == tenant_id).all()]
+        if email_thread_ids:
+            counts["email_messages"] = db.query(EmailMessage).filter(EmailMessage.thread_id.in_(email_thread_ids)).count()
+            db.query(EmailMessage).filter(EmailMessage.thread_id.in_(email_thread_ids)).delete(synchronize_session=False)
+        else:
+            counts["email_messages"] = 0
+        
+        # Delete attachments (via companies)
+        company_ids = [c.id for c in db.query(Company).filter(Company.tenant_id == tenant_id).all()]
+        if company_ids:
+            counts["attachments"] = db.query(Attachment).filter(Attachment.company_id.in_(company_ids)).count()
+            db.query(Attachment).filter(Attachment.company_id.in_(company_ids)).delete(synchronize_session=False)
+        else:
+            counts["attachments"] = 0
+        
+        # Delete in order
+        db.query(Activity).filter(Activity.tenant_id == tenant_id).delete()
+        db.query(UserInvite).filter(UserInvite.tenant_id == tenant_id).delete()
+        db.query(EmailSignature).filter(EmailSignature.tenant_id == tenant_id).delete()
+        db.query(EmailThread).filter(EmailThread.tenant_id == tenant_id).delete()
+        db.query(Task).filter(Task.tenant_id == tenant_id).delete()
+        db.query(Contact).filter(Contact.tenant_id == tenant_id).delete()
+        db.query(Company).filter(Company.tenant_id == tenant_id).delete()
+        db.query(User).filter(User.tenant_id == tenant_id).delete()
+        
+        # Finally delete the tenant
+        db.query(Tenant).filter(Tenant.id == tenant_id).delete()
+        
+        # Commit all changes
+        db.commit()
+        
+        return {
+            "message": f"Tenant '{tenant_slug}' and all associated data deleted successfully",
+            "tenant_id": tenant_id,
+            "deleted_records": counts
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete tenant: {str(e)}"
+        )
+
+@app.delete("/api/admin/cleanup/all")
+async def cleanup_all_data(confirm: str = None, db: Session = Depends(get_db)):
+    """
+    Nuclear option: Delete ALL data from ALL tenants
+    WARNING: This permanently deletes everything
+    You must pass confirm=DELETE_EVERYTHING as a query parameter
+    """
+    if confirm != "DELETE_EVERYTHING":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You must pass confirm=DELETE_EVERYTHING as a query parameter to confirm this destructive action"
+        )
+    
+    try:
+        # Count all records before deletion
+        counts = {
+            "activities": db.query(Activity).count(),
+            "user_invites": db.query(UserInvite).count(),
+            "email_signatures": db.query(EmailSignature).count(),
+            "email_messages": db.query(EmailMessage).count(),
+            "email_threads": db.query(EmailThread).count(),
+            "attachments": db.query(Attachment).count(),
+            "tasks": db.query(Task).count(),
+            "contacts": db.query(Contact).count(),
+            "companies": db.query(Company).count(),
+            "users": db.query(User).count(),
+            "tenants": db.query(Tenant).count(),
+        }
+        
+        # Delete everything
+        db.query(Activity).delete()
+        db.query(UserInvite).delete()
+        db.query(EmailSignature).delete()
+        db.query(EmailMessage).delete()
+        db.query(EmailThread).delete()
+        db.query(Attachment).delete()
+        db.query(Task).delete()
+        db.query(Contact).delete()
+        db.query(Company).delete()
+        db.query(User).delete()
+        db.query(Tenant).delete()
+        
+        # Commit all changes
+        db.commit()
+        
+        return {
+            "message": "ALL data deleted successfully",
+            "deleted_records": counts
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete all data: {str(e)}"
+        )
+
+@app.get("/api/admin/tenants")
+async def list_all_tenants(db: Session = Depends(get_db)):
+    """List all tenants for admin purposes"""
+    tenants = db.query(Tenant).all()
+    return [
+        {
+            "id": t.id,
+            "slug": t.slug,
+            "name": t.name,
+            "created_at": t.created_at,
+            "user_count": db.query(User).filter(User.tenant_id == t.id).count(),
+            "company_count": db.query(Company).filter(Company.tenant_id == t.id).count(),
+            "contact_count": db.query(Contact).filter(Contact.tenant_id == t.id).count(),
+        }
+        for t in tenants
+    ]
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     print(f"🚀 Starting NotHubSpot CRM API on port {port}")
