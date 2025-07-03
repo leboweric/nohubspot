@@ -1,9 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Configure for static export to work with Netlify
-  output: 'export',
-  trailingSlash: true,
-  skipTrailingSlashRedirect: true,
+  // Configure for Netlify deployment with middleware and API routes enabled
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -13,7 +10,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Disable server-side features for static export
   experimental: {
     esmExternals: 'loose'
   }
