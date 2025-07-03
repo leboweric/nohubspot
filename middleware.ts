@@ -1,7 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  // Temporarily disabled for debugging - just pass through all requests
+  const { pathname } = request.nextUrl
+  const host = request.headers.get('host') || ''
+  const originalHost = request.headers.get('x-forwarded-host') || host
+  
+  console.log('Middleware - Host:', host, 'Original Host:', originalHost, 'Path:', pathname)
+  
+  // Skip middleware for static files and API routes
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.includes('.') ||
+    pathname.startsWith('/auth/')
+  ) {
+    return NextResponse.next()
+  }
+
+  // Handle subdomain routing for organizations
+  // Check both the current host and the original forwarded host
+  const subdomain = getSubdomain(originalHost) || getSubdomain(host)
+  
+  if (subdomain && subdomain !== 'www') {
+    console.log('Detected subdomain:', subdomain)
+    // This is an organization subdomain (e.g., acme.nothubspot.app)
+    // Store the organization slug for the app to use
+    const response = NextResponse.next()
+    response.headers.set('x-organization-slug', subdomain)
+    
+    return response
+  }
+
+  // On main domain - allow access to all routes
+  // The authentication will be handled by the AuthGuard components
   return NextResponse.next()
 }
 

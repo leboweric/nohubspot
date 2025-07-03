@@ -9,11 +9,3 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-
-# Correct syntax for subdomain redirects
-[[redirects]]
-  from = "/*"
-  to = "https://nothubspot.app/:splat"
-  status = 200
-  force = true
-  conditions = {Host = ["*.nothubspot.app"]}
