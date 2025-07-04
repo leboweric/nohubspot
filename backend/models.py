@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, JSON, Float, Enum
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, JSON, Float, Enum, cast
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -96,7 +96,7 @@ class Company(Base):
     contacts = relationship("Contact", back_populates="company_rel", cascade="all, delete-orphan")
     attachments = relationship("Attachment", back_populates="company_rel", cascade="all, delete-orphan")
     activities = relationship("Activity", foreign_keys="Activity.entity_id", 
-                            primaryjoin="and_(Company.id == Activity.entity_id, Activity.type == 'company')",
+                            primaryjoin="and_(cast(Company.id, String) == Activity.entity_id, Activity.type == 'company')",
                             overlaps="activities")
 
 class Contact(Base):
@@ -123,7 +123,7 @@ class Contact(Base):
     email_threads = relationship("EmailThread", back_populates="contact", cascade="all, delete-orphan")
     tasks = relationship("Task", back_populates="contact", cascade="all, delete-orphan")
     activities = relationship("Activity", foreign_keys="Activity.entity_id", 
-                            primaryjoin="and_(Contact.id == Activity.entity_id, Activity.type == 'contact')",
+                            primaryjoin="and_(cast(Contact.id, String) == Activity.entity_id, Activity.type == 'contact')",
                             overlaps="activities")
 
 class EmailThread(Base):
