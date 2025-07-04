@@ -17,12 +17,6 @@ export default function CalendarView({ events, currentDate, onDateClick, onEvent
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
   
-  console.log('📅 CalendarView received currentDate:', currentDate, 'Year:', year, 'Month:', month)
-
-  // Track when currentDate actually changes
-  useEffect(() => {
-    console.log('🔄 CalendarView currentDate useEffect triggered:', currentDate)
-  }, [currentDate])
 
   // Get first day of month and how many days
   const firstDayOfMonth = new Date(year, month, 1)
@@ -52,23 +46,17 @@ export default function CalendarView({ events, currentDate, onDateClick, onEvent
 
   // Navigate months
   const goToPreviousMonth = () => {
-    console.log('⬅️ Previous month clicked')
     const newDate = new Date(year, month - 1, 1)
-    console.log('New date for previous month:', newDate)
     onMonthChange(newDate)
   }
 
   const goToNextMonth = () => {
-    console.log('➡️ Next month clicked')
     const newDate = new Date(year, month + 1, 1)
-    console.log('New date for next month:', newDate)
     onMonthChange(newDate)
   }
 
   const goToToday = () => {
-    console.log('📍 Today clicked')
     const today = new Date()
-    console.log('Going to today:', today)
     onMonthChange(today)
   }
 
@@ -110,6 +98,8 @@ export default function CalendarView({ events, currentDate, onDateClick, onEvent
         return 'bg-orange-500'
       case 'reminder':
         return 'bg-purple-500'
+      case 'out_of_office':
+        return 'bg-red-500'
       default:
         return 'bg-gray-500'
     }
@@ -223,6 +213,10 @@ export default function CalendarView({ events, currentDate, onDateClick, onEvent
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-purple-500 rounded"></div>
           <span>Reminder</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-red-500 rounded"></div>
+          <span>Out of Office</span>
         </div>
       </div>
     </div>

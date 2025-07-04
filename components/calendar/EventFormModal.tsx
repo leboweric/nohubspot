@@ -266,6 +266,7 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
               <option value="call">Call</option>
               <option value="task">Task</option>
               <option value="reminder">Reminder</option>
+              <option value="out_of_office">Out of Office</option>
             </select>
           </div>
 

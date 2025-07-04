@@ -110,7 +110,6 @@ export default function CalendarPage() {
   }
 
   const handleMonthChange = (date: Date) => {
-    console.log('📅 Parent handleMonthChange called with:', date)
     setCurrentDate(date)
     const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1)
     const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0)
