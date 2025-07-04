@@ -5,6 +5,7 @@ import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import EmailCompose, { EmailMessage } from "@/components/email/EmailCompose"
 import DailySummaryCard from "@/components/dashboard/DailySummaryCard"
+import TodayCalendarCard from "@/components/dashboard/TodayCalendarCard"
 import { getAuthState } from "@/lib/auth"
 
 export default function DashboardPage() {
@@ -50,7 +51,10 @@ export default function DashboardPage() {
       </div>
 
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Today's Schedule */}
+        <TodayCalendarCard />
+
         <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
           <h2 className="text-lg font-semibold mb-6 flex items-center">
             <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
