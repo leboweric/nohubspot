@@ -665,6 +665,28 @@ async def read_contact(
         raise HTTPException(status_code=404, detail="Contact not found")
     return contact
 
+@app.put("/api/contacts/{contact_id}", response_model=ContactResponse)
+async def update_existing_contact(
+    contact_id: int,
+    contact_update: ContactUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    contact = update_contact(db, contact_id, contact_update, current_user.organization_id)
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    
+    create_activity(
+        db,
+        title="Contact Updated",
+        description=f"Updated {contact.first_name} {contact.last_name}",
+        type="contact",
+        entity_id=str(contact.id),
+        organization_id=current_user.organization_id
+    )
+    
+    return contact
+
 @app.delete("/api/contacts/{contact_id}")
 async def delete_existing_contact(
     contact_id: int, 
