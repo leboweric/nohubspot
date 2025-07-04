@@ -1,23 +1,28 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { CalendarEvent } from "@/lib/api"
 
 interface CalendarViewProps {
   events: CalendarEvent[]
+  currentDate: Date
   onDateClick: (date: Date) => void
   onEventClick: (event: CalendarEvent) => void
   onMonthChange: (date: Date) => void
 }
 
-export default function CalendarView({ events, onDateClick, onEventClick, onMonthChange }: CalendarViewProps) {
-  const [currentDate, setCurrentDate] = useState(new Date())
+export default function CalendarView({ events, currentDate, onDateClick, onEventClick, onMonthChange }: CalendarViewProps) {
 
   const today = new Date()
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
   
-  console.log('Current date state:', currentDate, 'Year:', year, 'Month:', month)
+  console.log('📅 CalendarView received currentDate:', currentDate, 'Year:', year, 'Month:', month)
+
+  // Track when currentDate actually changes
+  useEffect(() => {
+    console.log('🔄 CalendarView currentDate useEffect triggered:', currentDate)
+  }, [currentDate])
 
   // Get first day of month and how many days
   const firstDayOfMonth = new Date(year, month, 1)
@@ -36,25 +41,23 @@ export default function CalendarView({ events, onDateClick, onEventClick, onMont
 
   // Navigate months
   const goToPreviousMonth = () => {
-    console.log('Previous month clicked')
+    console.log('⬅️ Previous month clicked')
     const newDate = new Date(year, month - 1, 1)
-    console.log('New date:', newDate)
-    setCurrentDate(newDate)
+    console.log('New date for previous month:', newDate)
     onMonthChange(newDate)
   }
 
   const goToNextMonth = () => {
-    console.log('Next month clicked')
+    console.log('➡️ Next month clicked')
     const newDate = new Date(year, month + 1, 1)
-    console.log('New date:', newDate)
-    setCurrentDate(newDate)
+    console.log('New date for next month:', newDate)
     onMonthChange(newDate)
   }
 
   const goToToday = () => {
-    console.log('Today clicked')
+    console.log('📍 Today clicked')
     const today = new Date()
-    setCurrentDate(today)
+    console.log('Going to today:', today)
     onMonthChange(today)
   }
 

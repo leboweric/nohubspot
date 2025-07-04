@@ -14,6 +14,7 @@ export default function CalendarPage() {
   const [showEventModal, setShowEventModal] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [currentDate, setCurrentDate] = useState(new Date())
 
   // Load events for current month
   const loadEvents = async (startDate?: Date, endDate?: Date) => {
@@ -109,6 +110,8 @@ export default function CalendarPage() {
   }
 
   const handleMonthChange = (date: Date) => {
+    console.log('📅 Parent handleMonthChange called with:', date)
+    setCurrentDate(date)
     const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1)
     const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0)
     loadEvents(startOfMonth, endOfMonth)
@@ -154,6 +157,7 @@ export default function CalendarPage() {
             ) : (
               <CalendarView
                 events={events}
+                currentDate={currentDate}
                 onDateClick={handleDateClick}
                 onEventClick={handleEditEvent}
                 onMonthChange={handleMonthChange}
