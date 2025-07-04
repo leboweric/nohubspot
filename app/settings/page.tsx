@@ -36,17 +36,22 @@ export default function SettingsPage() {
   })
 
   const isOwner = user?.role === 'owner'
+  const isO365Enabled = process.env.NEXT_PUBLIC_O365_ENABLED === 'true'
 
   useEffect(() => {
     if (isAdmin(user)) {
       loadUsers()
       loadInvites()
     }
-    if (isOwner) {
-      loadO365Config()
+    
+    // Only load O365 if explicitly enabled via environment variable
+    if (isO365Enabled) {
+      if (isOwner) {
+        loadO365Config()
+      }
+      loadO365UserConnection()
     }
-    loadO365UserConnection()
-  }, [user])
+  }, [user, isO365Enabled])
 
   const loadO365Config = async () => {
     try {
@@ -468,7 +473,8 @@ export default function SettingsPage() {
         </div>
 
         {/* Office 365 Integration Section */}
-        <div className="bg-card border rounded-lg p-6">
+        {isO365Enabled && (
+          <div className="bg-card border rounded-lg p-6">
           <div className="flex justify-between items-start mb-4">
             <div>
               <h2 className="text-lg font-semibold">Office 365 Integration</h2>
@@ -591,6 +597,23 @@ export default function SettingsPage() {
             )}
           </div>
         </div>
+        )}
+
+        {/* O365 Disabled Notice */}
+        {!isO365Enabled && (
+          <div className="bg-card border rounded-lg p-6">
+            <div className="flex items-center space-x-3">
+              <div className="h-2 w-2 rounded-full bg-gray-400"></div>
+              <div>
+                <h2 className="text-lg font-semibold">Office 365 Integration</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Office 365 integration is currently disabled to optimize performance. 
+                  Contact your administrator to enable it.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* System Settings Section */}
         <div className="bg-card border rounded-lg p-6">
@@ -672,7 +695,7 @@ export default function SettingsPage() {
       )}
 
       {/* Office 365 Configuration Modal */}
-      {showO365Config && isOwner && (
+      {isO365Enabled && showO365Config && isOwner && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
