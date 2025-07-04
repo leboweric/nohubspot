@@ -303,6 +303,39 @@ class Token(BaseModel):
     user: UserResponse
     organization: OrganizationResponse
 
+# Email Template Schemas
+class EmailTemplateBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=200)
+    subject: str = Field(..., min_length=1, max_length=500)
+    body: str = Field(..., min_length=1)
+    category: Optional[str] = Field(None, max_length=100)
+    is_shared: bool = True
+
+class EmailTemplateCreate(EmailTemplateBase):
+    variables_used: Optional[List[str]] = None
+
+class EmailTemplateUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
+    subject: Optional[str] = Field(None, min_length=1, max_length=500)
+    body: Optional[str] = Field(None, min_length=1)
+    category: Optional[str] = Field(None, max_length=100)
+    is_shared: Optional[bool] = None
+    variables_used: Optional[List[str]] = None
+
+class EmailTemplateResponse(EmailTemplateBase):
+    id: int
+    organization_id: int
+    created_by: Optional[int]
+    variables_used: Optional[List[str]]
+    usage_count: int
+    last_used_at: Optional[datetime]
+    created_at: datetime
+    updated_at: datetime
+    creator_name: Optional[str] = None  # Will be populated by the API
+
+    class Config:
+        from_attributes = True
+
 # Dashboard schemas
 class DashboardStats(BaseModel):
     total_companies: int

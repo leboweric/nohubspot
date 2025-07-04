@@ -224,3 +224,34 @@ class EmailSignature(Base):
     enabled = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+class EmailTemplate(Base):
+    __tablename__ = "email_templates"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    
+    # Template details
+    name = Column(String(200), nullable=False)
+    subject = Column(String(500), nullable=False)
+    body = Column(Text, nullable=False)
+    category = Column(String(100), nullable=True)  # sales, support, follow-up, etc.
+    
+    # Sharing settings
+    is_shared = Column(Boolean, default=True)  # True = team-wide, False = personal
+    
+    # Track which variables are used in the template
+    variables_used = Column(JSON, nullable=True)  # e.g., ["contact.first_name", "company.name"]
+    
+    # Usage tracking
+    usage_count = Column(Integer, default=0)
+    last_used_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    organization = relationship("Organization")
+    creator = relationship("User")
