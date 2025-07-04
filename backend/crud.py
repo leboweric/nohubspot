@@ -6,7 +6,7 @@ from datetime import datetime
 from models import (
     Company, Contact, EmailThread, EmailMessage, 
     Task, Attachment, Activity, EmailSignature, CalendarEvent, EventAttendee,
-    O365OrganizationConfig, O365UserConnection, User
+    O365OrganizationConfig, O365UserConnection, User, PipelineStage, Deal
 )
 from schemas import (
     CompanyCreate, CompanyUpdate, ContactCreate, ContactUpdate,
@@ -14,7 +14,8 @@ from schemas import (
     AttachmentCreate, ActivityCreate, EmailSignatureCreate, EmailSignatureUpdate,
     CalendarEventCreate, CalendarEventUpdate, DashboardStats,
     EventAttendeeCreate, EventAttendeeResponse,
-    O365OrganizationConfigCreate, O365OrganizationConfigUpdate, O365UserConnectionUpdate
+    O365OrganizationConfigCreate, O365OrganizationConfigUpdate, O365UserConnectionUpdate,
+    PipelineStageCreate, PipelineStageUpdate, DealCreate, DealUpdate
 )
 
 # Company CRUD operations
@@ -723,3 +724,184 @@ def get_today_events(db: Session, organization_id: int) -> List[CalendarEvent]:
             CalendarEvent.status == "scheduled"
         )
     ).order_by(CalendarEvent.start_time).all()
+
+# Pipeline Stage CRUD operations
+def create_pipeline_stage(db: Session, stage: PipelineStageCreate, organization_id: int) -> PipelineStage:
+    db_stage = PipelineStage(**stage.dict(), organization_id=organization_id)
+    db.add(db_stage)
+    db.commit()
+    db.refresh(db_stage)
+    return db_stage
+
+def get_pipeline_stages(db: Session, organization_id: int, include_inactive: bool = False) -> List[PipelineStage]:
+    query = db.query(PipelineStage).filter(PipelineStage.organization_id == organization_id)
+    
+    if not include_inactive:
+        query = query.filter(PipelineStage.is_active == True)
+    
+    return query.order_by(PipelineStage.position).all()
+
+def get_pipeline_stage(db: Session, stage_id: int, organization_id: int) -> Optional[PipelineStage]:
+    return db.query(PipelineStage).filter(
+        PipelineStage.id == stage_id,
+        PipelineStage.organization_id == organization_id
+    ).first()
+
+def update_pipeline_stage(db: Session, stage_id: int, stage_update: PipelineStageUpdate, organization_id: int) -> Optional[PipelineStage]:
+    db_stage = get_pipeline_stage(db, stage_id, organization_id)
+    if not db_stage:
+        return None
+    
+    update_data = stage_update.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_stage, field, value)
+    
+    db.commit()
+    db.refresh(db_stage)
+    return db_stage
+
+def delete_pipeline_stage(db: Session, stage_id: int, organization_id: int) -> bool:
+    db_stage = get_pipeline_stage(db, stage_id, organization_id)
+    if not db_stage:
+        return False
+    
+    # Check if there are deals in this stage
+    deal_count = db.query(Deal).filter(Deal.stage_id == stage_id).count()
+    if deal_count > 0:
+        # Don't delete, just deactivate
+        db_stage.is_active = False
+        db.commit()
+    else:
+        # Safe to delete
+        db.delete(db_stage)
+        db.commit()
+    
+    return True
+
+def create_default_pipeline_stages(db: Session, organization_id: int) -> List[PipelineStage]:
+    """Create default pipeline stages for new organizations"""
+    default_stages = [
+        {"name": "Lead", "description": "Initial contact or inquiry", "position": 0, "color": "#94A3B8"},
+        {"name": "Qualified", "description": "Qualified as potential customer", "position": 1, "color": "#3B82F6"},
+        {"name": "Proposal", "description": "Proposal or quote sent", "position": 2, "color": "#F59E0B"},
+        {"name": "Negotiation", "description": "In negotiation phase", "position": 3, "color": "#EF4444"},
+        {"name": "Closed Won", "description": "Deal successfully closed", "position": 4, "color": "#10B981", "is_closed_won": True},
+        {"name": "Closed Lost", "description": "Deal lost or cancelled", "position": 5, "color": "#6B7280", "is_closed_lost": True},
+    ]
+    
+    created_stages = []
+    for stage_data in default_stages:
+        stage = PipelineStage(**stage_data, organization_id=organization_id)
+        db.add(stage)
+        created_stages.append(stage)
+    
+    db.commit()
+    for stage in created_stages:
+        db.refresh(stage)
+    
+    return created_stages
+
+# Deal CRUD operations
+def create_deal(db: Session, deal: DealCreate, organization_id: int, created_by: int) -> Deal:
+    db_deal = Deal(**deal.dict(), organization_id=organization_id, created_by=created_by)
+    db.add(db_deal)
+    db.commit()
+    db.refresh(db_deal)
+    
+    # Create activity log
+    create_activity(
+        db,
+        title="Deal Created",
+        description=f"Created deal: {deal.title}",
+        type="deal",
+        entity_id=str(db_deal.id),
+        organization_id=organization_id
+    )
+    
+    return db_deal
+
+def get_deals(
+    db: Session,
+    organization_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    stage_id: Optional[int] = None,
+    contact_id: Optional[int] = None,
+    company_id: Optional[int] = None,
+    assigned_to: Optional[int] = None,
+    include_inactive: bool = False
+) -> List[Deal]:
+    query = db.query(Deal).filter(Deal.organization_id == organization_id)
+    
+    if not include_inactive:
+        query = query.filter(Deal.is_active == True)
+    
+    if stage_id:
+        query = query.filter(Deal.stage_id == stage_id)
+    
+    if contact_id:
+        query = query.filter(Deal.contact_id == contact_id)
+    
+    if company_id:
+        query = query.filter(Deal.company_id == company_id)
+    
+    if assigned_to:
+        query = query.filter(Deal.assigned_to == assigned_to)
+    
+    return query.order_by(desc(Deal.created_at)).offset(skip).limit(limit).all()
+
+def get_deal(db: Session, deal_id: int, organization_id: int) -> Optional[Deal]:
+    return db.query(Deal).filter(
+        Deal.id == deal_id,
+        Deal.organization_id == organization_id
+    ).first()
+
+def update_deal(db: Session, deal_id: int, deal_update: DealUpdate, organization_id: int) -> Optional[Deal]:
+    db_deal = get_deal(db, deal_id, organization_id)
+    if not db_deal:
+        return None
+    
+    update_data = deal_update.dict(exclude_unset=True)
+    old_stage_id = db_deal.stage_id
+    
+    for field, value in update_data.items():
+        setattr(db_deal, field, value)
+    
+    # If stage changed, log activity
+    if "stage_id" in update_data and update_data["stage_id"] != old_stage_id:
+        old_stage = get_pipeline_stage(db, old_stage_id, organization_id)
+        new_stage = get_pipeline_stage(db, update_data["stage_id"], organization_id)
+        
+        if old_stage and new_stage:
+            create_activity(
+                db,
+                title="Deal Stage Changed",
+                description=f"Moved deal from '{old_stage.name}' to '{new_stage.name}'",
+                type="deal",
+                entity_id=str(db_deal.id),
+                organization_id=organization_id
+            )
+    
+    db.commit()
+    db.refresh(db_deal)
+    return db_deal
+
+def delete_deal(db: Session, deal_id: int, organization_id: int) -> bool:
+    db_deal = get_deal(db, deal_id, organization_id)
+    if not db_deal:
+        return False
+    
+    # Soft delete - mark as inactive
+    db_deal.is_active = False
+    db.commit()
+    
+    create_activity(
+        db,
+        title="Deal Deleted",
+        description=f"Deleted deal: {db_deal.title}",
+        type="deal",
+        entity_id=str(db_deal.id),
+        organization_id=organization_id
+    )
+    
+    return True

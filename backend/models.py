@@ -393,3 +393,66 @@ class O365UserConnection(Base):
     user = relationship("User")
     organization = relationship("Organization")
     org_config = relationship("O365OrganizationConfig", back_populates="user_connections")
+
+class PipelineStage(Base):
+    __tablename__ = "pipeline_stages"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    name = Column(String(100), nullable=False)  # Lead, Qualified, Proposal, etc.
+    description = Column(Text)
+    position = Column(Integer, nullable=False)  # Order in pipeline (0, 1, 2, ...)
+    is_closed_won = Column(Boolean, default=False)  # Final winning stage
+    is_closed_lost = Column(Boolean, default=False)  # Final losing stage
+    color = Column(String(7), default="#3B82F6")  # Hex color for UI
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    organization = relationship("Organization")
+    deals = relationship("Deal", back_populates="stage")
+
+class Deal(Base):
+    __tablename__ = "deals"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True)
+    
+    # Deal details
+    title = Column(String(255), nullable=False)
+    description = Column(Text)
+    value = Column(Float, default=0.0)  # Deal value in currency
+    currency = Column(String(3), default="USD")  # ISO currency code
+    probability = Column(Integer, default=50)  # 0-100% chance of closing
+    
+    # Dates
+    expected_close_date = Column(DateTime(timezone=True))
+    actual_close_date = Column(DateTime(timezone=True))
+    
+    # Relationships
+    stage_id = Column(Integer, ForeignKey("pipeline_stages.id"), nullable=False)
+    contact_id = Column(Integer, ForeignKey("contacts.id"), nullable=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
+    
+    # Status and tracking
+    is_active = Column(Boolean, default=True)
+    notes = Column(Text)
+    tags = Column(JSON)  # Store as JSON array
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    organization = relationship("Organization")
+    creator = relationship("User", foreign_keys=[created_by])
+    assignee = relationship("User", foreign_keys=[assigned_to])
+    stage = relationship("PipelineStage", back_populates="deals")
+    contact = relationship("Contact")
+    company = relationship("Company")
+    activities = relationship("Activity", foreign_keys="Activity.entity_id", 
+                            primaryjoin="and_(cast(Deal.id, String) == Activity.entity_id, Activity.type == 'deal')",
+                            overlaps="activities")

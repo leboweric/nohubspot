@@ -499,3 +499,85 @@ class O365TestConnectionResponse(BaseModel):
     success: bool
     message: str
     error_details: Optional[str] = None
+
+# Pipeline Stage schemas
+class PipelineStageBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = None
+    position: int = Field(..., ge=0)
+    is_closed_won: bool = False
+    is_closed_lost: bool = False
+    color: str = Field(default="#3B82F6", regex="^#[0-9A-Fa-f]{6}$")
+    is_active: bool = True
+
+class PipelineStageCreate(PipelineStageBase):
+    pass
+
+class PipelineStageUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    description: Optional[str] = None
+    position: Optional[int] = Field(None, ge=0)
+    is_closed_won: Optional[bool] = None
+    is_closed_lost: Optional[bool] = None
+    color: Optional[str] = Field(None, regex="^#[0-9A-Fa-f]{6}$")
+    is_active: Optional[bool] = None
+
+class PipelineStageResponse(PipelineStageBase, TimestampMixin):
+    id: int
+    organization_id: int
+    deal_count: Optional[int] = 0  # Will be populated by API
+    
+    class Config:
+        from_attributes = True
+
+# Deal schemas
+class DealBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    value: float = Field(default=0.0, ge=0)
+    currency: str = Field(default="USD", max_length=3)
+    probability: int = Field(default=50, ge=0, le=100)
+    expected_close_date: Optional[datetime] = None
+    contact_id: Optional[int] = None
+    company_id: Optional[int] = None
+    assigned_to: Optional[int] = None
+    notes: Optional[str] = None
+    tags: Optional[List[str]] = Field(default_factory=list)
+
+class DealCreate(DealBase):
+    stage_id: int
+
+class DealUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = None
+    value: Optional[float] = Field(None, ge=0)
+    currency: Optional[str] = Field(None, max_length=3)
+    probability: Optional[int] = Field(None, ge=0, le=100)
+    expected_close_date: Optional[datetime] = None
+    actual_close_date: Optional[datetime] = None
+    stage_id: Optional[int] = None
+    contact_id: Optional[int] = None
+    company_id: Optional[int] = None
+    assigned_to: Optional[int] = None
+    notes: Optional[str] = None
+    tags: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+
+class DealResponse(DealBase, TimestampMixin):
+    id: int
+    organization_id: int
+    created_by: int
+    stage_id: int
+    actual_close_date: Optional[datetime] = None
+    is_active: bool
+    
+    # Populated by API
+    stage_name: Optional[str] = None
+    stage_color: Optional[str] = None
+    contact_name: Optional[str] = None
+    company_name: Optional[str] = None
+    creator_name: Optional[str] = None
+    assignee_name: Optional[str] = None
+    
+    class Config:
+        from_attributes = True

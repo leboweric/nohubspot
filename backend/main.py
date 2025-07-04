@@ -34,7 +34,7 @@ def rate_limit_check(client_ip: str, endpoint: str, max_requests: int = 30, wind
     return True
 
 from database import get_db, SessionLocal, engine
-from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection
+from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, PipelineStage, Deal
 from schemas import (
     CompanyCreate, CompanyResponse, CompanyUpdate,
     ContactCreate, ContactResponse, ContactUpdate,
@@ -51,7 +51,9 @@ from schemas import (
     PasswordResetRequest, PasswordResetConfirm, PasswordResetResponse,
     O365OrganizationConfigCreate, O365OrganizationConfigUpdate, O365OrganizationConfigResponse,
     O365UserConnectionUpdate, O365UserConnectionResponse,
-    O365TestConnectionRequest, O365TestConnectionResponse
+    O365TestConnectionRequest, O365TestConnectionResponse,
+    PipelineStageCreate, PipelineStageResponse, PipelineStageUpdate,
+    DealCreate, DealResponse, DealUpdate
 )
 from crud import (
     create_company, get_companies, get_company, update_company, delete_company,
@@ -66,7 +68,9 @@ from crud import (
     create_calendar_event, get_calendar_events, get_calendar_event, 
     update_calendar_event, delete_calendar_event, get_upcoming_events, get_today_events,
     is_org_owner, get_o365_org_config, create_o365_org_config, update_o365_org_config, delete_o365_org_config,
-    get_o365_user_connection, get_o365_user_connections_by_org, update_o365_user_connection, delete_o365_user_connection
+    get_o365_user_connection, get_o365_user_connections_by_org, update_o365_user_connection, delete_o365_user_connection,
+    create_pipeline_stage, get_pipeline_stages, get_pipeline_stage, update_pipeline_stage, delete_pipeline_stage, create_default_pipeline_stages,
+    create_deal, get_deals, get_deal, update_deal, delete_deal
 )
 from auth_crud import (
     create_organization, get_organization_by_slug, get_organization_by_id,
@@ -1823,6 +1827,223 @@ async def list_all_tenants(db: Session = Depends(get_db)):
         }
         for t in tenants
     ]
+
+# Pipeline Stage endpoints
+@app.get("/api/pipeline/stages", response_model=List[PipelineStageResponse])
+async def get_stages(
+    include_inactive: bool = False,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all pipeline stages for the organization"""
+    stages = get_pipeline_stages(db, current_user.organization_id, include_inactive)
+    
+    # Add deal counts
+    for stage in stages:
+        stage.deal_count = db.query(Deal).filter(
+            Deal.stage_id == stage.id,
+            Deal.is_active == True
+        ).count()
+    
+    return stages
+
+@app.post("/api/pipeline/stages", response_model=PipelineStageResponse)
+async def create_stage(
+    stage: PipelineStageCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new pipeline stage"""
+    db_stage = create_pipeline_stage(db, stage, current_user.organization_id)
+    
+    # Create activity log
+    create_activity(
+        db,
+        title="Pipeline Stage Created",
+        description=f"Created pipeline stage: {stage.name}",
+        type="pipeline",
+        organization_id=current_user.organization_id
+    )
+    
+    return db_stage
+
+@app.get("/api/pipeline/stages/{stage_id}", response_model=PipelineStageResponse)
+async def get_stage(
+    stage_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get a specific pipeline stage"""
+    stage = get_pipeline_stage(db, stage_id, current_user.organization_id)
+    if not stage:
+        raise HTTPException(status_code=404, detail="Pipeline stage not found")
+    
+    # Add deal count
+    stage.deal_count = db.query(Deal).filter(
+        Deal.stage_id == stage.id,
+        Deal.is_active == True
+    ).count()
+    
+    return stage
+
+@app.put("/api/pipeline/stages/{stage_id}", response_model=PipelineStageResponse)
+async def update_stage(
+    stage_id: int,
+    stage_update: PipelineStageUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update a pipeline stage"""
+    db_stage = update_pipeline_stage(db, stage_id, stage_update, current_user.organization_id)
+    if not db_stage:
+        raise HTTPException(status_code=404, detail="Pipeline stage not found")
+    
+    return db_stage
+
+@app.delete("/api/pipeline/stages/{stage_id}")
+async def delete_stage(
+    stage_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a pipeline stage"""
+    success = delete_pipeline_stage(db, stage_id, current_user.organization_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Pipeline stage not found")
+    
+    return {"message": "Pipeline stage deleted successfully"}
+
+@app.post("/api/pipeline/stages/initialize")
+async def initialize_default_stages(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create default pipeline stages for the organization"""
+    # Check if stages already exist
+    existing_stages = get_pipeline_stages(db, current_user.organization_id)
+    if existing_stages:
+        raise HTTPException(status_code=400, detail="Pipeline stages already exist")
+    
+    stages = create_default_pipeline_stages(db, current_user.organization_id)
+    return {"message": f"Created {len(stages)} default pipeline stages", "stages": stages}
+
+# Deal endpoints
+@app.get("/api/deals", response_model=List[DealResponse])
+async def get_organization_deals(
+    skip: int = 0,
+    limit: int = 100,
+    stage_id: Optional[int] = None,
+    contact_id: Optional[int] = None,
+    company_id: Optional[int] = None,
+    assigned_to: Optional[int] = None,
+    include_inactive: bool = False,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all deals for the organization"""
+    deals = get_deals(
+        db, current_user.organization_id, skip, limit,
+        stage_id, contact_id, company_id, assigned_to, include_inactive
+    )
+    
+    # Populate related names
+    for deal in deals:
+        # Stage info
+        if deal.stage:
+            deal.stage_name = deal.stage.name
+            deal.stage_color = deal.stage.color
+        
+        # Contact info
+        if deal.contact:
+            deal.contact_name = f"{deal.contact.first_name} {deal.contact.last_name}".strip()
+        
+        # Company info
+        if deal.company:
+            deal.company_name = deal.company.name
+        
+        # Creator info
+        if deal.creator:
+            deal.creator_name = f"{deal.creator.first_name} {deal.creator.last_name}".strip()
+        
+        # Assignee info
+        if deal.assignee:
+            deal.assignee_name = f"{deal.assignee.first_name} {deal.assignee.last_name}".strip()
+    
+    return deals
+
+@app.post("/api/deals", response_model=DealResponse)
+async def create_new_deal(
+    deal: DealCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new deal"""
+    # Verify stage exists
+    stage = get_pipeline_stage(db, deal.stage_id, current_user.organization_id)
+    if not stage:
+        raise HTTPException(status_code=400, detail="Invalid stage_id")
+    
+    db_deal = create_deal(db, deal, current_user.organization_id, current_user.id)
+    return db_deal
+
+@app.get("/api/deals/{deal_id}", response_model=DealResponse)
+async def get_deal_by_id(
+    deal_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get a specific deal"""
+    deal = get_deal(db, deal_id, current_user.organization_id)
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal not found")
+    
+    # Populate related names (same as above)
+    if deal.stage:
+        deal.stage_name = deal.stage.name
+        deal.stage_color = deal.stage.color
+    if deal.contact:
+        deal.contact_name = f"{deal.contact.first_name} {deal.contact.last_name}".strip()
+    if deal.company:
+        deal.company_name = deal.company.name
+    if deal.creator:
+        deal.creator_name = f"{deal.creator.first_name} {deal.creator.last_name}".strip()
+    if deal.assignee:
+        deal.assignee_name = f"{deal.assignee.first_name} {deal.assignee.last_name}".strip()
+    
+    return deal
+
+@app.put("/api/deals/{deal_id}", response_model=DealResponse)
+async def update_deal_by_id(
+    deal_id: int,
+    deal_update: DealUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update a deal"""
+    # Verify stage exists if being updated
+    if deal_update.stage_id:
+        stage = get_pipeline_stage(db, deal_update.stage_id, current_user.organization_id)
+        if not stage:
+            raise HTTPException(status_code=400, detail="Invalid stage_id")
+    
+    db_deal = update_deal(db, deal_id, deal_update, current_user.organization_id)
+    if not db_deal:
+        raise HTTPException(status_code=404, detail="Deal not found")
+    
+    return db_deal
+
+@app.delete("/api/deals/{deal_id}")
+async def delete_deal_by_id(
+    deal_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a deal"""
+    success = delete_deal(db, deal_id, current_user.organization_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Deal not found")
+    
+    return {"message": "Deal deleted successfully"}
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
