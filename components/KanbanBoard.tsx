@@ -24,7 +24,7 @@ interface KanbanBoardProps {
   stages: PipelineStage[]
   deals: Deal[]
   onDealMove: (dealId: number, newStageId: number) => Promise<void>
-  onAddDeal?: () => void
+  onAddDeal?: (stageId?: number) => void
 }
 
 export default function KanbanBoard({ stages, deals, onDealMove, onAddDeal }: KanbanBoardProps) {

@@ -8,7 +8,7 @@ import DealCard from './DealCard'
 interface KanbanColumnProps {
   stage: PipelineStage
   deals: Deal[]
-  onAddDeal?: () => void
+  onAddDeal?: (stageId?: number) => void
 }
 
 export default function KanbanColumn({ stage, deals, onAddDeal }: KanbanColumnProps) {
@@ -72,7 +72,7 @@ export default function KanbanColumn({ stage, deals, onAddDeal }: KanbanColumnPr
         {/* Add Deal Button */}
         {onAddDeal && (
           <button
-            onClick={onAddDeal}
+            onClick={() => onAddDeal(stage.id)}
             className="w-full p-3 text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:text-blue-600 transition-colors"
           >
             + Add Deal

@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import KanbanBoard from "@/components/KanbanBoard"
-import { pipelineAPI, dealAPI, handleAPIError, PipelineStage, Deal } from "@/lib/api"
+import DealModal from "@/components/DealModal"
+import { pipelineAPI, dealAPI, handleAPIError, PipelineStage, Deal, DealCreate } from "@/lib/api"
 
 export default function PipelinePage() {
   const [stages, setStages] = useState<PipelineStage[]>([])
@@ -14,6 +15,9 @@ export default function PipelinePage() {
   const [success, setSuccess] = useState("")
   const [selectedStage, setSelectedStage] = useState<number | null>(null)
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban')
+  const [showDealModal, setShowDealModal] = useState(false)
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null)
+  const [defaultStageId, setDefaultStageId] = useState<number | undefined>(undefined)
 
   useEffect(() => {
     loadPipelineData()
@@ -95,6 +99,51 @@ export default function PipelinePage() {
       // Revert the optimistic update by reloading data
       await loadPipelineData()
     }
+  }
+
+  const handleCreateDeal = (stageId?: number) => {
+    setSelectedDeal(null)
+    setDefaultStageId(stageId)
+    setShowDealModal(true)
+  }
+
+  const handleEditDeal = (deal: Deal) => {
+    setSelectedDeal(deal)
+    setDefaultStageId(undefined)
+    setShowDealModal(true)
+  }
+
+  const handleSaveDeal = async (dealData: DealCreate) => {
+    try {
+      setError("")
+      
+      if (selectedDeal) {
+        // Editing existing deal
+        const updatedDeal = await dealAPI.updateDeal(selectedDeal.id, dealData)
+        setDeals(prevDeals => 
+          prevDeals.map(deal => 
+            deal.id === selectedDeal.id ? updatedDeal : deal
+          )
+        )
+        setSuccess("Deal updated successfully!")
+      } else {
+        // Creating new deal
+        const newDeal = await dealAPI.createDeal(dealData)
+        setDeals(prevDeals => [...prevDeals, newDeal])
+        setSuccess("Deal created successfully!")
+      }
+      
+      setTimeout(() => setSuccess(""), 3000)
+      
+    } catch (err) {
+      throw new Error(handleAPIError(err))
+    }
+  }
+
+  const handleCloseModal = () => {
+    setShowDealModal(false)
+    setSelectedDeal(null)
+    setDefaultStageId(undefined)
   }
 
   if (loading) {
@@ -254,10 +303,7 @@ export default function PipelinePage() {
                     stages={stages}
                     deals={deals}
                     onDealMove={handleDealMove}
-                    onAddDeal={() => {
-                      // TODO: Open deal creation modal
-                      console.log('Add new deal')
-                    }}
+                    onAddDeal={handleCreateDeal}
                   />
                 </div>
               ) : (
@@ -342,7 +388,10 @@ export default function PipelinePage() {
 
                   {/* Quick Actions for List View */}
                   <div className="flex justify-center">
-                    <button className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
+                    <button 
+                      onClick={() => handleCreateDeal()}
+                      className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                    >
                       + Add New Deal
                     </button>
                   </div>
@@ -351,6 +400,16 @@ export default function PipelinePage() {
             </div>
           )}
         </div>
+
+        {/* Deal Creation/Edit Modal */}
+        <DealModal
+          isOpen={showDealModal}
+          onClose={handleCloseModal}
+          onSave={handleSaveDeal}
+          stages={stages}
+          deal={selectedDeal}
+          defaultStageId={defaultStageId}
+        />
       </MainLayout>
     </AuthGuard>
   )
