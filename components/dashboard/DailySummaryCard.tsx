@@ -12,7 +12,7 @@ interface DailySummary {
     overdue_tasks: number
     today_tasks: number
     total_contacts: number
-    contacts_needing_attention: number
+    active_deals: number
     active_companies: number
   }
 }
@@ -198,8 +198,8 @@ export default function DailySummaryCard() {
           <div className="text-xs text-gray-600">Contacts</div>
         </div>
         <div className="text-center">
-          <div className="text-lg font-bold text-purple-600">{summary.quick_stats.contacts_needing_attention}</div>
-          <div className="text-xs text-gray-600">Attention</div>
+          <div className="text-lg font-bold text-purple-600">{summary.quick_stats.active_deals}</div>
+          <div className="text-xs text-gray-600">Deals</div>
         </div>
         <div className="text-center">
           <div className="text-lg font-bold text-green-600">{summary.quick_stats.active_companies}</div>

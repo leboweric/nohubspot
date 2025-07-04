@@ -462,7 +462,7 @@ export const dashboardAPI = {
       overdue_tasks: number
       today_tasks: number
       total_contacts: number
-      contacts_needing_attention: number
+      active_deals: number
       active_companies: number
     }
   }> =>

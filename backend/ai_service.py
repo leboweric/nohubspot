@@ -8,8 +8,8 @@ from typing import Dict, List, Optional, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc
 from openai import OpenAI
-from models import Task, Contact, Company, Activity, User
-from crud import get_tasks, get_contacts, get_companies
+from models import Task, Contact, Company, Activity, User, Deal
+from crud import get_tasks, get_contacts, get_companies, get_deals
 
 # Configure OpenAI - try multiple environment variable names
 openai_key = (
@@ -101,6 +101,23 @@ class DailySummaryService:
         # Get companies data
         all_companies = get_companies(self.db, self.organization_id, limit=1000)
         
+        # Get deals data
+        all_deals = get_deals(self.db, self.organization_id, limit=1000)
+        
+        # Categorize deals by stage
+        deals_by_stage = {}
+        active_deals = []
+        high_value_deals = []
+        
+        for deal in all_deals:
+            # Only include active deals
+            if deal.is_active:
+                active_deals.append(deal)
+                
+                # High value deals (>= $5000)
+                if deal.value >= 5000:
+                    high_value_deals.append(deal)
+        
         return {
             "tasks": {
                 "total": len(all_tasks),
@@ -115,6 +132,11 @@ class DailySummaryService:
             "companies": {
                 "total": len(all_companies),
                 "active": [c for c in all_companies if c.status == 'Active']
+            },
+            "deals": {
+                "total": len(all_deals),
+                "active": active_deals,
+                "high_value": high_value_deals
             },
             "activities": recent_activities,
             "time_range": {
@@ -164,7 +186,8 @@ class DailySummaryService:
         overdue_count = len(data["tasks"]["overdue"])
         today_count = len(data["tasks"]["today"])
         pending_count = len(data["tasks"]["pending"])
-        contacts_with_tasks = len(data["contacts"]["with_tasks"])
+        active_deals = len(data["deals"]["active"])
+        high_value_deals = len(data["deals"]["high_value"])
         
         # Build overdue task details
         overdue_details = []
@@ -176,14 +199,10 @@ class DailySummaryService:
         for task in data["tasks"]["today"][:5]:
             today_details.append(f"- {task.title} (priority: {task.priority})")
         
-        # Build contact insights
-        contact_details = []
-        for item in data["contacts"]["with_tasks"][:3]:
-            contact = item["contact"]
-            overdue = len(item["overdue_tasks"])
-            total_tasks = len(item["tasks"])
-            if overdue > 0:
-                contact_details.append(f"- {contact.first_name} {contact.last_name} at {contact.company_name or 'Unknown Company'} ({overdue} overdue, {total_tasks} total tasks)")
+        # Build deals insights
+        deal_details = []
+        for deal in data["deals"]["high_value"][:5]:  # Top 5 high value deals
+            deal_details.append(f"- {deal.title} (${deal.value:,.0f}, {deal.probability}% probability)")
         
         prompt = f"""
         Generate a daily summary for {user_name} (sales representative) based on this CRM data:
@@ -201,8 +220,12 @@ class DailySummaryService:
         TODAY'S TASKS:
         {chr(10).join(today_details) if today_details else "None"}
 
-        CONTACTS NEEDING ATTENTION:
-        {chr(10).join(contact_details) if contact_details else "No contacts with overdue tasks"}
+        DEALS OVERVIEW:
+        - {active_deals} active deals
+        - {high_value_deals} high-value deals (>=$5,000)
+
+        TOP HIGH-VALUE DEALS:
+        {chr(10).join(deal_details) if deal_details else "No high-value deals"}
 
         COMPANIES: {data["companies"]["total"]} total, {len(data["companies"]["active"])} active
 
@@ -222,7 +245,7 @@ class DailySummaryService:
             "overdue_tasks": len(data["tasks"]["overdue"]),
             "today_tasks": len(data["tasks"]["today"]), 
             "total_contacts": data["contacts"]["total"],
-            "contacts_needing_attention": len([c for c in data["contacts"]["with_tasks"] if c["overdue_tasks"]]),
+            "active_deals": len(data["deals"]["active"]),
             "active_companies": len(data["companies"]["active"])
         }
     
@@ -232,12 +255,12 @@ class DailySummaryService:
         return {
             "generated_at": datetime.now().isoformat(),
             "user_id": self.user_id,
-            "ai_insights": "Good morning! Your daily summary is being prepared. Please check your tasks and contacts for today's priorities.",
+            "ai_insights": "Good morning! Your daily summary is being prepared. Please check your tasks and deals for today's priorities.",
             "quick_stats": {
                 "overdue_tasks": 0,
                 "today_tasks": 0,
                 "total_contacts": 0,
-                "contacts_needing_attention": 0,
+                "active_deals": 0,
                 "active_companies": 0
             }
         }
