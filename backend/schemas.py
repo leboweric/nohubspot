@@ -205,7 +205,7 @@ class EmailSignatureUpdate(EmailSignatureBase):
 
 class EmailSignatureResponse(EmailSignatureBase, TimestampMixin):
     id: int
-    user_id: str
+    user_id: int
     
     class Config:
         from_attributes = True
