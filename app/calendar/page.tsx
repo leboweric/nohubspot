@@ -98,18 +98,22 @@ export default function CalendarPage() {
   }
 
   const handleEventDelete = async (eventId: number) => {
-    if (!confirm('Are you sure you want to delete this event?')) return
+    console.log('handleEventDelete called with eventId:', eventId)
     
     try {
+      console.log('Starting delete process...')
       await calendarAPI.delete(eventId)
+      console.log('API delete successful, refreshing events...')
       
       // Refresh events for the currently viewed month
       const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
       const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
       await loadEvents(startOfMonth, endOfMonth)
       
+      console.log('Events refreshed, closing modal...')
       setShowEventModal(false)
       setSelectedEvent(null)
+      console.log('Delete process completed')
     } catch (err) {
       console.error('Failed to delete event:', err)
       alert(`Failed to delete event: ${handleAPIError(err)}`)

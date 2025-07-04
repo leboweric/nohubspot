@@ -219,9 +219,21 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
     }))
   }
 
-  const handleDelete = () => {
-    if (onDelete && confirm('Are you sure you want to delete this event?')) {
-      onDelete()
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!onDelete) return
+    
+    const confirmed = window.confirm('Are you sure you want to delete this event?')
+    if (confirmed) {
+      try {
+        console.log('Delete button clicked - calling onDelete')
+        await onDelete()
+        console.log('Delete completed successfully')
+      } catch (error) {
+        console.error('Delete failed:', error)
+      }
     }
   }
 
@@ -488,7 +500,27 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
             </div>
           </div>
 
-          <div className="flex justify-between">
+          <div className="flex justify-end gap-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border rounded-md hover:bg-accent transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {loading ? 'Saving...' : event ? 'Update Event' : 'Create Event'}
+            </button>
+          </div>
+        </form>
+        
+        {/* Delete and secondary actions outside the form */}
+        {(event && onDelete) || (event && formData.attendee_ids.length > 0) ? (
+          <div className="p-6 border-t flex justify-between">
             <div className="flex gap-2">
               {event && onDelete && (
                 <button
@@ -510,25 +542,8 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
                 </button>
               )}
             </div>
-            
-            <div className="flex gap-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 border rounded-md hover:bg-accent transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
-              >
-                {loading ? 'Saving...' : event ? 'Update Event' : 'Create Event'}
-              </button>
-            </div>
           </div>
-        </form>
+        ) : null}
       </div>
     </div>
   )
