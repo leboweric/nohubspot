@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
-import { contactAPI, handleAPIError } from "@/lib/api"
+import { contactAPI, companyAPI, handleAPIError, Company } from "@/lib/api"
 import { normalizePhoneNumber } from "@/lib/phoneUtils"
 
 export default function NewContactPage() {
@@ -16,21 +16,45 @@ export default function NewContactPage() {
     email: "",
     phone: "",
     title: "",
-    company_name: "",
+    company_id: "",
     status: "Lead"
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [loadingCompanies, setLoadingCompanies] = useState(true)
+
+  // Load companies on component mount
+  useEffect(() => {
+    const loadCompanies = async () => {
+      try {
+        setLoadingCompanies(true)
+        const companiesData = await companyAPI.getAll({ limit: 1000 })
+        setCompanies(companiesData)
+      } catch (err) {
+        console.error('Failed to load companies:', err)
+        setError('Failed to load companies. Please refresh the page.')
+      } finally {
+        setLoadingCompanies(false)
+      }
+    }
+
+    loadCompanies()
+  }, [])
 
   useEffect(() => {
     const companyParam = searchParams.get('company')
-    if (companyParam) {
-      setFormData(prev => ({
-        ...prev,
-        company_name: companyParam
-      }))
+    if (companyParam && companies.length > 0) {
+      // Find company by name and set the ID
+      const company = companies.find(c => c.name.toLowerCase() === companyParam.toLowerCase())
+      if (company) {
+        setFormData(prev => ({
+          ...prev,
+          company_id: company.id.toString()
+        }))
+      }
     }
-  }, [searchParams])
+  }, [searchParams, companies])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,10 +64,16 @@ export default function NewContactPage() {
     try {
       console.log("Submitting contact:", formData)
       
-      // Format phone number before submitting
+      // Format phone number and company_id before submitting
       const formattedData = {
         ...formData,
-        phone: normalizePhoneNumber(formData.phone)
+        phone: normalizePhoneNumber(formData.phone),
+        company_id: formData.company_id ? parseInt(formData.company_id) : undefined
+      }
+      
+      // Remove company_id from formData if it's empty string
+      if (!formData.company_id) {
+        delete formattedData.company_id
       }
       
       console.log("Formatted contact data:", formattedData)
@@ -165,17 +195,35 @@ export default function NewContactPage() {
         </div>
 
         <div>
-          <label htmlFor="company_name" className="block text-sm font-medium mb-2">
-            Company
+          <label htmlFor="company_id" className="block text-sm font-medium mb-2">
+            Company *
           </label>
-          <input
-            type="text"
-            id="company_name"
-            name="company_name"
-            value={formData.company_name}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+          {loadingCompanies ? (
+            <div className="w-full px-4 py-2 border rounded-md bg-gray-50 text-gray-500">
+              Loading companies...
+            </div>
+          ) : (
+            <select
+              id="company_id"
+              name="company_id"
+              required
+              value={formData.company_id}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">Select a company</option>
+              {companies.map(company => (
+                <option key={company.id} value={company.id}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
+          )}
+          {companies.length === 0 && !loadingCompanies && (
+            <p className="text-sm text-gray-600 mt-1">
+              No companies found. <a href="/companies/new" className="text-blue-600 hover:underline">Create a company first</a>.
+            </p>
+          )}
         </div>
 
         <div>

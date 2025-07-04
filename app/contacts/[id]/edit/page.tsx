@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { contactAPI, Contact, handleAPIError } from "@/lib/api"
+import { contactAPI, companyAPI, Contact, Company, handleAPIError } from "@/lib/api"
 import { normalizePhoneNumber } from "@/lib/phoneUtils"
 
 export default function EditContactPage({ params }: { params: { id: string } }) {
@@ -11,6 +11,8 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
   const [contact, setContact] = useState<Contact | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [loadingCompanies, setLoadingCompanies] = useState(true)
   
   const [formData, setFormData] = useState({
     first_name: "",
@@ -18,9 +20,27 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
     email: "",
     phone: "",
     title: "",
-    company_name: "",
+    company_id: "",
     status: "Lead"
   })
+
+  // Load companies on component mount
+  useEffect(() => {
+    const loadCompanies = async () => {
+      try {
+        setLoadingCompanies(true)
+        const companiesData = await companyAPI.getAll({ limit: 1000 })
+        setCompanies(companiesData)
+      } catch (err) {
+        console.error('Failed to load companies:', err)
+        setError('Failed to load companies. Please refresh the page.')
+      } finally {
+        setLoadingCompanies(false)
+      }
+    }
+
+    loadCompanies()
+  }, [])
 
   useEffect(() => {
     const loadContact = async () => {
@@ -35,7 +55,7 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
           email: contactData.email,
           phone: contactData.phone || "",
           title: contactData.title || "",
-          company_name: contactData.company_name || "",
+          company_id: contactData.company_id ? contactData.company_id.toString() : "",
           status: contactData.status
         })
       } catch (err) {
@@ -81,8 +101,15 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
     try {
       const updateData = {
         ...formData,
-        phone: normalizePhoneNumber(formData.phone)
+        phone: normalizePhoneNumber(formData.phone),
+        company_id: formData.company_id ? parseInt(formData.company_id) : undefined
       }
+      
+      // Remove company_id from updateData if it's empty string
+      if (!formData.company_id) {
+        delete updateData.company_id
+      }
+      
       await contactAPI.update(parseInt(params.id), updateData)
       router.push(`/contacts/${params.id}`)
     } catch (err) {
@@ -186,17 +213,35 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
         </div>
 
         <div>
-          <label htmlFor="company_name" className="block text-sm font-medium mb-2">
-            Company
+          <label htmlFor="company_id" className="block text-sm font-medium mb-2">
+            Company *
           </label>
-          <input
-            type="text"
-            id="company_name"
-            name="company_name"
-            value={formData.company_name}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+          {loadingCompanies ? (
+            <div className="w-full px-4 py-2 border rounded-md bg-gray-50 text-gray-500">
+              Loading companies...
+            </div>
+          ) : (
+            <select
+              id="company_id"
+              name="company_id"
+              required
+              value={formData.company_id}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">Select a company</option>
+              {companies.map(company => (
+                <option key={company.id} value={company.id}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
+          )}
+          {companies.length === 0 && !loadingCompanies && (
+            <p className="text-sm text-gray-600 mt-1">
+              No companies found. <a href="/companies/new" className="text-blue-600 hover:underline">Create a company first</a>.
+            </p>
+          )}
         </div>
 
         <div>
