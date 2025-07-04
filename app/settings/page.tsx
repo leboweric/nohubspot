@@ -42,11 +42,10 @@ export default function SettingsPage() {
       loadUsers()
       loadInvites()
     }
-    // TEMPORARILY DISABLED: O365 functionality
-    // if (isOwner) {
-    //   loadO365Config()
-    // }
-    // loadO365UserConnection()
+    if (isOwner) {
+      loadO365Config()
+    }
+    loadO365UserConnection()
   }, [user])
 
   const loadO365Config = async () => {
@@ -71,7 +70,11 @@ export default function SettingsPage() {
       const connection = await o365API.getUserConnection()
       setO365UserConnection(connection)
     } catch (err) {
-      console.error('Failed to load O365 user connection:', err)
+      // Don't spam logs for 404 - no user connection exists yet
+      if (err.status !== 404) {
+        console.error('Failed to load O365 user connection:', err)
+      }
+      setO365UserConnection(null)
     }
   }
 
@@ -464,8 +467,8 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Office 365 Integration Section - TEMPORARILY DISABLED */}
-        {/* <div className="bg-card border rounded-lg p-6">
+        {/* Office 365 Integration Section */}
+        <div className="bg-card border rounded-lg p-6">
           <div className="flex justify-between items-start mb-4">
             <div>
               <h2 className="text-lg font-semibold">Office 365 Integration</h2>
@@ -587,7 +590,7 @@ export default function SettingsPage() {
               </div>
             )}
           </div>
-        </div> */}
+        </div>
 
         {/* System Settings Section */}
         <div className="bg-card border rounded-lg p-6">
@@ -668,8 +671,8 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Office 365 Configuration Modal - TEMPORARILY DISABLED */}
-      {/* {showO365Config && isOwner && (
+      {/* Office 365 Configuration Modal */}
+      {showO365Config && isOwner && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
@@ -827,7 +830,7 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
-      )} */}
+      )}
 
       {/* Signature Builder Modal */}
       <SignatureBuilder
