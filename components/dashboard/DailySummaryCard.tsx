@@ -203,7 +203,7 @@ export default function DailySummaryCard() {
         </div>
         <div className="text-center">
           <div className="text-lg font-bold text-green-600">{summary.quick_stats.active_companies}</div>
-          <div className="text-xs text-gray-600">Active</div>
+          <div className="text-xs text-gray-600">Customers</div>
         </div>
       </div>
 
