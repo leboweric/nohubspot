@@ -454,19 +454,22 @@ export default function SettingsPage() {
             <div>
               <label className="block text-sm font-medium mb-1">Default Sender Name</label>
               <div className="px-3 py-2 bg-muted rounded-md text-sm">
-                {process.env.NEXT_PUBLIC_DEFAULT_SENDER_NAME || 'Sales Rep'}
+                {user?.first_name && user?.last_name 
+                  ? `${user.first_name} ${user.last_name}`
+                  : user?.email?.split('@')[0] || 'Sales Rep'
+                }
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Configure this in your environment variables
+                Your name used as the sender for outgoing emails
               </p>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Default Sender Email</label>
               <div className="px-3 py-2 bg-muted rounded-md text-sm">
-                {process.env.NEXT_PUBLIC_DEFAULT_SENDER_EMAIL || 'sales@company.com'}
+                {user?.email || 'sales@company.com'}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Configure this in your environment variables
+                Your email address used as the sender for outgoing emails
               </p>
             </div>
           </div>

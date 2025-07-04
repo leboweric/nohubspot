@@ -10,8 +10,10 @@ import TaskCreate from "@/components/tasks/TaskCreate"
 import EventFormModal from "@/components/calendar/EventFormModal"
 import { Task } from "@/components/tasks/types"
 import { contactAPI, Contact, handleAPIError, CalendarEventCreate, calendarAPI } from "@/lib/api"
+import { getAuthState } from "@/lib/auth"
 
 export default function ContactDetailPage({ params }: { params: { id: string } }) {
+  const { user } = getAuthState()
   const [contact, setContact] = useState<Contact | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -332,8 +334,11 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
         recipientEmail={contact?.email || ""}
         recipientName={`${contact?.first_name} ${contact?.last_name}` || ""}
         onSend={handleEmailSent}
-        senderName={process.env.NEXT_PUBLIC_DEFAULT_SENDER_NAME || "John Smith"}
-        senderEmail={process.env.NEXT_PUBLIC_DEFAULT_SENDER_EMAIL || "john.smith@company.com"}
+        senderName={user?.first_name && user?.last_name 
+          ? `${user.first_name} ${user.last_name}`
+          : user?.email?.split('@')[0] || "Sales Rep"
+        }
+        senderEmail={user?.email || "sales@company.com"}
       />
 
       {/* Email Thread Modal */}
@@ -355,8 +360,11 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                 contactEmail={contact?.email || ""}
                 emails={emails}
                 onReply={handleReply}
-                senderName={process.env.NEXT_PUBLIC_DEFAULT_SENDER_NAME || "John Smith"}
-                senderEmail={process.env.NEXT_PUBLIC_DEFAULT_SENDER_EMAIL || "john.smith@company.com"}
+                senderName={user?.first_name && user?.last_name 
+                  ? `${user.first_name} ${user.last_name}`
+                  : user?.email?.split('@')[0] || "Sales Rep"
+                }
+                senderEmail={user?.email || "sales@company.com"}
               />
             </div>
           </div>
