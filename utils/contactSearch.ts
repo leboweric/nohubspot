@@ -40,19 +40,23 @@ export const getAllContacts = (): Contact[] => {
     // Get updated contacts from localStorage
     const updatedContacts = JSON.parse(localStorage.getItem('updatedContacts') || '{}')
     
-    // Transform and merge contacts from mock data
-    const transformedContacts = contacts.map(contact => {
-      const transformed = transformContact(contact)
-      return updatedContacts[transformed.id] || transformed
-    })
-    
-    // Combine all contacts
-    const allContacts = [...newContacts, ...transformedContacts]
-    
-    // Debug logging
-    console.log('getAllContacts:', allContacts)
-    
-    return allContacts
+    // If we have real contacts, prioritize them over mock data
+    if (newContacts.length > 0) {
+      // Only use real contacts from localStorage
+      const allContacts = [...newContacts]
+      console.log('getAllContacts (real contacts only):', allContacts)
+      return allContacts
+    } else {
+      // Fallback to mock data if no real contacts exist
+      const transformedContacts = contacts.map(contact => {
+        const transformed = transformContact(contact)
+        return updatedContacts[transformed.id] || transformed
+      })
+      
+      const allContacts = [...newContacts, ...transformedContacts]
+      console.log('getAllContacts (using mock data):', allContacts)
+      return allContacts
+    }
   } catch {
     return contacts.map(transformContact)
   }
