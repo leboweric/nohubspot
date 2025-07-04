@@ -65,11 +65,16 @@ export default function ContactsPage() {
     if (!confirmed) return
 
     try {
+      setLoading(true)
       await contactAPI.delete(contactId)
+      alert(`${contactName} has been deleted successfully.`)
       loadContacts() // Refresh the list
     } catch (err) {
       console.error('Failed to delete contact:', err)
-      alert(`Failed to delete contact: ${handleAPIError(err)}`)
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
+      alert(`Failed to delete contact: ${errorMessage}\n\nPlease check your internet connection and try again.`)
+    } finally {
+      setLoading(false)
     }
   }
 

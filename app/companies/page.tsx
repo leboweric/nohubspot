@@ -65,11 +65,16 @@ export default function CompaniesPage() {
     if (!confirmed) return
 
     try {
+      setLoading(true)
       await companyAPI.delete(companyId)
+      alert(`${companyName} has been deleted successfully.`)
       loadCompanies() // Refresh the list
     } catch (err) {
       console.error('Failed to delete company:', err)
-      alert(`Failed to delete company: ${handleAPIError(err)}`)
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
+      alert(`Failed to delete company: ${errorMessage}\n\nPlease check your internet connection and try again.`)
+    } finally {
+      setLoading(false)
     }
   }
 
