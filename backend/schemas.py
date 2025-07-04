@@ -358,6 +358,30 @@ class DashboardStats(BaseModel):
     pending_tasks: int
     overdue_tasks: int
 
+# Event Attendee schemas
+class EventAttendeeBase(BaseModel):
+    contact_id: int
+    status: str = Field(default="invited", max_length=50)
+
+class EventAttendeeCreate(EventAttendeeBase):
+    pass
+
+class EventAttendeeResponse(EventAttendeeBase):
+    id: int
+    event_id: int
+    invite_sent: bool
+    invite_sent_at: Optional[datetime]
+    response_at: Optional[datetime]
+    created_at: datetime
+    updated_at: datetime
+    
+    # Contact details (populated by API)
+    contact_name: Optional[str] = None
+    contact_email: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
 # Calendar Event schemas
 class CalendarEventBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
@@ -373,7 +397,7 @@ class CalendarEventBase(BaseModel):
     status: str = Field(default="scheduled", max_length=50)
 
 class CalendarEventCreate(CalendarEventBase):
-    pass
+    attendee_ids: Optional[List[int]] = Field(default_factory=list)  # List of contact IDs to invite
 
 class CalendarEventUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=255)
@@ -394,6 +418,7 @@ class CalendarEventResponse(CalendarEventBase, TimestampMixin):
     contact_name: Optional[str] = None  # Will be populated by API
     company_name: Optional[str] = None  # Will be populated by API
     creator_name: Optional[str] = None  # Will be populated by API
+    attendees: List[EventAttendeeResponse] = Field(default_factory=list)  # List of attendees
 
     class Config:
         from_attributes = True

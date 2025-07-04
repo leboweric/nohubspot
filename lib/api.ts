@@ -579,6 +579,7 @@ export interface CalendarEventCreate {
   is_all_day?: boolean
   reminder_minutes?: number
   status?: string
+  attendee_ids?: number[]
 }
 
 export interface CalendarEventUpdate {
@@ -649,6 +650,13 @@ export const calendarAPI = {
     if (limit) searchParams.append('limit', limit.toString())
     
     return apiRequest(`/api/calendar/upcoming?${searchParams}`)
+  },
+
+  // Send calendar invites to attendees
+  sendInvite: (id: number): Promise<{ success: boolean; message: string; attendees_notified: string[] }> => {
+    return apiRequest(`/api/calendar/events/${id}/send-invite`, {
+      method: 'POST'
+    })
   },
 }
 

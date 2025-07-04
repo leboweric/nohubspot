@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from database import get_db, engine
-from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken
+from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee
 from schemas import (
     CompanyCreate, CompanyResponse, CompanyUpdate,
     ContactCreate, ContactResponse, ContactUpdate,
@@ -26,6 +26,7 @@ from schemas import (
     UserInviteCreate, UserInviteResponse, UserInviteAccept, Token,
     EmailTemplateCreate, EmailTemplateResponse, EmailTemplateUpdate,
     CalendarEventCreate, CalendarEventResponse, CalendarEventUpdate,
+    EventAttendeeCreate, EventAttendeeResponse,
     PasswordResetRequest, PasswordResetConfirm, PasswordResetResponse
 )
 from crud import (
@@ -53,7 +54,7 @@ from auth import (
     get_current_active_user, get_current_admin_user,
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
-from email_service import send_welcome_email, send_password_reset_email
+from email_service import send_welcome_email, send_password_reset_email, send_calendar_invite
 from email_template_crud import (
     get_email_templates, get_email_template, create_email_template,
     update_email_template, delete_email_template, increment_template_usage,
@@ -768,6 +769,80 @@ async def read_upcoming_events(
                 event.company_name = company.name
     
     return events
+
+@app.post("/api/calendar/events/{event_id}/send-invite")
+async def send_calendar_event_invite(
+    event_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Send calendar invites to all attendees of an event"""
+    # Get the event with attendees
+    event = get_calendar_event(db, event_id, current_user.organization_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Calendar event not found")
+    
+    # Get attendee contact information
+    attendee_emails = []
+    attendee_names = []
+    
+    for attendee in event.attendees:
+        contact = db.query(Contact).filter(Contact.id == attendee.contact_id).first()
+        if contact and contact.email:
+            attendee_emails.append(contact.email)
+            attendee_names.append(f"{contact.first_name} {contact.last_name}")
+    
+    if not attendee_emails:
+        raise HTTPException(status_code=400, detail="No attendees with email addresses found")
+    
+    # Get organizer information
+    organizer = db.query(User).filter(User.id == event.created_by).first()
+    organizer_email = organizer.email if organizer else "noreply@nothubspot.app"
+    organizer_name = f"{organizer.first_name} {organizer.last_name}" if organizer and organizer.first_name else "NotHubSpot"
+    
+    try:
+        # Send calendar invites
+        success = await send_calendar_invite(
+            event_title=event.title,
+            event_description=event.description or "",
+            start_time=event.start_time,
+            end_time=event.end_time,
+            location=event.location or "",
+            attendee_emails=attendee_emails,
+            organizer_email=organizer_email,
+            organizer_name=organizer_name
+        )
+        
+        if success:
+            # Update attendee records to mark invites as sent
+            from datetime import datetime
+            for attendee in event.attendees:
+                attendee.invite_sent = True
+                attendee.invite_sent_at = datetime.utcnow()
+            
+            db.commit()
+            
+            # Create activity log
+            create_activity(
+                db,
+                title="Calendar Invites Sent",
+                description=f"Sent calendar invites for '{event.title}' to {len(attendee_emails)} attendees",
+                type="calendar",
+                entity_id=str(event.id),
+                organization_id=current_user.organization_id
+            )
+            
+            return {
+                "success": True,
+                "message": f"Calendar invites sent to {len(attendee_emails)} attendees",
+                "attendees_notified": attendee_names
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Failed to send calendar invites")
+            
+    except Exception as e:
+        print(f"Error sending calendar invites: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to send calendar invites: {str(e)}")
 
 @app.post("/api/ai/chat")
 async def ai_chat(

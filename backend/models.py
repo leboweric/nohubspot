@@ -302,3 +302,25 @@ class CalendarEvent(Base):
     creator = relationship("User")
     contact = relationship("Contact")
     company = relationship("Company")
+    attendees = relationship("EventAttendee", back_populates="event", cascade="all, delete-orphan")
+
+class EventAttendee(Base):
+    __tablename__ = "event_attendees"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(Integer, ForeignKey("calendar_events.id"), nullable=False)
+    contact_id = Column(Integer, ForeignKey("contacts.id"), nullable=False)
+    
+    # Attendee status
+    status = Column(String(50), default="invited")  # invited, accepted, declined, tentative
+    invite_sent = Column(Boolean, default=False)
+    invite_sent_at = Column(DateTime(timezone=True))
+    response_at = Column(DateTime(timezone=True))
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    event = relationship("CalendarEvent", back_populates="attendees")
+    contact = relationship("Contact")

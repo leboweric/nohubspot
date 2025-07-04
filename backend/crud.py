@@ -1,17 +1,18 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_, or_, func, desc
 from typing import List, Optional
 from datetime import datetime
 
 from models import (
     Company, Contact, EmailThread, EmailMessage, 
-    Task, Attachment, Activity, EmailSignature, CalendarEvent
+    Task, Attachment, Activity, EmailSignature, CalendarEvent, EventAttendee
 )
 from schemas import (
     CompanyCreate, CompanyUpdate, ContactCreate, ContactUpdate,
     TaskCreate, TaskUpdate, EmailThreadCreate, EmailMessageCreate,
     AttachmentCreate, ActivityCreate, EmailSignatureCreate, EmailSignatureUpdate,
-    CalendarEventCreate, CalendarEventUpdate, DashboardStats
+    CalendarEventCreate, CalendarEventUpdate, DashboardStats,
+    EventAttendeeCreate, EventAttendeeResponse
 )
 
 # Company CRUD operations
@@ -482,10 +483,30 @@ def get_dashboard_stats(db: Session, organization_id: int) -> DashboardStats:
 
 # Calendar Event CRUD operations
 def create_calendar_event(db: Session, event: CalendarEventCreate, organization_id: int, created_by: int) -> CalendarEvent:
-    db_event = CalendarEvent(**event.dict(), organization_id=organization_id, created_by=created_by)
+    # Extract attendee_ids from the event data before creating the event
+    event_data = event.dict()
+    attendee_ids = event_data.pop('attendee_ids', [])
+    
+    # Create the calendar event
+    db_event = CalendarEvent(**event_data, organization_id=organization_id, created_by=created_by)
     db.add(db_event)
     db.commit()
     db.refresh(db_event)
+    
+    # Create attendee records if attendee_ids were provided
+    if attendee_ids:
+        for contact_id in attendee_ids:
+            attendee = EventAttendee(
+                event_id=db_event.id,
+                contact_id=contact_id,
+                status="invited",
+                invite_sent=False
+            )
+            db.add(attendee)
+        
+        db.commit()
+        db.refresh(db_event)  # Refresh to include the new attendees relationship
+    
     return db_event
 
 def get_calendar_events(
@@ -515,10 +536,14 @@ def get_calendar_events(
     if event_type:
         query = query.filter(CalendarEvent.event_type == event_type)
     
-    return query.order_by(CalendarEvent.start_time).offset(skip).limit(limit).all()
+    return query.options(
+        joinedload(CalendarEvent.attendees)
+    ).order_by(CalendarEvent.start_time).offset(skip).limit(limit).all()
 
 def get_calendar_event(db: Session, event_id: int, organization_id: int) -> Optional[CalendarEvent]:
-    return db.query(CalendarEvent).filter(
+    return db.query(CalendarEvent).options(
+        joinedload(CalendarEvent.attendees)
+    ).filter(
         and_(CalendarEvent.id == event_id, CalendarEvent.organization_id == organization_id)
     ).first()
 
