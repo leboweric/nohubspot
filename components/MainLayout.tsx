@@ -22,6 +22,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     { name: "Companies", href: "/companies" },
     { name: "Contacts", href: "/contacts" },
     { name: "Tasks", href: "/tasks" },
+    { name: "Templates", href: "/templates" },
     { name: "Settings", href: "/settings" },
   ]
 

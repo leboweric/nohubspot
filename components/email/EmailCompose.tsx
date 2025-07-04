@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useEmailSignature } from "../signature/SignatureManager"
 import ContactAutocomplete from "./ContactAutocomplete"
 import { Contact } from "@/utils/contactSearch"
+import { emailTemplateAPI, EmailTemplate, handleAPIError } from "@/lib/api"
 
 interface EmailComposeProps {
   isOpen: boolean
@@ -31,7 +32,17 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
   const [toName, setToName] = useState(recipientName || "")
   const [toSearchValue, setToSearchValue] = useState("")
   const [isSending, setIsSending] = useState(false)
+  const [templates, setTemplates] = useState<EmailTemplate[]>([])
+  const [showTemplates, setShowTemplates] = useState(false)
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const { getSignatureText, isLoaded } = useEmailSignature()
+
+  // Load templates when component opens
+  useEffect(() => {
+    if (isOpen) {
+      loadTemplates()
+    }
+  }, [isOpen])
 
   // Add signature to message when component loads or when signature changes
   useEffect(() => {
@@ -42,6 +53,15 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
       }
     }
   }, [isLoaded, isOpen, getSignatureText])
+
+  const loadTemplates = async () => {
+    try {
+      const templatesData = await emailTemplateAPI.getAll({ limit: 50 })
+      setTemplates(templatesData)
+    } catch (error) {
+      console.error('Failed to load templates:', error)
+    }
+  }
 
   // Set initial search value when component opens
   useEffect(() => {
@@ -56,6 +76,27 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
     setToEmail(contact.email)
     setToName(`${contact.firstName} ${contact.lastName}`)
     setToSearchValue(`${contact.firstName} ${contact.lastName} <${contact.email}>`)
+    setSelectedContact(contact)
+  }
+
+  const handleTemplateSelect = async (template: EmailTemplate) => {
+    try {
+      // Use template API to get processed content with variables replaced
+      const processedTemplate = await emailTemplateAPI.use(template.id, {
+        contact_id: selectedContact?.id,
+        // company_id could be passed if available
+      })
+      
+      setSubject(processedTemplate.subject)
+      setMessage(processedTemplate.body)
+      setShowTemplates(false)
+    } catch (error) {
+      console.error('Failed to use template:', error)
+      // Fallback to using template as-is
+      setSubject(template.subject)
+      setMessage(template.body)
+      setShowTemplates(false)
+    }
   }
 
   const handleSearchValueChange = (value: string) => {
@@ -169,7 +210,16 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
           </div>
 
           <div>
-            <label htmlFor="subject" className="block text-sm font-medium mb-1">Subject:</label>
+            <div className="flex items-center justify-between mb-1">
+              <label htmlFor="subject" className="block text-sm font-medium">Subject:</label>
+              <button
+                type="button"
+                onClick={() => setShowTemplates(!showTemplates)}
+                className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+              >
+                📄 Use Template
+              </button>
+            </div>
             <input
               id="subject"
               type="text"
@@ -179,6 +229,42 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
               className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
+
+          {/* Template Selection */}
+          {showTemplates && (
+            <div className="border rounded-md p-3 bg-gray-50">
+              <h4 className="text-sm font-medium mb-2">Select a Template:</h4>
+              {templates.length > 0 ? (
+                <div className="max-h-40 overflow-y-auto space-y-1">
+                  {templates.map((template) => (
+                    <button
+                      key={template.id}
+                      type="button"
+                      onClick={() => handleTemplateSelect(template)}
+                      className="w-full text-left p-2 text-sm border border-gray-200 rounded hover:bg-white hover:border-blue-300 transition-colors"
+                    >
+                      <div className="font-medium">{template.name}</div>
+                      <div className="text-gray-600 text-xs truncate">{template.subject}</div>
+                      {template.category && (
+                        <span className="inline-block mt-1 px-2 py-0.5 text-xs rounded bg-blue-100 text-blue-800">
+                          {template.category}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-600">No templates available</p>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowTemplates(false)}
+                className="mt-2 text-xs text-gray-500 hover:text-gray-700"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
 
           <div className="flex-1">
             <label htmlFor="message" className="block text-sm font-medium mb-1">Message:</label>

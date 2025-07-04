@@ -32,7 +32,8 @@ async function apiRequest<T>(
                             url.includes('/api/companies') || 
                             url.includes('/api/tasks') || 
                             url.includes('/api/activities') ||
-                            url.includes('/api/dashboard')
+                            url.includes('/api/dashboard') ||
+                            url.includes('/api/email-templates')
       
       const isCriticalAuthEndpoint = url.includes('/api/auth/') || 
                                    url.includes('/api/users') || 
@@ -423,6 +424,110 @@ export class APIError extends Error {
     super(message)
     this.name = 'APIError'
   }
+}
+
+// Email Template API functions
+export interface EmailTemplate {
+  id: number
+  name: string
+  subject: string
+  body: string
+  category?: string
+  is_shared: boolean
+  organization_id: number
+  created_by?: number
+  variables_used?: string[]
+  usage_count: number
+  last_used_at?: string
+  created_at: string
+  updated_at: string
+  creator_name?: string
+}
+
+export interface EmailTemplateCreate {
+  name: string
+  subject: string
+  body: string
+  category?: string
+  is_shared?: boolean
+  variables_used?: string[]
+}
+
+export interface EmailTemplateUpdate {
+  name?: string
+  subject?: string
+  body?: string
+  category?: string
+  is_shared?: boolean
+  variables_used?: string[]
+}
+
+export const emailTemplateAPI = {
+  // Get all templates
+  getAll: (params?: {
+    skip?: number
+    limit?: number
+    category?: string
+    search?: string
+    include_personal?: boolean
+  }): Promise<EmailTemplate[]> => {
+    const searchParams = new URLSearchParams()
+    if (params?.skip) searchParams.append('skip', params.skip.toString())
+    if (params?.limit) searchParams.append('limit', params.limit.toString())
+    if (params?.category) searchParams.append('category', params.category)
+    if (params?.search) searchParams.append('search', params.search)
+    if (params?.include_personal !== undefined) searchParams.append('include_personal', params.include_personal.toString())
+    
+    return apiRequest(`/api/email-templates?${searchParams}`)
+  },
+
+  // Get template categories
+  getCategories: (): Promise<{ categories: string[] }> =>
+    apiRequest('/api/email-templates/categories'),
+
+  // Get single template
+  getById: (id: number): Promise<EmailTemplate> => 
+    apiRequest(`/api/email-templates/${id}`),
+
+  // Create template
+  create: (data: EmailTemplateCreate): Promise<EmailTemplate> =>
+    apiRequest('/api/email-templates', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Update template
+  update: (id: number, data: EmailTemplateUpdate): Promise<EmailTemplate> =>
+    apiRequest(`/api/email-templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // Delete template
+  delete: (id: number): Promise<{ message: string }> =>
+    apiRequest(`/api/email-templates/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // Use template with variable replacement
+  use: (id: number, params?: {
+    contact_id?: number
+    company_id?: number
+  }): Promise<{
+    id: number
+    name: string
+    subject: string
+    body: string
+    category?: string
+  }> => {
+    const searchParams = new URLSearchParams()
+    if (params?.contact_id) searchParams.append('contact_id', params.contact_id.toString())
+    if (params?.company_id) searchParams.append('company_id', params.company_id.toString())
+    
+    return apiRequest(`/api/email-templates/${id}/use?${searchParams}`, {
+      method: 'POST',
+    })
+  },
 }
 
 // Helper function to handle API errors consistently
