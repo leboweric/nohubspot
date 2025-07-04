@@ -14,7 +14,7 @@ export const useEmailSignature = () => {
     const loadSignature = async () => {
       try {
         setLoading(true)
-        const apiSignature = await signatureAPI.get('default')
+        const apiSignature = await signatureAPI.get()
         if (apiSignature) {
           // Convert API signature to component signature
           const componentSignature: EmailSignature = {
@@ -60,7 +60,7 @@ export const useEmailSignature = () => {
         enabled: newSignature.enabled
       }
       
-      await signatureAPI.createOrUpdate(apiSignatureData, 'default')
+      await signatureAPI.createOrUpdate(apiSignatureData)
       setSignature(newSignature)
     } catch (error) {
       console.error('Failed to save email signature:', error)

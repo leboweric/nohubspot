@@ -225,8 +225,8 @@ class EmailSignature(Base):
     __tablename__ = "email_signatures"
     
     id = Column(Integer, primary_key=True, index=True)
-    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    organization_id = Column(Integer, default=1)
+    user_id = Column(String(100), default="default")
     name = Column(String(255))
     title = Column(String(255))
     company = Column(String(255))

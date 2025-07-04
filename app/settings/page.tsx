@@ -106,9 +106,16 @@ export default function SettingsPage() {
     }
   }
 
-  const handleSaveSignature = (newSignature: EmailSignature) => {
-    saveSignature(newSignature)
-    setShowSignatureBuilder(false)
+  const handleSaveSignature = async (newSignature: EmailSignature) => {
+    try {
+      setError("")
+      setSuccess("")
+      await saveSignature(newSignature)
+      setShowSignatureBuilder(false)
+      setSuccess("Email signature saved successfully!")
+    } catch (err) {
+      setError(`Failed to save signature: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    }
   }
 
   const handleSendInvite = async (e: React.FormEvent) => {

@@ -1371,18 +1371,16 @@ async def delete_existing_task(
 # Email Signature endpoints
 @app.get("/api/signature", response_model=Optional[EmailSignatureResponse])
 async def get_user_signature(
-    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    return get_email_signature(db, current_user.id, current_user.organization_id)
+    return get_email_signature(db, "default", 1)
 
 @app.post("/api/signature", response_model=EmailSignatureResponse)
 async def create_or_update_signature(
     signature: EmailSignatureCreate,
-    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    return create_or_update_email_signature(db, signature, current_user.id, current_user.organization_id)
+    return create_or_update_email_signature(db, signature, "default", 1)
 
 # Email Template endpoints
 @app.get("/api/email-templates", response_model=List[EmailTemplateResponse])

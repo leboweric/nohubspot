@@ -375,12 +375,12 @@ export interface EmailSignatureCreate {
 
 export const signatureAPI = {
   // Get signature
-  get: (user_id: string = 'default'): Promise<EmailSignature | null> =>
-    apiRequest(`/api/signature?user_id=${user_id}`),
+  get: (): Promise<EmailSignature | null> =>
+    apiRequest('/api/signature'),
 
   // Create or update signature
-  createOrUpdate: (data: EmailSignatureCreate, user_id: string = 'default'): Promise<EmailSignature> =>
-    apiRequest(`/api/signature?user_id=${user_id}`, {
+  createOrUpdate: (data: EmailSignatureCreate): Promise<EmailSignature> =>
+    apiRequest('/api/signature', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
