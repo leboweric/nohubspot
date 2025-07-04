@@ -1,93 +1,37 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import AuthGuard from "@/components/AuthGuard"
+import MainLayout from "@/components/MainLayout"
 import EmailCompose, { EmailMessage } from "@/components/email/EmailCompose"
 import EmailThread from "@/components/email/EmailThread"
 import TaskCreate from "@/components/tasks/TaskCreate"
 import { Task } from "@/components/tasks/types"
-
-const contacts = [
-  {
-    id: "1",
-    firstName: "John",
-    lastName: "Smith",
-    email: "john.smith@acme.example.com",
-    phone: "+1 (555) 123-4567",
-    title: "CTO",
-    company: "Acme Corporation",
-    status: "Active",
-    createdAt: "2024-01-20",
-    lastActivity: "2024-03-20",
-    notes: "Key technical decision maker. Interested in cloud migration solutions."
-  },
-  {
-    id: "2",
-    firstName: "Sarah",
-    lastName: "Johnson",
-    email: "sarah.j@acme.example.com",
-    phone: "+1 (555) 987-6543",
-    title: "Marketing Director",
-    company: "Acme Corporation",
-    status: "Active",
-    createdAt: "2024-02-05",
-    lastActivity: "2024-03-18",
-    notes: "Responsible for all marketing initiatives. Looking for analytics tools."
-  },
-  {
-    id: "3",
-    firstName: "Michael",
-    lastName: "Brown",
-    email: "michael.b@globex.example.com",
-    phone: "+1 (555) 456-7890",
-    title: "CEO",
-    company: "Globex Industries",
-    status: "Active",
-    createdAt: "2024-02-10",
-    lastActivity: "2024-03-15",
-    notes: "Final decision maker. Focuses on cost-efficiency and ROI."
-  },
-  {
-    id: "4",
-    firstName: "Emily",
-    lastName: "Davis",
-    email: "emily.d@initech.example.com",
-    phone: "",
-    title: "CFO",
-    company: "Initech LLC",
-    status: "Lead",
-    createdAt: "2024-03-10",
-    lastActivity: "2024-03-10",
-    notes: "New lead from conference. Interested in financial planning tools."
-  }
-]
+import { contactAPI, Contact, handleAPIError } from "@/lib/api"
 
 export default function ContactDetailPage({ params }: { params: { id: string } }) {
-  // Get contact from base contacts or new contacts
-  const getContact = () => {
-    if (typeof window !== 'undefined') {
+  const [contact, setContact] = useState<Contact | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadContact = async () => {
       try {
-        // First check for new contacts
-        const newContacts = JSON.parse(localStorage.getItem('newContacts') || '[]')
-        const newContact = newContacts.find((c: any) => c.id === params.id)
-        if (newContact) return newContact
-        
-        // Then check base contacts with updates
-        const baseContact = contacts.find(c => c.id === params.id)
-        if (baseContact) {
-          const updatedContacts = JSON.parse(localStorage.getItem('updatedContacts') || '{}')
-          return updatedContacts[params.id] || baseContact
-        }
-        
-        return null
-      } catch {
-        return contacts.find(c => c.id === params.id) || null
+        setLoading(true)
+        setError(null)
+        const contactData = await contactAPI.getById(parseInt(params.id))
+        setContact(contactData)
+      } catch (err) {
+        setError(handleAPIError(err))
+        console.error('Failed to load contact:', err)
+      } finally {
+        setLoading(false)
       }
     }
-    return contacts.find(c => c.id === params.id) || null
-  }
-  
-  const contact = getContact()
+
+    loadContact()
+  }, [params.id])
   const [showNoteModal, setShowNoteModal] = useState(false)
   const [newNote, setNewNote] = useState("")
   const [showEmailCompose, setShowEmailCompose] = useState(false)
@@ -170,30 +114,53 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
     alert('Task created successfully!')
   }
 
-  if (!contact) {
+  if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold mb-4">Contact Not Found</h1>
-          <p className="text-muted-foreground mb-4">The contact you're looking for doesn't exist.</p>
-          <Link href="/contacts" className="text-primary hover:underline">
-            Back to Contacts
-          </Link>
-        </div>
-      </div>
+      <AuthGuard>
+        <MainLayout>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading contact...</p>
+            </div>
+          </div>
+        </MainLayout>
+      </AuthGuard>
+    )
+  }
+
+  if (error || !contact) {
+    return (
+      <AuthGuard>
+        <MainLayout>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center">
+              <h1 className="text-2xl font-semibold mb-4">Contact Not Found</h1>
+              <p className="text-muted-foreground mb-4">
+                {error || "The contact you're looking for doesn't exist."}
+              </p>
+              <Link href="/contacts" className="text-primary hover:underline">
+                Back to Contacts
+              </Link>
+            </div>
+          </div>
+        </MainLayout>
+      </AuthGuard>
     )
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AuthGuard>
+      <MainLayout>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <Link href="/contacts" className="text-sm text-muted-foreground hover:text-foreground mb-4 inline-block">
           ← Back to Contacts
         </Link>
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-2xl font-semibold">{contact.firstName} {contact.lastName}</h1>
-            <p className="text-muted-foreground mt-1">{contact.title} at {contact.company}</p>
+            <h1 className="text-2xl font-semibold">{contact.first_name} {contact.last_name}</h1>
+            <p className="text-muted-foreground mt-1">{contact.title} at {contact.company_name}</p>
           </div>
           <span className={`inline-flex px-3 py-1 text-sm rounded-full ${
             contact.status === "Active" 
@@ -233,18 +200,20 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">Company</dt>
                 <dd className="mt-1">
-                  <Link href={`/companies/${contacts.indexOf(contact) + 1}`} className="text-primary hover:underline">
-                    {contact.company}
-                  </Link>
+                  {contact.company_name ? (
+                    <span className="text-foreground">{contact.company_name}</span>
+                  ) : (
+                    <span className="text-muted-foreground">Not specified</span>
+                  )}
                 </dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">Created</dt>
-                <dd className="mt-1">{new Date(contact.createdAt).toLocaleDateString()}</dd>
+                <dd className="mt-1">{new Date(contact.created_at).toLocaleDateString()}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">Last Activity</dt>
-                <dd className="mt-1">{new Date(contact.lastActivity).toLocaleDateString()}</dd>
+                <dd className="mt-1">{new Date(contact.last_activity).toLocaleDateString()}</dd>
               </div>
             </dl>
           </div>
@@ -274,7 +243,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                     }`}></div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">
-                        {email.fromSelf ? 'You' : contact.firstName} sent: {email.subject}
+                        {email.fromSelf ? 'You' : contact.first_name} sent: {email.subject}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {email.timestamp.toLocaleDateString()} at {email.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -341,7 +310,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
         isOpen={showEmailCompose}
         onClose={() => setShowEmailCompose(false)}
         recipientEmail={contact?.email || ""}
-        recipientName={`${contact?.firstName} ${contact?.lastName}` || ""}
+        recipientName={`${contact?.first_name} ${contact?.last_name}` || ""}
         onSend={handleEmailSent}
         senderName={process.env.NEXT_PUBLIC_DEFAULT_SENDER_NAME || "John Smith"}
         senderEmail={process.env.NEXT_PUBLIC_DEFAULT_SENDER_EMAIL || "john.smith@company.com"}
@@ -362,7 +331,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
             </div>
             <div className="flex-1">
               <EmailThread
-                contactName={`${contact?.firstName} ${contact?.lastName}` || ""}
+                contactName={`${contact?.first_name} ${contact?.last_name}` || ""}
                 contactEmail={contact?.email || ""}
                 emails={emails}
                 onReply={handleReply}
@@ -380,9 +349,9 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
         onClose={() => setShowCreateTask(false)}
         onSave={handleCreateTask}
         contactId={params.id}
-        contactName={`${contact?.firstName} ${contact?.lastName}`}
-        companyId={contact?.id} // Assuming company info might be linked
-        companyName={contact?.company}
+        contactName={`${contact?.first_name} ${contact?.last_name}`}
+        companyId={contact?.company_id} 
+        companyName={contact?.company_name}
       />
 
       {/* Add Note Modal */}
@@ -417,6 +386,8 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
           </div>
         </div>
       )}
-    </div>
+        </div>
+      </MainLayout>
+    </AuthGuard>
   )
 }

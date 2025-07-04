@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import { contactAPI, handleAPIError } from "@/lib/api"
+import { normalizePhoneNumber } from "@/lib/phoneUtils"
 
 export default function NewContactPage() {
   const router = useRouter()
@@ -39,8 +40,16 @@ export default function NewContactPage() {
     try {
       console.log("Submitting contact:", formData)
       
+      // Format phone number before submitting
+      const formattedData = {
+        ...formData,
+        phone: normalizePhoneNumber(formData.phone)
+      }
+      
+      console.log("Formatted contact data:", formattedData)
+      
       // Create contact via API
-      const newContact = await contactAPI.create(formData)
+      const newContact = await contactAPI.create(formattedData)
       
       console.log("Contact created successfully:", newContact)
       alert("Contact added successfully!")
