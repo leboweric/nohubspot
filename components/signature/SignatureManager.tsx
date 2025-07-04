@@ -64,7 +64,18 @@ export const useEmailSignature = () => {
       setSignature(newSignature)
     } catch (error) {
       console.error('Failed to save email signature:', error)
-      throw new Error(handleAPIError(error))
+      
+      // Provide more helpful error messages
+      let errorMessage = handleAPIError(error)
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+        errorMessage = 'Network connection failed. Please check your internet connection and try again.'
+      } else if (errorMessage.includes('500')) {
+        errorMessage = 'Server error occurred. Please try again in a moment.'
+      } else if (errorMessage.includes('401') || errorMessage.includes('403')) {
+        errorMessage = 'Authentication error. Please refresh the page and try again.'
+      }
+      
+      throw new Error(errorMessage)
     } finally {
       setLoading(false)
     }

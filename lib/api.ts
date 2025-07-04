@@ -378,12 +378,35 @@ export const signatureAPI = {
   get: (): Promise<EmailSignature | null> =>
     apiRequest('/api/signature'),
 
-  // Create or update signature
-  createOrUpdate: (data: EmailSignatureCreate): Promise<EmailSignature> =>
-    apiRequest('/api/signature', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+  // Create or update signature with retry logic
+  createOrUpdate: async (data: EmailSignatureCreate): Promise<EmailSignature> => {
+    let lastError: any
+    
+    // Try up to 2 times
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        return await apiRequest('/api/signature', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        })
+      } catch (error) {
+        lastError = error
+        console.warn(`Signature save attempt ${attempt} failed:`, error)
+        
+        // Only retry on network errors, not on validation/auth errors
+        if (error instanceof APIError && error.status && error.status < 500) {
+          throw error // Don't retry client errors (4xx)
+        }
+        
+        // Wait before retry (except on last attempt)
+        if (attempt < 2) {
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        }
+      }
+    }
+    
+    throw lastError
+  },
 }
 
 // Dashboard API functions
