@@ -242,7 +242,7 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
         # Create access token
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            data={"sub": user.id, "organization_id": organization.id}, 
+            data={"sub": str(user.id), "organization_id": str(organization.id)}, 
             expires_delta=access_token_expires
         )
         
@@ -281,7 +281,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     # Create access token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.id, "organization_id": user.organization_id}, 
+        data={"sub": str(user.id), "organization_id": str(user.organization_id)}, 
         expires_delta=access_token_expires
     )
     
@@ -337,7 +337,7 @@ async def accept_invite(invite_accept: UserInviteAccept, db: Session = Depends(g
         # Create access token
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            data={"sub": user.id, "organization_id": user.organization_id}, 
+            data={"sub": str(user.id), "organization_id": str(user.organization_id)}, 
             expires_delta=access_token_expires
         )
         
