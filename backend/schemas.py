@@ -296,6 +296,17 @@ class UserInviteAccept(BaseModel):
     last_name: str = Field(..., min_length=1, max_length=100)
     password: str = Field(..., min_length=8)
 
+# Password Reset schemas
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+class PasswordResetConfirm(BaseModel):
+    token: str
+    new_password: str = Field(..., min_length=8)
+
+class PasswordResetResponse(BaseModel):
+    message: str
+
 # Token schemas
 class Token(BaseModel):
     access_token: str

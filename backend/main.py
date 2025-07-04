@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from database import get_db, engine
-from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite
+from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken
 from schemas import (
     CompanyCreate, CompanyResponse, CompanyUpdate,
     ContactCreate, ContactResponse, ContactUpdate,
@@ -25,7 +25,8 @@ from schemas import (
     OrganizationCreate, OrganizationResponse, UserRegister, UserLogin, UserResponse,
     UserInviteCreate, UserInviteResponse, UserInviteAccept, Token,
     EmailTemplateCreate, EmailTemplateResponse, EmailTemplateUpdate,
-    CalendarEventCreate, CalendarEventResponse, CalendarEventUpdate
+    CalendarEventCreate, CalendarEventResponse, CalendarEventUpdate,
+    PasswordResetRequest, PasswordResetConfirm, PasswordResetResponse
 )
 from crud import (
     create_company, get_companies, get_company, update_company, delete_company,
@@ -44,14 +45,15 @@ from auth_crud import (
     create_organization, get_organization_by_slug, get_organization_by_id,
     create_user, register_user_with_organization, get_user_by_email,
     create_user_invite, get_invite_by_code, accept_user_invite,
-    get_organization_invites, revoke_invite, get_users_by_organization
+    get_organization_invites, revoke_invite, get_users_by_organization,
+    create_password_reset_token, get_password_reset_token, use_password_reset_token
 )
 from auth import (
     verify_password, create_access_token, get_current_user, 
     get_current_active_user, get_current_admin_user,
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
-from email_service import send_welcome_email
+from email_service import send_welcome_email, send_password_reset_email
 from email_template_crud import (
     get_email_templates, get_email_template, create_email_template,
     update_email_template, delete_email_template, increment_template_usage,
@@ -356,6 +358,58 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
 async def get_current_user_info(current_user: User = Depends(get_current_active_user)):
     """Get current user information"""
     return current_user
+
+# Password reset endpoints
+@app.post("/api/auth/forgot-password", response_model=PasswordResetResponse)
+async def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db)):
+    """Request a password reset"""
+    # Check if user exists
+    user = get_user_by_email(db, request.email)
+    if not user:
+        # Don't reveal if user exists or not for security
+        return PasswordResetResponse(message="If your email is registered, you will receive a password reset link.")
+    
+    try:
+        # Create password reset token
+        reset_token = create_password_reset_token(db, user.id)
+        
+        # Generate reset URL
+        reset_url = f"https://nothubspot.app/auth/reset-password?token={reset_token.token}"
+        
+        # Send password reset email
+        import asyncio
+        asyncio.create_task(send_password_reset_email(
+            user_email=user.email,
+            first_name=user.first_name or user.email.split('@')[0],
+            reset_url=reset_url
+        ))
+        
+        return PasswordResetResponse(message="If your email is registered, you will receive a password reset link.")
+        
+    except Exception as e:
+        print(f"Password reset error: {str(e)}")
+        return PasswordResetResponse(message="If your email is registered, you will receive a password reset link.")
+
+@app.post("/api/auth/reset-password", response_model=PasswordResetResponse)
+async def reset_password(request: PasswordResetConfirm, db: Session = Depends(get_db)):
+    """Reset password using token"""
+    try:
+        success = use_password_reset_token(db, request.token, request.new_password)
+        
+        if success:
+            return PasswordResetResponse(message="Your password has been successfully reset. You can now log in with your new password.")
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired reset token"
+            )
+            
+    except Exception as e:
+        print(f"Password reset confirmation error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to reset password"
+        )
 
 # User invitation endpoints
 @app.post("/api/invites", response_model=UserInviteResponse)

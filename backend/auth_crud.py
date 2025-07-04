@@ -6,9 +6,10 @@ from sqlalchemy import and_
 from typing import Optional, List
 from datetime import datetime, timedelta
 
-from models import Organization, User, UserInvite
+from models import Organization, User, UserInvite, PasswordResetToken
 from schemas import OrganizationCreate, UserCreate, UserRegister, UserInviteCreate, UserInviteAccept
 from auth import get_password_hash, create_organization_slug, generate_invite_code
+import secrets
 
 
 # Organization CRUD operations
@@ -194,3 +195,55 @@ def revoke_invite(db: Session, invite_id: int, organization_id: int) -> bool:
         return True
     
     return False
+
+# Password Reset CRUD operations
+def create_password_reset_token(db: Session, user_id: int) -> PasswordResetToken:
+    """Create a password reset token for a user"""
+    # Invalidate any existing tokens for this user
+    db.query(PasswordResetToken).filter(
+        PasswordResetToken.user_id == user_id,
+        PasswordResetToken.is_used == False
+    ).update({"is_used": True})
+    
+    # Generate a secure token
+    token = secrets.token_urlsafe(32)
+    
+    # Create new token with 1 hour expiry
+    db_token = PasswordResetToken(
+        user_id=user_id,
+        token=token,
+        expires_at=datetime.utcnow() + timedelta(hours=1),
+        is_used=False
+    )
+    
+    db.add(db_token)
+    db.commit()
+    db.refresh(db_token)
+    return db_token
+
+def get_password_reset_token(db: Session, token: str) -> Optional[PasswordResetToken]:
+    """Get a password reset token by token string"""
+    return db.query(PasswordResetToken).filter(
+        PasswordResetToken.token == token,
+        PasswordResetToken.is_used == False,
+        PasswordResetToken.expires_at > datetime.utcnow()
+    ).first()
+
+def use_password_reset_token(db: Session, token: str, new_password: str) -> bool:
+    """Use a password reset token to update user password"""
+    reset_token = get_password_reset_token(db, token)
+    if not reset_token:
+        return False
+    
+    # Update user password
+    user = db.query(User).filter(User.id == reset_token.user_id).first()
+    if not user:
+        return False
+    
+    user.password_hash = get_password_hash(new_password)
+    
+    # Mark token as used
+    reset_token.is_used = True
+    
+    db.commit()
+    return True

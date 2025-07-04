@@ -4,7 +4,7 @@ Email service for NotHubSpot CRM
 import os
 from typing import Optional
 import httpx
-from email_templates import get_welcome_email_html, get_welcome_email_text
+from email_templates import get_welcome_email_html, get_welcome_email_text, get_password_reset_email_html, get_password_reset_email_text
 
 async def send_email(
     to_email: str,
@@ -73,6 +73,23 @@ async def send_welcome_email(
     subject = f"Welcome to NotHubSpot, {first_name}! 🎉"
     html_content = get_welcome_email_html(first_name, organization_name)
     text_content = get_welcome_email_text(first_name, organization_name)
+    
+    return await send_email(
+        to_email=user_email,
+        subject=subject,
+        html_content=html_content,
+        text_content=text_content
+    )
+
+async def send_password_reset_email(
+    user_email: str,
+    first_name: str,
+    reset_url: str
+) -> bool:
+    """Send password reset email to user"""
+    subject = "Reset Your Password - NotHubSpot"
+    html_content = get_password_reset_email_html(first_name, reset_url)
+    text_content = get_password_reset_email_text(first_name, reset_url)
     
     return await send_email(
         to_email=user_email,
