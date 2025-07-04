@@ -15,7 +15,6 @@ interface DailySummary {
     contacts_needing_attention: number
     active_companies: number
   }
-  recommendations: string[]
 }
 
 interface ChatMessage {
@@ -55,7 +54,8 @@ export default function DailySummaryCard() {
   const formatTime = (isoString: string) => {
     return new Date(isoString).toLocaleTimeString('en-US', {
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'America/Chicago' // Central Time
     })
   }
 
@@ -207,32 +207,12 @@ export default function DailySummaryCard() {
         </div>
       </div>
 
-      {/* Compact AI Insights - Show first 2 lines by default */}
+      {/* AI Insights - Compact when collapsed, full when expanded */}
       <div className="bg-white/70 rounded-lg p-3 mb-3">
         <div className={`text-sm text-blue-900 leading-relaxed whitespace-pre-line ${!expanded ? 'overflow-hidden' : ''}`} style={!expanded ? {display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'} : {}}>
           {summary.ai_insights}
         </div>
       </div>
-
-      {/* Expandable Content */}
-      {expanded && (
-        <div className="space-y-3">
-          {/* Full Recommendations */}
-          {summary.recommendations.length > 0 && (
-            <div className="bg-white/70 rounded-lg p-3">
-              <h4 className="font-medium text-blue-900 mb-2">🎯 Action Items:</h4>
-              <ul className="space-y-1">
-                {summary.recommendations.map((rec, index) => (
-                  <li key={index} className="flex items-start gap-2 text-sm text-blue-800">
-                    <span className="text-blue-600 mt-0.5">•</span>
-                    <span>{rec}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Chat Interface */}
       {showChat && (

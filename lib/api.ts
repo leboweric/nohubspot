@@ -429,7 +429,6 @@ export const dashboardAPI = {
       contacts_needing_attention: number
       active_companies: number
     }
-    recommendations: string[]
   }> =>
     apiRequest('/api/dashboard/daily-summary'),
 }

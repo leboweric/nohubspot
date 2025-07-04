@@ -29,20 +29,23 @@ class DailySummaryService:
     def generate_daily_summary(self) -> Dict[str, Any]:
         """Generate a comprehensive daily summary for the user"""
         try:
+            # Get user info for personalization
+            user = self.db.query(User).filter(User.id == self.user_id).first()
+            user_name = user.first_name if user and user.first_name else "there"
+            
             # Collect data from last 24-48 hours
             data = self._collect_summary_data()
             
-            # Generate AI insights
-            ai_summary = self._generate_ai_insights(data)
+            # Generate AI insights with user name
+            ai_summary = self._generate_ai_insights(data, user_name)
             
-            # Combine with structured data
+            # Combine with structured data (remove recommendations)
             summary = {
                 "generated_at": datetime.now().isoformat(),
                 "user_id": self.user_id,
                 "data_summary": data,
                 "ai_insights": ai_summary,
-                "quick_stats": self._generate_quick_stats(data),
-                "recommendations": self._extract_recommendations(ai_summary)
+                "quick_stats": self._generate_quick_stats(data)
             }
             
             return summary
@@ -118,7 +121,7 @@ class DailySummaryService:
             }
         }
     
-    def _generate_ai_insights(self, data: Dict[str, Any]) -> str:
+    def _generate_ai_insights(self, data: Dict[str, Any], user_name: str = "there") -> str:
         """Use OpenAI to generate insights from the collected data"""
         if not openai_key:
             available_vars = [k for k in os.environ.keys() if 'openai' in k.lower() or 'open_ai' in k.lower()]
@@ -126,7 +129,7 @@ class DailySummaryService:
         
         try:
             # Prepare data for AI
-            prompt = self._build_summary_prompt(data)
+            prompt = self._build_summary_prompt(data, user_name)
             
             response = openai.chat.completions.create(
                 model="gpt-4o-mini",  # Using the efficient model
@@ -134,13 +137,17 @@ class DailySummaryService:
                     {
                         "role": "system", 
                         "content": """You are an AI assistant for a CRM system helping sales representatives. 
-                        Generate a concise, actionable daily summary focusing on priorities, opportunities, and recommendations.
-                        Keep it professional but friendly. Use emojis sparingly and only for section headers.
-                        Focus on what the rep should do TODAY."""
+                        Generate a concise daily summary with ONLY:
+                        1. A personalized greeting with the user's name
+                        2. Top 3 priorities for today 
+                        3. Key insights about patterns or opportunities
+                        
+                        Keep it professional but friendly. No recommendations section. No motivational closing.
+                        Focus on what's most important TODAY. Keep under 200 words."""
                     },
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=800,
+                max_tokens=400,
                 temperature=0.7
             )
             
@@ -150,7 +157,7 @@ class DailySummaryService:
             print(f"OpenAI API error: {e}")
             return f"AI insights temporarily unavailable. Error: {str(e)}"
     
-    def _build_summary_prompt(self, data: Dict[str, Any]) -> str:
+    def _build_summary_prompt(self, data: Dict[str, Any], user_name: str = "there") -> str:
         """Build the prompt for OpenAI"""
         overdue_count = len(data["tasks"]["overdue"])
         today_count = len(data["tasks"]["today"])
@@ -177,7 +184,9 @@ class DailySummaryService:
                 contact_details.append(f"- {contact.first_name} {contact.last_name} at {contact.company_name or 'Unknown Company'} ({overdue} overdue, {total_tasks} total tasks)")
         
         prompt = f"""
-        Generate a daily summary for a sales representative based on this CRM data:
+        Generate a daily summary for {user_name} (sales representative) based on this CRM data:
+
+        USER NAME: {user_name}
 
         TASKS OVERVIEW:
         - {overdue_count} overdue tasks
@@ -196,13 +205,11 @@ class DailySummaryService:
         COMPANIES: {data["companies"]["total"]} total, {len(data["companies"]["active"])} active
 
         Please generate a concise daily summary with:
-        1. A friendly greeting
+        1. Personalized greeting: "Good morning {user_name}!" (or afternoon/evening based on time)
         2. Top 3 priorities for today
         3. Key insights or patterns you notice
-        4. 2-3 specific recommendations
-        5. A motivational closing
 
-        Keep it under 300 words and actionable.
+        Keep it under 200 words, professional but friendly. No recommendations section.
         """
         
         return prompt
@@ -217,40 +224,20 @@ class DailySummaryService:
             "active_companies": len(data["companies"]["active"])
         }
     
-    def _extract_recommendations(self, ai_summary: str) -> List[str]:
-        """Extract actionable recommendations from AI summary"""
-        # Simple extraction - look for numbered or bulleted items
-        lines = ai_summary.split('\n')
-        recommendations = []
-        
-        for line in lines:
-            line = line.strip()
-            if any(line.startswith(prefix) for prefix in ['1.', '2.', '3.', '•', '-', '*']):
-                # Clean up the recommendation
-                clean_rec = line.lstrip('123456789.-•* ').strip()
-                if len(clean_rec) > 10:  # Ignore very short items
-                    recommendations.append(clean_rec)
-        
-        return recommendations[:3]  # Limit to top 3
     
     def _fallback_summary(self) -> Dict[str, Any]:
         """Fallback summary when AI is unavailable"""
         return {
             "generated_at": datetime.now().isoformat(),
             "user_id": self.user_id,
-            "ai_insights": "Welcome back! Your daily summary is being prepared. Please check your tasks and contacts for today's priorities.",
+            "ai_insights": "Good morning! Your daily summary is being prepared. Please check your tasks and contacts for today's priorities.",
             "quick_stats": {
                 "overdue_tasks": 0,
                 "today_tasks": 0,
                 "total_contacts": 0,
                 "contacts_needing_attention": 0,
                 "active_companies": 0
-            },
-            "recommendations": [
-                "Review your task list and prioritize urgent items",
-                "Check for any overdue follow-ups with contacts",
-                "Update your pipeline and contact information"
-            ]
+            }
         }
 
 def generate_daily_summary(db: Session, user_id: int, organization_id: int) -> Dict[str, Any]:
