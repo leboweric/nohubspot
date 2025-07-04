@@ -104,7 +104,7 @@ export default function CalendarView({ events, onDateClick, onEventClick, onMont
           </h2>
           <button
             onClick={goToToday}
-            className="px-3 py-1 text-sm border rounded-md hover:bg-accent transition-colors"
+            className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
           >
             Today
           </button>
@@ -112,13 +112,15 @@ export default function CalendarView({ events, onDateClick, onEventClick, onMont
         <div className="flex items-center gap-2">
           <button
             onClick={goToPreviousMonth}
-            className="p-2 hover:bg-accent rounded-md transition-colors"
+            className="p-2 hover:bg-gray-100 border border-gray-300 rounded-md transition-colors"
+            title="Previous month"
           >
             ←
           </button>
           <button
             onClick={goToNextMonth}
-            className="p-2 hover:bg-accent rounded-md transition-colors"
+            className="p-2 hover:bg-gray-100 border border-gray-300 rounded-md transition-colors"
+            title="Next month"
           >
             →
           </button>
