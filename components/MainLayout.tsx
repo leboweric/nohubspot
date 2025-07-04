@@ -32,7 +32,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
               <Link href="/dashboard" className="text-xl font-semibold text-blue-600">
-                {organization ? organization.name : 'NotHubSpot'}
+                NotHubSpot
               </Link>
               
               {isAuthenticated && (
