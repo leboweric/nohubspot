@@ -77,19 +77,34 @@ def delete_company(db: Session, company_id: int, organization_id: int) -> bool:
 
 # Contact CRUD operations
 def create_contact(db: Session, contact: ContactCreate, organization_id: int) -> Contact:
-    db_contact = Contact(**contact.dict(), organization_id=organization_id)
-    db.add(db_contact)
-    db.commit()
-    db.refresh(db_contact)
-    
-    # Update company contact count if company_id is provided
-    if db_contact.company_id:
-        company = get_company(db, db_contact.company_id, organization_id)
-        if company:
-            company.contact_count += 1
-            db.commit()
-    
-    return db_contact
+    try:
+        print(f"CRUD: Creating contact with data: {contact.dict()}")
+        db_contact = Contact(**contact.dict(), organization_id=organization_id)
+        print(f"CRUD: Contact object created: {db_contact.first_name} {db_contact.last_name}")
+        
+        db.add(db_contact)
+        print("CRUD: Contact added to session")
+        
+        db.commit()
+        print("CRUD: Database committed")
+        
+        db.refresh(db_contact)
+        print(f"CRUD: Contact refreshed with ID: {db_contact.id}")
+        
+        # Update company contact count if company_id is provided
+        if db_contact.company_id:
+            company = get_company(db, db_contact.company_id, organization_id)
+            if company:
+                company.contact_count += 1
+                db.commit()
+                print(f"CRUD: Updated company contact count for company ID: {db_contact.company_id}")
+        
+        return db_contact
+        
+    except Exception as e:
+        print(f"CRUD ERROR: Failed to create contact: {str(e)}")
+        db.rollback()
+        raise e
 
 def get_contacts(
     db: Session,

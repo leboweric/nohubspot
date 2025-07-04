@@ -4,58 +4,55 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
+import { contactAPI, handleAPIError } from "@/lib/api"
 
 export default function NewContactPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    first_name: "",
+    last_name: "",
     email: "",
     phone: "",
     title: "",
-    company: "",
+    company_name: "",
     status: "Lead"
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const companyParam = searchParams.get('company')
     if (companyParam) {
       setFormData(prev => ({
         ...prev,
-        company: companyParam
+        company_name: companyParam
       }))
     }
   }, [searchParams])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLoading(true)
+    setError(null)
     
     try {
-      // Generate a new ID for the contact
-      const newId = (Date.now()).toString()
+      console.log("Submitting contact:", formData)
       
-      // Create new contact object
-      const newContact = {
-        id: newId,
-        ...formData,
-        createdAt: new Date().toISOString(),
-        lastActivity: new Date().toISOString(),
-        notes: ""
-      }
+      // Create contact via API
+      const newContact = await contactAPI.create(formData)
       
-      // Get existing new contacts from localStorage or initialize empty array
-      const existingNewContacts = JSON.parse(localStorage.getItem('newContacts') || '[]')
-      existingNewContacts.push(newContact)
-      localStorage.setItem('newContacts', JSON.stringify(existingNewContacts))
-      
-      console.log("New contact created:", newContact)
+      console.log("Contact created successfully:", newContact)
       alert("Contact added successfully!")
       router.push("/contacts")
       
     } catch (error) {
       console.error("Failed to add contact:", error)
-      alert("Failed to add contact. Please try again.")
+      const errorMessage = handleAPIError(error)
+      setError(errorMessage)
+      alert(`Failed to add contact: ${errorMessage}`)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -75,33 +72,39 @@ export default function NewContactPage() {
         <p className="text-muted-foreground mt-1">Enter contact information below</p>
       </div>
 
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-red-800 text-sm">{error}</p>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label htmlFor="firstName" className="block text-sm font-medium mb-2">
+            <label htmlFor="first_name" className="block text-sm font-medium mb-2">
               First Name *
             </label>
             <input
               type="text"
-              id="firstName"
-              name="firstName"
+              id="first_name"
+              name="first_name"
               required
-              value={formData.firstName}
+              value={formData.first_name}
               onChange={handleChange}
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
 
           <div>
-            <label htmlFor="lastName" className="block text-sm font-medium mb-2">
+            <label htmlFor="last_name" className="block text-sm font-medium mb-2">
               Last Name *
             </label>
             <input
               type="text"
-              id="lastName"
-              name="lastName"
+              id="last_name"
+              name="last_name"
               required
-              value={formData.lastName}
+              value={formData.last_name}
               onChange={handleChange}
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
             />
@@ -153,14 +156,14 @@ export default function NewContactPage() {
         </div>
 
         <div>
-          <label htmlFor="company" className="block text-sm font-medium mb-2">
+          <label htmlFor="company_name" className="block text-sm font-medium mb-2">
             Company
           </label>
           <input
             type="text"
-            id="company"
-            name="company"
-            value={formData.company}
+            id="company_name"
+            name="company_name"
+            value={formData.company_name}
             onChange={handleChange}
             className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
           />
@@ -186,9 +189,10 @@ export default function NewContactPage() {
         <div className="flex gap-4">
           <button
             type="submit"
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+            disabled={loading}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
-            Add Contact
+            {loading ? "Adding..." : "Add Contact"}
           </button>
           <button
             type="button"

@@ -530,19 +530,32 @@ async def create_new_company(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    db_company = create_company(db, company, current_user.organization_id)
-    
-    # Create activity log
-    create_activity(
-        db, 
-        title="Company Added",
-        description=f"Added {company.name} as a new company",
-        type="company",
-        entity_id=str(db_company.id),
-        organization_id=current_user.organization_id
-    )
-    
-    return db_company
+    try:
+        print(f"Creating company: {company.dict()}")
+        print(f"User org_id: {current_user.organization_id}")
+        
+        db_company = create_company(db, company, current_user.organization_id)
+        print(f"Company created with ID: {db_company.id}")
+        
+        # Create activity log
+        create_activity(
+            db, 
+            title="Company Added",
+            description=f"Added {company.name} as a new company",
+            type="company",
+            entity_id=str(db_company.id),
+            organization_id=current_user.organization_id
+        )
+        
+        return db_company
+        
+    except Exception as e:
+        print(f"Error creating company: {str(e)}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create company: {str(e)}"
+        )
 
 @app.get("/api/companies", response_model=List[CompanyResponse])
 async def read_companies(
@@ -595,18 +608,31 @@ async def create_new_contact(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    db_contact = create_contact(db, contact, current_user.organization_id)
-    
-    create_activity(
-        db,
-        title="Contact Added",
-        description=f"Added {contact.first_name} {contact.last_name} as a new contact",
-        type="contact", 
-        entity_id=str(db_contact.id),
-        organization_id=current_user.organization_id
-    )
-    
-    return db_contact
+    try:
+        print(f"Creating contact: {contact.dict()}")
+        print(f"User org_id: {current_user.organization_id}")
+        
+        db_contact = create_contact(db, contact, current_user.organization_id)
+        print(f"Contact created with ID: {db_contact.id}")
+        
+        create_activity(
+            db,
+            title="Contact Added",
+            description=f"Added {contact.first_name} {contact.last_name} as a new contact",
+            type="contact", 
+            entity_id=str(db_contact.id),
+            organization_id=current_user.organization_id
+        )
+        
+        return db_contact
+        
+    except Exception as e:
+        print(f"Error creating contact: {str(e)}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create contact: {str(e)}"
+        )
 
 @app.get("/api/contacts", response_model=List[ContactResponse])
 async def read_contacts(
