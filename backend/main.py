@@ -239,6 +239,20 @@ async def health_check():
 async def users_health():
     return {"status": "ok", "message": "NotHubSpot CRM API is running"}
 
+@app.get("/api/debug/env")
+async def debug_env():
+    """Debug endpoint to check environment variables"""
+    import os
+    return {
+        "sendgrid_api_key_exists": bool(os.environ.get("SENDGRID_API_KEY")),
+        "sendgrid_api_key_length": len(os.environ.get("SENDGRID_API_KEY", "")),
+        "sendgrid_from_email": os.environ.get("SENDGRID_FROM_EMAIL", "not set"),
+        "sendgrid_from_name": os.environ.get("SENDGRID_FROM_NAME", "not set"),
+        "database_url_exists": bool(os.environ.get("DATABASE_URL")),
+        "railway_environment": os.environ.get("RAILWAY_ENVIRONMENT_NAME", "not set"),
+        "all_env_vars": list(os.environ.keys())
+    }
+
 # Authentication endpoints
 @app.post("/api/auth/register", response_model=Token)
 async def register(user_data: UserRegister, db: Session = Depends(get_db)):

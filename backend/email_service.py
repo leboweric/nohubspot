@@ -19,6 +19,11 @@ async def send_email(
     from_name: Optional[str] = None
 ) -> bool:
     """Send email via SendGrid"""
+    print(f"DEBUG: SENDGRID_API_KEY exists: {bool(SENDGRID_API_KEY)}")
+    print(f"DEBUG: SENDGRID_API_KEY length: {len(SENDGRID_API_KEY)}")
+    print(f"DEBUG: SENDGRID_FROM_EMAIL: {SENDGRID_FROM_EMAIL}")
+    print(f"DEBUG: SENDGRID_FROM_NAME: {SENDGRID_FROM_NAME}")
+    
     if not SENDGRID_API_KEY:
         print("Warning: SENDGRID_API_KEY not configured, skipping email send")
         return False
