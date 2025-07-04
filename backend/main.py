@@ -1368,19 +1368,14 @@ async def delete_existing_task(
     
     return {"message": "Task deleted successfully"}
 
-# Email Signature endpoints
+# Email Signature endpoints - DISABLED FOR STABILITY
 @app.get("/api/signature", response_model=Optional[EmailSignatureResponse])
-async def get_user_signature(
-    db: Session = Depends(get_db)
-):
-    return get_email_signature(db, "default", 1)
+async def get_user_signature():
+    return None
 
 @app.post("/api/signature", response_model=EmailSignatureResponse)
-async def create_or_update_signature(
-    signature: EmailSignatureCreate,
-    db: Session = Depends(get_db)
-):
-    return create_or_update_email_signature(db, signature, "default", 1)
+async def create_or_update_signature(signature: EmailSignatureCreate):
+    raise HTTPException(status_code=503, detail="Signature functionality temporarily disabled")
 
 # Email Template endpoints
 @app.get("/api/email-templates", response_model=List[EmailTemplateResponse])
