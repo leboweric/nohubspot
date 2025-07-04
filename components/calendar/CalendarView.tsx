@@ -16,6 +16,8 @@ export default function CalendarView({ events, onDateClick, onEventClick, onMont
   const today = new Date()
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
+  
+  console.log('Current date state:', currentDate, 'Year:', year, 'Month:', month)
 
   // Get first day of month and how many days
   const firstDayOfMonth = new Date(year, month, 1)
@@ -34,18 +36,23 @@ export default function CalendarView({ events, onDateClick, onEventClick, onMont
 
   // Navigate months
   const goToPreviousMonth = () => {
+    console.log('Previous month clicked')
     const newDate = new Date(year, month - 1, 1)
+    console.log('New date:', newDate)
     setCurrentDate(newDate)
     onMonthChange(newDate)
   }
 
   const goToNextMonth = () => {
+    console.log('Next month clicked')
     const newDate = new Date(year, month + 1, 1)
+    console.log('New date:', newDate)
     setCurrentDate(newDate)
     onMonthChange(newDate)
   }
 
   const goToToday = () => {
+    console.log('Today clicked')
     const today = new Date()
     setCurrentDate(today)
     onMonthChange(today)
