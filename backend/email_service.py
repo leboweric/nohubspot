@@ -6,10 +6,6 @@ from typing import Optional
 import httpx
 from email_templates import get_welcome_email_html, get_welcome_email_text
 
-SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
-SENDGRID_FROM_EMAIL = os.environ.get("SENDGRID_FROM_EMAIL", "noreply@nothubspot.app")
-SENDGRID_FROM_NAME = os.environ.get("SENDGRID_FROM_NAME", "NotHubSpot")
-
 async def send_email(
     to_email: str,
     subject: str,
@@ -19,6 +15,11 @@ async def send_email(
     from_name: Optional[str] = None
 ) -> bool:
     """Send email via SendGrid"""
+    # Load environment variables at runtime instead of module import time
+    SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
+    SENDGRID_FROM_EMAIL = os.environ.get("SENDGRID_FROM_EMAIL", "noreply@nothubspot.app")
+    SENDGRID_FROM_NAME = os.environ.get("SENDGRID_FROM_NAME", "NotHubSpot")
+    
     print(f"DEBUG: SENDGRID_API_KEY exists: {bool(SENDGRID_API_KEY)}")
     print(f"DEBUG: SENDGRID_API_KEY length: {len(SENDGRID_API_KEY)}")
     print(f"DEBUG: SENDGRID_FROM_EMAIL: {SENDGRID_FROM_EMAIL}")
