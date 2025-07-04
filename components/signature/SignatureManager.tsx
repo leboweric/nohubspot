@@ -15,6 +15,7 @@ export const useEmailSignature = () => {
       try {
         setLoading(true)
         const apiSignature = await signatureAPI.get()
+        console.log('API signature response:', apiSignature)
         if (apiSignature) {
           // Convert API signature to component signature
           const componentSignature: EmailSignature = {
@@ -33,6 +34,11 @@ export const useEmailSignature = () => {
         }
       } catch (error) {
         console.error('Failed to load email signature:', error)
+        console.error('Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          type: typeof error,
+          error
+        })
         // Don't throw error - just fail silently to avoid logout loop
         // The signature will remain null and can be created later
       } finally {
@@ -60,7 +66,8 @@ export const useEmailSignature = () => {
         enabled: newSignature.enabled
       }
       
-      await signatureAPI.createOrUpdate(apiSignatureData)
+      const result = await signatureAPI.createOrUpdate(apiSignatureData)
+      console.log('Signature save result:', result)
       setSignature(newSignature)
     } catch (error) {
       console.error('Failed to save email signature:', error)
