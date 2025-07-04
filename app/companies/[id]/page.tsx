@@ -4,7 +4,8 @@ import Link from "next/link"
 import { useRef, useState, useEffect } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
-import { companyAPI, Company, handleAPIError } from "@/lib/api"
+import EventFormModal from "@/components/calendar/EventFormModal"
+import { companyAPI, Company, handleAPIError, CalendarEventCreate, calendarAPI } from "@/lib/api"
 
 export default function CompanyDetailPage({ params }: { params: { id: string } }) {
   const [company, setCompany] = useState<Company | null>(null)
@@ -30,6 +31,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
   }, [params.id])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [showScheduleEvent, setShowScheduleEvent] = useState(false)
 
   if (loading) {
     return (
@@ -99,6 +101,21 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
       // TODO: Upload file to backend
       console.log("File dropped:", file.name)
       alert(`File "${file.name}" dropped for upload. (Backend integration needed)`)
+    }
+  }
+
+  const handleScheduleMeeting = () => {
+    setShowScheduleEvent(true)
+  }
+
+  const handleEventSave = async (eventData: CalendarEventCreate) => {
+    try {
+      await calendarAPI.create(eventData)
+      setShowScheduleEvent(false)
+      alert('Meeting scheduled successfully!')
+    } catch (err) {
+      console.error('Failed to schedule meeting:', err)
+      alert(`Failed to schedule meeting: ${handleAPIError(err)}`)
     }
   }
 
@@ -197,6 +214,9 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
               <Link href={`/contacts/new?company=${encodeURIComponent(company.name)}`} className="block w-full text-left px-4 py-2 border rounded-md hover:bg-accent transition-colors">
                 Add Contact
               </Link>
+              <button onClick={handleScheduleMeeting} className="w-full text-left px-4 py-2 border rounded-md hover:bg-accent transition-colors">
+                Schedule Meeting
+              </button>
               <div
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -232,6 +252,16 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
           </div>
         </div>
       </div>
+
+      {/* Schedule Event Modal */}
+      <EventFormModal
+        isOpen={showScheduleEvent}
+        onClose={() => setShowScheduleEvent(false)}
+        onSave={handleEventSave}
+        event={null}
+        selectedDate={null}
+        preselectedCompanyId={company?.id}
+      />
         </div>
       </MainLayout>
     </AuthGuard>

@@ -7,8 +7,9 @@ import MainLayout from "@/components/MainLayout"
 import EmailCompose, { EmailMessage } from "@/components/email/EmailCompose"
 import EmailThread from "@/components/email/EmailThread"
 import TaskCreate from "@/components/tasks/TaskCreate"
+import EventFormModal from "@/components/calendar/EventFormModal"
 import { Task } from "@/components/tasks/types"
-import { contactAPI, Contact, handleAPIError } from "@/lib/api"
+import { contactAPI, Contact, handleAPIError, CalendarEventCreate, calendarAPI } from "@/lib/api"
 
 export default function ContactDetailPage({ params }: { params: { id: string } }) {
   const [contact, setContact] = useState<Contact | null>(null)
@@ -37,6 +38,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
   const [showEmailCompose, setShowEmailCompose] = useState(false)
   const [showEmailThread, setShowEmailThread] = useState(false)
   const [showCreateTask, setShowCreateTask] = useState(false)
+  const [showScheduleEvent, setShowScheduleEvent] = useState(false)
   const [emails, setEmails] = useState<EmailMessage[]>([
     // Sample email thread data
     {
@@ -91,6 +93,21 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
       fromSelf: true
     }
     setEmails(prev => [...prev, reply])
+  }
+
+  const handleScheduleMeeting = () => {
+    setShowScheduleEvent(true)
+  }
+
+  const handleEventSave = async (eventData: CalendarEventCreate) => {
+    try {
+      await calendarAPI.create(eventData)
+      setShowScheduleEvent(false)
+      alert('Meeting scheduled successfully!')
+    } catch (err) {
+      console.error('Failed to schedule meeting:', err)
+      alert(`Failed to schedule meeting: ${handleAPIError(err)}`)
+    }
   }
 
   const handleCreateTask = (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -273,6 +290,9 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
               <button onClick={handleScheduleCall} className="w-full text-left px-4 py-2 border rounded-md hover:bg-accent transition-colors">
                 Schedule Call
               </button>
+              <button onClick={handleScheduleMeeting} className="w-full text-left px-4 py-2 border rounded-md hover:bg-accent transition-colors">
+                Schedule Meeting
+              </button>
               <button onClick={() => setShowCreateTask(true)} className="w-full text-left px-4 py-2 border rounded-md hover:bg-accent transition-colors">
                 Create Task
               </button>
@@ -386,6 +406,16 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
           </div>
         </div>
       )}
+
+      {/* Schedule Event Modal */}
+      <EventFormModal
+        isOpen={showScheduleEvent}
+        onClose={() => setShowScheduleEvent(false)}
+        onSave={handleEventSave}
+        event={null}
+        selectedDate={null}
+        preselectedContactId={contact?.id}
+      />
         </div>
       </MainLayout>
     </AuthGuard>

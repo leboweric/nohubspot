@@ -19,6 +19,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard" },
+    { name: "Calendar", href: "/calendar" },
     { name: "Companies", href: "/companies" },
     { name: "Contacts", href: "/contacts" },
     { name: "Tasks", href: "/tasks" },
