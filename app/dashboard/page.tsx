@@ -9,11 +9,15 @@ import { getAuthState } from "@/lib/auth"
 export default function DashboardPage() {
   const [showEmailCompose, setShowEmailCompose] = useState(false)
   const [organizationName, setOrganizationName] = useState("")
+  const [firstName, setFirstName] = useState("")
   
   useEffect(() => {
-    const { organization } = getAuthState()
+    const { organization, user } = getAuthState()
     if (organization) {
       setOrganizationName(organization.name)
+    }
+    if (user) {
+      setFirstName(user.first_name || user.email.split('@')[0])
     }
   }, [])
   
@@ -42,7 +46,7 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold">{organizationName} Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Welcome back. Here's your CRM overview.</p>
+        <p className="text-muted-foreground mt-1">Welcome back{firstName ? `, ${firstName}` : ''}. Here's your CRM overview.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
