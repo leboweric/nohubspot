@@ -22,12 +22,6 @@ export default function DashboardPage() {
     }
   }, [])
   
-  const stats = [
-    { label: "Companies", value: 3, change: "+1 from last month" },
-    { label: "Contacts", value: 4, change: "+2 from last month" },
-    { label: "Email Threads", value: 2, change: "Active conversations" },
-    { label: "Attachments", value: 3, change: "Documents stored" }
-  ]
 
   const recentActivity = [
     { action: "Email sent to John Smith", time: "2 hours ago" },
@@ -55,26 +49,6 @@ export default function DashboardPage() {
         <DailySummaryCard />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => {
-          const colors = [
-            'bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-100',
-            'bg-green-50 border-green-200 text-green-900 dark:bg-green-950 dark:border-green-800 dark:text-green-100',
-            'bg-purple-50 border-purple-200 text-purple-900 dark:bg-purple-950 dark:border-purple-800 dark:text-purple-100',
-            'bg-orange-50 border-orange-200 text-orange-900 dark:bg-orange-950 dark:border-orange-800 dark:text-orange-100'
-          ]
-          
-          return (
-            <div key={index} className={`bg-card border rounded-lg p-6 transition-all hover:shadow-md ${colors[index]}`}>
-              <div className="text-sm font-medium text-muted-foreground">{stat.label}</div>
-              <div className="mt-2 flex items-baseline">
-                <span className="text-3xl font-bold">{stat.value}</span>
-              </div>
-              <div className="mt-2 text-xs text-muted-foreground">{stat.change}</div>
-            </div>
-          )
-        })}
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">

@@ -60,6 +60,19 @@ export default function ContactsPage() {
   // Since we're using API search, no need for client-side filtering
   const filteredContacts = contacts
 
+  const handleDelete = async (contactId: number, contactName: string) => {
+    const confirmed = confirm(`Are you sure you want to delete ${contactName}? This action cannot be undone.`)
+    if (!confirmed) return
+
+    try {
+      await contactAPI.delete(contactId)
+      loadContacts() // Refresh the list
+    } catch (err) {
+      console.error('Failed to delete contact:', err)
+      alert(`Failed to delete contact: ${handleAPIError(err)}`)
+    }
+  }
+
   const handleBulkUpload = async (data: BulkUploadData, mappings: FieldMapping[]) => {
     try {
       const newContacts: ContactCreate[] = data.rows.map((row) => {
@@ -220,6 +233,12 @@ export default function ContactsPage() {
                         <a href={`/contacts/${contact.id}/edit`} className="text-blue-600 hover:underline">
                           Edit
                         </a>
+                        <button
+                          onClick={() => handleDelete(contact.id, `${contact.first_name} ${contact.last_name}`)}
+                          className="text-red-600 hover:underline"
+                        >
+                          Delete
+                        </button>
                       </div>
                     </td>
                   </tr>

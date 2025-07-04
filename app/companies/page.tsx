@@ -60,6 +60,19 @@ export default function CompaniesPage() {
   // Since we're using API search, no need for client-side filtering
   const filteredCompanies = companies
 
+  const handleDelete = async (companyId: number, companyName: string) => {
+    const confirmed = confirm(`Are you sure you want to delete ${companyName}? This action cannot be undone.`)
+    if (!confirmed) return
+
+    try {
+      await companyAPI.delete(companyId)
+      loadCompanies() // Refresh the list
+    } catch (err) {
+      console.error('Failed to delete company:', err)
+      alert(`Failed to delete company: ${handleAPIError(err)}`)
+    }
+  }
+
   const handleBulkUpload = async (data: BulkUploadData, mappings: FieldMapping[]) => {
     try {
       const newCompanies: CompanyCreate[] = data.rows.map((row) => {
@@ -211,6 +224,12 @@ export default function CompaniesPage() {
                         <a href={`/companies/${company.id}/edit`} className="text-blue-600 hover:underline">
                           Edit
                         </a>
+                        <button
+                          onClick={() => handleDelete(company.id, company.name)}
+                          className="text-red-600 hover:underline"
+                        >
+                          Delete
+                        </button>
                       </div>
                     </td>
                   </tr>

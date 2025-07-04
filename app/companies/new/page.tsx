@@ -14,6 +14,7 @@ export default function NewCompanyPage() {
     name: "",
     industry: "",
     website: "",
+    address: "",
     description: "",
     status: "Lead"
   })
@@ -27,6 +28,7 @@ export default function NewCompanyPage() {
         name: formData.name,
         industry: formData.industry || undefined,
         website: formData.website || undefined,
+        address: formData.address || undefined,
         description: formData.description || undefined,
         status: formData.status
       }
@@ -104,6 +106,21 @@ export default function NewCompanyPage() {
             value={formData.website}
             onChange={handleChange}
             placeholder="https://example.com"
+            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="address" className="block text-sm font-medium mb-2">
+            Address
+          </label>
+          <textarea
+            id="address"
+            name="address"
+            rows={3}
+            value={formData.address}
+            onChange={handleChange}
+            placeholder="Company address"
             className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>

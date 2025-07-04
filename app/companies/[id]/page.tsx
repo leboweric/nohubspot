@@ -143,6 +143,16 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                 </dd>
               </div>
               <div>
+                <dt className="text-sm font-medium text-muted-foreground">Address</dt>
+                <dd className="mt-1">
+                  {company.address ? (
+                    <div className="whitespace-pre-line">{company.address}</div>
+                  ) : (
+                    <span className="text-muted-foreground">Not provided</span>
+                  )}
+                </dd>
+              </div>
+              <div>
                 <dt className="text-sm font-medium text-muted-foreground">Description</dt>
                 <dd className="mt-1">{company.description || "No description provided"}</dd>
               </div>
