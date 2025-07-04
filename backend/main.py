@@ -1384,9 +1384,19 @@ async def create_or_update_signature(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    # Use actual user ID and organization ID
-    org_id = getattr(current_user, 'organization_id', 4)  # Fallback to org 4
-    return create_or_update_email_signature(db, signature, str(current_user.id), org_id)
+    try:
+        # Use actual user ID and organization ID
+        org_id = getattr(current_user, 'organization_id', 4)  # Fallback to org 4
+        result = create_or_update_email_signature(db, signature, str(current_user.id), org_id)
+        
+        # Ensure user_id is string for response validation
+        if hasattr(result, 'user_id') and isinstance(result.user_id, int):
+            result.user_id = str(result.user_id)
+            
+        return result
+    except Exception as e:
+        print(f"Signature save error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save signature: {str(e)}")
 
 # Email Template endpoints
 @app.get("/api/email-templates", response_model=List[EmailTemplateResponse])
