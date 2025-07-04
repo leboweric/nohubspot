@@ -99,9 +99,16 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
           }
         }
         
-        // Default end time is 1 hour later
+        // Default end time is 30 minutes later
         const endTime = new Date(startTime)
-        endTime.setHours(endTime.getHours() + 1)
+        endTime.setMinutes(endTime.getMinutes() + 30)
+        
+        console.log('Form initialization:')
+        console.log('Selected date:', selectedDate)
+        console.log('Start time:', startTime)
+        console.log('End time:', endTime)
+        console.log('Start time ISO:', startTime.toISOString().slice(0, 16))
+        console.log('End time ISO:', endTime.toISOString().slice(0, 16))
         
         setFormData({
           title: "",
@@ -173,7 +180,12 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
     if (name === 'start_time' && value && !formData.is_all_day) {
       const startTime = new Date(value)
       const endTime = new Date(startTime)
-      endTime.setHours(endTime.getHours() + 1) // Default 1 hour duration
+      endTime.setMinutes(endTime.getMinutes() + 30) // Default 30 minute duration
+      
+      console.log('Start time changed:', value)
+      console.log('Parsed start time:', startTime)
+      console.log('Calculated end time:', endTime)
+      console.log('End time ISO string:', endTime.toISOString().slice(0, 16))
       
       setFormData(prev => ({
         ...prev,
