@@ -15,12 +15,21 @@ export default function CalendarPage() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [currentDate, setCurrentDate] = useState(() => {
-    // Try to restore the last viewed month from localStorage
+    // Only restore saved month if this is a true page refresh/reload
     if (typeof window !== 'undefined') {
-      const savedDate = localStorage.getItem('calendar-current-date')
-      if (savedDate) {
-        return new Date(savedDate)
+      // Check if this is a fresh session (no session storage flag)
+      const hasNavigatedInSession = sessionStorage.getItem('has-navigated')
+      
+      if (!hasNavigatedInSession) {
+        // First visit in this session - restore saved month if exists
+        const savedDate = localStorage.getItem('calendar-current-date')
+        if (savedDate) {
+          return new Date(savedDate)
+        }
       }
+      
+      // Mark that we've navigated in this session
+      sessionStorage.setItem('has-navigated', 'true')
     }
     return new Date()
   })
