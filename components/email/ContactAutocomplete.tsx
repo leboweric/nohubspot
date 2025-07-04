@@ -27,10 +27,21 @@ export default function ContactAutocomplete({
   // Search for contacts when value changes
   useEffect(() => {
     if (value.trim().length > 0) {
-      const results = searchContacts(value.trim())
-      setSuggestions(results)
-      setShowSuggestions(results.length > 0)
-      setSelectedIndex(-1)
+      const searchAsync = async () => {
+        try {
+          const results = await searchContacts(value.trim())
+          setSuggestions(results)
+          setShowSuggestions(results.length > 0)
+          setSelectedIndex(-1)
+        } catch (error) {
+          console.error('Contact search failed:', error)
+          setSuggestions([])
+          setShowSuggestions(false)
+          setSelectedIndex(-1)
+        }
+      }
+      
+      searchAsync()
     } else {
       setSuggestions([])
       setShowSuggestions(false)
