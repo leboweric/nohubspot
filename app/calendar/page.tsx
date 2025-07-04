@@ -14,7 +14,16 @@ export default function CalendarPage() {
   const [showEventModal, setShowEventModal] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [currentDate, setCurrentDate] = useState(new Date())
+  const [currentDate, setCurrentDate] = useState(() => {
+    // Try to restore the last viewed month from localStorage
+    if (typeof window !== 'undefined') {
+      const savedDate = localStorage.getItem('calendar-current-date')
+      if (savedDate) {
+        return new Date(savedDate)
+      }
+    }
+    return new Date()
+  })
 
   // Load events for current month
   const loadEvents = async (startDate?: Date, endDate?: Date) => {
@@ -74,10 +83,9 @@ export default function CalendarPage() {
         await calendarAPI.create(eventData)
       }
       
-      // Refresh events
-      const now = new Date()
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      // Refresh events for the currently viewed month
+      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
       await loadEvents(startOfMonth, endOfMonth)
       
       setShowEventModal(false)
@@ -95,10 +103,9 @@ export default function CalendarPage() {
     try {
       await calendarAPI.delete(eventId)
       
-      // Refresh events
-      const now = new Date()
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      // Refresh events for the currently viewed month
+      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
       await loadEvents(startOfMonth, endOfMonth)
       
       setShowEventModal(false)
@@ -111,6 +118,10 @@ export default function CalendarPage() {
 
   const handleMonthChange = (date: Date) => {
     setCurrentDate(date)
+    // Save the current month to localStorage for persistence
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('calendar-current-date', date.toISOString())
+    }
     const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1)
     const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0)
     loadEvents(startOfMonth, endOfMonth)
