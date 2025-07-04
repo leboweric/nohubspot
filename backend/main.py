@@ -297,6 +297,32 @@ async def test_ai():
         }
     }
 
+@app.get("/api/debug/company-status")
+async def debug_company_status(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Debug endpoint to check company status values"""
+    companies = db.query(Company).filter(Company.organization_id == current_user.organization_id).all()
+    
+    return {
+        "total_companies": len(companies),
+        "companies": [
+            {
+                "id": company.id,
+                "name": company.name,
+                "status": company.status,
+                "status_repr": repr(company.status)  # Shows exact string with quotes
+            }
+            for company in companies
+        ],
+        "status_counts": {},
+        "active_count_query": db.query(Company).filter(
+            Company.organization_id == current_user.organization_id,
+            Company.status == "Active"
+        ).count()
+    }
+
 # Authentication endpoints
 @app.post("/api/auth/register", response_model=Token)
 async def register(user_data: UserRegister, db: Session = Depends(get_db)):
