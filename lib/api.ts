@@ -545,6 +545,113 @@ export const emailTemplateAPI = {
   },
 }
 
+// Calendar Event interfaces
+export interface CalendarEvent {
+  id: number
+  title: string
+  description?: string
+  start_time: string
+  end_time: string
+  location?: string
+  event_type: string
+  contact_id?: number
+  company_id?: number
+  is_all_day: boolean
+  reminder_minutes: number
+  status: string
+  created_by: number
+  contact_name?: string
+  company_name?: string
+  creator_name?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface CalendarEventCreate {
+  title: string
+  description?: string
+  start_time: string
+  end_time: string
+  location?: string
+  event_type?: string
+  contact_id?: number
+  company_id?: number
+  is_all_day?: boolean
+  reminder_minutes?: number
+  status?: string
+}
+
+export interface CalendarEventUpdate {
+  title?: string
+  description?: string
+  start_time?: string
+  end_time?: string
+  location?: string
+  event_type?: string
+  contact_id?: number
+  company_id?: number
+  is_all_day?: boolean
+  reminder_minutes?: number
+  status?: string
+}
+
+// Calendar API functions
+export const calendarAPI = {
+  // Get all calendar events
+  getAll: (params?: {
+    skip?: number
+    limit?: number
+    start_date?: string
+    end_date?: string
+    contact_id?: number
+    company_id?: number
+    event_type?: string
+  }): Promise<CalendarEvent[]> => {
+    const searchParams = new URLSearchParams()
+    if (params?.skip) searchParams.append('skip', params.skip.toString())
+    if (params?.limit) searchParams.append('limit', params.limit.toString())
+    if (params?.start_date) searchParams.append('start_date', params.start_date)
+    if (params?.end_date) searchParams.append('end_date', params.end_date)
+    if (params?.contact_id) searchParams.append('contact_id', params.contact_id.toString())
+    if (params?.company_id) searchParams.append('company_id', params.company_id.toString())
+    if (params?.event_type) searchParams.append('event_type', params.event_type)
+    
+    return apiRequest(`/api/calendar/events?${searchParams}`)
+  },
+
+  // Get single calendar event
+  getById: (id: number): Promise<CalendarEvent> => 
+    apiRequest(`/api/calendar/events/${id}`),
+
+  // Create calendar event
+  create: (data: CalendarEventCreate): Promise<CalendarEvent> =>
+    apiRequest('/api/calendar/events', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Update calendar event
+  update: (id: number, data: CalendarEventUpdate): Promise<CalendarEvent> =>
+    apiRequest(`/api/calendar/events/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // Delete calendar event
+  delete: (id: number): Promise<{ message: string }> =>
+    apiRequest(`/api/calendar/events/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // Get upcoming events
+  getUpcoming: (limit?: number): Promise<CalendarEvent[]> => {
+    const searchParams = new URLSearchParams()
+    if (limit) searchParams.append('limit', limit.toString())
+    
+    return apiRequest(`/api/calendar/upcoming?${searchParams}`)
+  },
+}
+
 // Helper function to handle API errors consistently
 export const handleAPIError = (error: unknown): string => {
   if (error instanceof APIError) {
