@@ -525,10 +525,18 @@ def get_calendar_events(
 ) -> List[CalendarEvent]:
     query = db.query(CalendarEvent).filter(CalendarEvent.organization_id == organization_id)
     
-    # Filter by date range
-    if start_date:
-        query = query.filter(CalendarEvent.start_time >= start_date)
-    if end_date:
+    # Filter by date range - include events that overlap with the range
+    if start_date and end_date:
+        # Event overlaps if: event_start <= range_end AND event_end >= range_start
+        query = query.filter(
+            CalendarEvent.start_time <= end_date,
+            CalendarEvent.end_time >= start_date
+        )
+    elif start_date:
+        # Only start date provided - events that end on or after start date
+        query = query.filter(CalendarEvent.end_time >= start_date)
+    elif end_date:
+        # Only end date provided - events that start on or before end date
         query = query.filter(CalendarEvent.start_time <= end_date)
     
     # Filter by related entities
