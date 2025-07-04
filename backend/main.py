@@ -277,6 +277,26 @@ async def test_email():
             "message": f"Error sending email: {str(e)}"
         }
 
+@app.post("/api/debug/test-ai")
+async def test_ai():
+    """Test endpoint to check AI configuration"""
+    import os
+    from openai import OpenAI
+    
+    openai_key = os.environ.get("OPENAI_API_KEY")
+    
+    return {
+        "openai_key_exists": bool(openai_key),
+        "openai_key_length": len(openai_key) if openai_key else 0,
+        "openai_key_starts_with": openai_key[:10] + "..." if openai_key else None,
+        "environment_vars": {
+            "OPENAI_API_KEY": bool(os.environ.get("OPENAI_API_KEY")),
+            "OPENAI_KEY": bool(os.environ.get("OPENAI_KEY")),
+            "OPEN_AI_KEY": bool(os.environ.get("OPEN_AI_KEY")),
+            "OPENAI": bool(os.environ.get("OPENAI"))
+        }
+    }
+
 # Authentication endpoints
 @app.post("/api/auth/register", response_model=Token)
 async def register(user_data: UserRegister, db: Session = Depends(get_db)):
@@ -731,9 +751,13 @@ async def ai_chat(
 ):
     """Interactive AI chat for CRM questions"""
     try:
+        print(f"AI Chat request received: {request}")
+        
         message = request.get("message", "")
         context = request.get("context", "general")
         summary_data = request.get("summary_data")
+        
+        print(f"AI Chat - User: {current_user.id}, Org: {current_user.organization_id}, Message: {message}")
         
         if not message.strip():
             raise HTTPException(
@@ -750,11 +774,16 @@ async def ai_chat(
             summary_data=summary_data
         )
         
+        print(f"AI Chat response: {response}")
+        
         return {"response": response}
         
     except HTTPException:
         raise
     except Exception as e:
+        print(f"AI Chat error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to process AI chat: {str(e)}"
