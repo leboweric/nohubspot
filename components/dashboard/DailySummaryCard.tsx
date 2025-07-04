@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { dashboardAPI, handleAPIError } from "@/lib/api"
+import { getAuthHeaders } from "@/lib/auth"
 
 interface DailySummary {
   generated_at: string
@@ -17,11 +18,21 @@ interface DailySummary {
   recommendations: string[]
 }
 
+interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+  timestamp: Date
+}
+
 export default function DailySummaryCard() {
   const [summary, setSummary] = useState<DailySummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expanded, setExpanded] = useState(false)
+  const [showChat, setShowChat] = useState(false)
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const [chatInput, setChatInput] = useState("")
+  const [chatLoading, setChatLoading] = useState(false)
 
   useEffect(() => {
     loadDailySummary()
@@ -54,6 +65,59 @@ export default function DailySummaryCard() {
     if (hour < 17) return "Good afternoon! 🌤️"
     return "Good evening! 🌙"
   }
+
+  const handleChatSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!chatInput.trim() || chatLoading) return
+
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content: chatInput.trim(),
+      timestamp: new Date()
+    }
+
+    setChatMessages(prev => [...prev, userMessage])
+    setChatInput("")
+    setChatLoading(true)
+
+    try {
+      // Call the AI chat endpoint with context
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({
+          message: userMessage.content,
+          context: 'daily_summary',
+          summary_data: summary
+        })
+      })
+
+      if (!response.ok) throw new Error('Failed to get AI response')
+
+      const data = await response.json()
+      
+      const aiMessage: ChatMessage = {
+        role: 'assistant',
+        content: data.response,
+        timestamp: new Date()
+      }
+
+      setChatMessages(prev => [...prev, aiMessage])
+    } catch (err) {
+      const errorMessage: ChatMessage = {
+        role: 'assistant', 
+        content: "Sorry, I couldn't process that request. Please try again.",
+        timestamp: new Date()
+      }
+      setChatMessages(prev => [...prev, errorMessage])
+    } finally {
+      setChatLoading(false)
+    }
+  }
+
 
   if (loading) {
     return (
@@ -92,83 +156,148 @@ export default function DailySummaryCard() {
   }
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+      <div className="flex items-center justify-between mb-3">
         <div>
-          <h2 className="text-lg font-semibold text-blue-900">Daily Summary</h2>
+          <h2 className="text-lg font-semibold text-blue-900">🤖 AI Daily Summary</h2>
           <p className="text-xs text-blue-600">
             Generated at {formatTime(summary.generated_at)}
           </p>
         </div>
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
-        >
-          {expanded ? 'Collapse' : 'Expand'}
-          <span className={`transition-transform ${expanded ? 'rotate-180' : ''}`}>
-            ▼
-          </span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowChat(!showChat)}
+            className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1 px-2 py-1 rounded border border-blue-300 hover:bg-blue-100"
+          >
+            💬 Ask AI
+          </button>
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+          >
+            {expanded ? 'Collapse' : 'Expand'}
+            <span className={`transition-transform ${expanded ? 'rotate-180' : ''}`}>
+              ▼
+            </span>
+          </button>
+        </div>
       </div>
 
-      {/* Quick Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+      {/* Compact Quick Stats Row */}
+      <div className="grid grid-cols-5 gap-2 mb-3">
         <div className="text-center">
-          <div className="text-xl font-bold text-red-600">
-            {summary.quick_stats.overdue_tasks}
-          </div>
+          <div className="text-lg font-bold text-red-600">{summary.quick_stats.overdue_tasks}</div>
           <div className="text-xs text-gray-600">Overdue</div>
         </div>
         <div className="text-center">
-          <div className="text-xl font-bold text-orange-600">
-            {summary.quick_stats.today_tasks}
-          </div>
-          <div className="text-xs text-gray-600">Due Today</div>
+          <div className="text-lg font-bold text-orange-600">{summary.quick_stats.today_tasks}</div>
+          <div className="text-xs text-gray-600">Today</div>
         </div>
         <div className="text-center">
-          <div className="text-xl font-bold text-blue-600">
-            {summary.quick_stats.total_contacts}
-          </div>
+          <div className="text-lg font-bold text-blue-600">{summary.quick_stats.total_contacts}</div>
           <div className="text-xs text-gray-600">Contacts</div>
         </div>
         <div className="text-center">
-          <div className="text-xl font-bold text-purple-600">
-            {summary.quick_stats.contacts_needing_attention}
-          </div>
-          <div className="text-xs text-gray-600">Need Attention</div>
+          <div className="text-lg font-bold text-purple-600">{summary.quick_stats.contacts_needing_attention}</div>
+          <div className="text-xs text-gray-600">Attention</div>
         </div>
         <div className="text-center">
-          <div className="text-xl font-bold text-green-600">
-            {summary.quick_stats.active_companies}
-          </div>
-          <div className="text-xs text-gray-600">Active Companies</div>
+          <div className="text-lg font-bold text-green-600">{summary.quick_stats.active_companies}</div>
+          <div className="text-xs text-gray-600">Active</div>
         </div>
       </div>
 
-      {/* AI Insights */}
-      <div className="bg-white/70 rounded-lg p-4 mb-4">
-        <div className="text-sm text-blue-900 leading-relaxed whitespace-pre-line">
+      {/* Compact AI Insights - Show first 2 lines by default */}
+      <div className="bg-white/70 rounded-lg p-3 mb-3">
+        <div className={`text-sm text-blue-900 leading-relaxed whitespace-pre-line ${!expanded ? 'overflow-hidden' : ''}`} style={!expanded ? {display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'} : {}}>
           {summary.ai_insights}
         </div>
       </div>
 
-      {/* Expandable Recommendations */}
-      {expanded && summary.recommendations.length > 0 && (
-        <div className="bg-white/70 rounded-lg p-4">
-          <h4 className="font-medium text-blue-900 mb-3">🎯 Today's Action Items:</h4>
-          <ul className="space-y-2">
-            {summary.recommendations.map((rec, index) => (
-              <li key={index} className="flex items-start gap-2 text-sm text-blue-800">
-                <span className="text-blue-600 mt-1">•</span>
-                <span>{rec}</span>
-              </li>
-            ))}
-          </ul>
+      {/* Expandable Content */}
+      {expanded && (
+        <div className="space-y-3">
+          {/* Full Recommendations */}
+          {summary.recommendations.length > 0 && (
+            <div className="bg-white/70 rounded-lg p-3">
+              <h4 className="font-medium text-blue-900 mb-2">🎯 Action Items:</h4>
+              <ul className="space-y-1">
+                {summary.recommendations.map((rec, index) => (
+                  <li key={index} className="flex items-start gap-2 text-sm text-blue-800">
+                    <span className="text-blue-600 mt-0.5">•</span>
+                    <span>{rec}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Refresh Button */}
-      <div className="mt-4 flex justify-end">
+      {/* Chat Interface */}
+      {showChat && (
+        <div className="mt-3 bg-white/90 rounded-lg border border-blue-300">
+          <div className="p-3 border-b border-blue-200">
+            <h4 className="font-medium text-blue-900 text-sm">Ask about your summary</h4>
+          </div>
+          
+          {/* Chat Messages */}
+          <div className="p-3 max-h-40 overflow-y-auto space-y-2">
+            {chatMessages.length === 0 ? (
+              <div className="text-xs text-gray-600 italic">
+                Ask me anything! Try: "What's Sally's phone number?" or "When is my next meeting?"
+              </div>
+            ) : (
+              chatMessages.map((msg, index) => (
+                <div key={index} className={`text-sm ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
+                  <div className={`inline-block px-3 py-1 rounded-lg max-w-xs ${
+                    msg.role === 'user' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {msg.content}
+                  </div>
+                </div>
+              ))
+            )}
+            {chatLoading && (
+              <div className="text-left">
+                <div className="inline-block px-3 py-1 rounded-lg bg-gray-100 text-gray-800">
+                  <div className="flex items-center gap-1">
+                    <div className="animate-bounce w-1 h-1 bg-gray-600 rounded-full"></div>
+                    <div className="animate-bounce w-1 h-1 bg-gray-600 rounded-full" style={{animationDelay: '0.1s'}}></div>
+                    <div className="animate-bounce w-1 h-1 bg-gray-600 rounded-full" style={{animationDelay: '0.2s'}}></div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Chat Input */}
+          <form onSubmit={handleChatSubmit} className="p-3 border-t border-blue-200">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Ask about tasks, contacts, or anything..."
+                disabled={chatLoading}
+                className="flex-1 px-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+              />
+              <button
+                type="submit"
+                disabled={!chatInput.trim() || chatLoading}
+                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50"
+              >
+                Send
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="mt-3 flex justify-end">
         <button
           onClick={loadDailySummary}
           disabled={loading}

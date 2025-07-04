@@ -51,6 +51,7 @@ from email_template_crud import (
     get_template_categories, replace_template_variables
 )
 from ai_service import generate_daily_summary
+from ai_chat import process_ai_chat
 
 # Create database tables with error handling
 print("🔨 Starting database initialization...")
@@ -475,6 +476,43 @@ async def get_daily_summary(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate daily summary: {str(e)}"
+        )
+
+@app.post("/api/ai/chat")
+async def ai_chat(
+    request: dict,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Interactive AI chat for CRM questions"""
+    try:
+        message = request.get("message", "")
+        context = request.get("context", "general")
+        summary_data = request.get("summary_data")
+        
+        if not message.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Message cannot be empty"
+            )
+        
+        response = process_ai_chat(
+            db=db,
+            user_id=current_user.id,
+            organization_id=current_user.organization_id,
+            message=message,
+            context=context,
+            summary_data=summary_data
+        )
+        
+        return {"response": response}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to process AI chat: {str(e)}"
         )
 
 @app.get("/api/activities", response_model=List[ActivityResponse])

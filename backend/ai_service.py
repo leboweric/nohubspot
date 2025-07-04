@@ -11,8 +11,14 @@ import openai
 from models import Task, Contact, Company, Activity, User
 from crud import get_tasks, get_contacts, get_companies
 
-# Configure OpenAI
-openai.api_key = os.environ.get("OPENAI_API_KEY")
+# Configure OpenAI - try multiple environment variable names
+openai_key = (
+    os.environ.get("OPENAI_API_KEY") or 
+    os.environ.get("OPENAI_KEY") or 
+    os.environ.get("OPEN_AI_KEY") or
+    os.environ.get("OPENAI")
+)
+openai.api_key = openai_key
 
 class DailySummaryService:
     def __init__(self, db: Session, user_id: int, organization_id: int):
@@ -114,8 +120,9 @@ class DailySummaryService:
     
     def _generate_ai_insights(self, data: Dict[str, Any]) -> str:
         """Use OpenAI to generate insights from the collected data"""
-        if not openai.api_key:
-            return "AI insights unavailable - OpenAI API key not configured"
+        if not openai_key:
+            available_vars = [k for k in os.environ.keys() if 'openai' in k.lower() or 'open_ai' in k.lower()]
+            return f"AI insights unavailable - OpenAI API key not configured. Available env vars: {available_vars}"
         
         try:
             # Prepare data for AI
