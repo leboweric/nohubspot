@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from database import get_db, engine
-from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee
+from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection
 from schemas import (
     CompanyCreate, CompanyResponse, CompanyUpdate,
     ContactCreate, ContactResponse, ContactUpdate,
@@ -27,7 +27,10 @@ from schemas import (
     EmailTemplateCreate, EmailTemplateResponse, EmailTemplateUpdate,
     CalendarEventCreate, CalendarEventResponse, CalendarEventUpdate,
     EventAttendeeCreate, EventAttendeeResponse,
-    PasswordResetRequest, PasswordResetConfirm, PasswordResetResponse
+    PasswordResetRequest, PasswordResetConfirm, PasswordResetResponse,
+    O365OrganizationConfigCreate, O365OrganizationConfigUpdate, O365OrganizationConfigResponse,
+    O365UserConnectionUpdate, O365UserConnectionResponse,
+    O365TestConnectionRequest, O365TestConnectionResponse
 )
 from crud import (
     create_company, get_companies, get_company, update_company, delete_company,
@@ -40,7 +43,9 @@ from crud import (
     create_activity, get_recent_activities,
     get_dashboard_stats,
     create_calendar_event, get_calendar_events, get_calendar_event, 
-    update_calendar_event, delete_calendar_event, get_upcoming_events, get_today_events
+    update_calendar_event, delete_calendar_event, get_upcoming_events, get_today_events,
+    is_org_owner, get_o365_org_config, create_o365_org_config, update_o365_org_config, delete_o365_org_config,
+    get_o365_user_connection, get_o365_user_connections_by_org, update_o365_user_connection, delete_o365_user_connection
 )
 from auth_crud import (
     create_organization, get_organization_by_slug, get_organization_by_id,
@@ -843,6 +848,177 @@ async def send_calendar_event_invite(
     except Exception as e:
         print(f"Error sending calendar invites: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to send calendar invites: {str(e)}")
+
+# Office 365 Integration endpoints
+@app.get("/api/settings/o365/organization", response_model=O365OrganizationConfigResponse)
+async def get_organization_o365_config(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get Office 365 organization configuration (Owner only)"""
+    if not is_org_owner(current_user):
+        raise HTTPException(
+            status_code=403, 
+            detail="Only organization owners can view Office 365 settings"
+        )
+    
+    config = get_o365_org_config(db, current_user.organization_id)
+    if not config:
+        # Return default empty config
+        return O365OrganizationConfigResponse(
+            id=0,
+            organization_id=current_user.organization_id,
+            client_id=None,
+            tenant_id=None,
+            calendar_sync_enabled=True,
+            email_sending_enabled=True,
+            contact_sync_enabled=True,
+            is_configured=False,
+            last_test_success=False,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+    
+    return config
+
+@app.post("/api/settings/o365/organization", response_model=O365OrganizationConfigResponse)
+async def create_organization_o365_config(
+    config: O365OrganizationConfigCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create Office 365 organization configuration (Owner only)"""
+    if not is_org_owner(current_user):
+        raise HTTPException(
+            status_code=403, 
+            detail="Only organization owners can configure Office 365 settings"
+        )
+    
+    # Check if config already exists
+    existing_config = get_o365_org_config(db, current_user.organization_id)
+    if existing_config:
+        raise HTTPException(
+            status_code=400,
+            detail="Office 365 configuration already exists. Use PUT to update."
+        )
+    
+    try:
+        db_config = create_o365_org_config(db, config, current_user.organization_id)
+        
+        # Create activity log
+        create_activity(
+            db,
+            title="Office 365 Configuration Created",
+            description=f"Office 365 integration configured for organization",
+            type="settings",
+            entity_id=str(current_user.organization_id),
+            organization_id=current_user.organization_id
+        )
+        
+        return db_config
+    except Exception as e:
+        print(f"Error creating O365 config: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create Office 365 configuration")
+
+@app.put("/api/settings/o365/organization", response_model=O365OrganizationConfigResponse)
+async def update_organization_o365_config(
+    config_update: O365OrganizationConfigUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update Office 365 organization configuration (Owner only)"""
+    if not is_org_owner(current_user):
+        raise HTTPException(
+            status_code=403, 
+            detail="Only organization owners can configure Office 365 settings"
+        )
+    
+    try:
+        db_config = update_o365_org_config(db, current_user.organization_id, config_update)
+        if not db_config:
+            # Create new config if it doesn't exist
+            create_config = O365OrganizationConfigCreate(**config_update.dict(exclude_unset=True))
+            db_config = create_o365_org_config(db, create_config, current_user.organization_id)
+        
+        # Create activity log
+        create_activity(
+            db,
+            title="Office 365 Configuration Updated",
+            description=f"Office 365 integration settings updated",
+            type="settings",
+            entity_id=str(current_user.organization_id),
+            organization_id=current_user.organization_id
+        )
+        
+        return db_config
+    except Exception as e:
+        print(f"Error updating O365 config: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update Office 365 configuration")
+
+@app.delete("/api/settings/o365/organization")
+async def delete_organization_o365_config(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete Office 365 organization configuration (Owner only)"""
+    if not is_org_owner(current_user):
+        raise HTTPException(
+            status_code=403, 
+            detail="Only organization owners can configure Office 365 settings"
+        )
+    
+    success = delete_o365_org_config(db, current_user.organization_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Office 365 configuration not found")
+    
+    # Create activity log
+    create_activity(
+        db,
+        title="Office 365 Configuration Deleted",
+        description=f"Office 365 integration disabled for organization",
+        type="settings",
+        entity_id=str(current_user.organization_id),
+        organization_id=current_user.organization_id
+    )
+    
+    return {"message": "Office 365 configuration deleted successfully"}
+
+@app.get("/api/settings/o365/user", response_model=O365UserConnectionResponse)
+async def get_user_o365_connection(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get current user's Office 365 connection"""
+    connection = get_o365_user_connection(db, current_user.id)
+    if not connection:
+        raise HTTPException(status_code=404, detail="Office 365 connection not found")
+    
+    return connection
+
+@app.put("/api/settings/o365/user", response_model=O365UserConnectionResponse)
+async def update_user_o365_connection(
+    connection_update: O365UserConnectionUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update current user's Office 365 connection preferences"""
+    connection = update_o365_user_connection(db, current_user.id, connection_update)
+    if not connection:
+        raise HTTPException(status_code=404, detail="Office 365 connection not found")
+    
+    return connection
+
+@app.delete("/api/settings/o365/user")
+async def disconnect_user_o365_connection(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Disconnect current user's Office 365 connection"""
+    success = delete_o365_user_connection(db, current_user.id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Office 365 connection not found")
+    
+    return {"message": "Office 365 connection disconnected successfully"}
 
 @app.post("/api/ai/chat")
 async def ai_chat(

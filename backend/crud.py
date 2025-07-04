@@ -5,14 +5,16 @@ from datetime import datetime
 
 from models import (
     Company, Contact, EmailThread, EmailMessage, 
-    Task, Attachment, Activity, EmailSignature, CalendarEvent, EventAttendee
+    Task, Attachment, Activity, EmailSignature, CalendarEvent, EventAttendee,
+    O365OrganizationConfig, O365UserConnection, User
 )
 from schemas import (
     CompanyCreate, CompanyUpdate, ContactCreate, ContactUpdate,
     TaskCreate, TaskUpdate, EmailThreadCreate, EmailMessageCreate,
     AttachmentCreate, ActivityCreate, EmailSignatureCreate, EmailSignatureUpdate,
     CalendarEventCreate, CalendarEventUpdate, DashboardStats,
-    EventAttendeeCreate, EventAttendeeResponse
+    EventAttendeeCreate, EventAttendeeResponse,
+    O365OrganizationConfigCreate, O365OrganizationConfigUpdate, O365UserConnectionUpdate
 )
 
 # Company CRUD operations
@@ -546,6 +548,132 @@ def get_calendar_event(db: Session, event_id: int, organization_id: int) -> Opti
     ).filter(
         and_(CalendarEvent.id == event_id, CalendarEvent.organization_id == organization_id)
     ).first()
+
+# Helper function for permission checking
+def is_org_owner(user: User) -> bool:
+    """Check if user is the organization owner"""
+    return user.role == "owner"
+
+# Office 365 Organization Configuration CRUD operations
+def get_o365_org_config(db: Session, organization_id: int) -> Optional[O365OrganizationConfig]:
+    """Get O365 organization configuration"""
+    return db.query(O365OrganizationConfig).filter(
+        O365OrganizationConfig.organization_id == organization_id
+    ).first()
+
+def create_o365_org_config(
+    db: Session, 
+    config: O365OrganizationConfigCreate, 
+    organization_id: int
+) -> O365OrganizationConfig:
+    """Create O365 organization configuration"""
+    from o365_encryption import encrypt_client_secret
+    
+    # Encrypt client secret if provided
+    encrypted_secret = None
+    if config.client_secret:
+        encrypted_secret = encrypt_client_secret(config.client_secret)
+    
+    db_config = O365OrganizationConfig(
+        organization_id=organization_id,
+        client_id=config.client_id,
+        client_secret_encrypted=encrypted_secret,
+        tenant_id=config.tenant_id,
+        calendar_sync_enabled=config.calendar_sync_enabled,
+        email_sending_enabled=config.email_sending_enabled,
+        contact_sync_enabled=config.contact_sync_enabled,
+        is_configured=bool(config.client_id and config.client_secret and config.tenant_id)
+    )
+    
+    db.add(db_config)
+    db.commit()
+    db.refresh(db_config)
+    return db_config
+
+def update_o365_org_config(
+    db: Session,
+    organization_id: int,
+    config_update: O365OrganizationConfigUpdate
+) -> Optional[O365OrganizationConfig]:
+    """Update O365 organization configuration"""
+    from o365_encryption import encrypt_client_secret
+    
+    db_config = get_o365_org_config(db, organization_id)
+    if not db_config:
+        return None
+    
+    update_data = config_update.dict(exclude_unset=True)
+    
+    # Handle client secret encryption
+    if "client_secret" in update_data and update_data["client_secret"]:
+        update_data["client_secret_encrypted"] = encrypt_client_secret(update_data["client_secret"])
+        del update_data["client_secret"]
+    
+    # Update is_configured status
+    is_configured = bool(
+        (update_data.get("client_id") or db_config.client_id) and
+        (update_data.get("client_secret_encrypted") or db_config.client_secret_encrypted) and
+        (update_data.get("tenant_id") or db_config.tenant_id)
+    )
+    update_data["is_configured"] = is_configured
+    
+    for field, value in update_data.items():
+        setattr(db_config, field, value)
+    
+    db.commit()
+    db.refresh(db_config)
+    return db_config
+
+def delete_o365_org_config(db: Session, organization_id: int) -> bool:
+    """Delete O365 organization configuration and all user connections"""
+    db_config = get_o365_org_config(db, organization_id)
+    if not db_config:
+        return False
+    
+    db.delete(db_config)
+    db.commit()
+    return True
+
+# Office 365 User Connection CRUD operations
+def get_o365_user_connection(db: Session, user_id: int) -> Optional[O365UserConnection]:
+    """Get O365 user connection"""
+    return db.query(O365UserConnection).filter(
+        O365UserConnection.user_id == user_id
+    ).first()
+
+def get_o365_user_connections_by_org(db: Session, organization_id: int) -> List[O365UserConnection]:
+    """Get all O365 user connections for an organization"""
+    return db.query(O365UserConnection).filter(
+        O365UserConnection.organization_id == organization_id
+    ).all()
+
+def update_o365_user_connection(
+    db: Session,
+    user_id: int,
+    connection_update: O365UserConnectionUpdate
+) -> Optional[O365UserConnection]:
+    """Update O365 user connection preferences"""
+    db_connection = get_o365_user_connection(db, user_id)
+    if not db_connection:
+        return None
+    
+    update_data = connection_update.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_connection, field, value)
+    
+    db.commit()
+    db.refresh(db_connection)
+    return db_connection
+
+def delete_o365_user_connection(db: Session, user_id: int) -> bool:
+    """Delete O365 user connection"""
+    db_connection = get_o365_user_connection(db, user_id)
+    if not db_connection:
+        return False
+    
+    db.delete(db_connection)
+    db.commit()
+    return True
 
 def update_calendar_event(db: Session, event_id: int, event_update: CalendarEventUpdate, organization_id: int) -> Optional[CalendarEvent]:
     db_event = get_calendar_event(db, event_id, organization_id)

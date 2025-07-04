@@ -324,3 +324,72 @@ class EventAttendee(Base):
     # Relationships
     event = relationship("CalendarEvent", back_populates="attendees")
     contact = relationship("Contact")
+
+class O365OrganizationConfig(Base):
+    __tablename__ = "o365_organization_configs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, unique=True)
+    
+    # Azure AD App Registration Details
+    client_id = Column(String(255), nullable=True)  # Application (client) ID
+    client_secret_encrypted = Column(Text, nullable=True)  # Encrypted client secret
+    tenant_id = Column(String(255), nullable=True)  # Directory (tenant) ID
+    
+    # Integration Feature Toggles
+    calendar_sync_enabled = Column(Boolean, default=True)
+    email_sending_enabled = Column(Boolean, default=True)
+    contact_sync_enabled = Column(Boolean, default=True)
+    
+    # Configuration Status
+    is_configured = Column(Boolean, default=False)
+    last_test_at = Column(DateTime(timezone=True))
+    last_test_success = Column(Boolean, default=False)
+    last_error_message = Column(Text)
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    organization = relationship("Organization")
+    user_connections = relationship("O365UserConnection", back_populates="org_config", cascade="all, delete-orphan")
+
+class O365UserConnection(Base):
+    __tablename__ = "o365_user_connections"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
+    org_config_id = Column(Integer, ForeignKey("o365_organization_configs.id"), nullable=False)
+    
+    # O365 User Information
+    o365_user_id = Column(String(255), nullable=False)  # Azure AD user ID
+    o365_email = Column(String(255), nullable=False)  # User's O365 email
+    o365_display_name = Column(String(255))  # User's display name from O365
+    
+    # OAuth Tokens (Encrypted)
+    access_token_encrypted = Column(Text, nullable=False)
+    refresh_token_encrypted = Column(Text, nullable=False)
+    token_expires_at = Column(DateTime(timezone=True), nullable=False)
+    scopes_granted = Column(JSON)  # List of granted scopes
+    
+    # User Sync Preferences
+    sync_calendar_enabled = Column(Boolean, default=True)
+    sync_email_enabled = Column(Boolean, default=True)
+    sync_contacts_enabled = Column(Boolean, default=True)
+    
+    # Connection Status
+    is_active = Column(Boolean, default=True)
+    last_sync_at = Column(DateTime(timezone=True))
+    last_sync_success = Column(Boolean, default=False)
+    last_error_message = Column(Text)
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    user = relationship("User")
+    organization = relationship("Organization")
+    org_config = relationship("O365OrganizationConfig", back_populates="user_connections")

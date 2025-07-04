@@ -422,3 +422,80 @@ class CalendarEventResponse(CalendarEventBase, TimestampMixin):
 
     class Config:
         from_attributes = True
+
+# Office 365 Organization Configuration schemas
+class O365OrganizationConfigBase(BaseModel):
+    client_id: Optional[str] = None
+    tenant_id: Optional[str] = None
+    calendar_sync_enabled: bool = True
+    email_sending_enabled: bool = True
+    contact_sync_enabled: bool = True
+
+class O365OrganizationConfigCreate(O365OrganizationConfigBase):
+    client_secret: Optional[str] = None  # Will be encrypted before storing
+
+class O365OrganizationConfigUpdate(BaseModel):
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None  # Will be encrypted before storing
+    tenant_id: Optional[str] = None
+    calendar_sync_enabled: Optional[bool] = None
+    email_sending_enabled: Optional[bool] = None
+    contact_sync_enabled: Optional[bool] = None
+
+class O365OrganizationConfigResponse(O365OrganizationConfigBase):
+    id: int
+    organization_id: int
+    is_configured: bool
+    last_test_at: Optional[datetime] = None
+    last_test_success: bool = False
+    last_error_message: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    # Security: Never expose client_secret in responses
+    client_secret: Optional[str] = None  # Always None for security
+    
+    class Config:
+        from_attributes = True
+
+# Office 365 User Connection schemas
+class O365UserConnectionBase(BaseModel):
+    sync_calendar_enabled: bool = True
+    sync_email_enabled: bool = True
+    sync_contacts_enabled: bool = True
+
+class O365UserConnectionUpdate(O365UserConnectionBase):
+    pass
+
+class O365UserConnectionResponse(O365UserConnectionBase):
+    id: int
+    user_id: int
+    o365_user_id: str
+    o365_email: str
+    o365_display_name: Optional[str] = None
+    scopes_granted: Optional[List[str]] = None
+    is_active: bool
+    last_sync_at: Optional[datetime] = None
+    last_sync_success: bool = False
+    last_error_message: Optional[str] = None
+    token_expires_at: datetime
+    created_at: datetime
+    updated_at: datetime
+    
+    # Security: Never expose tokens in responses
+    access_token_encrypted: Optional[str] = None  # Always None for security
+    refresh_token_encrypted: Optional[str] = None  # Always None for security
+    
+    class Config:
+        from_attributes = True
+
+# O365 Test Connection Request/Response
+class O365TestConnectionRequest(BaseModel):
+    client_id: str
+    client_secret: str
+    tenant_id: str
+
+class O365TestConnectionResponse(BaseModel):
+    success: bool
+    message: str
+    error_details: Optional[str] = None
