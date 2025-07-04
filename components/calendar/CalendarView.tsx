@@ -30,12 +30,23 @@ export default function CalendarView({ events, currentDate, onDateClick, onEvent
   const daysInMonth = lastDayOfMonth.getDate()
   const startDayOfWeek = firstDayOfMonth.getDay() // 0 = Sunday
 
-  // Get events for each day
+  // Get events for each day - includes multi-day events
   const getEventsForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0]
+    const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    
     return events.filter(event => {
-      const eventDate = new Date(event.start_time).toISOString().split('T')[0]
-      return eventDate === dateStr
+      // Get start and end dates without time component
+      const eventStartDate = new Date(event.start_time)
+      const eventStart = new Date(eventStartDate.getFullYear(), eventStartDate.getMonth(), eventStartDate.getDate())
+      
+      let eventEnd = eventStart // Default to same day if no end_time
+      if (event.end_time) {
+        const eventEndDate = new Date(event.end_time)
+        eventEnd = new Date(eventEndDate.getFullYear(), eventEndDate.getMonth(), eventEndDate.getDate())
+      }
+      
+      // Check if target date falls within the event's date range (inclusive)
+      return targetDate >= eventStart && targetDate <= eventEnd
     })
   }
 
