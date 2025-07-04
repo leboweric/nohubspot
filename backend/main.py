@@ -20,7 +20,8 @@ from schemas import (
     ActivityResponse, DashboardStats, BulkUploadResult,
     OrganizationCreate, OrganizationResponse, UserRegister, UserLogin, UserResponse,
     UserInviteCreate, UserInviteResponse, UserInviteAccept, Token,
-    EmailTemplateCreate, EmailTemplateResponse, EmailTemplateUpdate
+    EmailTemplateCreate, EmailTemplateResponse, EmailTemplateUpdate,
+    CalendarEventCreate, CalendarEventResponse, CalendarEventUpdate
 )
 from crud import (
     create_company, get_companies, get_company, update_company, delete_company,
@@ -31,7 +32,9 @@ from crud import (
     get_email_signature, create_or_update_email_signature,
     bulk_create_companies, bulk_create_contacts,
     create_activity, get_recent_activities,
-    get_dashboard_stats
+    get_dashboard_stats,
+    create_calendar_event, get_calendar_events, get_calendar_event, 
+    update_calendar_event, delete_calendar_event, get_upcoming_events, get_today_events
 )
 from auth_crud import (
     create_organization, get_organization_by_slug, get_organization_by_id,
@@ -477,6 +480,154 @@ async def get_daily_summary(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate daily summary: {str(e)}"
         )
+
+# Calendar endpoints
+@app.post("/api/calendar/events", response_model=CalendarEventResponse)
+async def create_new_calendar_event(
+    event: CalendarEventCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    db_event = create_calendar_event(db, event, current_user.organization_id, current_user.id)
+    
+    # Create activity log
+    create_activity(
+        db,
+        title="Calendar Event Created",
+        description=f"Created event: {event.title}",
+        type="calendar",
+        entity_id=str(db_event.id),
+        organization_id=current_user.organization_id
+    )
+    
+    return db_event
+
+@app.get("/api/calendar/events", response_model=List[CalendarEventResponse])
+async def read_calendar_events(
+    skip: int = 0,
+    limit: int = 100,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    contact_id: Optional[int] = None,
+    company_id: Optional[int] = None,
+    event_type: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    from datetime import datetime
+    
+    # Parse date strings
+    start_datetime = None
+    end_datetime = None
+    if start_date:
+        start_datetime = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+    if end_date:
+        end_datetime = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+    
+    events = get_calendar_events(
+        db, current_user.organization_id, skip, limit,
+        start_datetime, end_datetime, contact_id, company_id, event_type
+    )
+    
+    # Populate related names
+    for event in events:
+        if event.contact_id:
+            contact = get_contact(db, event.contact_id, current_user.organization_id)
+            if contact:
+                event.contact_name = f"{contact.first_name} {contact.last_name}"
+        if event.company_id:
+            company = get_company(db, event.company_id, current_user.organization_id)
+            if company:
+                event.company_name = company.name
+    
+    return events
+
+@app.get("/api/calendar/events/{event_id}", response_model=CalendarEventResponse)
+async def read_calendar_event(
+    event_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    event = get_calendar_event(db, event_id, current_user.organization_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Calendar event not found")
+    
+    # Populate related names
+    if event.contact_id:
+        contact = get_contact(db, event.contact_id, current_user.organization_id)
+        if contact:
+            event.contact_name = f"{contact.first_name} {contact.last_name}"
+    if event.company_id:
+        company = get_company(db, event.company_id, current_user.organization_id)
+        if company:
+            event.company_name = company.name
+    
+    return event
+
+@app.put("/api/calendar/events/{event_id}", response_model=CalendarEventResponse)
+async def update_existing_calendar_event(
+    event_id: int,
+    event_update: CalendarEventUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    event = update_calendar_event(db, event_id, event_update, current_user.organization_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Calendar event not found")
+    
+    create_activity(
+        db,
+        title="Calendar Event Updated",
+        description=f"Updated event: {event.title}",
+        type="calendar",
+        entity_id=str(event.id),
+        organization_id=current_user.organization_id
+    )
+    
+    return event
+
+@app.delete("/api/calendar/events/{event_id}")
+async def delete_existing_calendar_event(
+    event_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    success = delete_calendar_event(db, event_id, current_user.organization_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Calendar event not found")
+    
+    create_activity(
+        db,
+        title="Calendar Event Deleted",
+        description=f"Deleted calendar event",
+        type="calendar",
+        entity_id=str(event_id),
+        organization_id=current_user.organization_id
+    )
+    
+    return {"message": "Calendar event deleted successfully"}
+
+@app.get("/api/calendar/upcoming", response_model=List[CalendarEventResponse])
+async def read_upcoming_events(
+    limit: int = 10,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get upcoming events for dashboard"""
+    events = get_upcoming_events(db, current_user.organization_id, limit)
+    
+    # Populate related names
+    for event in events:
+        if event.contact_id:
+            contact = get_contact(db, event.contact_id, current_user.organization_id)
+            if contact:
+                event.contact_name = f"{contact.first_name} {contact.last_name}"
+        if event.company_id:
+            company = get_company(db, event.company_id, current_user.organization_id)
+            if company:
+                event.company_name = company.name
+    
+    return events
 
 @app.post("/api/ai/chat")
 async def ai_chat(

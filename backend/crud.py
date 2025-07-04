@@ -5,13 +5,13 @@ from datetime import datetime
 
 from models import (
     Company, Contact, EmailThread, EmailMessage, 
-    Task, Attachment, Activity, EmailSignature
+    Task, Attachment, Activity, EmailSignature, CalendarEvent
 )
 from schemas import (
     CompanyCreate, CompanyUpdate, ContactCreate, ContactUpdate,
     TaskCreate, TaskUpdate, EmailThreadCreate, EmailMessageCreate,
     AttachmentCreate, ActivityCreate, EmailSignatureCreate, EmailSignatureUpdate,
-    DashboardStats
+    CalendarEventCreate, CalendarEventUpdate, DashboardStats
 )
 
 # Company CRUD operations
@@ -479,3 +479,94 @@ def get_dashboard_stats(db: Session, organization_id: int) -> DashboardStats:
         pending_tasks=pending_tasks,
         overdue_tasks=overdue_tasks
     )
+
+# Calendar Event CRUD operations
+def create_calendar_event(db: Session, event: CalendarEventCreate, organization_id: int, created_by: int) -> CalendarEvent:
+    db_event = CalendarEvent(**event.dict(), organization_id=organization_id, created_by=created_by)
+    db.add(db_event)
+    db.commit()
+    db.refresh(db_event)
+    return db_event
+
+def get_calendar_events(
+    db: Session, 
+    organization_id: int,
+    skip: int = 0, 
+    limit: int = 100,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    contact_id: Optional[int] = None,
+    company_id: Optional[int] = None,
+    event_type: Optional[str] = None
+) -> List[CalendarEvent]:
+    query = db.query(CalendarEvent).filter(CalendarEvent.organization_id == organization_id)
+    
+    # Filter by date range
+    if start_date:
+        query = query.filter(CalendarEvent.start_time >= start_date)
+    if end_date:
+        query = query.filter(CalendarEvent.start_time <= end_date)
+    
+    # Filter by related entities
+    if contact_id:
+        query = query.filter(CalendarEvent.contact_id == contact_id)
+    if company_id:
+        query = query.filter(CalendarEvent.company_id == company_id)
+    if event_type:
+        query = query.filter(CalendarEvent.event_type == event_type)
+    
+    return query.order_by(CalendarEvent.start_time).offset(skip).limit(limit).all()
+
+def get_calendar_event(db: Session, event_id: int, organization_id: int) -> Optional[CalendarEvent]:
+    return db.query(CalendarEvent).filter(
+        and_(CalendarEvent.id == event_id, CalendarEvent.organization_id == organization_id)
+    ).first()
+
+def update_calendar_event(db: Session, event_id: int, event_update: CalendarEventUpdate, organization_id: int) -> Optional[CalendarEvent]:
+    db_event = get_calendar_event(db, event_id, organization_id)
+    if not db_event:
+        return None
+    
+    update_data = event_update.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_event, field, value)
+    
+    db.commit()
+    db.refresh(db_event)
+    return db_event
+
+def delete_calendar_event(db: Session, event_id: int, organization_id: int) -> bool:
+    db_event = get_calendar_event(db, event_id, organization_id)
+    if not db_event:
+        return False
+    
+    db.delete(db_event)
+    db.commit()
+    return True
+
+def get_upcoming_events(db: Session, organization_id: int, limit: int = 10) -> List[CalendarEvent]:
+    """Get upcoming events for dashboard/daily summary"""
+    current_time = datetime.utcnow()
+    return db.query(CalendarEvent).filter(
+        and_(
+            CalendarEvent.organization_id == organization_id,
+            CalendarEvent.start_time >= current_time,
+            CalendarEvent.status == "scheduled"
+        )
+    ).order_by(CalendarEvent.start_time).limit(limit).all()
+
+def get_today_events(db: Session, organization_id: int) -> List[CalendarEvent]:
+    """Get today's events for daily summary"""
+    from datetime import date
+    today = date.today()
+    start_of_day = datetime.combine(today, datetime.min.time())
+    end_of_day = datetime.combine(today, datetime.max.time())
+    
+    return db.query(CalendarEvent).filter(
+        and_(
+            CalendarEvent.organization_id == organization_id,
+            CalendarEvent.start_time >= start_of_day,
+            CalendarEvent.start_time <= end_of_day,
+            CalendarEvent.status == "scheduled"
+        )
+    ).order_by(CalendarEvent.start_time).all()

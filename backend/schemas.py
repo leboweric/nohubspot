@@ -346,3 +346,43 @@ class DashboardStats(BaseModel):
     active_contacts: int
     pending_tasks: int
     overdue_tasks: int
+
+# Calendar Event schemas
+class CalendarEventBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    start_time: datetime
+    end_time: datetime
+    location: Optional[str] = Field(None, max_length=255)
+    event_type: str = Field(default="meeting", max_length=50)
+    contact_id: Optional[int] = None
+    company_id: Optional[int] = None
+    is_all_day: bool = False
+    reminder_minutes: int = Field(default=15, ge=0, le=1440)  # 0 to 24 hours
+    status: str = Field(default="scheduled", max_length=50)
+
+class CalendarEventCreate(CalendarEventBase):
+    pass
+
+class CalendarEventUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    location: Optional[str] = Field(None, max_length=255)
+    event_type: Optional[str] = Field(None, max_length=50)
+    contact_id: Optional[int] = None
+    company_id: Optional[int] = None
+    is_all_day: Optional[bool] = None
+    reminder_minutes: Optional[int] = Field(None, ge=0, le=1440)
+    status: Optional[str] = Field(None, max_length=50)
+
+class CalendarEventResponse(CalendarEventBase, TimestampMixin):
+    id: int
+    created_by: int
+    contact_name: Optional[str] = None  # Will be populated by API
+    company_name: Optional[str] = None  # Will be populated by API
+    creator_name: Optional[str] = None  # Will be populated by API
+
+    class Config:
+        from_attributes = True

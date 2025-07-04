@@ -255,3 +255,37 @@ class EmailTemplate(Base):
     # Relationships
     organization = relationship("Organization")
     creator = relationship("User")
+
+class CalendarEvent(Base):
+    __tablename__ = "calendar_events"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    # Event details
+    title = Column(String(255), nullable=False)
+    description = Column(Text)
+    start_time = Column(DateTime(timezone=True), nullable=False, index=True)
+    end_time = Column(DateTime(timezone=True), nullable=False)
+    location = Column(String(255))
+    event_type = Column(String(50), default="meeting")  # meeting, call, task, reminder
+    
+    # Related entities
+    contact_id = Column(Integer, ForeignKey("contacts.id"), nullable=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
+    
+    # Event settings
+    is_all_day = Column(Boolean, default=False)
+    reminder_minutes = Column(Integer, default=15)  # 0=no reminder, 15=15min before, etc.
+    status = Column(String(50), default="scheduled")  # scheduled, completed, cancelled
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    organization = relationship("Organization")
+    creator = relationship("User")
+    contact = relationship("Contact")
+    company = relationship("Company")
