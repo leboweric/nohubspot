@@ -136,7 +136,9 @@ export default function PipelinePage() {
       setTimeout(() => setSuccess(""), 3000)
       
     } catch (err) {
-      throw new Error(handleAPIError(err))
+      const errorMessage = handleAPIError(err)
+      console.error('Deal save error:', err)
+      throw new Error(errorMessage)
     }
   }
 

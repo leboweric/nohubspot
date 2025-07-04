@@ -123,10 +123,37 @@ export default function DealModal({
     setError('')
 
     try {
-      await onSave(formData)
+      // Clean the form data before sending
+      const cleanedData = {
+        ...formData,
+        title: formData.title.trim(),
+        description: formData.description?.trim() || undefined,
+        notes: formData.notes?.trim() || undefined,
+        expected_close_date: formData.expected_close_date 
+          ? new Date(formData.expected_close_date).toISOString()
+          : undefined,
+        contact_id: formData.contact_id || undefined,
+        company_id: formData.company_id || undefined,
+        assigned_to: formData.assigned_to || undefined,
+        tags: formData.tags?.length ? formData.tags : undefined
+      }
+      
+      console.log('Sending deal data:', cleanedData)
+      await onSave(cleanedData)
       handleClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save deal')
+      console.error('Deal modal error:', err)
+      let errorMessage = 'Failed to save deal'
+      
+      if (err instanceof Error) {
+        errorMessage = err.message
+      } else if (typeof err === 'string') {
+        errorMessage = err
+      } else if (err && typeof err === 'object' && 'message' in err) {
+        errorMessage = String(err.message)
+      }
+      
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
