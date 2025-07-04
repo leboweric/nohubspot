@@ -6,6 +6,7 @@ import MainLayout from "@/components/MainLayout"
 import SignatureBuilder, { EmailSignature } from "@/components/signature/SignatureBuilder"
 import { useEmailSignature } from "@/components/signature/SignatureManager"
 import { getAuthState, isAdmin } from "@/lib/auth"
+import { o365API, O365OrganizationConfig, O365UserConnection, handleAPIError } from "@/lib/api"
 
 export default function SettingsPage() {
   const [showSignatureBuilder, setShowSignatureBuilder] = useState(false)
@@ -20,12 +21,58 @@ export default function SettingsPage() {
   const { signature, saveSignature } = useEmailSignature()
   const { user, organization } = getAuthState()
 
+  // Office 365 integration state
+  const [o365Config, setO365Config] = useState<O365OrganizationConfig | null>(null)
+  const [o365UserConnection, setO365UserConnection] = useState<O365UserConnection | null>(null)
+  const [o365Loading, setO365Loading] = useState(false)
+  const [showO365Config, setShowO365Config] = useState(false)
+  const [o365FormData, setO365FormData] = useState({
+    client_id: '',
+    client_secret: '',
+    tenant_id: '',
+    calendar_sync_enabled: true,
+    email_sending_enabled: true,
+    contact_sync_enabled: true
+  })
+
+  const isOwner = user?.role === 'owner'
+
   useEffect(() => {
     if (isAdmin(user)) {
       loadUsers()
       loadInvites()
     }
+    if (isOwner) {
+      loadO365Config()
+    }
+    loadO365UserConnection()
   }, [user])
+
+  const loadO365Config = async () => {
+    try {
+      const config = await o365API.getOrganizationConfig()
+      setO365Config(config)
+      setO365FormData({
+        client_id: config.client_id || '',
+        client_secret: '',
+        tenant_id: config.tenant_id || '',
+        calendar_sync_enabled: config.calendar_sync_enabled,
+        email_sending_enabled: config.email_sending_enabled,
+        contact_sync_enabled: config.contact_sync_enabled
+      })
+    } catch (err) {
+      console.error('Failed to load O365 config:', err)
+    }
+  }
+
+  const loadO365UserConnection = async () => {
+    try {
+      const connection = await o365API.getUserConnection()
+      setO365UserConnection(connection)
+    } catch (err) {
+      console.error('Failed to load O365 user connection:', err)
+    }
+  }
 
   const loadUsers = async () => {
     try {
@@ -117,6 +164,77 @@ export default function SettingsPage() {
       }
     } catch (err) {
       setError('Failed to revoke invitation')
+    }
+  }
+
+  const handleSaveO365Config = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setO365Loading(true)
+    setError("")
+    setSuccess("")
+
+    try {
+      if (o365Config) {
+        // Update existing config
+        await o365API.updateOrganizationConfig(o365FormData)
+        setSuccess('Office 365 configuration updated successfully')
+      } else {
+        // Create new config
+        await o365API.createOrganizationConfig(o365FormData)
+        setSuccess('Office 365 configuration created successfully')
+      }
+      
+      // Reload config
+      await loadO365Config()
+      setShowO365Config(false)
+    } catch (err) {
+      setError(handleAPIError(err))
+    } finally {
+      setO365Loading(false)
+    }
+  }
+
+  const handleDeleteO365Config = async () => {
+    if (!confirm('Are you sure you want to delete the Office 365 configuration? This will disconnect all users.')) return
+
+    setO365Loading(true)
+    setError("")
+    setSuccess("")
+
+    try {
+      await o365API.deleteOrganizationConfig()
+      setO365Config(null)
+      setO365FormData({
+        client_id: '',
+        client_secret: '',
+        tenant_id: '',
+        calendar_sync_enabled: true,
+        email_sending_enabled: true,
+        contact_sync_enabled: true
+      })
+      setSuccess('Office 365 configuration deleted successfully')
+    } catch (err) {
+      setError(handleAPIError(err))
+    } finally {
+      setO365Loading(false)
+    }
+  }
+
+  const handleDisconnectO365User = async () => {
+    if (!confirm('Are you sure you want to disconnect your Office 365 account?')) return
+
+    setO365Loading(true)
+    setError("")
+    setSuccess("")
+
+    try {
+      await o365API.disconnectUser()
+      setO365UserConnection(null)
+      setSuccess('Office 365 account disconnected successfully')
+    } catch (err) {
+      setError(handleAPIError(err))
+    } finally {
+      setO365Loading(false)
     }
   }
 
@@ -338,6 +456,131 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* Office 365 Integration Section */}
+        <div className="bg-card border rounded-lg p-6">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h2 className="text-lg font-semibold">Office 365 Integration</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Connect with Microsoft Office 365 for calendar sync, email sending, and contact management
+              </p>
+            </div>
+            {isOwner && (
+              <button
+                onClick={() => setShowO365Config(!showO365Config)}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+              >
+                {o365Config ? 'Manage Configuration' : 'Configure Office 365'}
+              </button>
+            )}
+          </div>
+
+          {/* Organization Configuration Status */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Organization Configuration Status</label>
+              <div className="flex items-center space-x-2">
+                {o365Config ? (
+                  <>
+                    <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                    <span className="text-sm text-green-600">Configured</span>
+                    {o365Config.last_test_success ? (
+                      <span className="text-xs text-green-500">✓ Test successful</span>
+                    ) : (
+                      <span className="text-xs text-red-500">⚠ Test failed</span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="h-2 w-2 rounded-full bg-gray-400"></div>
+                    <span className="text-sm text-gray-600">Not configured</span>
+                  </>
+                )}
+              </div>
+              {!isOwner && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Only organization owners can configure Office 365 integration
+                </p>
+              )}
+            </div>
+
+            {/* User Connection Status */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Your Office 365 Connection</label>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  {o365UserConnection ? (
+                    <>
+                      <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                      <span className="text-sm text-green-600">Connected</span>
+                      <span className="text-xs text-gray-500">
+                        ({o365UserConnection.o365_email})
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="h-2 w-2 rounded-full bg-gray-400"></div>
+                      <span className="text-sm text-gray-600">Not connected</span>
+                    </>
+                  )}
+                </div>
+                {o365UserConnection && (
+                  <button
+                    onClick={handleDisconnectO365User}
+                    disabled={o365Loading}
+                    className="text-sm text-red-600 hover:text-red-800 disabled:opacity-50"
+                  >
+                    Disconnect
+                  </button>
+                )}
+              </div>
+              {o365Config && !o365UserConnection && (
+                <div className="mt-2">
+                  <button
+                    onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/o365/authorize`}
+                    className="text-sm bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    Connect to Office 365
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Features Status */}
+            {o365Config && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="flex items-center space-x-2">
+                    <div className={`h-2 w-2 rounded-full ${o365Config.calendar_sync_enabled ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                    <span className="text-sm font-medium">Calendar Sync</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">
+                    {o365Config.calendar_sync_enabled ? 'Enabled' : 'Disabled'}
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="flex items-center space-x-2">
+                    <div className={`h-2 w-2 rounded-full ${o365Config.email_sending_enabled ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                    <span className="text-sm font-medium">Email Sending</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">
+                    {o365Config.email_sending_enabled ? 'Enabled' : 'Disabled'}
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="flex items-center space-x-2">
+                    <div className={`h-2 w-2 rounded-full ${o365Config.contact_sync_enabled ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                    <span className="text-sm font-medium">Contact Sync</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">
+                    {o365Config.contact_sync_enabled ? 'Enabled' : 'Disabled'}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* System Settings Section */}
         <div className="bg-card border rounded-lg p-6">
           <h2 className="text-lg font-semibold mb-4">System Settings</h2>
@@ -413,6 +656,167 @@ export default function SettingsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Office 365 Configuration Modal */}
+      {showO365Config && isOwner && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-semibold">Office 365 Configuration</h3>
+              <button
+                onClick={() => setShowO365Config(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Instructions */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-medium text-blue-900 mb-2">Azure AD App Registration Required</h4>
+                <p className="text-sm text-blue-800 mb-3">
+                  Before configuring, you need to register an application in Azure Active Directory:
+                </p>
+                <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                  <li>Go to Azure Portal → App registrations → New registration</li>
+                  <li>Set redirect URI to: <code className="bg-blue-100 px-1 rounded">{process.env.NEXT_PUBLIC_API_URL}/api/auth/o365/callback</code></li>
+                  <li>Generate a client secret in "Certificates & secrets"</li>
+                  <li>Grant these API permissions: Calendar.ReadWrite, Mail.Send, Contacts.ReadWrite</li>
+                </ol>
+              </div>
+
+              {/* Configuration Form */}
+              <form onSubmit={handleSaveO365Config} className="space-y-4">
+                <div>
+                  <label htmlFor="client_id" className="block text-sm font-medium mb-1">
+                    Client ID (Application ID)
+                  </label>
+                  <input
+                    id="client_id"
+                    type="text"
+                    value={o365FormData.client_id}
+                    onChange={(e) => setO365FormData({...o365FormData, client_id: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="client_secret" className="block text-sm font-medium mb-1">
+                    Client Secret
+                  </label>
+                  <input
+                    id="client_secret"
+                    type="password"
+                    value={o365FormData.client_secret}
+                    onChange={(e) => setO365FormData({...o365FormData, client_secret: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter client secret"
+                    required={!o365Config}
+                  />
+                  {o365Config && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Leave blank to keep current secret
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="tenant_id" className="block text-sm font-medium mb-1">
+                    Tenant ID (Directory ID)
+                  </label>
+                  <input
+                    id="tenant_id"
+                    type="text"
+                    value={o365FormData.tenant_id}
+                    onChange={(e) => setO365FormData({...o365FormData, tenant_id: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                    required
+                  />
+                </div>
+
+                {/* Feature Toggles */}
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-900">Integration Features</h4>
+                  
+                  <div className="flex items-center space-x-2">
+                    <input
+                      id="calendar_sync"
+                      type="checkbox"
+                      checked={o365FormData.calendar_sync_enabled}
+                      onChange={(e) => setO365FormData({...o365FormData, calendar_sync_enabled: e.target.checked})}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="calendar_sync" className="text-sm font-medium">
+                      Calendar Sync
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <input
+                      id="email_sending"
+                      type="checkbox"
+                      checked={o365FormData.email_sending_enabled}
+                      onChange={(e) => setO365FormData({...o365FormData, email_sending_enabled: e.target.checked})}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="email_sending" className="text-sm font-medium">
+                      Email Sending
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <input
+                      id="contact_sync"
+                      type="checkbox"
+                      checked={o365FormData.contact_sync_enabled}
+                      onChange={(e) => setO365FormData({...o365FormData, contact_sync_enabled: e.target.checked})}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="contact_sync" className="text-sm font-medium">
+                      Contact Sync
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex justify-between space-x-3 pt-4">
+                  <div>
+                    {o365Config && (
+                      <button
+                        type="button"
+                        onClick={handleDeleteO365Config}
+                        disabled={o365Loading}
+                        className="px-4 py-2 text-red-600 border border-red-300 rounded-md hover:bg-red-50 disabled:opacity-50"
+                      >
+                        Delete Configuration
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowO365Config(false)}
+                      className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={o365Loading}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {o365Loading ? 'Saving...' : (o365Config ? 'Update Configuration' : 'Save Configuration')}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

@@ -660,6 +660,112 @@ export const calendarAPI = {
   },
 }
 
+// Office 365 Integration Types
+export interface O365OrganizationConfig {
+  id: number
+  organization_id: number
+  client_id?: string
+  tenant_id?: string
+  calendar_sync_enabled: boolean
+  email_sending_enabled: boolean
+  contact_sync_enabled: boolean
+  is_configured: boolean
+  last_test_at?: string
+  last_test_success: boolean
+  last_error_message?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface O365OrganizationConfigCreate {
+  client_id?: string
+  client_secret?: string
+  tenant_id?: string
+  calendar_sync_enabled?: boolean
+  email_sending_enabled?: boolean
+  contact_sync_enabled?: boolean
+}
+
+export interface O365OrganizationConfigUpdate {
+  client_id?: string
+  client_secret?: string
+  tenant_id?: string
+  calendar_sync_enabled?: boolean
+  email_sending_enabled?: boolean
+  contact_sync_enabled?: boolean
+}
+
+export interface O365UserConnection {
+  id: number
+  user_id: number
+  o365_user_id: string
+  o365_email: string
+  o365_display_name?: string
+  scopes_granted?: string[]
+  sync_calendar_enabled: boolean
+  sync_email_enabled: boolean
+  sync_contacts_enabled: boolean
+  is_active: boolean
+  last_sync_at?: string
+  last_sync_success: boolean
+  last_error_message?: string
+  token_expires_at: string
+  created_at: string
+  updated_at: string
+}
+
+export interface O365UserConnectionUpdate {
+  sync_calendar_enabled?: boolean
+  sync_email_enabled?: boolean
+  sync_contacts_enabled?: boolean
+}
+
+// Office 365 API functions
+export const o365API = {
+  // Organization configuration (Owner only)
+  getOrganizationConfig: (): Promise<O365OrganizationConfig> => {
+    return apiRequest('/api/settings/o365/organization')
+  },
+
+  createOrganizationConfig: (config: O365OrganizationConfigCreate): Promise<O365OrganizationConfig> => {
+    return apiRequest('/api/settings/o365/organization', {
+      method: 'POST',
+      body: JSON.stringify(config)
+    })
+  },
+
+  updateOrganizationConfig: (config: O365OrganizationConfigUpdate): Promise<O365OrganizationConfig> => {
+    return apiRequest('/api/settings/o365/organization', {
+      method: 'PUT',
+      body: JSON.stringify(config)
+    })
+  },
+
+  deleteOrganizationConfig: (): Promise<{ message: string }> => {
+    return apiRequest('/api/settings/o365/organization', {
+      method: 'DELETE'
+    })
+  },
+
+  // User connection
+  getUserConnection: (): Promise<O365UserConnection> => {
+    return apiRequest('/api/settings/o365/user')
+  },
+
+  updateUserConnection: (connection: O365UserConnectionUpdate): Promise<O365UserConnection> => {
+    return apiRequest('/api/settings/o365/user', {
+      method: 'PUT',
+      body: JSON.stringify(connection)
+    })
+  },
+
+  disconnectUser: (): Promise<{ message: string }> => {
+    return apiRequest('/api/settings/o365/user', {
+      method: 'DELETE'
+    })
+  },
+}
+
 // Helper function to handle API errors consistently
 export const handleAPIError = (error: unknown): string => {
   if (error instanceof APIError) {
