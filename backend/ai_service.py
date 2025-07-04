@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc
-import openai
+from openai import OpenAI
 from models import Task, Contact, Company, Activity, User
 from crud import get_tasks, get_contacts, get_companies
 
@@ -18,7 +18,9 @@ openai_key = (
     os.environ.get("OPEN_AI_KEY") or
     os.environ.get("OPENAI")
 )
-openai.api_key = openai_key
+
+# Initialize OpenAI client
+openai_client = OpenAI(api_key=openai_key) if openai_key else None
 
 class DailySummaryService:
     def __init__(self, db: Session, user_id: int, organization_id: int):
@@ -112,7 +114,7 @@ class DailySummaryService:
             },
             "companies": {
                 "total": len(all_companies),
-                "active": [c for c in all_companies if c.status == 'active']
+                "active": [c for c in all_companies if c.status == 'Active']
             },
             "activities": recent_activities,
             "time_range": {
@@ -131,7 +133,7 @@ class DailySummaryService:
             # Prepare data for AI
             prompt = self._build_summary_prompt(data, user_name)
             
-            response = openai.chat.completions.create(
+            response = openai_client.chat.completions.create(
                 model="gpt-4o-mini",  # Using the efficient model
                 messages=[
                     {
