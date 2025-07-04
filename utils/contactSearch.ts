@@ -47,7 +47,12 @@ export const getAllContacts = (): Contact[] => {
     })
     
     // Combine all contacts
-    return [...newContacts, ...transformedContacts]
+    const allContacts = [...newContacts, ...transformedContacts]
+    
+    // Debug logging
+    console.log('getAllContacts:', allContacts)
+    
+    return allContacts
   } catch {
     return contacts.map(transformContact)
   }
@@ -59,6 +64,9 @@ export const searchContacts = (query: string, limit: number = 5): Contact[] => {
   
   const allContacts = getAllContacts()
   const searchTerm = query.toLowerCase().trim()
+  
+  // Debug logging
+  console.log('searchContacts query:', query, 'allContacts:', allContacts)
   
   const matches = allContacts.filter(contact => {
     const fullName = `${contact.firstName} ${contact.lastName}`.toLowerCase()
