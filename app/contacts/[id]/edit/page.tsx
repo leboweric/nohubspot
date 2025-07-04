@@ -3,109 +3,71 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-
-const contacts = [
-  {
-    id: "1",
-    firstName: "John",
-    lastName: "Smith",
-    email: "john.smith@acme.example.com",
-    phone: "+1 (555) 123-4567",
-    title: "CTO",
-    company: "Acme Corporation",
-    status: "Active"
-  },
-  {
-    id: "2",
-    firstName: "Sarah",
-    lastName: "Johnson",
-    email: "sarah.j@acme.example.com",
-    phone: "+1 (555) 987-6543",
-    title: "Marketing Director",
-    company: "Acme Corporation",
-    status: "Active"
-  },
-  {
-    id: "3",
-    firstName: "Michael",
-    lastName: "Brown",
-    email: "michael.b@globex.example.com",
-    phone: "+1 (555) 456-7890",
-    title: "CEO",
-    company: "Globex Industries",
-    status: "Active"
-  },
-  {
-    id: "4",
-    firstName: "Emily",
-    lastName: "Davis",
-    email: "emily.d@initech.example.com",
-    phone: "",
-    title: "CFO",
-    company: "Initech LLC",
-    status: "Lead"
-  }
-]
+import { contactAPI, Contact, handleAPIError } from "@/lib/api"
+import { normalizePhoneNumber } from "@/lib/phoneUtils"
 
 export default function EditContactPage({ params }: { params: { id: string } }) {
   const router = useRouter()
-  
-  // Get contact from base contacts or new contacts
-  const getContact = () => {
-    if (typeof window !== 'undefined') {
-      try {
-        // First check for new contacts
-        const newContacts = JSON.parse(localStorage.getItem('newContacts') || '[]')
-        const newContact = newContacts.find((c: any) => c.id === params.id)
-        if (newContact) return newContact
-        
-        // Then check base contacts with updates
-        const baseContact = contacts.find(c => c.id === params.id)
-        if (baseContact) {
-          const updatedContacts = JSON.parse(localStorage.getItem('updatedContacts') || '{}')
-          return updatedContacts[params.id] || baseContact
-        }
-        
-        return null
-      } catch {
-        return contacts.find(c => c.id === params.id) || null
-      }
-    }
-    return contacts.find(c => c.id === params.id) || null
-  }
-  
-  const contact = getContact()
+  const [contact, setContact] = useState<Contact | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    first_name: "",
+    last_name: "",
     email: "",
     phone: "",
     title: "",
-    company: "",
+    company_name: "",
     status: "Lead"
   })
 
   useEffect(() => {
-    if (contact) {
-      setFormData({
-        firstName: contact.firstName,
-        lastName: contact.lastName,
-        email: contact.email,
-        phone: contact.phone,
-        title: contact.title,
-        company: contact.company,
-        status: contact.status
-      })
+    const loadContact = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const contactData = await contactAPI.getById(parseInt(params.id))
+        setContact(contactData)
+        setFormData({
+          first_name: contactData.first_name,
+          last_name: contactData.last_name,
+          email: contactData.email,
+          phone: contactData.phone || "",
+          title: contactData.title || "",
+          company_name: contactData.company_name || "",
+          status: contactData.status
+        })
+      } catch (err) {
+        setError(handleAPIError(err))
+        console.error('Failed to load contact:', err)
+      } finally {
+        setLoading(false)
+      }
     }
-  }, [contact])
 
-  if (!contact) {
+    loadContact()
+  }, [params.id])
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading contact...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !contact) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center">
           <h1 className="text-2xl font-semibold mb-4">Contact Not Found</h1>
-          <p className="text-muted-foreground mb-4">The contact you're looking for doesn't exist.</p>
+          <p className="text-muted-foreground mb-4">
+            {error || "The contact you're looking for doesn't exist."}
+          </p>
           <Link href="/contacts" className="text-primary hover:underline">
             Back to Contacts
           </Link>
@@ -114,39 +76,18 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
     )
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
     try {
-      const updatedContact = {
-        ...contact,
-        ...formData
+      const updateData = {
+        ...formData,
+        phone: normalizePhoneNumber(formData.phone)
       }
-      
-      // Check if this is a new contact or existing contact
-      const newContacts = JSON.parse(localStorage.getItem('newContacts') || '[]')
-      const isNewContact = newContacts.some((c: any) => c.id === params.id)
-      
-      if (isNewContact) {
-        // Update in newContacts array
-        const updatedNewContacts = newContacts.map((c: any) => 
-          c.id === params.id ? updatedContact : c
-        )
-        localStorage.setItem('newContacts', JSON.stringify(updatedNewContacts))
-      } else {
-        // Update in updatedContacts object
-        const existingContacts = JSON.parse(localStorage.getItem('updatedContacts') || '{}')
-        existingContacts[params.id] = updatedContact
-        localStorage.setItem('updatedContacts', JSON.stringify(existingContacts))
-      }
-      
-      console.log("Contact updated:", formData)
-      alert("Contact updated successfully!")
+      await contactAPI.update(parseInt(params.id), updateData)
       router.push(`/contacts/${params.id}`)
-      
-    } catch (error) {
-      console.error("Failed to update contact:", error)
-      alert("Failed to update contact. Please try again.")
+    } catch (err) {
+      console.error('Failed to update contact:', err)
+      alert(`Failed to update contact: ${handleAPIError(err)}`)
     }
   }
 
@@ -170,30 +111,30 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label htmlFor="firstName" className="block text-sm font-medium mb-2">
+            <label htmlFor="first_name" className="block text-sm font-medium mb-2">
               First Name *
             </label>
             <input
               type="text"
-              id="firstName"
-              name="firstName"
+              id="first_name"
+              name="first_name"
               required
-              value={formData.firstName}
+              value={formData.first_name}
               onChange={handleChange}
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
 
           <div>
-            <label htmlFor="lastName" className="block text-sm font-medium mb-2">
+            <label htmlFor="last_name" className="block text-sm font-medium mb-2">
               Last Name *
             </label>
             <input
               type="text"
-              id="lastName"
-              name="lastName"
+              id="last_name"
+              name="last_name"
               required
-              value={formData.lastName}
+              value={formData.last_name}
               onChange={handleChange}
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
             />
@@ -245,14 +186,14 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
         </div>
 
         <div>
-          <label htmlFor="company" className="block text-sm font-medium mb-2">
+          <label htmlFor="company_name" className="block text-sm font-medium mb-2">
             Company
           </label>
           <input
             type="text"
-            id="company"
-            name="company"
-            value={formData.company}
+            id="company_name"
+            name="company_name"
+            value={formData.company_name}
             onChange={handleChange}
             className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
           />

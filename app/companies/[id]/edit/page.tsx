@@ -4,37 +4,13 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { INDUSTRIES } from "@/lib/constants"
-
-const companies = [
-  {
-    id: "1",
-    name: "Acme Corporation",
-    industry: "Technology",
-    website: "https://acme.example.com",
-    status: "Active",
-    description: "A leading technology company specializing in innovative solutions."
-  },
-  {
-    id: "2",
-    name: "Globex Industries",
-    industry: "Manufacturing",
-    website: "https://globex.example.com",
-    status: "Active",
-    description: "Manufacturing company focused on sustainable products."
-  },
-  {
-    id: "3",
-    name: "Initech LLC",
-    industry: "Finance",
-    website: "https://initech.example.com",
-    status: "Lead",
-    description: "Financial services provider for small businesses and startups."
-  }
-]
+import { companyAPI, Company, handleAPIError } from "@/lib/api"
 
 export default function EditCompanyPage({ params }: { params: { id: string } }) {
   const router = useRouter()
-  const company = companies.find(c => c.id === params.id)
+  const [company, setCompany] = useState<Company | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   
   const [formData, setFormData] = useState({
     name: "",
@@ -45,23 +21,49 @@ export default function EditCompanyPage({ params }: { params: { id: string } }) 
   })
 
   useEffect(() => {
-    if (company) {
-      setFormData({
-        name: company.name,
-        industry: company.industry,
-        website: company.website,
-        description: company.description,
-        status: company.status
-      })
+    const loadCompany = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const companyData = await companyAPI.getById(parseInt(params.id))
+        setCompany(companyData)
+        setFormData({
+          name: companyData.name,
+          industry: companyData.industry || "",
+          website: companyData.website || "",
+          description: companyData.description || "",
+          status: companyData.status
+        })
+      } catch (err) {
+        setError(handleAPIError(err))
+        console.error('Failed to load company:', err)
+      } finally {
+        setLoading(false)
+      }
     }
-  }, [company])
 
-  if (!company) {
+    loadCompany()
+  }, [params.id])
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading company...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !company) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center">
           <h1 className="text-2xl font-semibold mb-4">Company Not Found</h1>
-          <p className="text-muted-foreground mb-4">The company you're looking for doesn't exist.</p>
+          <p className="text-muted-foreground mb-4">
+            {error || "The company you're looking for doesn't exist."}
+          </p>
           <Link href="/companies" className="text-primary hover:underline">
             Back to Companies
           </Link>
@@ -70,10 +72,15 @@ export default function EditCompanyPage({ params }: { params: { id: string } }) 
     )
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Form submitted:", formData)
-    router.push(`/companies/${params.id}`)
+    try {
+      await companyAPI.update(parseInt(params.id), formData)
+      router.push(`/companies/${params.id}`)
+    } catch (err) {
+      console.error('Failed to update company:', err)
+      alert(`Failed to update company: ${handleAPIError(err)}`)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
