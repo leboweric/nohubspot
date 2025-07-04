@@ -436,12 +436,19 @@ async def cleanup_organization(
 
 # Dashboard endpoints
 @app.get("/api/dashboard/stats", response_model=DashboardStats)
-async def get_dashboard_statistics(db: Session = Depends(get_db)):
-    return get_dashboard_stats(db)
+async def get_dashboard_statistics(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    return get_dashboard_stats(db, current_user.organization_id)
 
 @app.get("/api/activities", response_model=List[ActivityResponse])
-async def get_activities(limit: int = 10, db: Session = Depends(get_db)):
-    return get_recent_activities(db, limit=limit)
+async def get_activities(
+    limit: int = 10, 
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    return get_recent_activities(db, current_user.organization_id, limit=limit)
 
 # Company endpoints
 @app.post("/api/companies", response_model=CompanyResponse)
@@ -489,10 +496,11 @@ async def read_company(
 @app.put("/api/companies/{company_id}", response_model=CompanyResponse)
 async def update_existing_company(
     company_id: int, 
-    company_update: CompanyUpdate, 
+    company_update: CompanyUpdate,
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    company = update_company(db, company_id, company_update)
+    company = update_company(db, company_id, company_update, current_user.organization_id)
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
     
@@ -501,22 +509,28 @@ async def update_existing_company(
         title="Company Updated", 
         description=f"Updated {company.name}",
         type="company",
-        entity_id=str(company.id)
+        entity_id=str(company.id),
+        organization_id=current_user.organization_id
     )
     
     return company
 
 # Contact endpoints
 @app.post("/api/contacts", response_model=ContactResponse)
-async def create_new_contact(contact: ContactCreate, db: Session = Depends(get_db)):
-    db_contact = create_contact(db, contact)
+async def create_new_contact(
+    contact: ContactCreate, 
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    db_contact = create_contact(db, contact, current_user.organization_id)
     
     create_activity(
         db,
         title="Contact Added",
         description=f"Added {contact.first_name} {contact.last_name} as a new contact",
         type="contact", 
-        entity_id=str(db_contact.id)
+        entity_id=str(db_contact.id),
+        organization_id=current_user.organization_id
     )
     
     return db_contact
@@ -528,35 +542,57 @@ async def read_contacts(
     search: Optional[str] = None,
     company_id: Optional[int] = None,
     status: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    return get_contacts(db, skip=skip, limit=limit, search=search, company_id=company_id, status=status)
+    return get_contacts(
+        db, 
+        current_user.organization_id,
+        skip=skip, 
+        limit=limit, 
+        search=search, 
+        company_id=company_id, 
+        status=status
+    )
 
 @app.get("/api/contacts/{contact_id}", response_model=ContactResponse)
-async def read_contact(contact_id: int, db: Session = Depends(get_db)):
-    contact = get_contact(db, contact_id)
+async def read_contact(
+    contact_id: int, 
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    contact = get_contact(db, contact_id, current_user.organization_id)
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
     return contact
 
 @app.delete("/api/contacts/{contact_id}")
-async def delete_existing_contact(contact_id: int, db: Session = Depends(get_db)):
-    success = delete_contact(db, contact_id)
+async def delete_existing_contact(
+    contact_id: int, 
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    success = delete_contact(db, contact_id, current_user.organization_id)
     if not success:
         raise HTTPException(status_code=404, detail="Contact not found")
     return {"message": "Contact deleted successfully"}
 
 # Task endpoints
 @app.post("/api/tasks", response_model=TaskResponse)
-async def create_new_task(task: TaskCreate, db: Session = Depends(get_db)):
-    db_task = create_task(db, task)
+async def create_new_task(
+    task: TaskCreate, 
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    db_task = create_task(db, task, current_user.organization_id)
     
     create_activity(
         db,
         title="Task Created",
         description=f"Created task: {task.title}",
         type="task",
-        entity_id=str(db_task.id)
+        entity_id=str(db_task.id),
+        organization_id=current_user.organization_id
     )
     
     return db_task
@@ -570,10 +606,12 @@ async def read_tasks(
     priority: Optional[str] = None,
     contact_id: Optional[int] = None,
     company_id: Optional[int] = None,
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     return get_tasks(
         db, 
+        current_user.organization_id,
         skip=skip, 
         limit=limit, 
         search=search, 
@@ -584,8 +622,12 @@ async def read_tasks(
     )
 
 @app.get("/api/tasks/{task_id}", response_model=TaskResponse)
-async def read_task(task_id: int, db: Session = Depends(get_db)):
-    task = get_task(db, task_id)
+async def read_task(
+    task_id: int, 
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    task = get_task(db, task_id, current_user.organization_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     return task
@@ -594,9 +636,10 @@ async def read_task(task_id: int, db: Session = Depends(get_db)):
 async def update_existing_task(
     task_id: int,
     task_update: TaskUpdate,
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    task = update_task(db, task_id, task_update)
+    task = update_task(db, task_id, task_update, current_user.organization_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     
@@ -605,14 +648,19 @@ async def update_existing_task(
         title="Task Updated",
         description=f"Updated task: {task.title}",
         type="task",
-        entity_id=str(task.id)
+        entity_id=str(task.id),
+        organization_id=current_user.organization_id
     )
     
     return task
 
 @app.delete("/api/tasks/{task_id}")
-async def delete_existing_task(task_id: int, db: Session = Depends(get_db)):
-    success = delete_task(db, task_id)
+async def delete_existing_task(
+    task_id: int, 
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    success = delete_task(db, task_id, current_user.organization_id)
     if not success:
         raise HTTPException(status_code=404, detail="Task not found")
     
@@ -621,7 +669,8 @@ async def delete_existing_task(task_id: int, db: Session = Depends(get_db)):
         title="Task Deleted",
         description=f"Deleted task",
         type="task",
-        entity_id=str(task_id)
+        entity_id=str(task_id),
+        organization_id=current_user.organization_id
     )
     
     return {"message": "Task deleted successfully"}
