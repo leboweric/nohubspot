@@ -6,7 +6,7 @@ import json
 from typing import Dict, List, Optional, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc
-import openai
+from openai import OpenAI
 from models import Task, Contact, Company, Activity, User
 from crud import get_tasks, get_contacts, get_companies, get_contact, get_company
 
@@ -17,7 +17,9 @@ openai_key = (
     os.environ.get("OPEN_AI_KEY") or
     os.environ.get("OPENAI")
 )
-openai.api_key = openai_key
+
+# Initialize OpenAI client
+openai_client = OpenAI(api_key=openai_key) if openai_key else None
 
 class AIChatService:
     def __init__(self, db: Session, user_id: int, organization_id: int):
@@ -28,7 +30,7 @@ class AIChatService:
     def process_chat_message(self, message: str, context: str = "general", summary_data: Optional[Dict] = None) -> str:
         """Process a chat message and return AI response with CRM context"""
         try:
-            if not openai_key:
+            if not openai_client:
                 return "Sorry, AI chat is currently unavailable. Please check with your administrator."
             
             # Get relevant CRM data based on the message
@@ -37,7 +39,7 @@ class AIChatService:
             # Build context-aware prompt
             prompt = self._build_chat_prompt(message, crm_context, summary_data)
             
-            response = openai.chat.completions.create(
+            response = openai_client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
                     {
@@ -64,7 +66,15 @@ class AIChatService:
             
         except Exception as e:
             print(f"AI Chat error: {e}")
-            return "Sorry, I encountered an error processing your request. Please try again."
+            error_msg = str(e).lower()
+            if "invalid_api_key" in error_msg or "401" in error_msg:
+                return "Sorry, the AI chat service is not properly configured. Please contact your administrator to set up a valid OpenAI API key."
+            elif "insufficient_quota" in error_msg or "429" in error_msg:
+                return "Sorry, the AI service has reached its usage limit. Please try again later."
+            elif "model" in error_msg:
+                return "Sorry, there was an issue with the AI model configuration. Please contact support."
+            else:
+                return "Sorry, I couldn't process that request. Please try again."
     
     def _get_relevant_crm_data(self, message: str) -> Dict[str, Any]:
         """Extract relevant CRM data based on the user's message"""
