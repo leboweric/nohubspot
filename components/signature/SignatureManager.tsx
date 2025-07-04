@@ -87,6 +87,9 @@ export const useEmailSignature = () => {
         enabled: newSignature.enabled
       }
       
+      console.log('🔍 Saving signature with data:', apiSignatureData);
+      console.log('🔍 Auth token:', localStorage.getItem('auth_token')?.substring(0, 20) + '...');
+      
       const result = await signatureAPI.createOrUpdate(apiSignatureData)
       console.log('Signature save result:', result)
       setSignature(newSignature)

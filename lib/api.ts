@@ -25,6 +25,9 @@ async function apiRequest<T>(
   }
 
   try {
+    console.log(`🔍 API Request: ${options.method || 'GET'} ${url}`);
+    console.log('🔍 Request config:', config);
+    
     const response = await fetch(url, config)
     
     // Handle authentication errors
@@ -63,7 +66,13 @@ async function apiRequest<T>(
     if (error instanceof APIError) {
       throw error
     }
-    console.error(`API request failed: ${endpoint}`, error)
+    console.error(`❌ API request failed: ${endpoint}`, error)
+    console.error('❌ Error details:', {
+      url,
+      method: options.method || 'GET',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      type: error instanceof TypeError ? 'Network/CORS error' : 'Other error'
+    })
     throw new APIError(error instanceof Error ? error.message : 'Network error')
   }
 }
