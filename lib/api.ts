@@ -3,6 +3,10 @@ import { getAuthHeaders, clearAuthState } from './auth'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
+// DEBUG: Log API configuration
+console.log("🔍 API Configuration - Base URL:", API_BASE_URL);
+console.log("🔍 API Configuration - Environment:", process.env.NODE_ENV);
+
 // Generic API request function
 async function apiRequest<T>(
   endpoint: string,

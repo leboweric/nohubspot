@@ -9,8 +9,24 @@ export const useEmailSignature = () => {
   const [isLoaded, setIsLoaded] = useState(false)
   const [loading, setLoading] = useState(false)
 
+  // Test API connectivity
+  const testAPIConnection = async () => {
+    try {
+      console.log("🔍 Testing API connection to:", process.env.NEXT_PUBLIC_API_URL);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/health`);
+      console.log("✅ API Health Check:", response.status);
+      const data = await response.json();
+      console.log("✅ Health Data:", data);
+    } catch (error) {
+      console.error("❌ API Connection Failed:", error);
+      console.error("❌ API URL was:", process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080');
+    }
+  };
+
   // Load signature from API with proper error handling
   useEffect(() => {
+    // Test API connectivity first
+    testAPIConnection();
     const loadSignature = async () => {
       try {
         setLoading(true)
@@ -52,6 +68,11 @@ export const useEmailSignature = () => {
 
   // Save signature to API
   const saveSignature = async (newSignature: EmailSignature) => {
+    // DEBUG: Check API configuration
+    console.log("🔍 DEBUG - API Base URL:", process.env.NEXT_PUBLIC_API_URL);
+    console.log("🔍 DEBUG - Full API URL:", `${process.env.NEXT_PUBLIC_API_URL}/api/signature`);
+    console.log("🔍 DEBUG - Environment:", process.env.NODE_ENV);
+    
     try {
       setLoading(true)
       // Convert component signature to API signature
