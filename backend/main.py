@@ -253,6 +253,28 @@ async def debug_env():
         "all_env_vars": list(os.environ.keys())
     }
 
+@app.post("/api/debug/test-email")
+async def test_email():
+    """Test endpoint to send a simple email"""
+    from email_service import send_email
+    
+    try:
+        result = await send_email(
+            to_email="test@example.com",
+            subject="Test Email from NotHubSpot",
+            html_content="<h1>Test Email</h1><p>This is a test email to verify SendGrid configuration.</p>",
+            text_content="Test Email\n\nThis is a test email to verify SendGrid configuration."
+        )
+        return {
+            "success": result,
+            "message": "Email sent successfully" if result else "Email failed to send"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Error sending email: {str(e)}"
+        }
+
 # Authentication endpoints
 @app.post("/api/auth/register", response_model=Token)
 async def register(user_data: UserRegister, db: Session = Depends(get_db)):
