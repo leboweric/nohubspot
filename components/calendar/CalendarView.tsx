@@ -179,10 +179,17 @@ export default function CalendarView({ events, currentDate, onDateClick, onEvent
                       e.stopPropagation()
                       onEventClick(event)
                     }}
-                    className={`text-xs px-2 py-1 rounded text-white truncate hover:opacity-80 transition-opacity ${getEventTypeColor(event.event_type)}`}
-                    title={`${event.title} - ${formatTime(event.start_time)}`}
+                    className={`text-xs px-2 py-1 rounded text-white hover:opacity-80 transition-opacity cursor-pointer ${getEventTypeColor(event.event_type)}`}
+                    title={`${event.title} - ${formatTime(event.start_time)} to ${formatTime(event.end_time)}`}
                   >
-                    {event.is_all_day ? event.title : `${formatTime(event.start_time)} ${event.title}`}
+                    {event.is_all_day ? (
+                      <div className="font-medium">{event.title}</div>
+                    ) : (
+                      <div>
+                        <div className="font-medium text-xs opacity-90">{formatTime(event.start_time)}</div>
+                        <div className="truncate">{event.title}</div>
+                      </div>
+                    )}
                   </div>
                 ))}
                 {dayEvents.length > 2 && (

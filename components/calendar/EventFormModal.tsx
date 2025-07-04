@@ -79,40 +79,35 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
           status: event.status,
           attendee_ids: [] // TODO: Load existing attendees when editing
         })
-      } else if (selectedDate) {
-        // Creating new event for selected date
-        const startTime = new Date(selectedDate)
-        startTime.setHours(9, 0) // Default to 9 AM
-        const endTime = new Date(selectedDate)
-        endTime.setHours(10, 0) // Default to 10 AM (1 hour duration)
+      } else {
+        // Creating new event - use selectedDate if available, otherwise use current time
+        let startTime: Date
+        
+        if (selectedDate) {
+          // Use the selected date and set to next reasonable hour
+          startTime = new Date(selectedDate)
+          const currentHour = new Date().getHours()
+          const defaultHour = currentHour < 17 ? Math.max(currentHour + 1, 9) : 9 // Next hour or 9 AM if after 5 PM
+          startTime.setHours(defaultHour, 0, 0, 0)
+        } else {
+          // Use current time rounded to next hour
+          const now = new Date()
+          startTime = new Date(now)
+          startTime.setMinutes(0, 0, 0)
+          if (now.getMinutes() > 0) {
+            startTime.setHours(startTime.getHours() + 1)
+          }
+        }
+        
+        // Default end time is 1 hour later
+        const endTime = new Date(startTime)
+        endTime.setHours(endTime.getHours() + 1)
         
         setFormData({
           title: "",
           description: "",
           start_time: startTime.toISOString().slice(0, 16),
           end_time: endTime.toISOString().slice(0, 16),
-          location: "",
-          event_type: "meeting",
-          contact_id: "",
-          company_id: "",
-          is_all_day: false,
-          reminder_minutes: 15,
-          status: "scheduled",
-          attendee_ids: []
-        })
-      } else {
-        // Creating new event
-        const now = new Date()
-        const start = new Date(now)
-        start.setMinutes(0, 0, 0) // Round to nearest hour
-        const end = new Date(start)
-        end.setHours(end.getHours() + 1)
-        
-        setFormData({
-          title: "",
-          description: "",
-          start_time: start.toISOString().slice(0, 16),
-          end_time: end.toISOString().slice(0, 16),
           location: "",
           event_type: "meeting",
           contact_id: preselectedContactId?.toString() || "",
@@ -173,10 +168,24 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-    }))
+    
+    // Auto-update end time when start time changes (unless it's an all-day event)
+    if (name === 'start_time' && value && !formData.is_all_day) {
+      const startTime = new Date(value)
+      const endTime = new Date(startTime)
+      endTime.setHours(endTime.getHours() + 1) // Default 1 hour duration
+      
+      setFormData(prev => ({
+        ...prev,
+        start_time: value,
+        end_time: endTime.toISOString().slice(0, 16)
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      }))
+    }
   }
 
   const handleAttendeeToggle = (contactId: number) => {
