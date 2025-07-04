@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, status
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -8,9 +8,30 @@ import os
 import uvicorn
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+from collections import defaultdict
+import time
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Simple rate limiter to prevent API overwhelm
+request_counts = defaultdict(list)
+
+def rate_limit_check(client_ip: str, endpoint: str, max_requests: int = 30, window: int = 60):
+    """Check if request is within rate limit"""
+    now = time.time()
+    key = f"{client_ip}:{endpoint}"
+    
+    # Clean old requests
+    request_counts[key] = [req_time for req_time in request_counts[key] if now - req_time < window]
+    
+    # Check limit
+    if len(request_counts[key]) >= max_requests:
+        return False
+    
+    # Add current request
+    request_counts[key].append(now)
+    return True
 
 from database import get_db, SessionLocal, engine
 from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection
@@ -554,12 +575,17 @@ async def revoke_user_invite(
 # Organization users endpoint
 @app.get("/api/users", response_model=List[UserResponse])
 async def get_organization_users(
+    request: Request,
     skip: int = 0,
     limit: int = 100,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """Get all users in the organization"""
+    # Rate limiting to prevent API overwhelm
+    if not rate_limit_check(request.client.host, "/api/users", max_requests=10, window=60):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded - too many requests")
+    
     return get_users_by_organization(db, current_user.organization_id, skip, limit)
 
 # TEMPORARY: Cleanup endpoint for development
