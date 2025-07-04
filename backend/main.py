@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-from database import get_db, engine
+from database import get_db, SessionLocal, engine
 from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection
 from schemas import (
     CompanyCreate, CompanyResponse, CompanyUpdate,
@@ -235,17 +235,34 @@ async def root():
 @app.get("/health")
 async def health_check():
     try:
-        # Test database connection
-        db = next(get_db())
-        db.execute(text("SELECT 1"))
-        db.close()
-        return {"status": "healthy", "timestamp": datetime.utcnow(), "database": "connected"}
+        # ✅ Use dependency injection instead of manual session
+        db = SessionLocal()
+        try:
+            db.execute(text("SELECT 1"))
+            return {"status": "healthy", "timestamp": datetime.utcnow(), "database": "connected"}
+        finally:
+            db.close()  # ✅ Always close in finally block
     except Exception as e:
         return {"status": "unhealthy", "timestamp": datetime.utcnow(), "error": str(e)}
 
 @app.get("/api/users")  # Railway healthcheck endpoint
 async def users_health():
     return {"status": "ok", "message": "NotHubSpot CRM API is running"}
+
+@app.get("/api/debug/db-pool")
+async def db_pool_status():
+    """Monitor database connection pool status"""
+    try:
+        pool = engine.pool
+        return {
+            "pool_size": pool.size(),
+            "checked_in": pool.checkedin(),
+            "checked_out": pool.checkedout(),
+            "overflow": pool.overflow(),
+            "invalid": pool.invalid()
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.get("/api/debug/env")
 async def debug_env():

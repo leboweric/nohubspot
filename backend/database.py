@@ -18,9 +18,24 @@ if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 try:
-    engine = create_engine(DATABASE_URL, echo=False)  # Set echo=True for SQL debugging
+    # ✅ CRITICAL: Add connection pool configuration
+    engine = create_engine(
+        DATABASE_URL, 
+        echo=False,
+        # Connection pool settings
+        pool_size=20,          # Increase from default 5 to 20
+        max_overflow=30,       # Allow 30 additional connections
+        pool_timeout=30,       # Wait 30s for connection
+        pool_recycle=3600,     # Recycle connections every hour
+        pool_pre_ping=True,    # Verify connections before use
+        # Additional performance settings
+        connect_args={
+            "connect_timeout": 10,
+            "application_name": "nohubspot_crm"
+        } if DATABASE_URL.startswith("postgresql://") else {}
+    )
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    print("✅ Database engine created successfully")
+    print("✅ Database engine created with connection pool")
 except Exception as e:
     print(f"❌ Failed to create database engine: {e}")
     raise
