@@ -802,6 +802,181 @@ export const o365API = {
   },
 }
 
+// Pipeline Stage interfaces
+export interface PipelineStage {
+  id: number
+  organization_id: number
+  name: string
+  description?: string
+  position: number
+  is_closed_won: boolean
+  is_closed_lost: boolean
+  color: string
+  is_active: boolean
+  deal_count?: number
+  created_at: string
+  updated_at: string
+}
+
+export interface PipelineStageCreate {
+  name: string
+  description?: string
+  position: number
+  is_closed_won?: boolean
+  is_closed_lost?: boolean
+  color?: string
+  is_active?: boolean
+}
+
+export interface PipelineStageUpdate {
+  name?: string
+  description?: string
+  position?: number
+  is_closed_won?: boolean
+  is_closed_lost?: boolean
+  color?: string
+  is_active?: boolean
+}
+
+// Deal interfaces
+export interface Deal {
+  id: number
+  organization_id: number
+  created_by: number
+  assigned_to?: number
+  title: string
+  description?: string
+  value: number
+  currency: string
+  probability: number
+  expected_close_date?: string
+  actual_close_date?: string
+  stage_id: number
+  contact_id?: number
+  company_id?: number
+  is_active: boolean
+  notes?: string
+  tags?: string[]
+  created_at: string
+  updated_at: string
+  
+  // Populated by API
+  stage_name?: string
+  stage_color?: string
+  contact_name?: string
+  company_name?: string
+  creator_name?: string
+  assignee_name?: string
+}
+
+export interface DealCreate {
+  title: string
+  description?: string
+  value?: number
+  currency?: string
+  probability?: number
+  expected_close_date?: string
+  stage_id: number
+  contact_id?: number
+  company_id?: number
+  assigned_to?: number
+  notes?: string
+  tags?: string[]
+}
+
+export interface DealUpdate {
+  title?: string
+  description?: string
+  value?: number
+  currency?: string
+  probability?: number
+  expected_close_date?: string
+  actual_close_date?: string
+  stage_id?: number
+  contact_id?: number
+  company_id?: number
+  assigned_to?: number
+  notes?: string
+  tags?: string[]
+  is_active?: boolean
+}
+
+// Pipeline API functions
+export const pipelineAPI = {
+  // Stage operations
+  getStages: (includeInactive = false): Promise<PipelineStage[]> =>
+    apiRequest(`/api/pipeline/stages?include_inactive=${includeInactive}`),
+
+  createStage: (stage: PipelineStageCreate): Promise<PipelineStage> =>
+    apiRequest('/api/pipeline/stages', {
+      method: 'POST',
+      body: JSON.stringify(stage),
+    }),
+
+  getStage: (stageId: number): Promise<PipelineStage> =>
+    apiRequest(`/api/pipeline/stages/${stageId}`),
+
+  updateStage: (stageId: number, stage: PipelineStageUpdate): Promise<PipelineStage> =>
+    apiRequest(`/api/pipeline/stages/${stageId}`, {
+      method: 'PUT',
+      body: JSON.stringify(stage),
+    }),
+
+  deleteStage: (stageId: number): Promise<{ message: string }> =>
+    apiRequest(`/api/pipeline/stages/${stageId}`, {
+      method: 'DELETE',
+    }),
+
+  initializeDefaultStages: (): Promise<{ message: string; stages: PipelineStage[] }> =>
+    apiRequest('/api/pipeline/stages/initialize', {
+      method: 'POST',
+    }),
+}
+
+// Deal API functions
+export const dealAPI = {
+  getDeals: (params?: {
+    skip?: number
+    limit?: number
+    stage_id?: number
+    contact_id?: number
+    company_id?: number
+    assigned_to?: number
+    include_inactive?: boolean
+  }): Promise<Deal[]> => {
+    const searchParams = new URLSearchParams()
+    if (params?.skip) searchParams.append('skip', params.skip.toString())
+    if (params?.limit) searchParams.append('limit', params.limit.toString())
+    if (params?.stage_id) searchParams.append('stage_id', params.stage_id.toString())
+    if (params?.contact_id) searchParams.append('contact_id', params.contact_id.toString())
+    if (params?.company_id) searchParams.append('company_id', params.company_id.toString())
+    if (params?.assigned_to) searchParams.append('assigned_to', params.assigned_to.toString())
+    if (params?.include_inactive) searchParams.append('include_inactive', 'true')
+    
+    return apiRequest(`/api/deals?${searchParams.toString()}`)
+  },
+
+  createDeal: (deal: DealCreate): Promise<Deal> =>
+    apiRequest('/api/deals', {
+      method: 'POST',
+      body: JSON.stringify(deal),
+    }),
+
+  getDeal: (dealId: number): Promise<Deal> =>
+    apiRequest(`/api/deals/${dealId}`),
+
+  updateDeal: (dealId: number, deal: DealUpdate): Promise<Deal> =>
+    apiRequest(`/api/deals/${dealId}`, {
+      method: 'PUT',
+      body: JSON.stringify(deal),
+    }),
+
+  deleteDeal: (dealId: number): Promise<{ message: string }> =>
+    apiRequest(`/api/deals/${dealId}`, {
+      method: 'DELETE',
+    }),
+}
+
 // Helper function to handle API errors consistently
 export const handleAPIError = (error: unknown): string => {
   if (error instanceof APIError) {
