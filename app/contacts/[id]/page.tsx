@@ -12,6 +12,9 @@ import { Task } from "@/components/tasks/types"
 import { contactAPI, Contact, handleAPIError, CalendarEventCreate, calendarAPI } from "@/lib/api"
 import { getAuthState } from "@/lib/auth"
 
+// Force dynamic rendering to prevent static generation issues with auth
+export const dynamic = 'force-dynamic'
+
 export default function ContactDetailPage({ params }: { params: { id: string } }) {
   const { user } = getAuthState()
   const [contact, setContact] = useState<Contact | null>(null)

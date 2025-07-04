@@ -8,6 +8,9 @@ import { useEmailSignature } from "@/components/signature/SignatureManager"
 import { getAuthState, isAdmin } from "@/lib/auth"
 import { o365API, O365OrganizationConfig, O365UserConnection, handleAPIError } from "@/lib/api"
 
+// Force dynamic rendering to prevent static generation issues with auth
+export const dynamic = 'force-dynamic'
+
 export default function SettingsPage() {
   const [showSignatureBuilder, setShowSignatureBuilder] = useState(false)
   const [showInviteForm, setShowInviteForm] = useState(false)

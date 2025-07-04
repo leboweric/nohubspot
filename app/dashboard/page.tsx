@@ -8,20 +8,25 @@ import DailySummaryCard from "@/components/dashboard/DailySummaryCard"
 import TodayCalendarCard from "@/components/dashboard/TodayCalendarCard"
 import { getAuthState } from "@/lib/auth"
 
+// Force dynamic rendering to prevent static generation issues with auth
+export const dynamic = 'force-dynamic'
+
 export default function DashboardPage() {
   const [showEmailCompose, setShowEmailCompose] = useState(false)
   const [organizationName, setOrganizationName] = useState("")
   const [firstName, setFirstName] = useState("")
   
+  // Get auth state - will be null during SSR
+  const { organization, user } = getAuthState()
+  
   useEffect(() => {
-    const { organization, user } = getAuthState()
     if (organization) {
       setOrganizationName(organization.name)
     }
     if (user) {
       setFirstName(user.first_name || user.email.split('@')[0])
     }
-  }, [])
+  }, [organization, user])
   
 
   const recentActivity = [
