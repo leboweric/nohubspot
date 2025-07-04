@@ -601,6 +601,27 @@ async def update_existing_company(
     
     return company
 
+@app.delete("/api/companies/{company_id}")
+async def delete_existing_company(
+    company_id: int, 
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    success = delete_company(db, company_id, current_user.organization_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    create_activity(
+        db,
+        title="Company Deleted",
+        description=f"Deleted company",
+        type="company",
+        entity_id=str(company_id),
+        organization_id=current_user.organization_id
+    )
+    
+    return {"message": "Company deleted successfully"}
+
 # Contact endpoints
 @app.post("/api/contacts", response_model=ContactResponse)
 async def create_new_contact(
