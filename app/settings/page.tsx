@@ -455,7 +455,7 @@ export default function SettingsPage() {
               <label className="block text-sm font-medium mb-1">Default Sender Name</label>
               <div className="px-3 py-2 bg-muted rounded-md text-sm">
                 {user?.first_name && user?.last_name 
-                  ? `${user.first_name} ${user.last_name}`
+                  ? `${user?.first_name} ${user?.last_name}`
                   : user?.email?.split('@')[0] || 'Sales Rep'
                 }
               </div>

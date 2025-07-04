@@ -110,7 +110,7 @@ export default function DashboardPage() {
         onClose={() => setShowEmailCompose(false)}
         onSend={handleEmailSent}
         senderName={user?.first_name && user?.last_name 
-          ? `${user.first_name} ${user.last_name}`
+          ? `${user?.first_name} ${user?.last_name}`
           : user?.email?.split('@')[0] || "Sales Rep"
         }
         senderEmail={user?.email || "sales@company.com"}

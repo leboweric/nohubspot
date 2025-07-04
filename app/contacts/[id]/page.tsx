@@ -335,7 +335,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
         recipientName={`${contact?.first_name} ${contact?.last_name}` || ""}
         onSend={handleEmailSent}
         senderName={user?.first_name && user?.last_name 
-          ? `${user.first_name} ${user.last_name}`
+          ? `${user?.first_name} ${user?.last_name}`
           : user?.email?.split('@')[0] || "Sales Rep"
         }
         senderEmail={user?.email || "sales@company.com"}
@@ -361,7 +361,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                 emails={emails}
                 onReply={handleReply}
                 senderName={user?.first_name && user?.last_name 
-                  ? `${user.first_name} ${user.last_name}`
+                  ? `${user?.first_name} ${user?.last_name}`
                   : user?.email?.split('@')[0] || "Sales Rep"
                 }
                 senderEmail={user?.email || "sales@company.com"}
