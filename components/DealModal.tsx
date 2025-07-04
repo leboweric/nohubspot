@@ -84,6 +84,34 @@ export default function DealModal({
     }
   }
 
+  // Filter contacts based on selected company
+  const getFilteredContacts = () => {
+    if (!formData.company_id) {
+      return contacts // Show all contacts if no company selected
+    }
+    return contacts.filter(contact => contact.company_id === formData.company_id)
+  }
+
+  // Handle company change and reset contact if needed
+  const handleCompanyChange = (companyId: string) => {
+    const newCompanyId = companyId ? parseInt(companyId) : undefined
+    
+    setFormData(prev => {
+      const updatedFormData = { ...prev, company_id: newCompanyId }
+      
+      // If changing company, check if current contact is still valid
+      if (prev.contact_id && newCompanyId) {
+        const currentContact = contacts.find(c => c.id === prev.contact_id)
+        if (currentContact && currentContact.company_id !== newCompanyId) {
+          // Reset contact if it doesn't belong to the new company
+          updatedFormData.contact_id = undefined
+        }
+      }
+      
+      return updatedFormData
+    })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.title.trim()) {
@@ -181,6 +209,7 @@ export default function DealModal({
                 type="number"
                 value={formData.value}
                 onChange={(e) => setFormData(prev => ({ ...prev, value: parseFloat(e.target.value) || 0 }))}
+                onFocus={(e) => e.target.select()}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="0.00"
                 min="0"
@@ -248,10 +277,7 @@ export default function DealModal({
               </label>
               <select
                 value={formData.company_id || ''}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  company_id: e.target.value ? parseInt(e.target.value) : undefined 
-                }))}
+                onChange={(e) => handleCompanyChange(e.target.value)}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select company...</option>
@@ -273,11 +299,20 @@ export default function DealModal({
                   contact_id: e.target.value ? parseInt(e.target.value) : undefined 
                 }))}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={!formData.company_id && getFilteredContacts().length === 0}
               >
-                <option value="">Select contact...</option>
-                {contacts.map(contact => (
+                <option value="">
+                  {!formData.company_id 
+                    ? "Select company first..." 
+                    : getFilteredContacts().length === 0 
+                      ? "No contacts in this company" 
+                      : "Select contact..."
+                  }
+                </option>
+                {getFilteredContacts().map(contact => (
                   <option key={contact.id} value={contact.id}>
                     {contact.first_name} {contact.last_name}
+                    {contact.title && ` - ${contact.title}`}
                   </option>
                 ))}
               </select>
