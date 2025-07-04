@@ -43,6 +43,7 @@ from auth import (
     get_current_active_user, get_current_admin_user,
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
+from email_service import send_welcome_email
 
 # Create database tables with error handling
 print("🔨 Starting database initialization...")
@@ -245,6 +246,14 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
             data={"sub": str(user.id), "organization_id": str(organization.id)}, 
             expires_delta=access_token_expires
         )
+        
+        # Send welcome email (don't wait for it)
+        import asyncio
+        asyncio.create_task(send_welcome_email(
+            user_email=user.email,
+            first_name=user.first_name or user.email.split('@')[0],
+            organization_name=organization.name
+        ))
         
         return {
             "access_token": access_token,
