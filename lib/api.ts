@@ -416,6 +416,22 @@ export const dashboardAPI = {
   // Get recent activities
   getActivities: (limit: number = 10): Promise<Activity[]> =>
     apiRequest(`/api/activities?limit=${limit}`),
+
+  // Get AI-powered daily summary
+  getDailySummary: (): Promise<{
+    generated_at: string
+    user_id: number
+    ai_insights: string
+    quick_stats: {
+      overdue_tasks: number
+      today_tasks: number
+      total_contacts: number
+      contacts_needing_attention: number
+      active_companies: number
+    }
+    recommendations: string[]
+  }> =>
+    apiRequest('/api/dashboard/daily-summary'),
 }
 
 // Error handling utility

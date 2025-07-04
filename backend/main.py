@@ -50,6 +50,7 @@ from email_template_crud import (
     update_email_template, delete_email_template, increment_template_usage,
     get_template_categories, replace_template_variables
 )
+from ai_service import generate_daily_summary
 
 # Create database tables with error handling
 print("🔨 Starting database initialization...")
@@ -456,6 +457,25 @@ async def get_dashboard_statistics(
     db: Session = Depends(get_db)
 ):
     return get_dashboard_stats(db, current_user.organization_id)
+
+@app.get("/api/dashboard/daily-summary")
+async def get_daily_summary(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Generate AI-powered daily summary for the user"""
+    try:
+        summary = generate_daily_summary(
+            db=db,
+            user_id=current_user.id,
+            organization_id=current_user.organization_id
+        )
+        return summary
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate daily summary: {str(e)}"
+        )
 
 @app.get("/api/activities", response_model=List[ActivityResponse])
 async def get_activities(

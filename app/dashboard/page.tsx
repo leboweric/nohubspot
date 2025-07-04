@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import EmailCompose, { EmailMessage } from "@/components/email/EmailCompose"
+import DailySummaryCard from "@/components/dashboard/DailySummaryCard"
 import { getAuthState } from "@/lib/auth"
 
 export default function DashboardPage() {
@@ -47,6 +48,11 @@ export default function DashboardPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-semibold">{organizationName} Dashboard</h1>
         <p className="text-muted-foreground mt-1">Welcome back{firstName ? `, ${firstName}` : ''}. Here's your CRM overview.</p>
+      </div>
+
+      {/* AI Daily Summary */}
+      <div className="mb-8">
+        <DailySummaryCard />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
