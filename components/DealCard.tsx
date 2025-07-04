@@ -8,9 +8,10 @@ import { Deal } from '@/lib/api'
 interface DealCardProps {
   deal: Deal
   isDragging?: boolean
+  onEdit?: (deal: Deal) => void
 }
 
-export default function DealCard({ deal, isDragging = false }: DealCardProps) {
+export default function DealCard({ deal, isDragging = false, onEdit }: DealCardProps) {
   const {
     attributes,
     listeners,
@@ -41,9 +42,16 @@ export default function DealCard({ deal, isDragging = false }: DealCardProps) {
     return 'text-red-600 bg-red-50 border-red-200'
   }
 
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onEdit) {
+      onEdit(deal)
+    }
+  }
+
   const cardClasses = `
     bg-white border rounded-lg p-3 cursor-grab active:cursor-grabbing
-    hover:shadow-md transition-shadow
+    hover:shadow-md transition-shadow relative group
     ${isDragging || isSortableDragging ? 'shadow-lg opacity-90' : ''}
     ${isSortableDragging ? 'z-50' : ''}
   `.trim()
@@ -56,6 +64,19 @@ export default function DealCard({ deal, isDragging = false }: DealCardProps) {
       {...listeners}
       className={cardClasses}
     >
+      {/* Edit Button - Appears on hover */}
+      {onEdit && (
+        <button
+          onClick={handleEdit}
+          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white shadow-md rounded-full p-1 hover:bg-gray-50 z-10"
+          title="Edit deal"
+        >
+          <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </button>
+      )}
+
       {/* Deal Header */}
       <div className="mb-2">
         <h4 className="font-semibold text-sm text-gray-900 truncate">

@@ -25,9 +25,10 @@ interface KanbanBoardProps {
   deals: Deal[]
   onDealMove: (dealId: number, newStageId: number) => Promise<void>
   onAddDeal?: (stageId?: number) => void
+  onEditDeal?: (deal: Deal) => void
 }
 
-export default function KanbanBoard({ stages, deals, onDealMove, onAddDeal }: KanbanBoardProps) {
+export default function KanbanBoard({ stages, deals, onDealMove, onAddDeal, onEditDeal }: KanbanBoardProps) {
   const [activeDeal, setActiveDeal] = React.useState<Deal | null>(null)
 
   const sensors = useSensors(
@@ -97,6 +98,7 @@ export default function KanbanBoard({ stages, deals, onDealMove, onAddDeal }: Ka
                   stage={stage}
                   deals={stageDeals}
                   onAddDeal={onAddDeal}
+                  onEditDeal={onEditDeal}
                 />
               </SortableContext>
             )

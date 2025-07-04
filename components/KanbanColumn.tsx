@@ -9,9 +9,10 @@ interface KanbanColumnProps {
   stage: PipelineStage
   deals: Deal[]
   onAddDeal?: (stageId?: number) => void
+  onEditDeal?: (deal: Deal) => void
 }
 
-export default function KanbanColumn({ stage, deals, onAddDeal }: KanbanColumnProps) {
+export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `stage-${stage.id}`,
   })
@@ -65,7 +66,7 @@ export default function KanbanColumn({ stage, deals, onAddDeal }: KanbanColumnPr
           </div>
         ) : (
           deals.map((deal) => (
-            <DealCard key={deal.id} deal={deal} />
+            <DealCard key={deal.id} deal={deal} onEdit={onEditDeal} />
           ))
         )}
 
