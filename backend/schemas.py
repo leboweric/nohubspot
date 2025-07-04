@@ -507,7 +507,7 @@ class PipelineStageBase(BaseModel):
     position: int = Field(..., ge=0)
     is_closed_won: bool = False
     is_closed_lost: bool = False
-    color: str = Field(default="#3B82F6", regex="^#[0-9A-Fa-f]{6}$")
+    color: str = Field(default="#3B82F6", pattern="^#[0-9A-Fa-f]{6}$")
     is_active: bool = True
 
 class PipelineStageCreate(PipelineStageBase):
@@ -519,7 +519,7 @@ class PipelineStageUpdate(BaseModel):
     position: Optional[int] = Field(None, ge=0)
     is_closed_won: Optional[bool] = None
     is_closed_lost: Optional[bool] = None
-    color: Optional[str] = Field(None, regex="^#[0-9A-Fa-f]{6}$")
+    color: Optional[str] = Field(None, pattern="^#[0-9A-Fa-f]{6}$")
     is_active: Optional[bool] = None
 
 class PipelineStageResponse(PipelineStageBase, TimestampMixin):
