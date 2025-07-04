@@ -213,9 +213,14 @@ export default function ContactsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      <a href={`/contacts/${contact.id}`} className="text-primary hover:underline">
-                        View
-                      </a>
+                      <div className="flex gap-3">
+                        <a href={`/contacts/${contact.id}`} className="text-primary hover:underline">
+                          View
+                        </a>
+                        <a href={`/contacts/${contact.id}/edit`} className="text-blue-600 hover:underline">
+                          Edit
+                        </a>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -204,9 +204,14 @@ export default function CompaniesPage() {
                     <td className="px-6 py-4 text-sm">{company.contact_count}</td>
                     <td className="px-6 py-4 text-sm">{company.attachment_count}</td>
                     <td className="px-6 py-4 text-sm">
-                      <a href={`/companies/${company.id}`} className="text-primary hover:underline">
-                        View
-                      </a>
+                      <div className="flex gap-3">
+                        <a href={`/companies/${company.id}`} className="text-primary hover:underline">
+                          View
+                        </a>
+                        <a href={`/companies/${company.id}/edit`} className="text-blue-600 hover:underline">
+                          Edit
+                        </a>
+                      </div>
                     </td>
                   </tr>
                 ))}

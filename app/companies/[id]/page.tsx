@@ -1,51 +1,70 @@
 "use client"
 
 import Link from "next/link"
-import { useRef, useState } from "react"
-
-const companies = [
-  {
-    id: "1",
-    name: "Acme Corporation",
-    industry: "Technology",
-    website: "https://acme.example.com",
-    status: "Active",
-    contactCount: 3,
-    attachmentCount: 2,
-    description: "A leading technology company specializing in innovative solutions.",
-    createdAt: "2024-01-15",
-    lastActivity: "2024-03-20"
-  },
-  {
-    id: "2",
-    name: "Globex Industries",
-    industry: "Manufacturing",
-    website: "https://globex.example.com",
-    status: "Active",
-    contactCount: 2,
-    attachmentCount: 1,
-    description: "Manufacturing company focused on sustainable products.",
-    createdAt: "2024-02-01",
-    lastActivity: "2024-03-18"
-  },
-  {
-    id: "3",
-    name: "Initech LLC",
-    industry: "Finance",
-    website: "https://initech.example.com",
-    status: "Lead",
-    contactCount: 1,
-    attachmentCount: 0,
-    description: "Financial services provider for small businesses and startups.",
-    createdAt: "2024-03-10",
-    lastActivity: "2024-03-15"
-  }
-]
+import { useRef, useState, useEffect } from "react"
+import AuthGuard from "@/components/AuthGuard"
+import MainLayout from "@/components/MainLayout"
+import { companyAPI, Company, handleAPIError } from "@/lib/api"
 
 export default function CompanyDetailPage({ params }: { params: { id: string } }) {
-  const company = companies.find(c => c.id === params.id)
+  const [company, setCompany] = useState<Company | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadCompany = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const companyData = await companyAPI.getById(parseInt(params.id))
+        setCompany(companyData)
+      } catch (err) {
+        setError(handleAPIError(err))
+        console.error('Failed to load company:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadCompany()
+  }, [params.id])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
+
+  if (loading) {
+    return (
+      <AuthGuard>
+        <MainLayout>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading company...</p>
+            </div>
+          </div>
+        </MainLayout>
+      </AuthGuard>
+    )
+  }
+
+  if (error || !company) {
+    return (
+      <AuthGuard>
+        <MainLayout>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center">
+              <h1 className="text-2xl font-semibold mb-4">Company Not Found</h1>
+              <p className="text-muted-foreground mb-4">
+                {error || "The company you're looking for doesn't exist."}
+              </p>
+              <Link href="/companies" className="text-primary hover:underline">
+                Back to Companies
+              </Link>
+            </div>
+          </div>
+        </MainLayout>
+      </AuthGuard>
+    )
+  }
 
   const handleFileUpload = () => {
     fileInputRef.current?.click()
@@ -83,22 +102,10 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
     }
   }
 
-  if (!company) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold mb-4">Company Not Found</h1>
-          <p className="text-muted-foreground mb-4">The company you're looking for doesn't exist.</p>
-          <Link href="/companies" className="text-primary hover:underline">
-            Back to Companies
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AuthGuard>
+      <MainLayout>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <Link href="/companies" className="text-sm text-muted-foreground hover:text-foreground mb-4 inline-block">
           ← Back to Companies
@@ -141,11 +148,11 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
               </div>
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">Created</dt>
-                <dd className="mt-1">{new Date(company.createdAt).toLocaleDateString()}</dd>
+                <dd className="mt-1">{new Date(company.created_at).toLocaleDateString()}</dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-muted-foreground">Last Activity</dt>
-                <dd className="mt-1">{new Date(company.lastActivity).toLocaleDateString()}</dd>
+                <dt className="text-sm font-medium text-muted-foreground">Last Updated</dt>
+                <dd className="mt-1">{new Date(company.updated_at).toLocaleDateString()}</dd>
               </div>
             </dl>
           </div>
@@ -162,11 +169,11 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
             <dl className="space-y-3">
               <div className="flex justify-between">
                 <dt className="text-sm text-muted-foreground">Contacts</dt>
-                <dd className="text-sm font-medium">{company.contactCount}</dd>
+                <dd className="text-sm font-medium">{company.contact_count}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-sm text-muted-foreground">Files</dt>
-                <dd className="text-sm font-medium">{company.attachmentCount}</dd>
+                <dd className="text-sm font-medium">{company.attachment_count}</dd>
               </div>
             </dl>
           </div>
@@ -215,6 +222,8 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
           </div>
         </div>
       </div>
-    </div>
+        </div>
+      </MainLayout>
+    </AuthGuard>
   )
 }
