@@ -7,6 +7,7 @@ import EmailCompose, { EmailMessage } from "@/components/email/EmailCompose"
 import DailySummaryCard from "@/components/dashboard/DailySummaryCard"
 import TodayCalendarCard from "@/components/dashboard/TodayCalendarCard"
 import { getAuthState } from "@/lib/auth"
+import { dashboardAPI, Activity, handleAPIError } from "@/lib/api"
 
 // Force dynamic rendering to prevent static generation issues with auth
 export const dynamic = 'force-dynamic'
@@ -15,6 +16,8 @@ export default function DashboardPage() {
   const [showEmailCompose, setShowEmailCompose] = useState(false)
   const [organizationName, setOrganizationName] = useState("")
   const [firstName, setFirstName] = useState("")
+  const [recentActivity, setRecentActivity] = useState<Activity[]>([])
+  const [activitiesLoading, setActivitiesLoading] = useState(true)
   
   // Get auth state - will be null during SSR
   const { organization, user } = getAuthState()
@@ -28,17 +31,41 @@ export default function DashboardPage() {
     }
   }, [organization, user])
   
+  // Load recent activities
+  useEffect(() => {
+    const loadActivities = async () => {
+      try {
+        setActivitiesLoading(true)
+        const activities = await dashboardAPI.getActivities(5)
+        setRecentActivity(activities)
+      } catch (err) {
+        console.error('Failed to load activities:', err)
+        // Keep loading state as false so UI shows empty state
+      } finally {
+        setActivitiesLoading(false)
+      }
+    }
 
-  const recentActivity = [
-    { action: "Email sent to John Smith", time: "2 hours ago" },
-    { action: "Added Sarah Johnson as contact", time: "1 day ago" },
-    { action: "Uploaded service agreement", time: "2 days ago" }
-  ]
+    loadActivities()
+  }, [])
 
   const handleEmailSent = (email: EmailMessage) => {
     setShowEmailCompose(false)
     // Could add to recent activity here
     console.log("Email sent from dashboard:", email)
+  }
+
+  // Helper function to format relative time
+  const formatRelativeTime = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+    
+    if (diffInSeconds < 60) return 'Just now'
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`
+    return date.toLocaleDateString()
   }
 
   return (
@@ -96,15 +123,37 @@ export default function DashboardPage() {
             Recent Activity
           </h2>
           <div className="space-y-4">
-            {recentActivity.map((activity, index) => (
-              <div key={index} className="flex items-start space-x-4 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{activity.action}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
-                </div>
+            {activitiesLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-start space-x-4 p-3 rounded-lg bg-muted/30">
+                    <div className="w-2 h-2 bg-gray-300 rounded-full mt-2 animate-pulse"></div>
+                    <div className="flex-1 min-w-0">
+                      <div className="h-4 bg-gray-300 rounded w-3/4 mb-2 animate-pulse"></div>
+                      <div className="h-3 bg-gray-300 rounded w-1/2 animate-pulse"></div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : recentActivity.length > 0 ? (
+              recentActivity.map((activity) => (
+                <div key={activity.id} className="flex items-start space-x-4 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                  <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{activity.title}</p>
+                    {activity.description && (
+                      <p className="text-xs text-muted-foreground mt-1">{activity.description}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">{formatRelativeTime(activity.created_at)}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                <p className="text-sm">No recent activity</p>
+                <p className="text-xs mt-1">Activity will appear here as you use the CRM</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
