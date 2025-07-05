@@ -297,13 +297,16 @@ def get_email_threads(
     
     return query.order_by(desc(EmailThread.updated_at)).offset(skip).limit(limit).all()
 
-def add_email_message(db: Session, message: EmailMessageCreate, organization_id: int) -> EmailMessage:
-    db_message = EmailMessage(**message.dict(), organization_id=organization_id)
+def add_email_message(db: Session, thread_id: int, message: EmailMessageCreate, organization_id: int) -> EmailMessage:
+    # Create message with thread_id
+    message_data = message.dict()
+    message_data['thread_id'] = thread_id
+    db_message = EmailMessage(**message_data)
     db.add(db_message)
     
     # Update thread message count and preview - ensure thread belongs to same tenant
     thread = db.query(EmailThread).filter(
-        EmailThread.id == message.thread_id,
+        EmailThread.id == thread_id,
         EmailThread.organization_id == organization_id
     ).first()
     if thread:

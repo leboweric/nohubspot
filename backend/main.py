@@ -2236,9 +2236,9 @@ async def create_email_thread_endpoint(
 ):
     """Create a new email thread"""
     db_thread = create_email_thread(
-        db,
-        organization_id=current_user.organization_id,
-        **thread.dict()
+        db=db,
+        thread=thread,
+        organization_id=current_user.organization_id
     )
     return db_thread
 
@@ -2260,7 +2260,12 @@ async def add_message_to_thread(
     if not thread:
         raise HTTPException(status_code=404, detail="Email thread not found")
     
-    db_message = add_email_message(db, thread_id, **message.dict())
+    db_message = add_email_message(
+        db=db,
+        thread_id=thread_id,
+        message=message,
+        organization_id=current_user.organization_id
+    )
     return db_message
 
 
