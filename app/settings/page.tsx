@@ -642,7 +642,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Support Section */}
+        {/* Support Section - Contact Support Feature */}
         <div className="bg-card border rounded-lg p-6">
           <div className="flex justify-between items-start mb-4">
             <div>
