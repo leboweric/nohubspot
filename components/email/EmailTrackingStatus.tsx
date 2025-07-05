@@ -2,7 +2,23 @@
 
 import { useState, useEffect } from "react"
 import { emailTrackingAPI, EmailTracking } from "@/lib/api"
-import { formatDistanceToNow } from "date-fns"
+
+// Helper function to format relative time without date-fns
+function formatDistanceToNow(date: Date): string {
+  const now = new Date()
+  const diffInMs = now.getTime() - date.getTime()
+  const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
+  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
+  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
+
+  if (diffInMinutes < 1) return 'just now'
+  if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`
+  if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`
+  if (diffInDays < 30) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`
+  
+  // For older dates, show the actual date
+  return date.toLocaleDateString()
+}
 
 interface EmailTrackingStatusProps {
   contactId?: number
@@ -99,7 +115,7 @@ export default function EmailTrackingStatus({ contactId, className = "" }: Email
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{record.subject}</p>
                 <p className="text-xs text-muted-foreground">
-                  Sent {formatDistanceToNow(new Date(record.sent_at), { addSuffix: true })}
+                  Sent {formatDistanceToNow(new Date(record.sent_at))}
                 </p>
               </div>
               <div className="flex items-center gap-3 ml-2">
@@ -140,12 +156,12 @@ export default function EmailTrackingStatus({ contactId, className = "" }: Email
               <div className="mt-2 text-xs text-muted-foreground">
                 {record.opened_at && (
                   <span className="mr-3">
-                    Opened {formatDistanceToNow(new Date(record.opened_at), { addSuffix: true })}
+                    Opened {formatDistanceToNow(new Date(record.opened_at))}
                   </span>
                 )}
                 {record.first_clicked_at && (
                   <span>
-                    Clicked {formatDistanceToNow(new Date(record.first_clicked_at), { addSuffix: true })}
+                    Clicked {formatDistanceToNow(new Date(record.first_clicked_at))}
                   </span>
                 )}
               </div>
