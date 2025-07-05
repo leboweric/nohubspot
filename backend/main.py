@@ -34,7 +34,7 @@ def rate_limit_check(client_ip: str, endpoint: str, max_requests: int = 30, wind
     return True
 
 from database import get_db, SessionLocal, engine
-from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, PipelineStage, Deal
+from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, PipelineStage, Deal, EmailTracking, EmailEvent
 from schemas import (
     CompanyCreate, CompanyResponse, CompanyUpdate,
     ContactCreate, ContactResponse, ContactUpdate,
@@ -53,7 +53,8 @@ from schemas import (
     O365UserConnectionUpdate, O365UserConnectionResponse,
     O365TestConnectionRequest, O365TestConnectionResponse,
     PipelineStageCreate, PipelineStageResponse, PipelineStageUpdate,
-    DealCreate, DealResponse, DealUpdate
+    DealCreate, DealResponse, DealUpdate,
+    EmailTrackingCreate, EmailTrackingResponse, EmailEventCreate, EmailEventResponse, SendGridEvent
 )
 from crud import (
     create_company, get_companies, get_company, update_company, delete_company,
@@ -2044,6 +2045,168 @@ async def delete_deal_by_id(
         raise HTTPException(status_code=404, detail="Deal not found")
     
     return {"message": "Deal deleted successfully"}
+
+
+# Email Tracking endpoints
+@app.post("/api/email-tracking/webhook")
+async def process_sendgrid_webhook(
+    event: SendGridEvent,
+    db: Session = Depends(get_db)
+):
+    """Process SendGrid webhook events"""
+    try:
+        # Find the email tracking record by message ID
+        tracking = db.query(EmailTracking).filter(
+            EmailTracking.message_id == event.sg_message_id
+        ).first()
+        
+        if not tracking:
+            # Create a new tracking record if it doesn't exist
+            # This might happen if the webhook arrives before our tracking record is created
+            print(f"Email tracking not found for message ID: {event.sg_message_id}")
+            return {"status": "skipped", "reason": "tracking_not_found"}
+        
+        # Create event record
+        email_event = EmailEvent(
+            tracking_id=tracking.id,
+            event_type=event.event,
+            timestamp=datetime.fromtimestamp(event.timestamp),
+            ip_address=event.ip,
+            user_agent=event.useragent,
+            url=event.url,
+            raw_data=event.dict()
+        )
+        db.add(email_event)
+        
+        # Update tracking metrics based on event type
+        if event.event == "open":
+            tracking.open_count += 1
+            if not tracking.opened_at:
+                tracking.opened_at = datetime.fromtimestamp(event.timestamp)
+                
+        elif event.event == "click":
+            tracking.click_count += 1
+            if not tracking.first_clicked_at:
+                tracking.first_clicked_at = datetime.fromtimestamp(event.timestamp)
+        
+        db.commit()
+        
+        return {"status": "processed", "event_type": event.event}
+        
+    except Exception as e:
+        print(f"Error processing SendGrid webhook: {str(e)}")
+        db.rollback()
+        # Return success to prevent SendGrid from retrying
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/email-tracking", response_model=EmailTrackingResponse)
+async def create_email_tracking(
+    tracking: EmailTrackingCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create email tracking record when sending an email"""
+    db_tracking = EmailTracking(
+        organization_id=current_user.organization_id,
+        **tracking.dict()
+    )
+    db.add(db_tracking)
+    db.commit()
+    db.refresh(db_tracking)
+    
+    # Populate response fields
+    db_tracking.sender_name = f"{current_user.first_name} {current_user.last_name}"
+    if db_tracking.contact_id:
+        contact = db.query(Contact).filter(Contact.id == db_tracking.contact_id).first()
+        if contact:
+            db_tracking.contact_name = f"{contact.first_name} {contact.last_name}"
+    
+    return db_tracking
+
+
+@app.get("/api/email-tracking", response_model=List[EmailTrackingResponse])
+async def get_email_tracking_list(
+    skip: int = 0,
+    limit: int = 100,
+    contact_id: Optional[int] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get email tracking records for the organization"""
+    query = db.query(EmailTracking).filter(
+        EmailTracking.organization_id == current_user.organization_id
+    )
+    
+    if contact_id:
+        query = query.filter(EmailTracking.contact_id == contact_id)
+    
+    trackings = query.order_by(EmailTracking.sent_at.desc()).offset(skip).limit(limit).all()
+    
+    # Populate response fields
+    for tracking in trackings:
+        sender = db.query(User).filter(User.id == tracking.sent_by).first()
+        if sender:
+            tracking.sender_name = f"{sender.first_name} {sender.last_name}"
+        
+        if tracking.contact_id:
+            contact = db.query(Contact).filter(Contact.id == tracking.contact_id).first()
+            if contact:
+                tracking.contact_name = f"{contact.first_name} {contact.last_name}"
+    
+    return trackings
+
+
+@app.get("/api/email-tracking/{tracking_id}", response_model=EmailTrackingResponse)
+async def get_email_tracking(
+    tracking_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get specific email tracking record with events"""
+    tracking = db.query(EmailTracking).filter(
+        EmailTracking.id == tracking_id,
+        EmailTracking.organization_id == current_user.organization_id
+    ).first()
+    
+    if not tracking:
+        raise HTTPException(status_code=404, detail="Email tracking not found")
+    
+    # Populate response fields
+    sender = db.query(User).filter(User.id == tracking.sent_by).first()
+    if sender:
+        tracking.sender_name = f"{sender.first_name} {sender.last_name}"
+    
+    if tracking.contact_id:
+        contact = db.query(Contact).filter(Contact.id == tracking.contact_id).first()
+        if contact:
+            tracking.contact_name = f"{contact.first_name} {contact.last_name}"
+    
+    return tracking
+
+
+@app.get("/api/email-tracking/{tracking_id}/events", response_model=List[EmailEventResponse])
+async def get_email_events(
+    tracking_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all events for a specific email"""
+    # Verify the tracking record belongs to the user's organization
+    tracking = db.query(EmailTracking).filter(
+        EmailTracking.id == tracking_id,
+        EmailTracking.organization_id == current_user.organization_id
+    ).first()
+    
+    if not tracking:
+        raise HTTPException(status_code=404, detail="Email tracking not found")
+    
+    events = db.query(EmailEvent).filter(
+        EmailEvent.tracking_id == tracking_id
+    ).order_by(EmailEvent.timestamp.desc()).all()
+    
+    return events
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))

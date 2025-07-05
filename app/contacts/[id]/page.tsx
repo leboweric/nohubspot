@@ -6,6 +6,7 @@ import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import EmailCompose, { EmailMessage } from "@/components/email/EmailCompose"
 import EmailThread from "@/components/email/EmailThread"
+import EmailTrackingStatus from "@/components/email/EmailTrackingStatus"
 import TaskCreate from "@/components/tasks/TaskCreate"
 import EventFormModal from "@/components/calendar/EventFormModal"
 import { Task } from "@/components/tasks/types"
@@ -286,6 +287,9 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
         </div>
 
         <div className="space-y-6">
+          {/* Email Engagement Tracking */}
+          <EmailTrackingStatus contactId={contact.id} />
+          
           <div className="bg-card border rounded-lg p-6">
             <h2 className="text-lg font-semibold mb-4">Actions</h2>
             <div className="space-y-2">

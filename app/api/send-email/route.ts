@@ -92,9 +92,44 @@ export async function POST(request: NextRequest) {
       messageId: response.headers['x-message-id']
     })
 
+    // Create tracking records for each recipient
+    const messageId = response.headers['x-message-id']
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+    
+    // Get auth token from cookies
+    const authToken = request.cookies.get('auth-token')?.value
+    
+    if (authToken && messageId) {
+      try {
+        // Create tracking record for each recipient
+        for (const recipientEmail of recipients) {
+          const trackingData = {
+            message_id: messageId,
+            to_email: recipientEmail,
+            from_email: process.env.SENDGRID_FROM_EMAIL,
+            subject: subject,
+            sent_at: new Date().toISOString(),
+            sent_by: 1 // This should come from the authenticated user
+          }
+          
+          await fetch(`${backendUrl}/api/email-tracking`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(trackingData)
+          })
+        }
+      } catch (error) {
+        console.error('Failed to create email tracking records:', error)
+        // Don't fail the email send if tracking fails
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      messageId: response.headers['x-message-id'],
+      messageId: messageId,
       recipientCount: recipients.length,
       timestamp: new Date().toISOString()
     })

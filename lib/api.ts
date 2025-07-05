@@ -977,6 +977,61 @@ export const dealAPI = {
     }),
 }
 
+// Email tracking API functions
+export interface EmailTracking {
+  id: number
+  message_id: string
+  to_email: string
+  from_email: string
+  subject: string
+  contact_id?: number
+  sent_by: number
+  sent_at: string
+  opened_at?: string
+  open_count: number
+  first_clicked_at?: string
+  click_count: number
+  created_at: string
+  updated_at: string
+  sender_name?: string
+  contact_name?: string
+}
+
+export interface EmailEvent {
+  id: number
+  tracking_id: number
+  event_type: string
+  timestamp: string
+  ip_address?: string
+  user_agent?: string
+  url?: string
+  created_at: string
+}
+
+export const emailTrackingAPI = {
+  // Get all email tracking records
+  getAll: (params?: {
+    skip?: number
+    limit?: number
+    contact_id?: number
+  }): Promise<EmailTracking[]> => {
+    const searchParams = new URLSearchParams()
+    if (params?.skip) searchParams.append('skip', params.skip.toString())
+    if (params?.limit) searchParams.append('limit', params.limit.toString())
+    if (params?.contact_id) searchParams.append('contact_id', params.contact_id.toString())
+    
+    return apiRequest(`/api/email-tracking?${searchParams}`)
+  },
+
+  // Get single tracking record
+  getById: (id: number): Promise<EmailTracking> => 
+    apiRequest(`/api/email-tracking/${id}`),
+
+  // Get events for a tracking record
+  getEvents: (trackingId: number): Promise<EmailEvent[]> =>
+    apiRequest(`/api/email-tracking/${trackingId}/events`),
+}
+
 // Helper function to handle API errors consistently
 export const handleAPIError = (error: unknown): string => {
   if (error instanceof APIError) {

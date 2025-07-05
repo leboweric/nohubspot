@@ -456,3 +456,67 @@ class Deal(Base):
     activities = relationship("Activity", foreign_keys="Activity.entity_id", 
                             primaryjoin="and_(cast(Deal.id, String) == Activity.entity_id, Activity.type == 'deal')",
                             overlaps="activities")
+
+
+class EmailTracking(Base):
+    __tablename__ = "email_tracking"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    
+    # SendGrid message ID for tracking
+    message_id = Column(String(255), nullable=False, index=True)
+    
+    # Email details
+    to_email = Column(String(255), nullable=False)
+    from_email = Column(String(255), nullable=False)
+    subject = Column(String(500), nullable=False)
+    
+    # Related entities
+    contact_id = Column(Integer, ForeignKey("contacts.id"), nullable=True)
+    sent_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    # Tracking metrics
+    sent_at = Column(DateTime(timezone=True), nullable=False)
+    opened_at = Column(DateTime(timezone=True), nullable=True)
+    open_count = Column(Integer, default=0)
+    first_clicked_at = Column(DateTime(timezone=True), nullable=True)
+    click_count = Column(Integer, default=0)
+    
+    # SendGrid metadata
+    sendgrid_data = Column(JSON, nullable=True)  # Store raw event data
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    organization = relationship("Organization")
+    contact = relationship("Contact")
+    sender = relationship("User")
+    events = relationship("EmailEvent", back_populates="tracking", cascade="all, delete-orphan")
+
+
+class EmailEvent(Base):
+    __tablename__ = "email_events"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    tracking_id = Column(Integer, ForeignKey("email_tracking.id"), nullable=False, index=True)
+    
+    # Event details
+    event_type = Column(String(50), nullable=False)  # open, click, bounce, spam, unsubscribe
+    timestamp = Column(DateTime(timezone=True), nullable=False)
+    
+    # Additional event data
+    ip_address = Column(String(45), nullable=True)
+    user_agent = Column(Text, nullable=True)
+    url = Column(Text, nullable=True)  # For click events
+    
+    # Raw SendGrid event data
+    raw_data = Column(JSON, nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    tracking = relationship("EmailTracking", back_populates="events")

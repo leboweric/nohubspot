@@ -581,3 +581,69 @@ class DealResponse(DealBase, TimestampMixin):
     
     class Config:
         from_attributes = True
+
+
+# Email Tracking schemas
+class EmailTrackingBase(BaseModel):
+    message_id: str = Field(..., max_length=255)
+    to_email: str = Field(..., max_length=255)
+    from_email: str = Field(..., max_length=255)
+    subject: str = Field(..., max_length=500)
+    contact_id: Optional[int] = None
+    sent_at: datetime
+
+class EmailTrackingCreate(EmailTrackingBase):
+    sent_by: int
+
+class EmailTrackingResponse(EmailTrackingBase, TimestampMixin):
+    id: int
+    organization_id: int
+    sent_by: int
+    opened_at: Optional[datetime] = None
+    open_count: int = 0
+    first_clicked_at: Optional[datetime] = None
+    click_count: int = 0
+    
+    # Populated by API
+    sender_name: Optional[str] = None
+    contact_name: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class EmailEventBase(BaseModel):
+    event_type: str = Field(..., max_length=50)  # open, click, bounce, spam, unsubscribe
+    timestamp: datetime
+    ip_address: Optional[str] = Field(None, max_length=45)
+    user_agent: Optional[str] = None
+    url: Optional[str] = None  # For click events
+
+class EmailEventCreate(EmailEventBase):
+    tracking_id: int
+    raw_data: Optional[dict] = None
+
+class EmailEventResponse(EmailEventBase):
+    id: int
+    tracking_id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+# SendGrid webhook event
+class SendGridEvent(BaseModel):
+    event: str
+    email: str
+    timestamp: int
+    sg_message_id: str
+    sg_event_id: Optional[str] = None
+    ip: Optional[str] = None
+    useragent: Optional[str] = None
+    url: Optional[str] = None
+    category: Optional[List[str]] = None
+    # Custom args we send with emails
+    contact_name: Optional[str] = None
+    sender_name: Optional[str] = None
+    source: Optional[str] = None

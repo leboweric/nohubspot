@@ -7,7 +7,7 @@ This script creates all database tables and optionally seeds with sample data.
 import os
 from datetime import datetime, timedelta
 from database import engine, get_db
-from models import Base, Company, Contact, Task, EmailSignature
+from models import Base, Company, Contact, Task, EmailSignature, EmailTracking, EmailEvent
 from sqlalchemy.orm import Session
 
 def create_tables():
