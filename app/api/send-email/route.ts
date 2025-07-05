@@ -34,18 +34,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate email format
+    // Handle multiple recipients
+    const recipients = Array.isArray(to) ? to : [to]
+    
+    // Validate email formats
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(to)) {
-      return NextResponse.json(
-        { error: 'Invalid email address' },
-        { status: 400 }
-      )
+    for (const email of recipients) {
+      if (!emailRegex.test(email)) {
+        return NextResponse.json(
+          { error: `Invalid email address: ${email}` },
+          { status: 400 }
+        )
+      }
     }
 
     // Prepare email data
     const msg: any = {
-      to: to,
+      to: recipients,
       from: {
         email: process.env.SENDGRID_FROM_EMAIL,
         name: senderName || process.env.SENDGRID_FROM_NAME || 'Sales Team'
@@ -81,7 +86,8 @@ export async function POST(request: NextRequest) {
 
     // Log success
     console.log('Email sent successfully:', {
-      to,
+      to: recipients,
+      recipientCount: recipients.length,
       subject,
       messageId: response.headers['x-message-id']
     })
@@ -89,6 +95,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       messageId: response.headers['x-message-id'],
+      recipientCount: recipients.length,
       timestamp: new Date().toISOString()
     })
 

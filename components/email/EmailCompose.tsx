@@ -31,6 +31,7 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
   const [toEmail, setToEmail] = useState(recipientEmail || "")
   const [toName, setToName] = useState(recipientName || "")
   const [toSearchValue, setToSearchValue] = useState("")
+  const [selectedRecipients, setSelectedRecipients] = useState<Contact[]>([])
   const [isSending, setIsSending] = useState(false)
   const [templates, setTemplates] = useState<EmailTemplate[]>([])
   const [showTemplates, setShowTemplates] = useState(false)
@@ -63,20 +64,34 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
     }
   }
 
-  // Set initial search value when component opens
+  // Set initial recipients when component opens
   useEffect(() => {
     if (recipientEmail && recipientName) {
-      setToSearchValue(`${recipientName} <${recipientEmail}>`)
+      setSelectedRecipients([{
+        id: Date.now().toString(),
+        firstName: recipientName.split(' ')[0] || '',
+        lastName: recipientName.split(' ').slice(1).join(' ') || '',
+        email: recipientEmail,
+        status: 'Active'
+      }])
+      setToSearchValue("")
     } else {
+      setSelectedRecipients([])
       setToSearchValue("")
     }
   }, [recipientEmail, recipientName, isOpen])
 
   const handleContactSelect = (contact: Contact) => {
-    setToEmail(contact.email)
-    setToName(`${contact.firstName} ${contact.lastName}`)
-    setToSearchValue(`${contact.firstName} ${contact.lastName} <${contact.email}>`)
+    // Add contact to recipients if not already selected
+    if (!selectedRecipients.find(r => r.email === contact.email)) {
+      setSelectedRecipients(prev => [...prev, contact])
+    }
+    setToSearchValue("")
     setSelectedContact(contact)
+  }
+
+  const removeRecipient = (email: string) => {
+    setSelectedRecipients(prev => prev.filter(r => r.email !== email))
   }
 
   const handleTemplateSelect = async (template: EmailTemplate) => {
@@ -110,22 +125,25 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
   }
 
   const handleSend = async () => {
-    if (!subject.trim() || !message.trim() || !toEmail.trim()) return
+    if (!subject.trim() || !message.trim() || selectedRecipients.length === 0) return
 
     setIsSending(true)
     
     try {
-      // Send email via SendGrid API
+      // Send email to all recipients
+      const recipientEmails = selectedRecipients.map(r => r.email)
+      const recipientNames = selectedRecipients.map(r => `${r.firstName} ${r.lastName}`).join(', ')
+      
       const response = await fetch('/api/send-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          to: toEmail.trim(),
+          to: recipientEmails, // Send array of emails
           subject: subject.trim(),
           message: message.trim(),
-          contactName: toName.trim(),
+          contactName: recipientNames,
           senderName: senderName,
           senderEmail: senderEmail
         })
@@ -140,7 +158,7 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
       // Create email message for UI
       const emailMessage: EmailMessage = {
         id: result.messageId || Date.now().toString(),
-        to: toEmail.trim(),
+        to: recipientEmails.join(', '),
         subject: subject.trim(),
         message: message.trim(),
         timestamp: new Date(),
@@ -152,14 +170,13 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
       onSend(emailMessage)
       setSubject("")
       setMessage("")
-      setToEmail("")
-      setToName("")
+      setSelectedRecipients([])
       setToSearchValue("")
       setIsSending(false)
       onClose()
 
       // Show success feedback
-      alert('Email sent successfully!')
+      alert(`Email sent successfully to ${recipientEmails.length} recipient${recipientEmails.length > 1 ? 's' : ''}!`)
 
     } catch (error) {
       console.error('Failed to send email:', error)
@@ -195,17 +212,44 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
 
           <div>
             <label className="block text-sm font-medium mb-1">To:</label>
-            {recipientEmail ? (
-              <div className="px-3 py-2 bg-muted rounded-md text-sm">
-                {recipientName} &lt;{recipientEmail}&gt;
+            
+            {/* Selected Recipients */}
+            {selectedRecipients.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {selectedRecipients.map((recipient) => (
+                  <div
+                    key={recipient.email}
+                    className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-sm flex items-center gap-1"
+                  >
+                    {recipient.firstName} {recipient.lastName} &lt;{recipient.email}&gt;
+                    <button
+                      type="button"
+                      onClick={() => removeRecipient(recipient.email)}
+                      className="text-blue-600 hover:text-blue-800 ml-1"
+                      title="Remove recipient"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
               </div>
-            ) : (
+            )}
+
+            {/* Contact Search - only show if not in single recipient mode */}
+            {!recipientEmail && (
               <ContactAutocomplete
                 value={toSearchValue}
                 onChange={handleSearchValueChange}
                 onSelectContact={handleContactSelect}
-                placeholder="Type contact name or email..."
+                placeholder="Type contact name or email to add recipients..."
               />
+            )}
+
+            {/* Single recipient display - when opened with specific recipient */}
+            {recipientEmail && (
+              <div className="px-3 py-2 bg-muted rounded-md text-sm">
+                {recipientName} &lt;{recipientEmail}&gt;
+              </div>
             )}
           </div>
 
@@ -289,10 +333,10 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
           </button>
           <button
             onClick={handleSend}
-            disabled={!subject.trim() || !message.trim() || !toEmail.trim() || isSending}
+            disabled={!subject.trim() || !message.trim() || selectedRecipients.length === 0 || isSending}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
-            {isSending ? "Sending..." : "Send"}
+            {isSending ? "Sending..." : `Send${selectedRecipients.length > 1 ? ` to ${selectedRecipients.length} recipients` : ""}`}
           </button>
         </div>
       </div>
