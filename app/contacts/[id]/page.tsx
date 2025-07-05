@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import EmailCompose, { EmailMessage } from "@/components/email/EmailCompose"
-import EmailThread from "@/components/email/EmailThread"
+import EmailThreadComponent from "@/components/email/EmailThread"
 import EmailTrackingStatus from "@/components/email/EmailTrackingStatus"
 import TaskCreate from "@/components/tasks/TaskCreate"
 import EventFormModal from "@/components/calendar/EventFormModal"
@@ -405,7 +405,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
               </button>
             </div>
             <div className="flex-1">
-              <EmailThread
+              <EmailThreadComponent
                 contactName={`${contact?.first_name} ${contact?.last_name}` || ""}
                 contactEmail={contact?.email || ""}
                 emails={emails}
