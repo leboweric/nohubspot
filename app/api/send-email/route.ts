@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       messageId: response.headers['x-message-id']
     })
 
-    // Create tracking records for each recipient
+    // Create tracking records and email threads for each recipient
     const messageId = response.headers['x-message-id']
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
     
@@ -101,8 +101,9 @@ export async function POST(request: NextRequest) {
     
     if (authToken && messageId) {
       try {
-        // Create tracking record for each recipient
+        // Create tracking record and email thread for each recipient
         for (const recipientEmail of recipients) {
+          // Create tracking record
           const trackingData = {
             message_id: messageId,
             to_email: recipientEmail,
@@ -120,9 +121,70 @@ export async function POST(request: NextRequest) {
             },
             body: JSON.stringify(trackingData)
           })
+
+          // Find or create email thread for this contact
+          // First, try to get existing threads for this recipient
+          const threadsResponse = await fetch(`${backendUrl}/api/email-threads?contact_email=${recipientEmail}`, {
+            headers: {
+              'Authorization': `Bearer ${authToken}`
+            }
+          })
+
+          let threadId = null
+          if (threadsResponse.ok) {
+            const threads = await threadsResponse.json()
+            // Find thread with same or similar subject
+            const existingThread = threads.find((t: any) => 
+              t.subject === subject || 
+              t.subject.replace(/^Re:\s*/i, '') === subject.replace(/^Re:\s*/i, '')
+            )
+            threadId = existingThread?.id
+          }
+
+          // Create new thread if none exists
+          if (!threadId) {
+            const threadData = {
+              subject: subject,
+              contact_email: recipientEmail,
+              preview: message.substring(0, 100) + (message.length > 100 ? '...' : '')
+            }
+
+            const createThreadResponse = await fetch(`${backendUrl}/api/email-threads`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+              },
+              body: JSON.stringify(threadData)
+            })
+
+            if (createThreadResponse.ok) {
+              const newThread = await createThreadResponse.json()
+              threadId = newThread.id
+            }
+          }
+
+          // Add message to thread
+          if (threadId) {
+            const messageData = {
+              sender: senderName || 'Sales Team',
+              content: message,
+              direction: 'outgoing' as const,
+              message_id: messageId
+            }
+
+            await fetch(`${backendUrl}/api/email-threads/${threadId}/messages`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+              },
+              body: JSON.stringify(messageData)
+            })
+          }
         }
       } catch (error) {
-        console.error('Failed to create email tracking records:', error)
+        console.error('Failed to create email tracking/thread records:', error)
         // Don't fail the email send if tracking fails
       }
     }

@@ -1032,6 +1032,76 @@ export const emailTrackingAPI = {
     apiRequest(`/api/email-tracking/${trackingId}/events`),
 }
 
+// Email Thread API functions
+export interface EmailThread {
+  id: number
+  organization_id: number
+  subject: string
+  contact_id: number
+  message_count: number
+  preview: string
+  created_at: string
+  updated_at: string
+  messages: EmailMessage[]
+}
+
+export interface EmailMessage {
+  id: number
+  thread_id: number
+  sender: string
+  content: string
+  direction: 'incoming' | 'outgoing'
+  message_id?: string
+  created_at: string
+}
+
+export interface EmailThreadCreate {
+  subject: string
+  contact_id: number
+  preview?: string
+}
+
+export interface EmailMessageCreate {
+  sender: string
+  content: string
+  direction: 'incoming' | 'outgoing'
+  message_id?: string
+}
+
+export const emailThreadAPI = {
+  // Get all email threads
+  getAll: (params?: {
+    skip?: number
+    limit?: number
+    contact_id?: number
+  }): Promise<EmailThread[]> => {
+    const searchParams = new URLSearchParams()
+    if (params?.skip) searchParams.append('skip', params.skip.toString())
+    if (params?.limit) searchParams.append('limit', params.limit.toString())
+    if (params?.contact_id) searchParams.append('contact_id', params.contact_id.toString())
+    
+    return apiRequest(`/api/email-threads?${searchParams}`)
+  },
+
+  // Get threads for a specific contact
+  getByContact: (contactId: number): Promise<EmailThread[]> =>
+    apiRequest(`/api/contacts/${contactId}/email-threads`),
+
+  // Create new email thread
+  create: (thread: EmailThreadCreate): Promise<EmailThread> =>
+    apiRequest('/api/email-threads', {
+      method: 'POST',
+      body: JSON.stringify(thread),
+    }),
+
+  // Add message to thread
+  addMessage: (threadId: number, message: EmailMessageCreate): Promise<EmailMessage> =>
+    apiRequest(`/api/email-threads/${threadId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify(message),
+    }),
+}
+
 // Helper function to handle API errors consistently
 export const handleAPIError = (error: unknown): string => {
   if (error instanceof APIError) {

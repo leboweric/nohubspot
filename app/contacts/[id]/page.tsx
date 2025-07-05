@@ -10,7 +10,7 @@ import EmailTrackingStatus from "@/components/email/EmailTrackingStatus"
 import TaskCreate from "@/components/tasks/TaskCreate"
 import EventFormModal from "@/components/calendar/EventFormModal"
 import { Task } from "@/components/tasks/types"
-import { contactAPI, Contact, handleAPIError, CalendarEventCreate, calendarAPI } from "@/lib/api"
+import { contactAPI, Contact, handleAPIError, CalendarEventCreate, calendarAPI, emailThreadAPI, EmailThread } from "@/lib/api"
 import { getAuthState } from "@/lib/auth"
 
 // Force dynamic rendering to prevent static generation issues with auth
@@ -39,31 +39,57 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
 
     loadContact()
   }, [params.id])
+
+  // Load email threads for this contact
+  const loadEmailThreads = async () => {
+    if (!contact) return
+    
+    try {
+      setEmailsLoading(true)
+      const threads = await emailThreadAPI.getByContact(contact.id)
+      setEmailThreads(threads)
+      
+      // Convert threads to flat email messages for the existing UI
+      const allMessages: EmailMessage[] = []
+      threads.forEach(thread => {
+        thread.messages?.forEach(msg => {
+          allMessages.push({
+            id: msg.id.toString(),
+            to: msg.direction === 'outgoing' ? contact.email : user?.email || '',
+            subject: thread.subject,
+            message: msg.content,
+            timestamp: new Date(msg.created_at),
+            fromSelf: msg.direction === 'outgoing'
+          })
+        })
+      })
+      
+      // Sort by timestamp
+      allMessages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+      setEmails(allMessages)
+      
+    } catch (err) {
+      console.error('Failed to load email threads:', err)
+    } finally {
+      setEmailsLoading(false)
+    }
+  }
+
+  // Load email threads when contact is loaded
+  useEffect(() => {
+    if (contact) {
+      loadEmailThreads()
+    }
+  }, [contact])
   const [showNoteModal, setShowNoteModal] = useState(false)
   const [newNote, setNewNote] = useState("")
   const [showEmailCompose, setShowEmailCompose] = useState(false)
   const [showEmailThread, setShowEmailThread] = useState(false)
   const [showCreateTask, setShowCreateTask] = useState(false)
   const [showScheduleEvent, setShowScheduleEvent] = useState(false)
-  const [emails, setEmails] = useState<EmailMessage[]>([
-    // Sample email thread data
-    {
-      id: "1",
-      to: contact?.email || "",
-      subject: "Introduction and Partnership Opportunity",
-      message: "Hi John,\n\nI hope this email finds you well. I wanted to reach out regarding a potential partnership opportunity that I believe could benefit Acme Corporation.\n\nWould you be available for a brief call this week to discuss?\n\nBest regards,\nSales Team",
-      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-      fromSelf: true
-    },
-    {
-      id: "2",
-      to: "sales@ourcompany.com",
-      subject: "Re: Introduction and Partnership Opportunity",
-      message: "Hi there,\n\nThanks for reaching out! I'm definitely interested in learning more about this partnership opportunity.\n\nI'm available for a call on Thursday afternoon or Friday morning. What works best for you?\n\nLooking forward to hearing from you.\n\nBest,\nJohn",
-      timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-      fromSelf: false
-    }
-  ])
+  const [emailThreads, setEmailThreads] = useState<EmailThread[]>([])
+  const [emails, setEmails] = useState<EmailMessage[]>([])
+  const [emailsLoading, setEmailsLoading] = useState(false)
 
   const handleSendEmail = () => {
     setShowEmailCompose(true)
@@ -85,8 +111,10 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
   }
 
   const handleEmailSent = (email: EmailMessage) => {
-    setEmails(prev => [...prev, email])
+    // Close the compose modal
     setShowEmailCompose(false)
+    // Refresh email threads to show the new email
+    loadEmailThreads()
   }
 
   const handleReply = (message: string) => {
@@ -257,7 +285,19 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
               </button>
             </div>
             
-            {emails.length > 0 ? (
+            {emailsLoading ? (
+              <div className="space-y-3">
+                <div className="animate-pulse">
+                  <div className="flex items-start space-x-3 p-3 bg-muted rounded-md">
+                    <div className="w-2 h-2 rounded-full bg-gray-300 mt-2"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : emails.length > 0 ? (
               <div className="space-y-3">
                 {emails.slice(-3).map((email) => (
                   <div key={email.id} className="flex items-start space-x-3 p-3 bg-muted rounded-md">
@@ -266,7 +306,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                     }`}></div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">
-                        {email.fromSelf ? 'You' : contact.first_name} sent: {email.subject}
+                        {email.fromSelf ? 'You' : contact?.first_name} sent: {email.subject}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {email.timestamp.toLocaleDateString()} at {email.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -281,7 +321,10 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                 )}
               </div>
             ) : (
-              <p className="text-muted-foreground">No communication history yet.</p>
+              <div className="text-center py-4">
+                <p className="text-muted-foreground">No email conversation yet</p>
+                <p className="text-sm text-muted-foreground mt-1">Start a conversation by sending an email</p>
+              </div>
             )}
           </div>
         </div>

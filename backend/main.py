@@ -2208,6 +2208,86 @@ async def get_email_events(
     return events
 
 
+# Email Thread endpoints
+@app.get("/api/email-threads", response_model=List[EmailThreadResponse])
+async def get_email_threads_list(
+    skip: int = 0,
+    limit: int = 100,
+    contact_id: Optional[int] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get email threads for the organization"""
+    threads = get_email_threads(
+        db, 
+        organization_id=current_user.organization_id,
+        contact_id=contact_id,
+        skip=skip,
+        limit=limit
+    )
+    return threads
+
+
+@app.post("/api/email-threads", response_model=EmailThreadResponse)
+async def create_email_thread_endpoint(
+    thread: EmailThreadCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new email thread"""
+    db_thread = create_email_thread(
+        db,
+        organization_id=current_user.organization_id,
+        **thread.dict()
+    )
+    return db_thread
+
+
+@app.post("/api/email-threads/{thread_id}/messages", response_model=EmailMessage)
+async def add_message_to_thread(
+    thread_id: int,
+    message: EmailMessageCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Add a message to an email thread"""
+    # Verify thread belongs to organization
+    thread = db.query(EmailThread).filter(
+        EmailThread.id == thread_id,
+        EmailThread.organization_id == current_user.organization_id
+    ).first()
+    
+    if not thread:
+        raise HTTPException(status_code=404, detail="Email thread not found")
+    
+    db_message = add_email_message(db, thread_id, **message.dict())
+    return db_message
+
+
+@app.get("/api/contacts/{contact_id}/email-threads", response_model=List[EmailThreadResponse])
+async def get_contact_email_threads(
+    contact_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all email threads for a specific contact"""
+    # Verify contact belongs to organization
+    contact = db.query(Contact).filter(
+        Contact.id == contact_id,
+        Contact.organization_id == current_user.organization_id
+    ).first()
+    
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    
+    threads = get_email_threads(
+        db,
+        organization_id=current_user.organization_id,
+        contact_id=contact_id
+    )
+    return threads
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     print(f"🚀 Starting NotHubSpot CRM API on port {port}")
