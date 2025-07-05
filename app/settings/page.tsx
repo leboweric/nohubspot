@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import SignatureBuilder, { EmailSignature } from "@/components/signature/SignatureBuilder"
+import SupportModal from "@/components/support/SupportModal"
 import { useEmailSignature } from "@/components/signature/SignatureManager"
 import { getAuthState, isAdmin } from "@/lib/auth"
 import { o365API, O365OrganizationConfig, O365UserConnection, handleAPIError } from "@/lib/api"
@@ -14,6 +15,7 @@ export const dynamic = 'force-dynamic'
 export default function SettingsPage() {
   const [showSignatureBuilder, setShowSignatureBuilder] = useState(false)
   const [showInviteForm, setShowInviteForm] = useState(false)
+  const [showSupportModal, setShowSupportModal] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
   const [inviteRole, setInviteRole] = useState<"user" | "admin">("user")
   const [loading, setLoading] = useState(false)
@@ -639,6 +641,50 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+
+        {/* Support Section */}
+        <div className="bg-card border rounded-lg p-6">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h2 className="text-lg font-semibold">Support</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Need help or have a feature request? Get in touch with our support team.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowSupportModal(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              Contact Support
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <span className="text-lg">🔧</span>
+                <h3 className="text-sm font-medium">Technical Support</h3>
+              </div>
+              <p className="text-xs text-gray-600">
+                Report bugs, login issues, errors, or other technical problems
+              </p>
+            </div>
+            
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <span className="text-lg">💡</span>
+                <h3 className="text-sm font-medium">Feature Requests</h3>
+              </div>
+              <p className="text-xs text-gray-600">
+                Suggest new features or improvements to make the CRM better
+              </p>
+            </div>
+          </div>
+          
+          <div className="mt-4 text-xs text-gray-500">
+            Support requests are sent directly to our team and typically receive a response within 24 hours.
+          </div>
+        </div>
       </div>
 
       {/* Invite User Modal */}
@@ -867,6 +913,12 @@ export default function SettingsPage() {
         onClose={() => setShowSignatureBuilder(false)}
         onSave={handleSaveSignature}
         initialSignature={signature || undefined}
+      />
+
+      {/* Support Modal */}
+      <SupportModal
+        isOpen={showSupportModal}
+        onClose={() => setShowSupportModal(false)}
       />
         </div>
       </MainLayout>
