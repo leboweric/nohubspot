@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
+import * as XLSX from 'xlsx'
 
 export interface BulkUploadData {
   headers: string[]
@@ -68,40 +69,90 @@ export default function BulkUpload({
   }
 
   const processFile = (file: File) => {
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      alert('Please upload a CSV file.')
+    const fileName = file.name.toLowerCase()
+    const isCSV = fileName.endsWith('.csv')
+    const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls')
+    
+    if (!isCSV && !isExcel) {
+      alert('Please upload a CSV or Excel file (.csv, .xlsx, .xls)')
       return
     }
 
     const reader = new FileReader()
-    reader.onload = (e) => {
-      const text = e.target?.result as string
-      const lines = text.split('\n').map(line => line.trim()).filter(line => line)
-      
-      if (lines.length < 2) {
-        alert('CSV file must contain at least a header row and one data row.')
-        return
+    
+    if (isCSV) {
+      reader.onload = (e) => {
+        const text = e.target?.result as string
+        const lines = text.split('\n').map(line => line.trim()).filter(line => line)
+        
+        if (lines.length < 2) {
+          alert('CSV file must contain at least a header row and one data row.')
+          return
+        }
+
+        const headers = parseCSVLine(lines[0])
+        const rows = lines.slice(1).map(line => parseCSVLine(line))
+
+        const data: BulkUploadData = {
+          headers,
+          rows: rows.filter(row => row.some(cell => cell.trim())), // Filter out empty rows
+          file
+        }
+
+        setCsvData(data)
+        
+        // Auto-generate mappings based on column names
+        const autoMappings = generateAutoMappings(headers, availableFields)
+        setMappings(autoMappings)
+        
+        setStep('mapping')
       }
-
-      const headers = parseCSVLine(lines[0])
-      const rows = lines.slice(1).map(line => parseCSVLine(line))
-
-      const data: BulkUploadData = {
-        headers,
-        rows: rows.filter(row => row.some(cell => cell.trim())), // Filter out empty rows
-        file
+      reader.readAsText(file)
+    } else {
+      // Process Excel file
+      reader.onload = (e) => {
+        try {
+          const data = e.target?.result
+          const workbook = XLSX.read(data, { type: 'binary' })
+          
+          // Get the first sheet
+          const firstSheetName = workbook.SheetNames[0]
+          const worksheet = workbook.Sheets[firstSheetName]
+          
+          // Convert to JSON
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][]
+          
+          if (jsonData.length < 2) {
+            alert('Excel file must contain at least a header row and one data row.')
+            return
+          }
+          
+          // First row is headers
+          const headers = jsonData[0].map(h => String(h || '').trim()).filter(h => h)
+          const rows = jsonData.slice(1)
+            .map(row => row.map(cell => String(cell || '').trim()))
+            .filter(row => row.some(cell => cell)) // Filter out empty rows
+          
+          const uploadData: BulkUploadData = {
+            headers,
+            rows,
+            file
+          }
+          
+          setCsvData(uploadData)
+          
+          // Auto-generate mappings based on column names
+          const autoMappings = generateAutoMappings(headers, availableFields)
+          setMappings(autoMappings)
+          
+          setStep('mapping')
+        } catch (error) {
+          console.error('Error parsing Excel file:', error)
+          alert('Failed to parse Excel file. Please ensure it\'s a valid Excel file.')
+        }
       }
-
-      setCsvData(data)
-      
-      // Auto-generate mappings based on column names
-      const autoMappings = generateAutoMappings(headers, availableFields)
-      setMappings(autoMappings)
-      
-      setStep('mapping')
+      reader.readAsBinaryString(file)
     }
-
-    reader.readAsText(file)
   }
 
   const parseCSVLine = (line: string): string[] => {
@@ -252,9 +303,9 @@ export default function BulkUpload({
           {step === 'upload' && (
             <div className="p-6">
               <div className="mb-6">
-                <h3 className="text-lg font-medium mb-2">Upload CSV File</h3>
+                <h3 className="text-lg font-medium mb-2">Upload Spreadsheet</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Upload a CSV file containing your {type}. The first row should contain column headers.
+                  Upload a CSV or Excel file containing your {type}. The first row should contain column headers.
                 </p>
                 
                 <div className="bg-muted p-4 rounded-md mb-4">
@@ -281,13 +332,13 @@ export default function BulkUpload({
               >
                 <div className="text-4xl mb-4">📁</div>
                 <div className="text-lg font-medium mb-2">
-                  {isDragging ? 'Drop CSV file here' : 'Upload CSV File'}
+                  {isDragging ? 'Drop file here' : 'Upload Spreadsheet'}
                 </div>
                 <div className="text-sm text-muted-foreground mb-2">
-                  Click to browse or drag and drop your CSV file
+                  Click to browse or drag and drop your file
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Supported format: .csv
+                  Supported formats: .csv, .xlsx, .xls
                 </div>
               </div>
 
@@ -296,7 +347,7 @@ export default function BulkUpload({
                 type="file"
                 onChange={handleFileChange}
                 className="hidden"
-                accept=".csv"
+                accept=".csv,.xlsx,.xls"
               />
             </div>
           )}
@@ -382,7 +433,7 @@ export default function BulkUpload({
 
         <div className="flex justify-between items-center p-4 border-t">
           <div className="text-sm text-muted-foreground">
-            {step === 'upload' && 'Step 1 of 3: Upload CSV'}
+            {step === 'upload' && 'Step 1 of 3: Upload File'}
             {step === 'mapping' && `Step 2 of 3: Map Columns (${csvData?.rows.length || 0} records)`}
             {step === 'preview' && `Step 3 of 3: Preview (${csvData?.rows.length || 0} records)`}
           </div>
