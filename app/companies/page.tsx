@@ -36,21 +36,31 @@ export default function CompaniesPage() {
     loadCompanies()
   }, []) // Load initially
 
-  // Debounced search
+  // Debounced search with increased delay
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchTerm !== '') {
         loadCompanies()
       }
-    }, 300)
+    }, 1000) // Increased from 300ms to 1000ms
 
     return () => clearTimeout(timeoutId)
   }, [searchTerm])
 
-  // Reload companies when window gains focus (returning from add/edit pages)
+  // Throttled reload on window focus with cooldown
   useEffect(() => {
+    let lastFocusTime = 0
+    const FOCUS_COOLDOWN = 30000 // 30 seconds cooldown
+
     const handleFocus = () => {
-      loadCompanies()
+      const now = Date.now()
+      if (now - lastFocusTime > FOCUS_COOLDOWN) {
+        console.log('Window focus detected, reloading companies after cooldown')
+        loadCompanies()
+        lastFocusTime = now
+      } else {
+        console.log('Window focus ignored - still in cooldown period')
+      }
     }
 
     window.addEventListener('focus', handleFocus)

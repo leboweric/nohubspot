@@ -36,21 +36,31 @@ export default function ContactsPage() {
     loadContacts()
   }, []) // Load initially
 
-  // Debounced search
+  // Debounced search with increased delay
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchTerm !== '') {
         loadContacts()
       }
-    }, 300)
+    }, 1000) // Increased from 300ms to 1000ms
 
     return () => clearTimeout(timeoutId)
   }, [searchTerm])
 
-  // Reload contacts when window gains focus (returning from add/edit pages)
+  // Throttled reload on window focus with cooldown
   useEffect(() => {
+    let lastFocusTime = 0
+    const FOCUS_COOLDOWN = 30000 // 30 seconds cooldown
+
     const handleFocus = () => {
-      loadContacts()
+      const now = Date.now()
+      if (now - lastFocusTime > FOCUS_COOLDOWN) {
+        console.log('Window focus detected, reloading contacts after cooldown')
+        loadContacts()
+        lastFocusTime = now
+      } else {
+        console.log('Window focus ignored - still in cooldown period')
+      }
     }
 
     window.addEventListener('focus', handleFocus)

@@ -43,6 +43,29 @@ export default function SettingsPage() {
   const isOwner = user?.role === 'owner'
   const isO365Enabled = process.env.NEXT_PUBLIC_O365_ENABLED === 'true'
 
+  // API call monitoring
+  const [apiCallCount, setApiCallCount] = useState(0)
+  const [lastResetTime, setLastResetTime] = useState(Date.now())
+
+  const trackApiCall = (endpoint: string) => {
+    setApiCallCount(prev => {
+      const newCount = prev + 1
+      const now = Date.now()
+      
+      // Reset counter every minute
+      if (now - lastResetTime > 60000) {
+        console.log(`API calls in last minute: ${newCount}`)
+        if (newCount > 20) {
+          console.warn('⚠️ HIGH API CALL FREQUENCY DETECTED')
+        }
+        setLastResetTime(now)
+        return 1
+      }
+      
+      return newCount
+    })
+  }
+
   useEffect(() => {
     console.log("Settings page loading...")
     if (isAdmin(user)) {
@@ -57,7 +80,7 @@ export default function SettingsPage() {
       }
       loadO365UserConnection()
     }
-  }, [user, isO365Enabled])
+  }, [user, isO365Enabled, isOwner])
 
   const loadO365Config = async () => {
     try {
@@ -105,14 +128,62 @@ export default function SettingsPage() {
     }
   }
 
+  // Circuit breaker state
+  const [failureCount, setFailureCount] = useState(0)
+  const MAX_FAILURES = 3
+  const BACKOFF_TIME = 30000 // 30 seconds
+  const [isCircuitBreakerActive, setIsCircuitBreakerActive] = useState(false)
+
+  const fetchWithCircuitBreaker = async (url: string, options: RequestInit = {}) => {
+    // Track API call
+    trackApiCall(url)
+
+    // Emergency disable check
+    if (process.env.NEXT_PUBLIC_DISABLE_POLLING === 'true') {
+      console.log('Polling disabled by environment variable')
+      return null
+    }
+
+    if (failureCount >= MAX_FAILURES) {
+      console.log('Circuit breaker active - skipping API call')
+      return null
+    }
+
+    try {
+      const response = await fetch(url, options)
+      if (response.ok) {
+        setFailureCount(0) // Reset on success
+        setIsCircuitBreakerActive(false)
+        return response
+      } else {
+        throw new Error(`HTTP ${response.status}`)
+      }
+    } catch (error) {
+      const newFailureCount = failureCount + 1
+      setFailureCount(newFailureCount)
+      console.error(`API call failed (${newFailureCount}/${MAX_FAILURES}):`, error)
+      
+      if (newFailureCount >= MAX_FAILURES) {
+        console.log(`Circuit breaker activated. Waiting ${BACKOFF_TIME}ms`)
+        setIsCircuitBreakerActive(true)
+        setTimeout(() => {
+          setFailureCount(0) // Reset after backoff
+          setIsCircuitBreakerActive(false)
+        }, BACKOFF_TIME)
+      }
+      
+      throw error
+    }
+  }
+
   const loadInvites = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/invites`, {
+      const response = await fetchWithCircuitBreaker(`${process.env.NEXT_PUBLIC_API_URL}/api/invites`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         }
       })
-      if (response.ok) {
+      if (response) {
         const inviteData = await response.json()
         setInvites(inviteData)
       }
@@ -140,7 +211,7 @@ export default function SettingsPage() {
     setLoading(true)
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/invites`, {
+      const response = await fetchWithCircuitBreaker(`${process.env.NEXT_PUBLIC_API_URL}/api/invites`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -152,12 +223,13 @@ export default function SettingsPage() {
         })
       })
 
-      if (response.ok) {
+      if (response && response.ok) {
         setSuccess(`Invitation sent to ${inviteEmail}`)
         setInviteEmail("")
         setShowInviteForm(false)
-        loadInvites()
-      } else {
+        // Debounce reload to prevent immediate re-fetch
+        setTimeout(() => loadInvites(), 1000)
+      } else if (response) {
         const errorData = await response.json()
         setError(errorData.detail || 'Failed to send invitation')
       }
@@ -170,17 +242,18 @@ export default function SettingsPage() {
 
   const handleRevokeInvite = async (inviteId: number) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/invites/${inviteId}`, {
+      const response = await fetchWithCircuitBreaker(`${process.env.NEXT_PUBLIC_API_URL}/api/invites/${inviteId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         }
       })
 
-      if (response.ok) {
+      if (response && response.ok) {
         setSuccess('Invitation revoked')
-        loadInvites()
-      } else {
+        // Debounce reload to prevent immediate re-fetch
+        setTimeout(() => loadInvites(), 1000)
+      } else if (response) {
         const errorData = await response.json()
         setError(errorData.detail || 'Failed to revoke invitation')
       }

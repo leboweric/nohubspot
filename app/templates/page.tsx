@@ -46,11 +46,11 @@ export default function TemplatesPage() {
     loadData()
   }, [])
 
-  // Debounced search
+  // Debounced search with increased delay
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       loadData()
-    }, 300)
+    }, 1000) // Increased from 300ms to 1000ms
 
     return () => clearTimeout(timeoutId)
   }, [searchTerm, selectedCategory])

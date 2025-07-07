@@ -55,11 +55,11 @@ export default function TasksPage() {
     loadTasks()
   }, [])
 
-  // Debounced search and filtering
+  // Debounced search and filtering with increased delay
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       loadTasks()
-    }, 300)
+    }, 1000) // Increased from 300ms to 1000ms
 
     return () => clearTimeout(timeoutId)
   }, [searchTerm, filterStatus, filterPriority])
