@@ -34,3 +34,15 @@ yarn-error.log*
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+backend/nohubspot.db
+backend/migrations/*.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
