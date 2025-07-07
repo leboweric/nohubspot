@@ -7,6 +7,7 @@ interface DealModalProps {
   isOpen: boolean
   onClose: () => void
   onSave: (deal: DealCreate) => Promise<void>
+  onDelete?: (dealId: number) => Promise<void>
   stages: PipelineStage[]
   deal?: Deal | null // For editing existing deals
   defaultStageId?: number // For creating deals in specific stages
@@ -16,6 +17,7 @@ export default function DealModal({
   isOpen, 
   onClose, 
   onSave, 
+  onDelete,
   stages, 
   deal = null, 
   defaultStageId 
@@ -39,6 +41,7 @@ export default function DealModal({
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   // Load companies and contacts for dropdowns
   useEffect(() => {
@@ -175,7 +178,26 @@ export default function DealModal({
       tags: []
     })
     setError('')
+    setShowDeleteConfirm(false)
     onClose()
+  }
+
+  const handleDelete = async () => {
+    if (!deal || !onDelete) return
+    
+    setLoading(true)
+    setError('')
+    
+    try {
+      await onDelete(deal.id)
+      handleClose()
+    } catch (err) {
+      setError('Failed to delete deal')
+      console.error('Delete error:', err)
+    } finally {
+      setLoading(false)
+      setShowDeleteConfirm(false)
+    }
   }
 
   const getProbabilityColor = (prob: number) => {
@@ -388,24 +410,69 @@ export default function DealModal({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-4 border-t">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
-              {loading ? 'Saving...' : (deal ? 'Update Deal' : 'Create Deal')}
-            </button>
+          <div className="flex justify-between items-center pt-4 border-t">
+            {/* Delete Button - Only show when editing */}
+            <div>
+              {deal && onDelete && (
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="px-4 py-2 text-red-600 border border-red-300 rounded-md hover:bg-red-50 transition-colors"
+                  disabled={loading}
+                >
+                  Delete Deal
+                </button>
+              )}
+            </div>
+            
+            {/* Save/Cancel Buttons */}
+            <div className="flex space-x-3">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {loading ? 'Saving...' : (deal ? 'Update Deal' : 'Create Deal')}
+              </button>
+            </div>
           </div>
         </form>
       </div>
+      
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 rounded-lg">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <h3 className="text-lg font-semibold mb-2">Delete Deal?</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to delete "{deal?.title}"? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                disabled={loading}
+              >
+                {loading ? 'Deleting...' : 'Delete Deal'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

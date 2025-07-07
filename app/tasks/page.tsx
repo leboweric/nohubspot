@@ -17,6 +17,7 @@ export default function TasksPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterPriority, setFilterPriority] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState("")
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
 
   // Load tasks from API
   const loadTasks = async () => {
@@ -66,29 +67,47 @@ export default function TasksPage() {
 
   const handleCreateTask = async (taskData: Omit<Task, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      // Convert frontend field names to backend field names
-      const apiTaskData: TaskCreateType = {
-        title: taskData.title,
-        description: taskData.description,
-        status: taskData.status,
-        priority: taskData.priority,
-        due_date: taskData.due_date,
-        assigned_to: taskData.assigned_to,
-        contact_id: taskData.contact_id,
-        contact_name: taskData.contact_name,
-        company_id: taskData.company_id,
-        company_name: taskData.company_name,
-        type: taskData.type,
-        tags: taskData.tags
+      if (editingTask) {
+        // Update existing task
+        await taskAPI.update(editingTask.id, {
+          title: taskData.title,
+          description: taskData.description,
+          status: taskData.status,
+          priority: taskData.priority,
+          due_date: taskData.due_date,
+          assigned_to: taskData.assigned_to,
+          contact_id: taskData.contact_id,
+          company_id: taskData.company_id,
+          type: taskData.type,
+          tags: taskData.tags
+        })
+      } else {
+        // Create new task
+        const apiTaskData: TaskCreateType = {
+          title: taskData.title,
+          description: taskData.description,
+          status: taskData.status,
+          priority: taskData.priority,
+          due_date: taskData.due_date,
+          assigned_to: taskData.assigned_to,
+          contact_id: taskData.contact_id,
+          contact_name: taskData.contact_name,
+          company_id: taskData.company_id,
+          company_name: taskData.company_name,
+          type: taskData.type,
+          tags: taskData.tags
+        }
+        
+        await taskAPI.create(apiTaskData)
       }
       
-      await taskAPI.create(apiTaskData)
       setShowCreateTask(false)
-      // Reload tasks to show the new one
+      setEditingTask(null)
+      // Reload tasks to show the changes
       loadTasks()
     } catch (err) {
-      console.error('Failed to create task:', err)
-      alert(`Failed to create task: ${handleAPIError(err)}`)
+      console.error('Failed to save task:', err)
+      alert(`Failed to save task: ${handleAPIError(err)}`)
     }
   }
 
@@ -129,6 +148,11 @@ export default function TasksPage() {
         alert(`Failed to delete task: ${handleAPIError(err)}`)
       }
     }
+  }
+
+  const handleTaskEdit = (task: Task) => {
+    setEditingTask(task)
+    setShowCreateTask(true)
   }
 
   // Since we're using API filtering, no need for client-side filtering
@@ -272,14 +296,19 @@ export default function TasksPage() {
           tasks={filteredTasks}
           onTaskUpdate={handleTaskUpdate}
           onTaskDelete={handleTaskDelete}
+          onTaskEdit={handleTaskEdit}
         />
       )}
 
-      {/* Create Task Modal */}
+      {/* Create/Edit Task Modal */}
       <TaskCreate
         isOpen={showCreateTask}
-        onClose={() => setShowCreateTask(false)}
+        onClose={() => {
+          setShowCreateTask(false)
+          setEditingTask(null)
+        }}
         onSave={handleCreateTask}
+        existingTask={editingTask}
       />
         </div>
       </MainLayout>

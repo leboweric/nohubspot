@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Task } from "@/lib/api"
 
 interface TaskCreateProps {
   isOpen: boolean
   onClose: () => void
   onSave: (task: Omit<Task, 'id' | 'created_at' | 'updated_at'>) => void
+  existingTask?: Task | null
   contactId?: number
   contactName?: string
   companyId?: number
@@ -17,6 +18,7 @@ export default function TaskCreate({
   isOpen, 
   onClose, 
   onSave, 
+  existingTask,
   contactId, 
   contactName, 
   companyId, 
@@ -35,16 +37,44 @@ export default function TaskCreate({
 
   const [tagInput, setTagInput] = useState("")
 
+  // Populate form when editing existing task
+  useEffect(() => {
+    if (existingTask) {
+      setFormData({
+        title: existingTask.title,
+        description: existingTask.description || "",
+        status: existingTask.status,
+        priority: existingTask.priority,
+        due_date: existingTask.due_date ? new Date(existingTask.due_date).toISOString().split('T')[0] : "",
+        assigned_to: existingTask.assigned_to || process.env.NEXT_PUBLIC_DEFAULT_SENDER_NAME || "Sales Rep",
+        type: existingTask.type,
+        tags: existingTask.tags || []
+      })
+    } else {
+      // Reset form for new task
+      setFormData({
+        title: "",
+        description: "",
+        status: "pending",
+        priority: "medium",
+        due_date: "",
+        assigned_to: process.env.NEXT_PUBLIC_DEFAULT_SENDER_NAME || "Sales Rep",
+        type: "other",
+        tags: []
+      })
+    }
+  }, [existingTask])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
     const task: Omit<Task, 'id' | 'created_at' | 'updated_at'> = {
       ...formData,
       due_date: formData.due_date || undefined,
-      contact_id: contactId,
-      contact_name: contactName,
-      company_id: companyId,
-      company_name: companyName
+      contact_id: existingTask?.contact_id || contactId,
+      contact_name: existingTask?.contact_name || contactName,
+      company_id: existingTask?.company_id || companyId,
+      company_name: existingTask?.company_name || companyName
     }
     
     onSave(task)
@@ -93,7 +123,7 @@ export default function TaskCreate({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-card border rounded-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">Create New Task</h2>
+          <h2 className="text-lg font-semibold">{existingTask ? 'Edit Task' : 'Create New Task'}</h2>
           <button
             onClick={onClose}
             className="text-muted-foreground hover:text-foreground transition-colors"

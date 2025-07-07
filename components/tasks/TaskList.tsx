@@ -8,10 +8,11 @@ interface TaskListProps {
   tasks: Task[]
   onTaskUpdate: (taskId: number, updates: Partial<Task>) => void
   onTaskDelete: (taskId: number) => void
+  onTaskEdit?: (task: Task) => void
   filters?: TaskFilters
 }
 
-export default function TaskList({ tasks, onTaskUpdate, onTaskDelete, filters }: TaskListProps) {
+export default function TaskList({ tasks, onTaskUpdate, onTaskDelete, onTaskEdit, filters }: TaskListProps) {
   const [expandedTask, setExpandedTask] = useState<number | null>(null)
 
   const getPriorityColor = (priority: Task['priority']) => {
@@ -158,6 +159,15 @@ export default function TaskList({ tasks, onTaskUpdate, onTaskDelete, filters }:
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
               </select>
+
+              {onTaskEdit && (
+                <button
+                  onClick={() => onTaskEdit(task)}
+                  className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  Edit
+                </button>
+              )}
 
               <button
                 onClick={() => onTaskDelete(task.id)}

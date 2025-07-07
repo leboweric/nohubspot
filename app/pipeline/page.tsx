@@ -148,6 +148,23 @@ export default function PipelinePage() {
     setDefaultStageId(undefined)
   }
 
+  const handleDeleteDeal = async (dealId: number) => {
+    try {
+      setError("")
+      await dealAPI.deleteDeal(dealId)
+      
+      // Remove deal from local state
+      setDeals(prevDeals => prevDeals.filter(deal => deal.id !== dealId))
+      
+      setSuccess("Deal deleted successfully!")
+      setTimeout(() => setSuccess(""), 3000)
+    } catch (err) {
+      const errorMessage = handleAPIError(err)
+      console.error('Deal delete error:', err)
+      throw new Error(errorMessage)
+    }
+  }
+
   if (loading) {
     return (
       <AuthGuard>
@@ -420,6 +437,7 @@ export default function PipelinePage() {
           isOpen={showDealModal}
           onClose={handleCloseModal}
           onSave={handleSaveDeal}
+          onDelete={handleDeleteDeal}
           stages={stages}
           deal={selectedDeal}
           defaultStageId={defaultStageId}
