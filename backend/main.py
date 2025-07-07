@@ -207,6 +207,40 @@ try:
     Base.metadata.create_all(bind=engine)
     print("✅ Database tables created successfully")
     
+    # Run company fields migration
+    print("🔄 Checking for new company fields...")
+    from sqlalchemy import inspect
+    inspector = inspect(engine)
+    
+    if 'companies' in inspector.get_table_names():
+        columns = [col['name'] for col in inspector.get_columns('companies')]
+        fields_to_add = []
+        
+        if 'street_address' not in columns:
+            fields_to_add.append(('street_address', 'VARCHAR(255)'))
+        if 'city' not in columns:
+            fields_to_add.append(('city', 'VARCHAR(100)'))
+        if 'state' not in columns:
+            fields_to_add.append(('state', 'VARCHAR(100)'))
+        if 'postal_code' not in columns:
+            fields_to_add.append(('postal_code', 'VARCHAR(20)'))
+        if 'phone' not in columns:
+            fields_to_add.append(('phone', 'VARCHAR(50)'))
+        if 'annual_revenue' not in columns:
+            fields_to_add.append(('annual_revenue', 'FLOAT'))
+        
+        if fields_to_add:
+            print(f"📦 Adding new company fields: {', '.join([f[0] for f in fields_to_add])}")
+            with engine.connect() as conn:
+                for field_name, field_type in fields_to_add:
+                    try:
+                        conn.execute(text(f"ALTER TABLE companies ADD COLUMN {field_name} {field_type}"))
+                        conn.commit()
+                        print(f"  ✓ Added {field_name}")
+                    except Exception as e:
+                        print(f"  ⚠️ Failed to add {field_name}: {e}")
+            print("✅ Company fields migration completed")
+    
     # Check if we need to seed data
     db = next(get_db())
     try:
