@@ -11,3 +11,4 @@ passlib[bcrypt]==1.7.4
 httpx==0.25.2
 openai==1.93.0
 cryptography==45.0.5
+# Build trigger: Added dockerignore to fix Railway builds
