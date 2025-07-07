@@ -111,7 +111,6 @@ export default function TaskList({ tasks, onTaskUpdate, onTaskDelete, onTaskEdit
               </div>
 
               <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
-                {task.assigned_to && <span>👤 {task.assigned_to}</span>}
                 {task.contact_name && <span>👥 {task.contact_name}</span>}
                 {task.company_name && <span>🏢 {task.company_name}</span>}
                 <span className={isOverdue(task.due_date) && task.status !== 'completed' ? 'text-red-600 font-medium' : ''}>

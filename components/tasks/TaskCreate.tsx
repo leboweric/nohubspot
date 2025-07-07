@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Task } from "@/lib/api"
+import { getAuthState } from "@/lib/auth"
 
 interface TaskCreateProps {
   isOpen: boolean
@@ -24,13 +25,16 @@ export default function TaskCreate({
   companyId, 
   companyName 
 }: TaskCreateProps) {
+  const { user } = getAuthState()
+  const currentUserName = user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email : 'Sales Rep'
+  
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     status: "pending" as Task['status'],
     priority: "medium" as Task['priority'],
     due_date: "",
-    assigned_to: process.env.NEXT_PUBLIC_DEFAULT_SENDER_NAME || "Sales Rep",
+    assigned_to: currentUserName,
     type: "other" as Task['type'],
     tags: [] as string[]
   })
@@ -46,7 +50,7 @@ export default function TaskCreate({
         status: existingTask.status,
         priority: existingTask.priority,
         due_date: existingTask.due_date ? new Date(existingTask.due_date).toISOString().split('T')[0] : "",
-        assigned_to: existingTask.assigned_to || process.env.NEXT_PUBLIC_DEFAULT_SENDER_NAME || "Sales Rep",
+        assigned_to: currentUserName,
         type: existingTask.type,
         tags: existingTask.tags || []
       })
@@ -58,12 +62,12 @@ export default function TaskCreate({
         status: "pending",
         priority: "medium",
         due_date: "",
-        assigned_to: process.env.NEXT_PUBLIC_DEFAULT_SENDER_NAME || "Sales Rep",
+        assigned_to: currentUserName,
         type: "other",
         tags: []
       })
     }
-  }, [existingTask])
+  }, [existingTask, currentUserName])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -205,19 +209,6 @@ export default function TaskCreate({
               />
             </div>
 
-            <div>
-              <label htmlFor="assigned_to" className="block text-sm font-medium mb-1">
-                Assigned To
-              </label>
-              <input
-                type="text"
-                id="assigned_to"
-                name="assigned_to"
-                value={formData.assigned_to}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
           </div>
 
           {(contactName || companyName) && (
