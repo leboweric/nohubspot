@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import BulkUpload, { BulkUploadData, FieldMapping } from "@/components/upload/BulkUpload"
@@ -14,38 +14,54 @@ export default function CompaniesPage() {
   const [showBulkUpload, setShowBulkUpload] = useState(false)
 
   // Load companies from API
-  const loadCompanies = async () => {
+  const loadCompanies = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
+      console.log('Loading companies with search term:', searchTerm)
+      
       const data = await companyAPI.getAll({ 
         search: searchTerm || undefined,
         limit: 1000 // Get all companies for now
       })
+      
+      console.log('Companies loaded successfully:', data.length)
       setCompanies(data)
     } catch (err) {
-      setError(handleAPIError(err))
+      const errorMessage = handleAPIError(err)
+      setError(errorMessage)
       console.error('Failed to load companies:', err)
+      console.error('Error message:', errorMessage)
+      console.error('Error type:', err instanceof Error ? err.constructor.name : typeof err)
+      
+      // More specific error handling
+      if (err instanceof TypeError && err.message.includes('Failed to fetch')) {
+        setError('Network error: Unable to connect to the server. Please check your internet connection.')
+      } else if (errorMessage.includes('401') || errorMessage.includes('Authentication')) {
+        setError('Authentication error: Please log in again.')
+      }
     } finally {
       setLoading(false)
     }
-  }
+  }, [searchTerm])
 
-  // Load companies on mount and when search term changes
+  // Load companies on mount only
   useEffect(() => {
-    loadCompanies()
-  }, []) // Load initially
+    if (searchTerm === '') {
+      loadCompanies()
+    }
+  }, []) // Only run on mount
 
   // Debounced search with increased delay
   useEffect(() => {
+    if (searchTerm === '') return // Don't search on empty string
+    
     const timeoutId = setTimeout(() => {
-      if (searchTerm !== '') {
-        loadCompanies()
-      }
+      loadCompanies()
     }, 1000) // Increased from 300ms to 1000ms
 
     return () => clearTimeout(timeoutId)
-  }, [searchTerm])
+  }, [searchTerm, loadCompanies])
 
   // Throttled reload on window focus with cooldown
   useEffect(() => {
@@ -65,7 +81,7 @@ export default function CompaniesPage() {
 
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)
-  }, [])
+  }, [loadCompanies])
 
   // Since we're using API search, no need for client-side filtering
   const filteredCompanies = companies
