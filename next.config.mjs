@@ -13,6 +13,10 @@ const nextConfig = {
   experimental: {
     esmExternals: 'loose'
   },
+  // Force rebuild with circuit breaker fixes
+  env: {
+    BUILD_ID: 'circuit-breaker-fix-' + Date.now()
+  },
   // Ensure we're not using static export which disables API routes
   trailingSlash: false,
   // Enable server-side rendering for all pages
