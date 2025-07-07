@@ -160,9 +160,44 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                 </dd>
               </div>
               <div>
+                <dt className="text-sm font-medium text-muted-foreground">Phone</dt>
+                <dd className="mt-1">
+                  {company.phone ? (
+                    <a href={`tel:${company.phone}`} className="text-primary hover:underline">
+                      {company.phone}
+                    </a>
+                  ) : (
+                    <span className="text-muted-foreground">Not provided</span>
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">Annual Revenue</dt>
+                <dd className="mt-1">
+                  {company.annual_revenue ? (
+                    <span>${company.annual_revenue.toLocaleString()}</span>
+                  ) : (
+                    <span className="text-muted-foreground">Not provided</span>
+                  )}
+                </dd>
+              </div>
+              <div>
                 <dt className="text-sm font-medium text-muted-foreground">Address</dt>
                 <dd className="mt-1">
-                  {company.address ? (
+                  {company.street_address || company.city || company.state || company.postal_code ? (
+                    <div>
+                      {company.street_address && <div>{company.street_address}</div>}
+                      {(company.city || company.state || company.postal_code) && (
+                        <div>
+                          {company.city && <span>{company.city}</span>}
+                          {company.city && company.state && <span>, </span>}
+                          {company.state && <span>{company.state}</span>}
+                          {(company.city || company.state) && company.postal_code && <span> </span>}
+                          {company.postal_code && <span>{company.postal_code}</span>}
+                        </div>
+                      )}
+                    </div>
+                  ) : company.address ? (
                     <div className="whitespace-pre-line">{company.address}</div>
                   ) : (
                     <span className="text-muted-foreground">Not provided</span>

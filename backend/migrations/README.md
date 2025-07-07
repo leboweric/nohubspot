@@ -34,3 +34,32 @@ This migration:
    - Enable events: Opened, Clicked, Bounced, Spam Reports
 
 2. Restart your backend server to load the new API endpoints
+
+## Company Fields Migration
+
+To add new fields to the companies table, run:
+
+```bash
+cd backend/migrations
+python3 add_company_fields.py
+```
+
+This migration:
+- ✅ **Safe to run multiple times** - checks if columns exist before creating
+- ✅ **Works on existing databases** - only adds new columns, doesn't modify existing ones
+- ✅ **Backward compatible** - keeps the old 'address' field for compatibility
+
+## What This Adds
+
+New fields to the `companies` table:
+- `street_address`: Street address (VARCHAR 255)
+- `city`: City name (VARCHAR 100)
+- `state`: State or region (VARCHAR 100)
+- `postal_code`: Postal/ZIP code (VARCHAR 20)
+- `phone`: Phone number (VARCHAR 50)
+- `annual_revenue`: Annual revenue (FLOAT)
+
+## Required For
+
+- **Existing customers**: Must run to get the new company fields
+- **New customers**: Optional (columns are created automatically in new installations)

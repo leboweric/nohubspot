@@ -15,6 +15,12 @@ export default function NewCompanyPage() {
     industry: "",
     website: "",
     address: "",
+    street_address: "",
+    city: "",
+    state: "",
+    postal_code: "",
+    phone: "",
+    annual_revenue: "",
     description: "",
     status: "Lead"
   })
@@ -29,6 +35,12 @@ export default function NewCompanyPage() {
         industry: formData.industry || undefined,
         website: formData.website || undefined,
         address: formData.address || undefined,
+        street_address: formData.street_address || undefined,
+        city: formData.city || undefined,
+        state: formData.state || undefined,
+        postal_code: formData.postal_code || undefined,
+        phone: formData.phone || undefined,
+        annual_revenue: formData.annual_revenue ? parseFloat(formData.annual_revenue) : undefined,
         description: formData.description || undefined,
         status: formData.status
       }
@@ -110,9 +122,104 @@ export default function NewCompanyPage() {
           />
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium mb-2">
+              Phone Number
+            </label>
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              placeholder="(555) 123-4567"
+              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="annual_revenue" className="block text-sm font-medium mb-2">
+              Annual Revenue
+            </label>
+            <input
+              type="number"
+              id="annual_revenue"
+              name="annual_revenue"
+              value={formData.annual_revenue}
+              onChange={handleChange}
+              placeholder="1000000"
+              step="0.01"
+              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="street_address" className="block text-sm font-medium mb-2">
+            Street Address
+          </label>
+          <input
+            type="text"
+            id="street_address"
+            name="street_address"
+            value={formData.street_address}
+            onChange={handleChange}
+            placeholder="123 Main Street"
+            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label htmlFor="city" className="block text-sm font-medium mb-2">
+              City
+            </label>
+            <input
+              type="text"
+              id="city"
+              name="city"
+              value={formData.city}
+              onChange={handleChange}
+              placeholder="New York"
+              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="state" className="block text-sm font-medium mb-2">
+              State/Region
+            </label>
+            <input
+              type="text"
+              id="state"
+              name="state"
+              value={formData.state}
+              onChange={handleChange}
+              placeholder="NY"
+              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="postal_code" className="block text-sm font-medium mb-2">
+              Postal Code
+            </label>
+            <input
+              type="text"
+              id="postal_code"
+              name="postal_code"
+              value={formData.postal_code}
+              onChange={handleChange}
+              placeholder="10001"
+              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+        </div>
+
         <div>
           <label htmlFor="address" className="block text-sm font-medium mb-2">
-            Address
+            Full Address (Legacy)
           </label>
           <textarea
             id="address"
@@ -120,7 +227,7 @@ export default function NewCompanyPage() {
             rows={3}
             value={formData.address}
             onChange={handleChange}
-            placeholder="Company address"
+            placeholder="Full address (optional - for backward compatibility)"
             className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>

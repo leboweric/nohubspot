@@ -21,6 +21,12 @@ class CompanyBase(BaseModel):
     website: Optional[str] = Field(None, max_length=255)
     description: Optional[str] = None
     address: Optional[str] = None
+    street_address: Optional[str] = Field(None, max_length=255)
+    city: Optional[str] = Field(None, max_length=100)
+    state: Optional[str] = Field(None, max_length=100)
+    postal_code: Optional[str] = Field(None, max_length=20)
+    phone: Optional[str] = Field(None, max_length=50)
+    annual_revenue: Optional[float] = None
     status: str = Field(default="Active", max_length=50)
 
 class CompanyCreate(CompanyBase):
@@ -32,6 +38,12 @@ class CompanyUpdate(BaseModel):
     website: Optional[str] = Field(None, max_length=255)
     description: Optional[str] = None
     address: Optional[str] = None
+    street_address: Optional[str] = Field(None, max_length=255)
+    city: Optional[str] = Field(None, max_length=100)
+    state: Optional[str] = Field(None, max_length=100)
+    postal_code: Optional[str] = Field(None, max_length=20)
+    phone: Optional[str] = Field(None, max_length=50)
+    annual_revenue: Optional[float] = None
     status: Optional[str] = Field(None, max_length=50)
 
 class CompanyResponse(CompanyBase, TimestampMixin):

@@ -111,6 +111,18 @@ export default function CompaniesPage() {
                 company.description = value
               } else if (mapping.targetField === 'status') {
                 company.status = value
+              } else if (mapping.targetField === 'phone') {
+                company.phone = value
+              } else if (mapping.targetField === 'street_address') {
+                company.street_address = value
+              } else if (mapping.targetField === 'city') {
+                company.city = value
+              } else if (mapping.targetField === 'state') {
+                company.state = value
+              } else if (mapping.targetField === 'postal_code') {
+                company.postal_code = value
+              } else if (mapping.targetField === 'annual_revenue') {
+                company.annual_revenue = parseFloat(value) || undefined
               }
             }
           }
@@ -140,9 +152,84 @@ export default function CompaniesPage() {
     { key: 'name', label: 'Company Name' },
     { key: 'industry', label: 'Industry' },
     { key: 'website', label: 'Website' },
+    { key: 'phone', label: 'Phone Number' },
+    { key: 'street_address', label: 'Street Address' },
+    { key: 'city', label: 'City' },
+    { key: 'state', label: 'State/Region' },
+    { key: 'postal_code', label: 'Postal Code' },
+    { key: 'annual_revenue', label: 'Annual Revenue' },
     { key: 'description', label: 'Description' },
     { key: 'status', label: 'Status' }
   ]
+
+  const handleExportCompanies = () => {
+    try {
+      // Create CSV headers
+      const headers = [
+        'Company Name',
+        'Phone Number',
+        'City',
+        'State/Region',
+        'Industry',
+        'Street Address',
+        'Postal Code',
+        'Annual Revenue',
+        'Website',
+        'Status',
+        'Contact Count',
+        'Description'
+      ]
+      
+      // Create CSV rows
+      const rows = filteredCompanies.map(company => [
+        company.name,
+        company.phone || '',
+        company.city || '',
+        company.state || '',
+        company.industry || '',
+        company.street_address || '',
+        company.postal_code || '',
+        company.annual_revenue?.toString() || '',
+        company.website || '',
+        company.status,
+        company.contact_count.toString(),
+        company.description || ''
+      ])
+      
+      // Combine headers and rows
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => 
+          row.map(cell => {
+            // Escape quotes and wrap in quotes if contains comma, newline, or quotes
+            const escaped = cell.replace(/"/g, '""')
+            return /[,"\n]/.test(cell) ? `"${escaped}"` : escaped
+          }).join(',')
+        )
+      ].join('\n')
+      
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      
+      link.setAttribute('href', url)
+      link.setAttribute('download', `companies_export_${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = 'hidden'
+      
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      // Clean up
+      URL.revokeObjectURL(url)
+      
+      alert(`Successfully exported ${filteredCompanies.length} companies to CSV!`)
+    } catch (error) {
+      console.error('Failed to export companies:', error)
+      alert('Failed to export companies. Please try again.')
+    }
+  }
 
   return (
     <AuthGuard>
@@ -159,6 +246,13 @@ export default function CompaniesPage() {
             className="px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-all text-blue-700"
           >
             📂 Bulk Upload
+          </button>
+          <button
+            onClick={handleExportCompanies}
+            disabled={loading || filteredCompanies.length === 0}
+            className="px-4 py-2 border border-green-200 rounded-md hover:bg-green-50 hover:border-green-300 transition-all text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            📥 Export to CSV
           </button>
           <a href="/companies/new" className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors shadow-sm">
             ➕ Add Company
@@ -203,10 +297,10 @@ export default function CompaniesPage() {
               <thead>
                 <tr className="border-b">
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Company</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Phone</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Location</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Industry</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Status</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Contacts</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Files</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Actions</th>
                 </tr>
               </thead>
@@ -219,7 +313,17 @@ export default function CompaniesPage() {
                         <div className="text-sm text-muted-foreground">{company.website || 'No website'}</div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm">{company.industry || 'N/A'}</td>
+                    <td className="px-6 py-4 text-sm">{company.phone || '-'}</td>
+                    <td className="px-6 py-4 text-sm">
+                      {company.city || company.state ? (
+                        <span>
+                          {company.city}
+                          {company.city && company.state && ', '}
+                          {company.state}
+                        </span>
+                      ) : '-'}
+                    </td>
+                    <td className="px-6 py-4 text-sm">{company.industry || '-'}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
                         company.status === "Active" 
@@ -229,8 +333,6 @@ export default function CompaniesPage() {
                         {company.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm">{company.contact_count}</td>
-                    <td className="px-6 py-4 text-sm">{company.attachment_count}</td>
                     <td className="px-6 py-4 text-sm">
                       <div className="flex gap-3">
                         <a href={`/companies/${company.id}`} className="text-primary hover:underline">

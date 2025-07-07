@@ -97,7 +97,20 @@ class Company(Base):
     industry = Column(String(100))
     website = Column(String(255))
     description = Column(Text)
-    address = Column(Text)
+    
+    # Address fields
+    street_address = Column(String(255))
+    city = Column(String(100))
+    state = Column(String(100))
+    postal_code = Column(String(20))
+    
+    # Business info
+    phone = Column(String(50))
+    annual_revenue = Column(Float)
+    
+    # Legacy field - kept for backward compatibility
+    address = Column(Text)  # This can be deprecated later
+    
     status = Column(String(50), default="Active")  # Active, Lead, Inactive
     contact_count = Column(Integer, default=0)
     attachment_count = Column(Integer, default=0)

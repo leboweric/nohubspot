@@ -85,6 +85,12 @@ export interface Company {
   website?: string
   description?: string
   address?: string
+  street_address?: string
+  city?: string
+  state?: string
+  postal_code?: string
+  phone?: string
+  annual_revenue?: number
   status: string
   contact_count: number
   attachment_count: number
@@ -98,6 +104,12 @@ export interface CompanyCreate {
   website?: string
   description?: string
   address?: string
+  street_address?: string
+  city?: string
+  state?: string
+  postal_code?: string
+  phone?: string
+  annual_revenue?: number
   status?: string
 }
 
@@ -107,6 +119,12 @@ export interface CompanyUpdate {
   website?: string
   description?: string
   address?: string
+  street_address?: string
+  city?: string
+  state?: string
+  postal_code?: string
+  phone?: string
+  annual_revenue?: number
   status?: string
 }
 
