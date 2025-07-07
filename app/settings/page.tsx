@@ -69,26 +69,6 @@ export default function SettingsPage() {
   // Prevent multiple calls on mount
   const [hasLoaded, setHasLoaded] = useState(false)
 
-  useEffect(() => {
-    if (hasLoaded) return
-    
-    console.log("Settings page loading...")
-    if (isAdmin(user)) {
-      loadUsers()
-      loadInvites()
-    }
-    
-    // Only load O365 if explicitly enabled via environment variable
-    if (isO365Enabled) {
-      if (isOwner) {
-        loadO365Config()
-      }
-      loadO365UserConnection()
-    }
-    
-    setHasLoaded(true)
-  }, [user, isO365Enabled, isOwner, hasLoaded, loadUsers, loadInvites, loadO365Config, loadO365UserConnection])
-
   const loadO365Config = async () => {
     try {
       const config = await o365API.getOrganizationConfig()
@@ -339,6 +319,27 @@ export default function SettingsPage() {
       setO365Loading(false)
     }
   }
+
+  // Load data on mount
+  useEffect(() => {
+    if (hasLoaded) return
+    
+    console.log("Settings page loading...")
+    if (isAdmin(user)) {
+      loadUsers()
+      loadInvites()
+    }
+    
+    // Only load O365 if explicitly enabled via environment variable
+    if (isO365Enabled) {
+      if (isOwner) {
+        loadO365Config()
+      }
+      loadO365UserConnection()
+    }
+    
+    setHasLoaded(true)
+  }, [user?.role]) // Only depend on user role to avoid re-renders
 
   return (
     <AuthGuard>
