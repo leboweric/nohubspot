@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import SignatureBuilder, { EmailSignature } from "@/components/signature/SignatureBuilder"
@@ -66,7 +66,12 @@ export default function SettingsPage() {
     })
   }
 
+  // Prevent multiple calls on mount
+  const [hasLoaded, setHasLoaded] = useState(false)
+
   useEffect(() => {
+    if (hasLoaded) return
+    
     console.log("Settings page loading...")
     if (isAdmin(user)) {
       loadUsers()
@@ -80,7 +85,9 @@ export default function SettingsPage() {
       }
       loadO365UserConnection()
     }
-  }, [user, isO365Enabled, isOwner])
+    
+    setHasLoaded(true)
+  }, [user, isO365Enabled, isOwner, hasLoaded, loadUsers, loadInvites, loadO365Config, loadO365UserConnection])
 
   const loadO365Config = async () => {
     try {
@@ -114,12 +121,12 @@ export default function SettingsPage() {
 
   const loadUsers = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, {
+      const response = await fetchWithCircuitBreaker(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         }
       })
-      if (response.ok) {
+      if (response) {
         const userData = await response.json()
         setUsers(userData)
       }
