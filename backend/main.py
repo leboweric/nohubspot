@@ -1654,16 +1654,21 @@ async def use_template(
 
 # Bulk upload endpoints
 @app.post("/api/companies/bulk", response_model=BulkUploadResult)
-async def bulk_upload_companies(companies: List[CompanyCreate], db: Session = Depends(get_db)):
+async def bulk_upload_companies(
+    companies: List[CompanyCreate], 
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
     try:
-        db_companies = bulk_create_companies(db, companies)
+        db_companies = bulk_create_companies(db, companies, current_user.organization_id)
         
         # Create activity for bulk upload
         create_activity(
             db,
             title="Bulk Companies Upload",
             description=f"Uploaded {len(db_companies)} companies",
-            type="company"
+            type="company",
+            organization_id=current_user.organization_id
         )
         
         return BulkUploadResult(
@@ -1681,16 +1686,21 @@ async def bulk_upload_companies(companies: List[CompanyCreate], db: Session = De
         )
 
 @app.post("/api/contacts/bulk", response_model=BulkUploadResult)
-async def bulk_upload_contacts(contacts: List[ContactCreate], db: Session = Depends(get_db)):
+async def bulk_upload_contacts(
+    contacts: List[ContactCreate], 
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
     try:
-        db_contacts = bulk_create_contacts(db, contacts)
+        db_contacts = bulk_create_contacts(db, contacts, current_user.organization_id)
         
         # Create activity for bulk upload
         create_activity(
             db,
             title="Bulk Contacts Upload",
             description=f"Uploaded {len(db_contacts)} contacts",
-            type="contact"
+            type="contact",
+            organization_id=current_user.organization_id
         )
         
         return BulkUploadResult(

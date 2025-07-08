@@ -58,7 +58,21 @@ async function apiRequest<T>(
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new APIError(errorData.detail || `API Error: ${response.status}`, response.status)
+      console.error('API Error Response:', errorData)
+      
+      // Extract error message from various possible formats
+      let errorMessage = `API Error: ${response.status}`
+      if (errorData.detail) {
+        errorMessage = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail)
+      } else if (errorData.message) {
+        errorMessage = errorData.message
+      } else if (errorData.error) {
+        errorMessage = errorData.error
+      } else if (Array.isArray(errorData) && errorData.length > 0) {
+        errorMessage = errorData.map(e => e.msg || e.message || JSON.stringify(e)).join(', ')
+      }
+      
+      throw new APIError(errorMessage, response.status)
     }
 
     return await response.json()
