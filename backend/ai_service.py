@@ -25,8 +25,8 @@ openai_client = OpenAI(api_key=openai_key) if openai_key else None
 class DailySummaryService:
     def __init__(self, db: Session, user_id: int, organization_id: int):
         self.db = db
-        self.user_id = user_id
-        self.organization_id = organization_id
+        self.user_id = int(user_id) if isinstance(user_id, str) else user_id
+        self.organization_id = int(organization_id) if isinstance(organization_id, str) else organization_id
     
     def generate_daily_summary(self) -> Dict[str, Any]:
         """Generate a comprehensive daily summary for the user"""
@@ -53,7 +53,10 @@ class DailySummaryService:
             return summary
             
         except Exception as e:
+            import traceback
             print(f"Error generating daily summary: {e}")
+            print(f"Error type: {type(e).__name__}")
+            print(f"Full traceback: {traceback.format_exc()}")
             return self._fallback_summary()
     
     def _collect_summary_data(self) -> Dict[str, Any]:
@@ -63,7 +66,11 @@ class DailySummaryService:
         week_ago = now - timedelta(days=7)
         
         # Get tasks
-        all_tasks = get_tasks(self.db, self.organization_id, limit=1000)
+        try:
+            all_tasks = get_tasks(self.db, self.organization_id, limit=1000)
+        except Exception as e:
+            print(f"Error getting tasks in daily summary: {e}")
+            all_tasks = []
         
         # Categorize tasks
         overdue_tasks = [t for t in all_tasks if t.due_date and 
@@ -85,7 +92,11 @@ class DailySummaryService:
             pass  # Activities table might not exist yet
         
         # Get contacts that need attention
-        all_contacts = get_contacts(self.db, self.organization_id, limit=1000)
+        try:
+            all_contacts = get_contacts(self.db, self.organization_id, limit=1000)
+        except Exception as e:
+            print(f"Error getting contacts in daily summary: {e}")
+            all_contacts = []
         
         # Find contacts with recent activity or tasks
         contacts_with_tasks = []
@@ -99,10 +110,18 @@ class DailySummaryService:
                 })
         
         # Get companies data
-        all_companies = get_companies(self.db, self.organization_id, limit=1000)
+        try:
+            all_companies = get_companies(self.db, self.organization_id, limit=1000)
+        except Exception as e:
+            print(f"Error getting companies in daily summary: {e}")
+            all_companies = []
         
         # Get deals data
-        all_deals = get_deals(self.db, self.organization_id, limit=1000)
+        try:
+            all_deals = get_deals(self.db, self.organization_id, limit=1000)
+        except Exception as e:
+            print(f"Error getting deals in daily summary: {e}")
+            all_deals = []
         
         # Categorize deals by stage
         deals_by_stage = {}
