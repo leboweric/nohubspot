@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { o365IntegrationAPI, handleAPIError } from "@/lib/api"
 
-export default function MicrosoftCallbackPage() {
+function MicrosoftCallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing')
@@ -100,5 +100,21 @@ export default function MicrosoftCallbackPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function MicrosoftCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-card border rounded-lg p-6 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <h2 className="text-lg font-semibold mb-2">Loading...</h2>
+          <p className="text-sm text-muted-foreground">Please wait while we process your request</p>
+        </div>
+      </div>
+    }>
+      <MicrosoftCallbackContent />
+    </Suspense>
   )
 }
