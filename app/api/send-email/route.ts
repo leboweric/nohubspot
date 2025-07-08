@@ -257,6 +257,8 @@ export async function POST(request: NextRequest) {
               thread_id: threadId // Add thread_id to the body as required by schema
             }
 
+            console.log(`Adding message to thread ${threadId} with data:`, messageData)
+            
             const messageResponse = await fetch(`${backendUrl}/api/email-threads/${threadId}/messages`, {
               method: 'POST',
               headers: {
@@ -266,11 +268,25 @@ export async function POST(request: NextRequest) {
               body: JSON.stringify(messageData)
             })
             
+            const messageResponseText = await messageResponse.text()
+            
             if (!messageResponse.ok) {
-              const messageError = await messageResponse.text()
-              console.error(`Failed to add message to thread: ${messageResponse.status} - ${messageError}`)
+              console.error(`Failed to add message to thread: ${messageResponse.status} - ${messageResponseText}`)
+              // Try to parse error details
+              try {
+                const errorDetail = JSON.parse(messageResponseText)
+                console.error('Error details:', errorDetail)
+              } catch (e) {
+                // Not JSON, just log as is
+              }
             } else {
               console.log(`Message added to thread ${threadId} successfully`)
+              try {
+                const messageResult = JSON.parse(messageResponseText)
+                console.log('Created message:', messageResult)
+              } catch (e) {
+                // Not JSON
+              }
             }
           }
           } else {

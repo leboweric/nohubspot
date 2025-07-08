@@ -138,6 +138,7 @@ class EmailThreadResponse(EmailThreadBase, TimestampMixin):
     id: int
     message_count: int
     preview: Optional[str] = None
+    messages: Optional[List['EmailMessageResponse']] = []
     
     class Config:
         from_attributes = True
@@ -659,3 +660,5 @@ class SendGridEvent(BaseModel):
     contact_name: Optional[str] = None
     sender_name: Optional[str] = None
     source: Optional[str] = None
+# Update forward references
+EmailThreadResponse.model_rebuild()
