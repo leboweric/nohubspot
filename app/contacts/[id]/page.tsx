@@ -80,17 +80,21 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
     if (!contact) return
     
     try {
+      console.log(`Loading activity stats for contact ${contact.id}: ${contact.first_name} ${contact.last_name}`)
+      
       // Get email tracking records for this contact
       const emailTracking = await emailTrackingAPI.getAll({
         contact_id: contact.id,
         limit: 1000
       })
+      console.log(`Found ${emailTracking.length} email tracking records for contact ${contact.id}`)
       
       // Get calendar events for this contact
       const events = await calendarAPI.getAll({
         contact_id: contact.id,
         limit: 1000
       })
+      console.log(`Found ${events.length} calendar events for contact ${contact.id}`)
       
       // Count different types of activities
       const callEvents = events.filter(e => e.event_type === 'call')

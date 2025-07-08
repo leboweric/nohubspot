@@ -101,6 +101,20 @@ export async function POST(request: NextRequest) {
     
     if (authToken && messageId) {
       try {
+        // First get current user to get their ID
+        const userResponse = await fetch(`${backendUrl}/api/auth/me`, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        })
+        
+        let userId = 1 // fallback
+        if (userResponse.ok) {
+          const userData = await userResponse.json()
+          userId = userData.id
+          console.log(`Current user ID: ${userId}`)
+        }
+        
         // Create tracking record and email thread for each recipient
         for (const recipientEmail of recipients) {
           // First, try to find the contact by email
@@ -113,8 +127,12 @@ export async function POST(request: NextRequest) {
           
           if (contactsResponse.ok) {
             const contacts = await contactsResponse.json()
-            const matchingContact = contacts.find((c: any) => c.email === recipientEmail)
+            console.log(`Found ${contacts.length} contacts when searching for ${recipientEmail}`)
+            const matchingContact = contacts.find((c: any) => c.email.toLowerCase() === recipientEmail.toLowerCase())
             contactId = matchingContact?.id
+            console.log(`Contact lookup for ${recipientEmail}: found contact ${contactId}`)
+          } else {
+            console.log(`Contact search failed: ${contactsResponse.status}`)
           }
           
           // Create tracking record
@@ -124,11 +142,11 @@ export async function POST(request: NextRequest) {
             from_email: process.env.SENDGRID_FROM_EMAIL,
             subject: subject,
             sent_at: new Date().toISOString(),
-            sent_by: 1, // This should come from the authenticated user
+            sent_by: userId,
             contact_id: contactId // Include contact_id if found
           }
           
-          await fetch(`${backendUrl}/api/email-tracking`, {
+          const trackingResponse = await fetch(`${backendUrl}/api/email-tracking`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -136,6 +154,13 @@ export async function POST(request: NextRequest) {
             },
             body: JSON.stringify(trackingData)
           })
+          
+          if (!trackingResponse.ok) {
+            const trackingError = await trackingResponse.text()
+            console.error(`Failed to create tracking record: ${trackingResponse.status} - ${trackingError}`)
+          } else {
+            console.log(`Email tracking created successfully for ${recipientEmail}`)
+          }
           
           // Only create thread if we have a contact
           if (contactId) {
