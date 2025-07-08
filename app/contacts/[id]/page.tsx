@@ -350,25 +350,36 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                 </div>
               </div>
             ) : emails.length > 0 ? (
-              <div className="space-y-3">
-                {emails.slice(-3).map((email) => (
-                  <div key={email.id} className="flex items-start space-x-3 p-3 bg-muted rounded-md">
-                    <div className={`w-2 h-2 rounded-full mt-2 ${
-                      email.fromSelf ? 'bg-blue-500' : 'bg-green-500'
-                    }`}></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">
-                        {email.fromSelf ? 'You' : contact?.first_name} sent: {email.subject}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
+              <div className="space-y-4">
+                {emails.slice(-5).map((email) => (
+                  <div key={email.id} className="border rounded-lg overflow-hidden">
+                    <div className="bg-muted px-4 py-2 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${
+                          email.fromSelf ? 'bg-blue-500' : 'bg-green-500'
+                        }`}></div>
+                        <span className="text-sm font-medium">
+                          {email.fromSelf ? 'You' : `${contact?.first_name} ${contact?.last_name}`}
+                        </span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
                         {email.timestamp.toLocaleDateString()} at {email.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
+                      </span>
+                    </div>
+                    <div className="p-4">
+                      <h4 className="text-sm font-semibold mb-2">{email.subject}</h4>
+                      <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                        {email.message.length > 200 
+                          ? `${email.message.substring(0, 200)}...` 
+                          : email.message
+                        }
+                      </div>
                     </div>
                   </div>
                 ))}
-                {emails.length > 3 && (
+                {emails.length > 5 && (
                   <p className="text-xs text-muted-foreground text-center">
-                    And {emails.length - 3} more messages...
+                    Showing latest 5 of {emails.length} messages
                   </p>
                 )}
               </div>
