@@ -193,6 +193,8 @@ export async function POST(request: NextRequest) {
           
           // Only create thread if we have a contact
           if (contactId) {
+            console.log(`Creating/finding email thread for contact ${contactId}`)
+            
             // Find or create email thread for this contact
             const threadsResponse = await fetch(`${backendUrl}/api/contacts/${contactId}/email-threads`, {
               headers: {
@@ -203,12 +205,19 @@ export async function POST(request: NextRequest) {
             let threadId = null
             if (threadsResponse.ok) {
               const threads = await threadsResponse.json()
+              console.log(`Found ${threads.length} existing threads for contact ${contactId}`)
+              
               // Find thread with same or similar subject
               const existingThread = threads.find((t: any) => 
                 t.subject === subject || 
                 t.subject.replace(/^Re:\s*/i, '') === subject.replace(/^Re:\s*/i, '')
               )
               threadId = existingThread?.id
+              if (threadId) {
+                console.log(`Using existing thread ${threadId} with subject: ${existingThread.subject}`)
+              }
+            } else {
+              console.log(`Failed to fetch threads: ${threadsResponse.status}`)
             }
 
             // Create new thread if none exists
@@ -219,20 +228,24 @@ export async function POST(request: NextRequest) {
                 preview: message.substring(0, 100) + (message.length > 100 ? '...' : '')
               }
 
-            const createThreadResponse = await fetch(`${backendUrl}/api/email-threads`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
-              },
-              body: JSON.stringify(threadData)
-            })
+              const createThreadResponse = await fetch(`${backendUrl}/api/email-threads`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify(threadData)
+              })
 
-            if (createThreadResponse.ok) {
-              const newThread = await createThreadResponse.json()
-              threadId = newThread.id
+              if (createThreadResponse.ok) {
+                const newThread = await createThreadResponse.json()
+                threadId = newThread.id
+                console.log(`Created new email thread ${threadId} for contact ${contactId}`)
+              } else {
+                const threadError = await createThreadResponse.text()
+                console.error(`Failed to create email thread: ${createThreadResponse.status} - ${threadError}`)
+              }
             }
-          }
 
           // Add message to thread
           if (threadId) {

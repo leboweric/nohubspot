@@ -47,6 +47,10 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
     try {
       setEmailsLoading(true)
       const threads = await emailThreadAPI.getByContact(contact.id)
+      console.log(`Loaded ${threads.length} email threads for contact ${contact.id}`)
+      threads.forEach((thread, index) => {
+        console.log(`Thread ${index}: ${thread.subject}, messages: ${thread.messages?.length || 0}`)
+      })
       setEmailThreads(threads)
       
       // Convert threads to flat email messages for the existing UI
@@ -63,6 +67,8 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
           })
         })
       })
+      
+      console.log(`Converted to ${allMessages.length} messages for display`)
       
       // Sort by timestamp
       allMessages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
