@@ -4,6 +4,7 @@ Office 365 Integration Service using Microsoft Graph API
 import os
 import json
 import asyncio
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Optional, List, Dict, Any
 import httpx
@@ -217,7 +218,19 @@ class O365Service:
         
         if not contact:
             # Create basic contact
-            name_parts = msg.get("from", {}).get("emailAddress", {}).get("name", "").split()
+            # For incoming emails, use the sender's name. For outgoing, use recipient's name
+            if direction == "incoming":
+                contact_name = msg.get("from", {}).get("emailAddress", {}).get("name", "")
+            else:
+                # For outgoing emails, get the recipient's name
+                recipients = msg.get("toRecipients", [])
+                if recipients:
+                    contact_name = recipients[0].get("emailAddress", {}).get("name", "")
+                else:
+                    contact_name = ""
+            
+            # Parse the name
+            name_parts = contact_name.split() if contact_name else []
             contact = Contact(
                 first_name=name_parts[0] if name_parts else "Unknown",
                 last_name=" ".join(name_parts[1:]) if len(name_parts) > 1 else "Contact",
@@ -260,6 +273,13 @@ class O365Service:
         if not existing:
             # Add message to thread
             body_content = msg.get("body", {}).get("content", "")
+            
+            # Strip HTML tags for preview (basic implementation)
+            text_content = re.sub('<[^<]+?>', '', body_content)
+            text_content = re.sub('\s+', ' ', text_content).strip()
+            # Also decode HTML entities
+            text_content = text_content.replace('&nbsp;', ' ').replace('&lt;', '<').replace('&gt;', '>').replace('&amp;', '&').replace('&#39;', "'").replace('&quot;', '"')
+            
             sender_name = msg.get("from", {}).get("emailAddress", {}).get("name", "Unknown")
             
             message = EmailMessage(
@@ -273,7 +293,7 @@ class O365Service:
             
             # Update thread
             thread.message_count += 1
-            thread.preview = body_content[:100] + ("..." if len(body_content) > 100 else "")
+            thread.preview = text_content[:100] + ("..." if len(text_content) > 100 else "")
             thread.updated_at = datetime.utcnow().replace(tzinfo=None)
             
             db.commit()
