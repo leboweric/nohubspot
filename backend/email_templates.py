@@ -313,7 +313,7 @@ This email was sent because a password reset was requested for your NotHubSpot a
 © 2024 NotHubSpot. All rights reserved.
 """
 
-def get_invite_email_html(organization_name: str, inviter_name: str, invite_url: str, role: str) -> str:
+def get_invite_email_html(organization_name: str, inviter_name: str, invite_url: str, role: str, recipient_name: str = "") -> str:
     """Generate invitation email HTML content"""
     role_display = "Administrator" if role == "admin" else "Team Member"
     
