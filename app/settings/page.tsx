@@ -8,7 +8,7 @@ import SupportModal from "@/components/support/SupportModal"
 import O365Connection from "@/components/settings/O365Connection"
 import { useEmailSignature } from "@/components/signature/SignatureManager"
 import { getAuthState, isAdmin } from "@/lib/auth"
-import { o365API, O365OrganizationConfig, O365UserConnection, handleAPIError } from "@/lib/api"
+import { o365API, o365IntegrationAPI, O365OrganizationConfig, O365UserConnection, handleAPIError } from "@/lib/api"
 
 // Force dynamic rendering to prevent static generation issues with auth
 export const dynamic = 'force-dynamic'
@@ -645,7 +645,14 @@ export default function SettingsPage() {
               {o365Config && !o365UserConnection && (
                 <div className="mt-2">
                   <button
-                    onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/o365/authorize`}
+                    onClick={async () => {
+                      try {
+                        const { auth_url } = await o365IntegrationAPI.getAuthUrl()
+                        window.open(auth_url, 'o365-auth', 'width=600,height=700')
+                      } catch (error) {
+                        setError(handleAPIError(error))
+                      }
+                    }}
                     className="text-sm bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
                   >
                     Connect to Office 365
