@@ -240,10 +240,11 @@ export async function POST(request: NextRequest) {
               sender: senderName || 'Sales Team',
               content: message,
               direction: 'outgoing' as const,
-              message_id: messageId
+              message_id: messageId,
+              thread_id: threadId // Add thread_id to the body as required by schema
             }
 
-            await fetch(`${backendUrl}/api/email-threads/${threadId}/messages`, {
+            const messageResponse = await fetch(`${backendUrl}/api/email-threads/${threadId}/messages`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -251,6 +252,13 @@ export async function POST(request: NextRequest) {
               },
               body: JSON.stringify(messageData)
             })
+            
+            if (!messageResponse.ok) {
+              const messageError = await messageResponse.text()
+              console.error(`Failed to add message to thread: ${messageResponse.status} - ${messageError}`)
+            } else {
+              console.log(`Message added to thread ${threadId} successfully`)
+            }
           }
           } else {
             console.log(`No contact found for email ${recipientEmail}, skipping thread creation`)
