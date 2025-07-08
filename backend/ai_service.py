@@ -79,12 +79,24 @@ class DailySummaryService:
             all_tasks = []
         
         # Categorize tasks
-        overdue_tasks = [t for t in all_tasks if t.due_date and 
-                        datetime.fromisoformat(t.due_date.replace('Z', '+00:00')).replace(tzinfo=None) < now and 
-                        t.status != 'completed']
-        
-        today_tasks = [t for t in all_tasks if t.due_date and 
-                      datetime.fromisoformat(t.due_date.replace('Z', '+00:00')).replace(tzinfo=None).date() == now.date()]
+        overdue_tasks = []
+        today_tasks = []
+        for t in all_tasks:
+            if t.due_date:
+                try:
+                    # Handle both string and datetime objects
+                    if isinstance(t.due_date, str):
+                        task_date = datetime.fromisoformat(t.due_date.replace('Z', '+00:00')).replace(tzinfo=None)
+                    else:
+                        task_date = t.due_date.replace(tzinfo=None) if t.due_date.tzinfo else t.due_date
+                    
+                    if task_date < now and t.status != 'completed':
+                        overdue_tasks.append(t)
+                    if task_date.date() == now.date():
+                        today_tasks.append(t)
+                except Exception as e:
+                    print(f"Error parsing due date for task {t.id}: {t.due_date} - {e}")
+                    continue
         
         pending_tasks = [t for t in all_tasks if t.status in ['pending', 'in_progress']]
         
@@ -227,7 +239,8 @@ class DailySummaryService:
         # Build overdue task details
         overdue_details = []
         for task in data["tasks"]["overdue"][:5]:  # Limit to top 5
-            overdue_details.append(f"- {task.title} (due: {task.due_date}, priority: {task.priority})")
+            due_str = task.due_date if isinstance(task.due_date, str) else task.due_date.isoformat() if task.due_date else "No due date"
+            overdue_details.append(f"- {task.title} (due: {due_str}, priority: {task.priority})")
         
         # Build today's task details
         today_details = []
