@@ -2542,28 +2542,45 @@ async def o365_auth_callback(
 
 @app.get("/api/auth/microsoft/callback")
 async def microsoft_oauth_callback_redirect(
+    request: Request,
     code: str = None,
     state: str = None,
     error: str = None,
     error_description: str = None
 ):
     """Handle O365 OAuth callback and redirect to frontend"""
+    # Log the incoming request for debugging
+    print(f"Microsoft OAuth callback received:")
+    print(f"  Code: {code}")
+    print(f"  State: {state}")
+    print(f"  Error: {error}")
+    print(f"  Query params: {dict(request.query_params)}")
+    
     # Build the frontend URL with all parameters
     frontend_url = os.environ.get("FRONTEND_URL", "https://nothubspot.app")
     
-    # Construct query parameters
-    params = []
+    # If no code and no error, something went wrong
+    if not code and not error:
+        error = "missing_code"
+        error_description = "No authorization code received from Microsoft"
+    
+    # Use urllib to properly encode parameters
+    from urllib.parse import urlencode
+    params = {}
     if code:
-        params.append(f"code={code}")
+        params["code"] = code
     if state:
-        params.append(f"state={state}")
+        params["state"] = state
     if error:
-        params.append(f"error={error}")
+        params["error"] = error
     if error_description:
-        params.append(f"error_description={error_description}")
+        params["error_description"] = error_description
     
     # Redirect to frontend callback page
-    redirect_url = f"{frontend_url}/auth/microsoft/callback?{'&'.join(params)}"
+    query_string = urlencode(params)
+    redirect_url = f"{frontend_url}/auth/microsoft/callback{'?' + query_string if query_string else ''}"
+    print(f"Redirecting to: {redirect_url}")
+    
     return RedirectResponse(url=redirect_url)
 
 
