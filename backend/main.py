@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, status, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -285,19 +285,35 @@ app = FastAPI(
 # CORS middleware configured for your deployment
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",  # Local development
-        "https://*.netlify.app",  # Netlify deployments
-        "https://nohubspot.netlify.app",  # Your Netlify domain
-        "https://nothubspot.app",  # Your custom domain
-        "https://www.nothubspot.app",  # Your custom domain with www
-        "https://nohubspot-production.up.railway.app",  # Your Railway domain
-        "*"  # Allow all origins for now - you can restrict this later
-    ],
+    allow_origins=["*"],  # Allow all origins temporarily
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
+
+# Additional middleware to ensure CORS headers on errors
+@app.middleware("http")
+async def catch_exceptions_middleware(request: Request, call_next):
+    try:
+        response = await call_next(request)
+        # Add CORS headers to all responses
+        origin = request.headers.get("origin")
+        if origin:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response
+    except Exception as e:
+        # Return error with CORS headers
+        origin = request.headers.get("origin", "*")
+        return JSONResponse(
+            status_code=500,
+            content={"detail": str(e)},
+            headers={
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Credentials": "true"
+            }
+        )
 
 # Include cleanup router (temporary)
 app.include_router(cleanup_router)
@@ -640,6 +656,7 @@ async def create_invite(
     db: Session = Depends(get_db)
 ):
     """Create a user invitation (admin only)"""
+    print(f"Creating invitation for: {invite.email} by user: {current_user.email}")
     # Check if user already exists in the organization
     existing_user = get_user_by_email(db, invite.email, current_user.organization_id)
     if existing_user:
