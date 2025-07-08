@@ -98,6 +98,7 @@ from ai_service import generate_daily_summary
 from ai_chat import process_ai_chat
 from o365_service import O365Service, get_oauth_url, exchange_code_for_tokens
 from o365_encryption import encrypt_access_token, encrypt_refresh_token, decrypt_client_secret, encrypt_client_secret
+from run_migrations import run_migrations
 
 # Create database tables with error handling
 print("🔨 Starting database initialization...")
@@ -211,6 +212,9 @@ try:
     print("🔨 Creating tables...")
     Base.metadata.create_all(bind=engine)
     print("✅ Database tables created successfully")
+    
+    # Run SQL migrations
+    run_migrations()
     
     # Run company fields migration
     print("🔄 Checking for new company fields...")
