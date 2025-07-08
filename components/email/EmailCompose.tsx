@@ -185,6 +185,9 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
       }
 
       console.log('Email sent successfully:', result)
+      if (result.debug) {
+        console.log('Email tracking debug:', result.debug)
+      }
       
       onSend(emailMessage)
       setSubject("")

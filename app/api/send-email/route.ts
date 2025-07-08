@@ -96,12 +96,19 @@ export async function POST(request: NextRequest) {
     const messageId = response.headers['x-message-id']
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
     
+    console.log('Email tracking setup:', {
+      messageId,
+      backendUrl,
+      hasAuthToken: !!request.cookies.get('auth-token')?.value
+    })
+    
     // Get auth token from cookies
     const authToken = request.cookies.get('auth-token')?.value
     
     if (authToken && messageId) {
+      console.log('Starting email tracking creation...')
       try {
-        // First get current user to get their ID
+        // First get current user to get their ID and organization ID
         const userResponse = await fetch(`${backendUrl}/api/auth/me`, {
           headers: {
             'Authorization': `Bearer ${authToken}`
@@ -109,10 +116,12 @@ export async function POST(request: NextRequest) {
         })
         
         let userId = 1 // fallback
+        let organizationId = null
         if (userResponse.ok) {
           const userData = await userResponse.json()
           userId = userData.id
-          console.log(`Current user ID: ${userId}`)
+          organizationId = userData.organization_id
+          console.log(`Current user ID: ${userId}, Organization ID: ${organizationId}`)
         }
         
         // Create tracking record and email thread for each recipient
@@ -146,6 +155,8 @@ export async function POST(request: NextRequest) {
             contact_id: contactId // Include contact_id if found
           }
           
+          console.log('Creating email tracking with data:', JSON.stringify(trackingData, null, 2))
+          
           const trackingResponse = await fetch(`${backendUrl}/api/email-tracking`, {
             method: 'POST',
             headers: {
@@ -155,11 +166,20 @@ export async function POST(request: NextRequest) {
             body: JSON.stringify(trackingData)
           })
           
+          const trackingResponseText = await trackingResponse.text()
+          console.log(`Tracking response status: ${trackingResponse.status}`)
+          console.log(`Tracking response body: ${trackingResponseText}`)
+          
           if (!trackingResponse.ok) {
-            const trackingError = await trackingResponse.text()
-            console.error(`Failed to create tracking record: ${trackingResponse.status} - ${trackingError}`)
+            console.error(`Failed to create tracking record: ${trackingResponse.status} - ${trackingResponseText}`)
           } else {
             console.log(`Email tracking created successfully for ${recipientEmail}`)
+            try {
+              const trackingResult = JSON.parse(trackingResponseText)
+              console.log('Created tracking record:', trackingResult)
+            } catch (e) {
+              console.log('Could not parse tracking response as JSON')
+            }
           }
           
           // Only create thread if we have a contact
@@ -229,15 +249,29 @@ export async function POST(request: NextRequest) {
         }
       } catch (error) {
         console.error('Failed to create email tracking/thread records:', error)
+        console.error('Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        })
         // Don't fail the email send if tracking fails
       }
+    } else {
+      console.log('Skipping email tracking:', {
+        hasAuthToken: !!authToken,
+        hasMessageId: !!messageId,
+        messageId
+      })
     }
 
     return NextResponse.json({
       success: true,
       messageId: messageId,
       recipientCount: recipients.length,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      debug: {
+        trackingCreated: !!authToken && !!messageId,
+        backendUrl: backendUrl
+      }
     })
 
   } catch (error: any) {
