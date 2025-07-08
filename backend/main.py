@@ -2400,7 +2400,7 @@ async def get_o365_auth_url(
         client_id = org_config.client_id
         tenant_id = org_config.tenant_id
     
-    redirect_uri = os.environ.get("O365_REDIRECT_URI", "https://nohubspot-production.up.railway.app/api/auth/microsoft/callback")
+    redirect_uri = os.environ.get("O365_REDIRECT_URI", "https://nohubspot-production.up.railway.app/auth/microsoft/callback")
     auth_url = await get_oauth_url(
         client_id,
         tenant_id,
@@ -2444,7 +2444,7 @@ async def o365_auth_callback(
     
     try:
         # Exchange code for tokens
-        redirect_uri = os.environ.get("O365_REDIRECT_URI", "https://nohubspot-production.up.railway.app/api/auth/microsoft/callback")
+        redirect_uri = os.environ.get("O365_REDIRECT_URI", "https://nohubspot-production.up.railway.app/auth/microsoft/callback")
         
         token_data = await exchange_code_for_tokens(
             code,

@@ -856,7 +856,7 @@ export default function SettingsPage() {
                 </p>
                 <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
                   <li>Go to Azure Portal → App registrations → New registration</li>
-                  <li>Set redirect URI to: <code className="bg-blue-100 px-1 rounded">{process.env.NEXT_PUBLIC_API_URL}/api/auth/o365/callback</code></li>
+                  <li>Set redirect URI to: <code className="bg-blue-100 px-1 rounded">{process.env.NEXT_PUBLIC_API_URL}/auth/microsoft/callback</code></li>
                   <li>Generate a client secret in "Certificates & secrets"</li>
                   <li>Grant these API permissions: Calendar.ReadWrite, Mail.Send, Contacts.ReadWrite</li>
                 </ol>

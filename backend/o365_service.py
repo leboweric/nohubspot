@@ -16,7 +16,7 @@ from schemas import EmailMessageCreate
 # Microsoft OAuth2 endpoints
 MICROSOFT_AUTHORITY = "https://login.microsoftonline.com"
 MICROSOFT_GRAPH_API = "https://graph.microsoft.com/v1.0"
-OAUTH_REDIRECT_URI = os.environ.get("O365_REDIRECT_URI", "https://nohubspot-production.up.railway.app/api/auth/microsoft/callback")
+OAUTH_REDIRECT_URI = os.environ.get("O365_REDIRECT_URI", "https://nohubspot-production.up.railway.app/auth/microsoft/callback")
 
 # O365 Configuration from environment
 O365_CLIENT_ID = os.environ.get("O365_CLIENT_ID")
