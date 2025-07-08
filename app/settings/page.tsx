@@ -123,6 +123,7 @@ export default function SettingsPage() {
   const [isCircuitBreakerActive, setIsCircuitBreakerActive] = useState(false)
 
   const fetchWithCircuitBreaker = async (url: string, options: RequestInit = {}) => {
+    console.log('fetchWithCircuitBreaker called:', url, options.method || 'GET')
     // Track API call
     trackApiCall(url)
 
@@ -142,10 +143,8 @@ export default function SettingsPage() {
       if (response.ok) {
         setFailureCount(0) // Reset on success
         setIsCircuitBreakerActive(false)
-        return response
-      } else {
-        throw new Error(`HTTP ${response.status}`)
       }
+      return response // Return response regardless of status
     } catch (error) {
       const newFailureCount = failureCount + 1
       setFailureCount(newFailureCount)
@@ -229,6 +228,7 @@ export default function SettingsPage() {
   }
 
   const handleRevokeInvite = async (inviteId: number) => {
+    setError('')
     try {
       const response = await fetchWithCircuitBreaker(`${process.env.NEXT_PUBLIC_API_URL}/api/invites/${inviteId}`, {
         method: 'DELETE',
@@ -244,9 +244,12 @@ export default function SettingsPage() {
       } else if (response) {
         const errorData = await response.json()
         setError(errorData.detail || 'Failed to revoke invitation')
+      } else {
+        setError('Network error - please check your connection')
       }
     } catch (err) {
-      setError('Failed to revoke invitation')
+      console.error('Revoke invite error:', err)
+      setError('Failed to revoke invitation: ' + (err instanceof Error ? err.message : 'Unknown error'))
     }
   }
 
@@ -474,8 +477,12 @@ export default function SettingsPage() {
                             {invite.role === 'admin' ? 'Admin' : 'User'}
                           </span>
                           <button
-                            onClick={() => handleRevokeInvite(invite.id)}
+                            onClick={() => {
+                              console.log('Revoking invite ID:', invite.id)
+                              handleRevokeInvite(invite.id)
+                            }}
                             className="text-xs text-red-600 hover:text-red-800"
+                            type="button"
                           >
                             Revoke
                           </button>
