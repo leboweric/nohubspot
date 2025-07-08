@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, status, Request
+from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -2537,6 +2538,33 @@ async def o365_auth_callback(
     except Exception as e:
         print(f"O365 auth callback error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/auth/microsoft/callback")
+async def microsoft_oauth_callback(
+    code: str = None,
+    state: str = None,
+    error: str = None,
+    error_description: str = None
+):
+    """Handle Microsoft OAuth callback and redirect to frontend"""
+    # Build the frontend URL with all parameters
+    frontend_url = os.environ.get("FRONTEND_URL", "https://nothubspot.app")
+    
+    # Construct query parameters
+    params = []
+    if code:
+        params.append(f"code={code}")
+    if state:
+        params.append(f"state={state}")
+    if error:
+        params.append(f"error={error}")
+    if error_description:
+        params.append(f"error_description={error_description}")
+    
+    # Redirect to frontend callback page
+    redirect_url = f"{frontend_url}/auth/microsoft/callback?{'&'.join(params)}"
+    return RedirectResponse(url=redirect_url)
 
 
 @app.get("/api/o365/status")
