@@ -300,6 +300,32 @@ app.add_middleware(
 # Include cleanup router (temporary)
 app.include_router(cleanup_router)
 
+# Debug endpoint for invitations (temporary)
+@app.get("/api/debug/invitations")
+async def debug_invitations(
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Debug endpoint to check all invitations (admin only)"""
+    invites = db.query(UserInvite).filter(
+        UserInvite.organization_id == current_user.organization_id
+    ).all()
+    
+    return {
+        "organization_id": current_user.organization_id,
+        "invitations": [
+            {
+                "id": invite.id,
+                "email": invite.email,
+                "status": invite.status,
+                "role": invite.role,
+                "created_at": invite.created_at.isoformat() if invite.created_at else None,
+                "expires_at": invite.expires_at.isoformat() if invite.expires_at else None
+            }
+            for invite in invites
+        ]
+    }
+
 # Health check endpoints
 @app.get("/")
 async def root():
@@ -639,11 +665,35 @@ async def revoke_user_invite(
     db: Session = Depends(get_db)
 ):
     """Revoke a pending invitation (admin only)"""
+    # First check if the invite exists at all
+    invite = db.query(UserInvite).filter(UserInvite.id == invite_id).first()
+    
+    if not invite:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Invitation with ID {invite_id} not found"
+        )
+    
+    # Check if it belongs to the user's organization
+    if invite.organization_id != current_user.organization_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot revoke invitations from other organizations"
+        )
+    
+    # Check if it's already processed
+    if invite.status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot revoke invitation with status '{invite.status}'. Only pending invitations can be revoked."
+        )
+    
+    # Now try to revoke it
     success = revoke_invite(db, invite_id, current_user.organization_id)
     if not success:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Invitation not found or already processed"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to revoke invitation"
         )
     return {"message": "Invitation revoked successfully"}
 
