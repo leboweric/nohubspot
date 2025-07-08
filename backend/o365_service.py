@@ -276,6 +276,8 @@ class O365Service:
 
 async def get_oauth_url(client_id: str, tenant_id: str, redirect_uri: str) -> str:
     """Generate OAuth2 authorization URL for Microsoft"""
+    from urllib.parse import urlencode, quote
+    
     scopes = [
         "User.Read",
         "Mail.Read",
@@ -284,15 +286,16 @@ async def get_oauth_url(client_id: str, tenant_id: str, redirect_uri: str) -> st
         "offline_access"
     ]
     
-    auth_url = (
-        f"{MICROSOFT_AUTHORITY}/{tenant_id}/oauth2/v2.0/authorize?"
-        f"client_id={client_id}"
-        f"&response_type=code"
-        f"&redirect_uri={redirect_uri}"
-        f"&response_mode=query"
-        f"&scope={' '.join(scopes)}"
-        f"&state=12345"  # Should be random in production
-    )
+    params = {
+        "client_id": client_id.strip(),
+        "response_type": "code",
+        "redirect_uri": redirect_uri.strip(),
+        "response_mode": "query",
+        "scope": " ".join(scopes),
+        "state": "12345"  # Should be random in production
+    }
+    
+    auth_url = f"{MICROSOFT_AUTHORITY}/{tenant_id.strip()}/oauth2/v2.0/authorize?{urlencode(params)}"
     
     return auth_url
 
