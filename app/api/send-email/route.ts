@@ -96,14 +96,23 @@ export async function POST(request: NextRequest) {
     const messageId = response.headers['x-message-id']
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
     
+    // Get auth token from request headers (passed from frontend)
+    const authHeader = request.headers.get('authorization')
+    const authToken = authHeader?.replace('Bearer ', '')
+    
+    // Debug all headers
+    const headers: Record<string, string> = {}
+    request.headers.forEach((value, key) => {
+      headers[key] = value.substring(0, 50) + (value.length > 50 ? '...' : '')
+    })
+    
     console.log('Email tracking setup:', {
       messageId,
       backendUrl,
-      hasAuthToken: !!request.cookies.get('auth-token')?.value
+      hasAuthToken: !!authToken,
+      authHeader: authHeader ? 'Present' : 'Missing',
+      allHeaders: headers
     })
-    
-    // Get auth token from cookies
-    const authToken = request.cookies.get('auth-token')?.value
     
     if (authToken && messageId) {
       console.log('Starting email tracking creation...')
