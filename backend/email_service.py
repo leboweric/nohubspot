@@ -7,7 +7,7 @@ from typing import Optional, List
 from datetime import datetime
 import uuid
 import httpx
-from email_templates import get_welcome_email_html, get_welcome_email_text, get_password_reset_email_html, get_password_reset_email_text
+from email_templates import get_welcome_email_html, get_welcome_email_text, get_password_reset_email_html, get_password_reset_email_text, get_invite_email_html, get_invite_email_text
 
 def generate_ics_content(
     event_title: str,
@@ -165,6 +165,25 @@ async def send_password_reset_email(
     subject = "Reset Your Password - NotHubSpot"
     html_content = get_password_reset_email_html(first_name, reset_url)
     text_content = get_password_reset_email_text(first_name, reset_url)
+    
+    return await send_email(
+        to_email=user_email,
+        subject=subject,
+        html_content=html_content,
+        text_content=text_content
+    )
+
+async def send_invite_email(
+    user_email: str,
+    organization_name: str,
+    inviter_name: str,
+    invite_url: str,
+    role: str = "user"
+) -> bool:
+    """Send invitation email to new user"""
+    subject = f"You're invited to join {organization_name} on NotHubSpot"
+    html_content = get_invite_email_html(organization_name, inviter_name, invite_url, role)
+    text_content = get_invite_email_text(organization_name, inviter_name, invite_url, role)
     
     return await send_email(
         to_email=user_email,

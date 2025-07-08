@@ -312,3 +312,133 @@ The NotHubSpot Security Team
 This email was sent because a password reset was requested for your NotHubSpot account.
 © 2024 NotHubSpot. All rights reserved.
 """
+
+def get_invite_email_html(organization_name: str, inviter_name: str, invite_url: str, role: str) -> str:
+    """Generate invitation email HTML content"""
+    role_display = "Administrator" if role == "admin" else "Team Member"
+    
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Invitation to Join {organization_name}</title>
+        <style>
+            body {{
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                background-color: #f5f5f5;
+                margin: 0;
+                padding: 0;
+            }}
+            .container {{
+                max-width: 600px;
+                margin: 0 auto;
+                background-color: #ffffff;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }}
+            .header {{
+                background-color: #2563eb;
+                color: white;
+                padding: 30px;
+                text-align: center;
+            }}
+            .header h1 {{
+                margin: 0;
+                font-size: 28px;
+                font-weight: 600;
+            }}
+            .content {{
+                padding: 40px 30px;
+            }}
+            .button {{
+                display: inline-block;
+                background-color: #2563eb;
+                color: white;
+                padding: 12px 30px;
+                text-decoration: none;
+                border-radius: 6px;
+                font-weight: 500;
+                margin: 20px 0;
+            }}
+            .info-box {{
+                background-color: #eff6ff;
+                border-left: 4px solid #2563eb;
+                padding: 15px 20px;
+                margin: 20px 0;
+                border-radius: 4px;
+            }}
+            .footer {{
+                background-color: #f8f9fa;
+                padding: 30px;
+                text-align: center;
+                font-size: 14px;
+                color: #666;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>You're Invited to Join {organization_name}!</h1>
+            </div>
+            <div class="content">
+                <p>Hi there,</p>
+                
+                <p><strong>{inviter_name}</strong> has invited you to join <strong>{organization_name}</strong> on NotHubSpot CRM as a <strong>{role_display}</strong>.</p>
+                
+                <p>NotHubSpot is a powerful CRM platform that helps teams manage contacts, companies, and communications all in one place.</p>
+                
+                <div class="info-box">
+                    <p><strong>Your role: {role_display}</strong></p>
+                    <p>As a {role_display}, you'll be able to:
+                    {"<br>• Manage users and organization settings<br>• Full access to all CRM features" if role == "admin" else "<br>• Access and manage contacts and companies<br>• Send emails and track communications<br>• Create tasks and activities"}
+                    </p>
+                </div>
+                
+                <p style="text-align: center;">
+                    <a href="{invite_url}" class="button">Accept Invitation</a>
+                </p>
+                
+                <p style="color: #666; font-size: 14px;">
+                    <strong>Note:</strong> This invitation will expire in 7 days. If you need a new invitation, please ask {inviter_name} to send another one.
+                </p>
+            </div>
+            <div class="footer">
+                <p>This invitation was sent to you by {inviter_name} from {organization_name}.</p>
+                <p>© 2024 NotHubSpot. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+def get_invite_email_text(organization_name: str, inviter_name: str, invite_url: str, role: str) -> str:
+    """Generate invitation email text content"""
+    role_display = "Administrator" if role == "admin" else "Team Member"
+    
+    return f"""
+You're Invited to Join {organization_name}!
+
+Hi there,
+
+{inviter_name} has invited you to join {organization_name} on NotHubSpot CRM as a {role_display}.
+
+NotHubSpot is a powerful CRM platform that helps teams manage contacts, companies, and communications all in one place.
+
+Your role: {role_display}
+{"• Manage users and organization settings" if role == "admin" else "• Access and manage contacts and companies"}
+{"• Full access to all CRM features" if role == "admin" else "• Send emails and track communications"}
+{'' if role == "admin" else "• Create tasks and activities"}
+
+Accept your invitation:
+{invite_url}
+
+Note: This invitation will expire in 7 days. If you need a new invitation, please ask {inviter_name} to send another one.
+
+---
+This invitation was sent to you by {inviter_name} from {organization_name}.
+© 2024 NotHubSpot. All rights reserved.
+"""

@@ -85,7 +85,7 @@ from auth import (
     get_current_active_user, get_current_admin_user,
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
-from email_service import send_welcome_email, send_password_reset_email, send_calendar_invite
+from email_service import send_welcome_email, send_password_reset_email, send_calendar_invite, send_invite_email
 from email_template_crud import (
     get_email_templates, get_email_template, create_email_template,
     update_email_template, delete_email_template, increment_template_usage,
@@ -558,7 +558,30 @@ async def create_invite(
             detail="User already exists in this organization"
         )
     
-    return create_user_invite(db, invite, current_user.organization_id, current_user.id)
+    # Create the invite in database
+    db_invite = create_user_invite(db, invite, current_user.organization_id, current_user.id)
+    
+    # Get organization details
+    organization = get_organization_by_id(db, current_user.organization_id)
+    
+    # Build the invite URL - using frontend URL for accept page
+    frontend_url = os.environ.get("NEXT_PUBLIC_API_URL", "https://nothubspot.app")
+    invite_url = f"{frontend_url}/auth/accept-invite?code={db_invite.invite_code}"
+    
+    # Send the invitation email
+    inviter_name = f"{current_user.first_name} {current_user.last_name}"
+    email_sent = await send_invite_email(
+        user_email=invite.email,
+        organization_name=organization.name,
+        inviter_name=inviter_name,
+        invite_url=invite_url,
+        role=invite.role
+    )
+    
+    if not email_sent:
+        print(f"Warning: Failed to send invitation email to {invite.email}")
+    
+    return db_invite
 
 @app.get("/api/invites", response_model=List[UserInviteResponse])
 async def get_invites(
