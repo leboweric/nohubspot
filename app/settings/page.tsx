@@ -5,6 +5,7 @@ import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import SignatureBuilder, { EmailSignature } from "@/components/signature/SignatureBuilder"
 import SupportModal from "@/components/support/SupportModal"
+import O365Connection from "@/components/settings/O365Connection"
 import { useEmailSignature } from "@/components/signature/SignatureManager"
 import { getAuthState, isAdmin } from "@/lib/auth"
 import { o365API, O365OrganizationConfig, O365UserConnection, handleAPIError } from "@/lib/api"
@@ -704,6 +705,9 @@ export default function SettingsPage() {
             </div>
           </div>
         )}
+
+        {/* Office 365 Connection Component - For all users */}
+        <O365Connection />
 
         {/* System Settings Section */}
         <div className="bg-card border rounded-lg p-6">

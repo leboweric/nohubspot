@@ -1144,3 +1144,40 @@ export const handleAPIError = (error: unknown): string => {
   }
   return 'An unexpected error occurred'
 }
+
+// Office 365 Integration API (new endpoints)
+export const o365IntegrationAPI = {
+  getStatus: (): Promise<{
+    connected: boolean
+    email?: string
+    display_name?: string
+    last_sync?: string
+    sync_enabled?: boolean
+    message?: string
+  }> => apiRequest('/api/o365/status'),
+  
+  getAuthUrl: (): Promise<{ auth_url: string }> =>
+    apiRequest('/api/o365/auth/url'),
+  
+  handleCallback: (code: string, state?: string): Promise<{
+    success: boolean
+    message: string
+    email?: string
+  }> => apiRequest('/api/o365/auth/callback', {
+    method: 'POST',
+    body: JSON.stringify({ code, state })
+  }),
+  
+  syncEmails: (): Promise<{
+    success: boolean
+    synced_count: number
+    last_sync: string
+  }> => apiRequest('/api/o365/sync', {
+    method: 'POST'
+  }),
+  
+  disconnect: (): Promise<{ success: boolean; message: string }> =>
+    apiRequest('/api/o365/disconnect', {
+      method: 'DELETE'
+    })
+}

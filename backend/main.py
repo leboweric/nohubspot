@@ -93,6 +93,8 @@ from email_template_crud import (
 )
 from ai_service import generate_daily_summary
 from ai_chat import process_ai_chat
+from o365_service import O365Service, get_oauth_url, exchange_code_for_tokens
+from o365_encryption import encrypt_access_token, encrypt_refresh_token, decrypt_client_secret, encrypt_client_secret
 
 # Create database tables with error handling
 print("🔨 Starting database initialization...")
@@ -2366,6 +2368,232 @@ async def get_contact_email_threads(
         contact_id=contact_id
     )
     return threads
+
+
+# Office 365 Integration Endpoints
+@app.get("/api/o365/auth/url")
+async def get_o365_auth_url(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get O365 OAuth URL for user authorization"""
+    # Check if organization has O365 configured
+    org_config = get_o365_org_config(db, current_user.organization_id)
+    
+    # Use environment variables as fallback if no org config
+    if not org_config or not org_config.client_id:
+        # Check for environment variables
+        env_client_id = os.environ.get("O365_CLIENT_ID")
+        env_tenant_id = os.environ.get("O365_TENANT_ID")
+        
+        if not env_client_id or not env_tenant_id:
+            raise HTTPException(
+                status_code=400, 
+                detail="Office 365 integration not configured for your organization"
+            )
+        
+        # Use environment variables
+        client_id = env_client_id
+        tenant_id = env_tenant_id
+    else:
+        # Use org config
+        client_id = org_config.client_id
+        tenant_id = org_config.tenant_id
+    
+    redirect_uri = os.environ.get("O365_REDIRECT_URI", "https://nohubspot-production.up.railway.app/api/auth/microsoft/callback")
+    auth_url = await get_oauth_url(
+        client_id,
+        tenant_id,
+        redirect_uri
+    )
+    
+    return {"auth_url": auth_url}
+
+
+@app.post("/api/o365/auth/callback")
+async def o365_auth_callback(
+    code: str,
+    state: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Handle O365 OAuth callback"""
+    # Get org config
+    org_config = get_o365_org_config(db, current_user.organization_id)
+    
+    # Determine configuration source
+    if not org_config or not org_config.client_id:
+        # Use environment variables
+        env_client_id = os.environ.get("O365_CLIENT_ID")
+        env_tenant_id = os.environ.get("O365_TENANT_ID")
+        env_client_secret = os.environ.get("O365_CLIENT_SECRET")
+        
+        if not all([env_client_id, env_tenant_id, env_client_secret]):
+            raise HTTPException(status_code=400, detail="O365 not configured")
+        
+        client_id = env_client_id
+        tenant_id = env_tenant_id
+        client_secret = env_client_secret
+        org_config_id = None
+    else:
+        # Use org config
+        client_id = org_config.client_id
+        tenant_id = org_config.tenant_id
+        client_secret = decrypt_client_secret(org_config.client_secret_encrypted)
+        org_config_id = org_config.id
+    
+    try:
+        # Exchange code for tokens
+        redirect_uri = os.environ.get("O365_REDIRECT_URI", "https://nohubspot-production.up.railway.app/api/auth/microsoft/callback")
+        
+        token_data = await exchange_code_for_tokens(
+            code,
+            client_id,
+            client_secret,
+            tenant_id,
+            redirect_uri
+        )
+        
+        # Create or update user connection
+        existing = db.query(O365UserConnection).filter(
+            O365UserConnection.user_id == current_user.id
+        ).first()
+        
+        if existing:
+            # Update existing connection
+            existing.access_token_encrypted = encrypt_access_token(token_data["access_token"])
+            existing.refresh_token_encrypted = encrypt_refresh_token(token_data["refresh_token"])
+            existing.token_expires_at = datetime.utcnow() + timedelta(seconds=token_data.get("expires_in", 3600))
+            existing.scopes_granted = token_data.get("scope", "").split(" ")
+            existing.is_active = True
+            connection = existing
+        else:
+            # Create new connection
+            connection = O365UserConnection(
+                user_id=current_user.id,
+                organization_id=current_user.organization_id,
+                org_config_id=org_config_id,  # Can be None if using env vars
+                o365_user_id=token_data.get("user_id", ""),
+                o365_email=current_user.email,  # Will be updated after getting user info
+                o365_display_name=f"{current_user.first_name} {current_user.last_name}",
+                access_token_encrypted=encrypt_access_token(token_data["access_token"]),
+                refresh_token_encrypted=encrypt_refresh_token(token_data["refresh_token"]),
+                token_expires_at=datetime.utcnow() + timedelta(seconds=token_data.get("expires_in", 3600)),
+                scopes_granted=token_data.get("scope", "").split(" "),
+                is_active=True
+            )
+            db.add(connection)
+        
+        db.commit()
+        
+        # Get user info from Microsoft Graph
+        # Create a dummy org_config if using env vars
+        if not org_config:
+            from models import O365OrganizationConfig
+            org_config = O365OrganizationConfig(
+                id=0,
+                organization_id=current_user.organization_id,
+                client_id=client_id,
+                tenant_id=tenant_id,
+                client_secret_encrypted=encrypt_client_secret(client_secret)
+            )
+        
+        async with O365Service(connection, org_config) as service:
+            user_info = await service.get_user_info()
+            connection.o365_user_id = user_info.get("id", "")
+            connection.o365_email = user_info.get("mail") or user_info.get("userPrincipalName", "")
+            connection.o365_display_name = user_info.get("displayName", "")
+            db.commit()
+        
+        return {
+            "success": True,
+            "message": "Successfully connected to Office 365",
+            "email": connection.o365_email
+        }
+        
+    except Exception as e:
+        print(f"O365 auth callback error: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/o365/status")
+async def get_o365_connection_status(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get current user's O365 connection status"""
+    connection = db.query(O365UserConnection).filter(
+        O365UserConnection.user_id == current_user.id
+    ).first()
+    
+    if not connection:
+        return {
+            "connected": False,
+            "message": "No Office 365 connection found"
+        }
+    
+    return {
+        "connected": connection.is_active,
+        "email": connection.o365_email,
+        "display_name": connection.o365_display_name,
+        "last_sync": connection.last_sync_at,
+        "sync_enabled": connection.sync_email_enabled
+    }
+
+
+@app.post("/api/o365/sync")
+async def sync_o365_emails(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Manually trigger O365 email sync"""
+    connection = db.query(O365UserConnection).filter(
+        O365UserConnection.user_id == current_user.id,
+        O365UserConnection.is_active == True
+    ).first()
+    
+    if not connection:
+        raise HTTPException(status_code=400, detail="No active O365 connection")
+    
+    org_config = get_o365_org_config(db, current_user.organization_id)
+    if not org_config:
+        raise HTTPException(status_code=400, detail="O365 not configured")
+    
+    try:
+        async with O365Service(connection, org_config) as service:
+            synced_count = await service.sync_emails_to_crm(
+                db, 
+                current_user.organization_id,
+                since=connection.last_sync_at
+            )
+            db.commit()
+            
+        return {
+            "success": True,
+            "synced_count": synced_count,
+            "last_sync": connection.last_sync_at
+        }
+        
+    except Exception as e:
+        print(f"O365 sync error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/o365/disconnect")
+async def disconnect_o365(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Disconnect O365 integration"""
+    connection = db.query(O365UserConnection).filter(
+        O365UserConnection.user_id == current_user.id
+    ).first()
+    
+    if connection:
+        db.delete(connection)
+        db.commit()
+        
+    return {"success": True, "message": "Office 365 disconnected"}
 
 
 # Inbound email webhook
