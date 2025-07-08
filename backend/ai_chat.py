@@ -86,10 +86,12 @@ class AIChatService:
         relevant_tasks = []
         
         try:
-            # Get all data for searching
-            all_contacts = get_contacts(self.db, self.organization_id, limit=1000)
-            all_companies = get_companies(self.db, self.organization_id, limit=1000) 
-            all_tasks = get_tasks(self.db, self.organization_id, limit=1000)
+            # Get all data for searching (increased limits for large datasets)
+            all_contacts = get_contacts(self.db, self.organization_id, limit=10000)
+            all_companies = get_companies(self.db, self.organization_id, limit=10000) 
+            all_tasks = get_tasks(self.db, self.organization_id, limit=10000)
+            
+            print(f"AI Chat - Loaded {len(all_contacts)} contacts, {len(all_companies)} companies, {len(all_tasks)} tasks")
             
             # Look for name mentions in the message
             for contact in all_contacts:
@@ -102,10 +104,29 @@ class AIChatService:
                    (full_name and full_name in message_lower):
                     relevant_contacts.append(contact)
             
-            # Look for company mentions
+            # Look for company mentions - more flexible matching
             for company in all_companies:
-                if company.name and company.name.lower() in message_lower:
-                    relevant_companies.append(company)
+                if company.name:
+                    company_name_lower = company.name.lower()
+                    # Check if any word in the message matches any word in the company name
+                    message_words = message_lower.split()
+                    company_words = company_name_lower.split()
+                    
+                    # Direct substring match
+                    if company_name_lower in message_lower:
+                        relevant_companies.append(company)
+                    # Check if all significant words in search appear in company name
+                    elif len(message_words) > 0 and all(
+                        any(word in comp_word for comp_word in company_words) 
+                        for word in message_words 
+                        if len(word) > 2  # Skip small words like "is", "at", etc.
+                    ):
+                        relevant_companies.append(company)
+                    # Special case for partial matches (e.g., "KM" matches "KM Electric")
+                    elif any(word in company_words for word in message_words if len(word) >= 2):
+                        relevant_companies.append(company)
+            
+            print(f"AI Chat - Found {len(relevant_companies)} relevant companies for query: {message}")
             
             # If asking about tasks, get relevant ones
             if any(word in message_lower for word in ['task', 'todo', 'due', 'deadline', 'meeting', 'call']):
@@ -153,10 +174,21 @@ class AIChatService:
             prompt_parts.append("RELEVANT COMPANIES:")
             for company in crm_data["companies"]:
                 company_info = f"- {company.name}"
+                location_parts = []
+                if hasattr(company, 'city') and company.city:
+                    location_parts.append(company.city)
+                if hasattr(company, 'state') and company.state:
+                    location_parts.append(company.state)
+                if location_parts:
+                    company_info += f" (Location: {', '.join(location_parts)})"
+                if hasattr(company, 'phone') and company.phone:
+                    company_info += f" (Phone: {company.phone})"
                 if company.industry:
                     company_info += f" (Industry: {company.industry})"
                 if company.website:
                     company_info += f" (Website: {company.website})"
+                if hasattr(company, 'street_address') and company.street_address:
+                    company_info += f" (Address: {company.street_address})"
                 prompt_parts.append(company_info)
             prompt_parts.append("")
         
