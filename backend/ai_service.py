@@ -31,15 +31,20 @@ class DailySummaryService:
     def generate_daily_summary(self) -> Dict[str, Any]:
         """Generate a comprehensive daily summary for the user"""
         try:
+            print(f"Starting daily summary generation for user_id: {self.user_id}, org_id: {self.organization_id}")
+            
             # Get user info for personalization
             user = self.db.query(User).filter(User.id == self.user_id).first()
             user_name = user.first_name if user and user.first_name else "there"
+            print(f"User found: {user_name}")
             
             # Collect data from last 24-48 hours
             data = self._collect_summary_data()
+            print(f"Data collected successfully")
             
             # Generate AI insights with user name
             ai_summary = self._generate_ai_insights(data, user_name)
+            print(f"AI insights generated")
             
             # Combine with structured data (remove recommendations)
             summary = {
@@ -50,6 +55,7 @@ class DailySummaryService:
                 "quick_stats": self._generate_quick_stats(data)
             }
             
+            print(f"Summary quick_stats: {summary['quick_stats']}")
             return summary
             
         except Exception as e:
@@ -110,14 +116,21 @@ class DailySummaryService:
                 })
         
         # Get companies data
+        all_companies = []
+        active_companies = []
         try:
             all_companies = get_companies(self.db, self.organization_id, limit=10000)
             print(f"Daily summary - Total companies: {len(all_companies)}")
             active_companies = [c for c in all_companies if c.status == 'Active']
             print(f"Daily summary - Active companies: {len(active_companies)}")
+            # Also print some sample company statuses for debugging
+            if all_companies:
+                sample_statuses = [c.status for c in all_companies[:10]]
+                print(f"Sample company statuses: {sample_statuses}")
         except Exception as e:
             print(f"Error getting companies in daily summary: {e}")
-            all_companies = []
+            import traceback
+            print(f"Company error traceback: {traceback.format_exc()}")
         
         # Get deals data
         try:
@@ -153,7 +166,7 @@ class DailySummaryService:
             },
             "companies": {
                 "total": len(all_companies),
-                "active": [c for c in all_companies if c.status == 'Active']
+                "active": active_companies
             },
             "deals": {
                 "total": len(all_deals),
