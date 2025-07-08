@@ -10,7 +10,7 @@ import EmailTrackingStatus from "@/components/email/EmailTrackingStatus"
 import TaskCreate from "@/components/tasks/TaskCreate"
 import EventFormModal from "@/components/calendar/EventFormModal"
 import { Task } from "@/components/tasks/types"
-import { contactAPI, Contact, handleAPIError, CalendarEventCreate, calendarAPI, emailThreadAPI, EmailThread } from "@/lib/api"
+import { contactAPI, Contact, handleAPIError, CalendarEventCreate, calendarAPI, emailThreadAPI, EmailThread, emailTrackingAPI } from "@/lib/api"
 import { getAuthState } from "@/lib/auth"
 
 // Force dynamic rendering to prevent static generation issues with auth
@@ -75,10 +75,42 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
     }
   }
 
-  // Load email threads when contact is loaded
+  // Load activity stats for this contact
+  const loadActivityStats = async () => {
+    if (!contact) return
+    
+    try {
+      // Get email tracking records for this contact
+      const emailTracking = await emailTrackingAPI.getAll({
+        contact_id: contact.id,
+        limit: 1000
+      })
+      
+      // Get calendar events for this contact
+      const events = await calendarAPI.getAll({
+        contact_id: contact.id,
+        limit: 1000
+      })
+      
+      // Count different types of activities
+      const callEvents = events.filter(e => e.event_type === 'call')
+      const meetingEvents = events.filter(e => e.event_type === 'meeting')
+      
+      setActivityStats({
+        emailsSent: emailTracking.length,
+        callsMade: callEvents.length,
+        meetings: meetingEvents.length
+      })
+    } catch (err) {
+      console.error('Failed to load activity stats:', err)
+    }
+  }
+
+  // Load email threads and activity stats when contact is loaded
   useEffect(() => {
     if (contact) {
       loadEmailThreads()
+      loadActivityStats()
     }
   }, [contact])
   const [showNoteModal, setShowNoteModal] = useState(false)
@@ -90,6 +122,11 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
   const [emailThreads, setEmailThreads] = useState<EmailThread[]>([])
   const [emails, setEmails] = useState<EmailMessage[]>([])
   const [emailsLoading, setEmailsLoading] = useState(false)
+  const [activityStats, setActivityStats] = useState({
+    emailsSent: 0,
+    callsMade: 0,
+    meetings: 0
+  })
 
   const handleSendEmail = () => {
     setShowEmailCompose(true)
@@ -113,8 +150,13 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
   const handleEmailSent = (email: EmailMessage) => {
     // Close the compose modal
     setShowEmailCompose(false)
-    // Refresh email threads to show the new email
+    // Refresh email threads and stats to show the new email
     loadEmailThreads()
+    loadActivityStats()
+    // Small delay to allow backend to process
+    setTimeout(() => {
+      loadActivityStats()
+    }, 2000)
   }
 
   const handleReply = (message: string) => {
@@ -362,15 +404,15 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
             <dl className="space-y-3">
               <div className="flex justify-between">
                 <dt className="text-sm text-muted-foreground">Emails Sent</dt>
-                <dd className="text-sm font-medium">0</dd>
+                <dd className="text-sm font-medium">{activityStats.emailsSent}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-sm text-muted-foreground">Calls Made</dt>
-                <dd className="text-sm font-medium">0</dd>
+                <dd className="text-sm font-medium">{activityStats.callsMade}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-sm text-muted-foreground">Meetings</dt>
-                <dd className="text-sm font-medium">0</dd>
+                <dd className="text-sm font-medium">{activityStats.meetings}</dd>
               </div>
             </dl>
           </div>
