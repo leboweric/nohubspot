@@ -106,7 +106,13 @@ export default function CompaniesPage() {
 
   const handleBulkUpload = async (data: BulkUploadData, mappings: FieldMapping[]) => {
     try {
-      const newCompanies: CompanyCreate[] = data.rows.map((row) => {
+      console.log('Starting bulk upload with data:', { 
+        rowCount: data.rows.length, 
+        headers: data.headers,
+        mappings 
+      })
+      
+      const newCompanies: CompanyCreate[] = data.rows.map((row, index) => {
         const company: any = {
           status: "Active"
         }
@@ -115,7 +121,7 @@ export default function CompaniesPage() {
           if (mapping.targetField) {
             const columnIndex = data.headers.indexOf(mapping.csvColumn)
             if (columnIndex !== -1) {
-              const value = row[columnIndex] || ''
+              const value = String(row[columnIndex] || '').trim()
               // Map frontend field names to backend field names
               if (mapping.targetField === 'name') {
                 company.name = value
@@ -144,23 +150,83 @@ export default function CompaniesPage() {
           }
         })
 
+        // Validate required fields
+        if (!company.name) {
+          console.warn(`Row ${index + 1} missing company name:`, row)
+        }
+
         return company
       })
-
-      // Upload via API
-      const result = await companyAPI.bulkUpload(newCompanies)
       
-      if (result.error_count > 0) {
-        alert(`Imported ${result.success_count} companies successfully.\n${result.error_count} failed:\n${result.errors.join('\n')}`)
+      // Filter out companies without names
+      const validCompanies = newCompanies.filter(c => c.name)
+      console.log(`Processing ${validCompanies.length} valid companies out of ${newCompanies.length} total`)
+
+      // Check if we have too many companies - batch them
+      const BATCH_SIZE = 100
+      if (validCompanies.length > BATCH_SIZE) {
+        const totalBatches = Math.ceil(validCompanies.length / BATCH_SIZE)
+        let totalSuccess = 0
+        let totalErrors = 0
+        const allErrors: string[] = []
+        
+        // Show progress
+        const confirmed = confirm(`This will import ${validCompanies.length} companies in ${totalBatches} batches of ${BATCH_SIZE}. Continue?`)
+        if (!confirmed) return
+        
+        for (let i = 0; i < totalBatches; i++) {
+          const start = i * BATCH_SIZE
+          const end = Math.min(start + BATCH_SIZE, validCompanies.length)
+          const batch = validCompanies.slice(start, end)
+          
+          console.log(`Processing batch ${i + 1}/${totalBatches} (${batch.length} companies)`)
+          
+          try {
+            const result = await companyAPI.bulkUpload(batch)
+            totalSuccess += result.success_count
+            totalErrors += result.error_count
+            if (result.errors) {
+              allErrors.push(...result.errors)
+            }
+          } catch (batchError) {
+            console.error(`Batch ${i + 1} failed:`, batchError)
+            totalErrors += batch.length
+            allErrors.push(`Batch ${i + 1}: ${handleAPIError(batchError)}`)
+          }
+        }
+        
+        if (totalErrors > 0) {
+          alert(`Import completed!\n\nSuccessful: ${totalSuccess}\nFailed: ${totalErrors}\n\nErrors:\n${allErrors.slice(0, 10).join('\n')}${allErrors.length > 10 ? '\n...and more' : ''}`)
+        } else {
+          alert(`Successfully imported all ${totalSuccess} companies!`)
+        }
       } else {
-        alert(`Successfully imported ${result.success_count} companies!`)
+        // Small batch, upload normally
+        const result = await companyAPI.bulkUpload(validCompanies)
+        
+        if (result.error_count > 0) {
+          alert(`Imported ${result.success_count} companies successfully.\n${result.error_count} failed:\n${result.errors.join('\n')}`)
+        } else {
+          alert(`Successfully imported ${result.success_count} companies!`)
+        }
       }
 
       // Refresh the companies list
       loadCompanies()
     } catch (error) {
       console.error('Failed to import companies:', error)
-      alert(`Failed to import companies: ${handleAPIError(error)}`)
+      
+      // Better error handling
+      let errorMessage = 'Unknown error'
+      if (error instanceof Error) {
+        errorMessage = error.message
+      } else if (typeof error === 'object' && error !== null) {
+        errorMessage = JSON.stringify(error)
+      } else {
+        errorMessage = String(error)
+      }
+      
+      alert(`Failed to import companies: ${errorMessage}`)
     }
   }
 
