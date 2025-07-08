@@ -52,10 +52,11 @@ export default function DailySummaryCard() {
   }
 
   const formatTime = (isoString: string) => {
+    // Use the user's local timezone
     return new Date(isoString).toLocaleTimeString('en-US', {
-      hour: '2-digit',
+      hour: 'numeric',
       minute: '2-digit',
-      timeZone: 'America/Chicago' // Central Time
+      hour12: true
     })
   }
 
@@ -161,7 +162,7 @@ export default function DailySummaryCard() {
         <div>
           <h2 className="text-lg font-semibold text-blue-900">🤖 AI Daily Summary</h2>
           <p className="text-xs text-blue-600">
-            Generated at {formatTime(summary.generated_at)}
+            Last updated: {formatTime(summary.generated_at)}
           </p>
         </div>
         <div className="flex items-center gap-2">
