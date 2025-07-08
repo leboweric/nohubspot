@@ -4,7 +4,7 @@ Office 365 Integration Service using Microsoft Graph API
 import os
 import json
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List, Dict, Any
 import httpx
 from sqlalchemy.orm import Session
@@ -39,7 +39,12 @@ class O365Service:
         
     async def ensure_valid_token(self):
         """Ensure we have a valid access token, refreshing if necessary"""
-        if self.user_connection.token_expires_at <= datetime.utcnow() + timedelta(minutes=5):
+        # Convert to timezone-naive for comparison if necessary
+        token_expires = self.user_connection.token_expires_at
+        if token_expires.tzinfo is not None:
+            token_expires = token_expires.replace(tzinfo=None)
+        
+        if token_expires <= datetime.utcnow() + timedelta(minutes=5):
             await self.refresh_access_token()
         else:
             self.access_token = decrypt_access_token(self.user_connection.access_token_encrypted)
@@ -269,7 +274,7 @@ class O365Service:
             # Update thread
             thread.message_count += 1
             thread.preview = body_content[:100] + ("..." if len(body_content) > 100 else "")
-            thread.updated_at = datetime.utcnow()
+            thread.updated_at = datetime.utcnow().replace(tzinfo=None)
             
             db.commit()
 
