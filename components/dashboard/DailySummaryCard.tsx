@@ -52,8 +52,24 @@ export default function DailySummaryCard() {
   }
 
   const formatTime = (isoString: string) => {
-    // Use the user's local timezone
-    return new Date(isoString).toLocaleTimeString('en-US', {
+    // Parse the ISO string and convert to local time
+    const date = new Date(isoString)
+    
+    // Debug logging
+    console.log('Summary timestamp:', {
+      raw: isoString,
+      parsed: date.toString(),
+      utc: date.toUTCString(),
+      local: date.toLocaleString()
+    })
+    
+    // If the date is invalid, return a fallback
+    if (isNaN(date.getTime())) {
+      return 'Recently'
+    }
+    
+    // Format in user's local timezone
+    return date.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true

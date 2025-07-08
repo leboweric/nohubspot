@@ -3,7 +3,7 @@ AI Service for generating daily summaries and insights
 """
 import os
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc
@@ -48,7 +48,7 @@ class DailySummaryService:
             
             # Combine with structured data (remove recommendations)
             summary = {
-                "generated_at": datetime.now().isoformat(),
+                "generated_at": datetime.now(timezone.utc).isoformat(),
                 "user_id": self.user_id,
                 "data_summary": data,
                 "ai_insights": ai_summary,
@@ -301,7 +301,7 @@ class DailySummaryService:
     def _fallback_summary(self) -> Dict[str, Any]:
         """Fallback summary when AI is unavailable"""
         return {
-            "generated_at": datetime.now().isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "user_id": self.user_id,
             "ai_insights": "Good morning! Your daily summary is being prepared. Please check your tasks and deals for today's priorities.",
             "quick_stats": {
