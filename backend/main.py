@@ -605,6 +605,17 @@ async def create_invite(
     frontend_url = os.environ.get("NEXT_PUBLIC_API_URL", "https://nothubspot.app")
     invite_url = f"{frontend_url}/auth/accept-invite?code={db_invite.invite_code}"
     
+    # Find the organization owner to CC on the invitation
+    owner_email = None
+    owner = db.query(User).filter(
+        User.organization_id == current_user.organization_id,
+        User.role == "owner"
+    ).first()
+    
+    if owner:
+        owner_email = owner.email
+        print(f"CC'ing organization owner: {owner_email}")
+    
     # Send the invitation email
     inviter_name = f"{current_user.first_name} {current_user.last_name}"
     email_sent = await send_invite_email(
@@ -612,7 +623,8 @@ async def create_invite(
         organization_name=organization.name,
         inviter_name=inviter_name,
         invite_url=invite_url,
-        role=invite.role
+        role=invite.role,
+        cc_owner_email=owner_email
     )
     
     if not email_sent:

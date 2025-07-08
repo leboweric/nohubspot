@@ -83,7 +83,8 @@ async def send_email(
     text_content: Optional[str] = None,
     from_email: Optional[str] = None,
     from_name: Optional[str] = None,
-    attachments: Optional[List[dict]] = None
+    attachments: Optional[List[dict]] = None,
+    cc_emails: Optional[List[str]] = None
 ) -> bool:
     """Send email via SendGrid"""
     # Load environment variables at runtime instead of module import time
@@ -106,8 +107,13 @@ async def send_email(
         "Content-Type": "application/json"
     }
     
+    # Build personalizations with CC if provided
+    personalization = {"to": [{"email": to_email}]}
+    if cc_emails:
+        personalization["cc"] = [{"email": email} for email in cc_emails]
+    
     data = {
-        "personalizations": [{"to": [{"email": to_email}]}],
+        "personalizations": [personalization],
         "from": {
             "email": from_email or SENDGRID_FROM_EMAIL,
             "name": from_name or SENDGRID_FROM_NAME
@@ -130,7 +136,8 @@ async def send_email(
             response = await client.post(url, json=data, headers=headers)
             
             if response.status_code in [200, 201, 202]:
-                print(f"Email sent successfully to {to_email}")
+                cc_msg = f" (CC: {', '.join(cc_emails)})" if cc_emails else ""
+                print(f"Email sent successfully to {to_email}{cc_msg}")
                 return True
             else:
                 print(f"Failed to send email: {response.status_code} - {response.text}")
@@ -178,18 +185,23 @@ async def send_invite_email(
     organization_name: str,
     inviter_name: str,
     invite_url: str,
-    role: str = "user"
+    role: str = "user",
+    cc_owner_email: Optional[str] = None
 ) -> bool:
     """Send invitation email to new user"""
     subject = f"You're invited to join {organization_name} on NotHubSpot"
     html_content = get_invite_email_html(organization_name, inviter_name, invite_url, role)
     text_content = get_invite_email_text(organization_name, inviter_name, invite_url, role)
     
+    # Include CC if owner email is provided
+    cc_list = [cc_owner_email] if cc_owner_email else None
+    
     return await send_email(
         to_email=user_email,
         subject=subject,
         html_content=html_content,
-        text_content=text_content
+        text_content=text_content,
+        cc_emails=cc_list
     )
 
 async def send_calendar_invite(
