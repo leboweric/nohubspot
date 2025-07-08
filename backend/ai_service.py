@@ -67,7 +67,7 @@ class DailySummaryService:
         
         # Get tasks
         try:
-            all_tasks = get_tasks(self.db, self.organization_id, limit=1000)
+            all_tasks = get_tasks(self.db, self.organization_id, limit=10000)
         except Exception as e:
             print(f"Error getting tasks in daily summary: {e}")
             all_tasks = []
@@ -93,7 +93,7 @@ class DailySummaryService:
         
         # Get contacts that need attention
         try:
-            all_contacts = get_contacts(self.db, self.organization_id, limit=1000)
+            all_contacts = get_contacts(self.db, self.organization_id, limit=10000)
         except Exception as e:
             print(f"Error getting contacts in daily summary: {e}")
             all_contacts = []
@@ -111,14 +111,17 @@ class DailySummaryService:
         
         # Get companies data
         try:
-            all_companies = get_companies(self.db, self.organization_id, limit=1000)
+            all_companies = get_companies(self.db, self.organization_id, limit=10000)
+            print(f"Daily summary - Total companies: {len(all_companies)}")
+            active_companies = [c for c in all_companies if c.status == 'Active']
+            print(f"Daily summary - Active companies: {len(active_companies)}")
         except Exception as e:
             print(f"Error getting companies in daily summary: {e}")
             all_companies = []
         
         # Get deals data
         try:
-            all_deals = get_deals(self.db, self.organization_id, limit=1000)
+            all_deals = get_deals(self.db, self.organization_id, limit=10000)
         except Exception as e:
             print(f"Error getting deals in daily summary: {e}")
             all_deals = []
