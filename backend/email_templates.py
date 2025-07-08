@@ -356,12 +356,16 @@ def get_invite_email_html(organization_name: str, inviter_name: str, invite_url:
             .button {{
                 display: inline-block;
                 background-color: #2563eb;
-                color: white;
+                color: white !important;
                 padding: 12px 30px;
                 text-decoration: none;
                 border-radius: 6px;
                 font-weight: 500;
                 margin: 20px 0;
+            }}
+            .button:hover {{
+                background-color: #1d4ed8;
+                color: white !important;
             }}
             .info-box {{
                 background-color: #eff6ff;
@@ -415,14 +419,14 @@ def get_invite_email_html(organization_name: str, inviter_name: str, invite_url:
     </html>
     """
 
-def get_invite_email_text(organization_name: str, inviter_name: str, invite_url: str, role: str) -> str:
+def get_invite_email_text(organization_name: str, inviter_name: str, invite_url: str, role: str, recipient_name: str = "") -> str:
     """Generate invitation email text content"""
     role_display = "Administrator" if role == "admin" else "Team Member"
     
     return f"""
 You're Invited to Join {organization_name}!
 
-Hi there,
+Hi{f' {recipient_name}' if recipient_name else ' there'},
 
 {inviter_name} has invited you to join {organization_name} on NotHubSpot CRM as a {role_display}.
 

@@ -189,9 +189,12 @@ async def send_invite_email(
     cc_owner_email: Optional[str] = None
 ) -> bool:
     """Send invitation email to new user"""
+    # Extract first name from email (best guess)
+    recipient_name = user_email.split('@')[0].split('.')[0].capitalize()
+    
     subject = f"You're invited to join {organization_name} on NotHubSpot"
-    html_content = get_invite_email_html(organization_name, inviter_name, invite_url, role)
-    text_content = get_invite_email_text(organization_name, inviter_name, invite_url, role)
+    html_content = get_invite_email_html(organization_name, inviter_name, invite_url, role, recipient_name)
+    text_content = get_invite_email_text(organization_name, inviter_name, invite_url, role, recipient_name)
     
     # Include CC if owner email is provided
     cc_list = [cc_owner_email] if cc_owner_email else None
