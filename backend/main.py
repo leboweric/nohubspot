@@ -2434,14 +2434,21 @@ async def get_o365_auth_url(
     return {"auth_url": auth_url}
 
 
+from pydantic import BaseModel
+
+class O365CallbackRequest(BaseModel):
+    code: str
+    state: Optional[str] = None
+
 @app.post("/api/o365/auth/callback")
 async def o365_auth_callback(
-    code: str,
-    state: Optional[str] = None,
+    callback_data: O365CallbackRequest,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """Handle O365 OAuth callback"""
+    code = callback_data.code
+    state = callback_data.state
     # Get org config
     org_config = get_o365_org_config(db, current_user.organization_id)
     
