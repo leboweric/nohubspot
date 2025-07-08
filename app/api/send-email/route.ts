@@ -103,6 +103,20 @@ export async function POST(request: NextRequest) {
       try {
         // Create tracking record and email thread for each recipient
         for (const recipientEmail of recipients) {
+          // First, try to find the contact by email
+          let contactId = null
+          const contactsResponse = await fetch(`${backendUrl}/api/contacts?search=${encodeURIComponent(recipientEmail)}`, {
+            headers: {
+              'Authorization': `Bearer ${authToken}`
+            }
+          })
+          
+          if (contactsResponse.ok) {
+            const contacts = await contactsResponse.json()
+            const matchingContact = contacts.find((c: any) => c.email === recipientEmail)
+            contactId = matchingContact?.id
+          }
+          
           // Create tracking record
           const trackingData = {
             message_id: messageId,
@@ -110,7 +124,8 @@ export async function POST(request: NextRequest) {
             from_email: process.env.SENDGRID_FROM_EMAIL,
             subject: subject,
             sent_at: new Date().toISOString(),
-            sent_by: 1 // This should come from the authenticated user
+            sent_by: 1, // This should come from the authenticated user
+            contact_id: contactId // Include contact_id if found
           }
           
           await fetch(`${backendUrl}/api/email-tracking`, {
@@ -121,33 +136,34 @@ export async function POST(request: NextRequest) {
             },
             body: JSON.stringify(trackingData)
           })
+          
+          // Only create thread if we have a contact
+          if (contactId) {
+            // Find or create email thread for this contact
+            const threadsResponse = await fetch(`${backendUrl}/api/contacts/${contactId}/email-threads`, {
+              headers: {
+                'Authorization': `Bearer ${authToken}`
+              }
+            })
 
-          // Find or create email thread for this contact
-          // First, try to get existing threads for this recipient
-          const threadsResponse = await fetch(`${backendUrl}/api/email-threads?contact_email=${recipientEmail}`, {
-            headers: {
-              'Authorization': `Bearer ${authToken}`
+            let threadId = null
+            if (threadsResponse.ok) {
+              const threads = await threadsResponse.json()
+              // Find thread with same or similar subject
+              const existingThread = threads.find((t: any) => 
+                t.subject === subject || 
+                t.subject.replace(/^Re:\s*/i, '') === subject.replace(/^Re:\s*/i, '')
+              )
+              threadId = existingThread?.id
             }
-          })
 
-          let threadId = null
-          if (threadsResponse.ok) {
-            const threads = await threadsResponse.json()
-            // Find thread with same or similar subject
-            const existingThread = threads.find((t: any) => 
-              t.subject === subject || 
-              t.subject.replace(/^Re:\s*/i, '') === subject.replace(/^Re:\s*/i, '')
-            )
-            threadId = existingThread?.id
-          }
-
-          // Create new thread if none exists
-          if (!threadId) {
-            const threadData = {
-              subject: subject,
-              contact_email: recipientEmail,
-              preview: message.substring(0, 100) + (message.length > 100 ? '...' : '')
-            }
+            // Create new thread if none exists
+            if (!threadId) {
+              const threadData = {
+                subject: subject,
+                contact_id: contactId,
+                preview: message.substring(0, 100) + (message.length > 100 ? '...' : '')
+              }
 
             const createThreadResponse = await fetch(`${backendUrl}/api/email-threads`, {
               method: 'POST',
@@ -181,6 +197,9 @@ export async function POST(request: NextRequest) {
               },
               body: JSON.stringify(messageData)
             })
+          }
+          } else {
+            console.log(`No contact found for email ${recipientEmail}, skipping thread creation`)
           }
         }
       } catch (error) {
