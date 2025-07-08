@@ -5,6 +5,7 @@ import { useEmailSignature } from "../signature/SignatureManager"
 import ContactAutocomplete from "./ContactAutocomplete"
 import { Contact } from "@/utils/contactSearch"
 import { emailTemplateAPI, EmailTemplate, handleAPIError } from "@/lib/api"
+import { getAuthHeaders } from "@/lib/auth"
 
 interface EmailComposeProps {
   isOpen: boolean
@@ -124,6 +125,23 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
     }
   }
 
+  // Add email on Enter key or when losing focus with valid email
+  const handleAddEmailOnEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && toSearchValue.includes('@')) {
+      e.preventDefault()
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (emailRegex.test(toSearchValue.trim())) {
+        handleContactSelect({
+          id: Date.now().toString(),
+          firstName: toSearchValue.split('@')[0],
+          lastName: '',
+          email: toSearchValue.trim(),
+          status: 'Active'
+        })
+      }
+    }
+  }
+
   const handleSend = async () => {
     if (!subject.trim() || !message.trim() || selectedRecipients.length === 0) return
 
@@ -138,6 +156,7 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeaders()
         },
         body: JSON.stringify({
           to: recipientEmails, // Send array of emails
@@ -237,12 +256,17 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
 
             {/* Contact Search - only show if not in single recipient mode */}
             {!recipientEmail && (
-              <ContactAutocomplete
-                value={toSearchValue}
-                onChange={handleSearchValueChange}
-                onSelectContact={handleContactSelect}
-                placeholder="Type contact name or email to add recipients..."
-              />
+              <div>
+                <ContactAutocomplete
+                  value={toSearchValue}
+                  onChange={handleSearchValueChange}
+                  onSelectContact={handleContactSelect}
+                  placeholder="Type contact name or email to add recipients..."
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Tip: Type an email address and press Enter to add it, or select from contacts
+                </p>
+              </div>
             )}
 
             {/* Single recipient display - when opened with specific recipient */}

@@ -63,27 +63,42 @@ export default function ContactAutocomplete({
 
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!showSuggestions || suggestions.length === 0) return
-
     switch (e.key) {
       case 'ArrowDown':
-        e.preventDefault()
-        setSelectedIndex(prev => 
-          prev < suggestions.length - 1 ? prev + 1 : 0
-        )
+        if (showSuggestions && suggestions.length > 0) {
+          e.preventDefault()
+          setSelectedIndex(prev => 
+            prev < suggestions.length - 1 ? prev + 1 : 0
+          )
+        }
         break
       
       case 'ArrowUp':
-        e.preventDefault()
-        setSelectedIndex(prev => 
-          prev > 0 ? prev - 1 : suggestions.length - 1
-        )
+        if (showSuggestions && suggestions.length > 0) {
+          e.preventDefault()
+          setSelectedIndex(prev => 
+            prev > 0 ? prev - 1 : suggestions.length - 1
+          )
+        }
         break
       
       case 'Enter':
         e.preventDefault()
-        if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
+        if (showSuggestions && selectedIndex >= 0 && selectedIndex < suggestions.length) {
+          // Select from suggestions
           handleSelectContact(suggestions[selectedIndex])
+        } else if (value.includes('@')) {
+          // Add as email if it looks like an email
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+          if (emailRegex.test(value.trim())) {
+            onSelectContact({
+              id: Date.now().toString(),
+              firstName: value.split('@')[0],
+              lastName: '',
+              email: value.trim(),
+              status: 'Active'
+            })
+          }
         }
         break
       
