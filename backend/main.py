@@ -2424,7 +2424,7 @@ async def get_o365_auth_url(
         client_id = org_config.client_id
         tenant_id = org_config.tenant_id
     
-    redirect_uri = os.environ.get("O365_REDIRECT_URI", "https://nohubspot-production.up.railway.app/auth/microsoft/callback")
+    redirect_uri = os.environ.get("O365_REDIRECT_URI", "https://nohubspot-production.up.railway.app/api/auth/o365/callback")
     auth_url = await get_oauth_url(
         client_id,
         tenant_id,
@@ -2468,7 +2468,7 @@ async def o365_auth_callback(
     
     try:
         # Exchange code for tokens
-        redirect_uri = os.environ.get("O365_REDIRECT_URI", "https://nohubspot-production.up.railway.app/auth/microsoft/callback")
+        redirect_uri = os.environ.get("O365_REDIRECT_URI", "https://nohubspot-production.up.railway.app/api/auth/o365/callback")
         
         token_data = await exchange_code_for_tokens(
             code,
@@ -2540,14 +2540,14 @@ async def o365_auth_callback(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@app.get("/auth/microsoft/callback")
-async def microsoft_oauth_callback(
+@app.get("/api/auth/o365/callback")
+async def o365_oauth_callback_redirect(
     code: str = None,
     state: str = None,
     error: str = None,
     error_description: str = None
 ):
-    """Handle Microsoft OAuth callback and redirect to frontend"""
+    """Handle O365 OAuth callback and redirect to frontend"""
     # Build the frontend URL with all parameters
     frontend_url = os.environ.get("FRONTEND_URL", "https://nothubspot.app")
     
