@@ -1659,31 +1659,62 @@ async def bulk_upload_companies(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    try:
-        db_companies = bulk_create_companies(db, companies, current_user.organization_id)
-        
-        # Create activity for bulk upload
-        create_activity(
-            db,
-            title="Bulk Companies Upload",
-            description=f"Uploaded {len(db_companies)} companies",
-            type="company",
-            organization_id=current_user.organization_id
+    # Validate input
+    if not companies:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No companies provided for upload"
         )
-        
-        return BulkUploadResult(
-            success_count=len(db_companies),
-            error_count=0,
-            total_count=len(companies),
-            errors=[]
-        )
-    except Exception as e:
-        return BulkUploadResult(
-            success_count=0,
-            error_count=len(companies),
-            total_count=len(companies),
-            errors=[str(e)]
-        )
+    
+    # Process companies in batches with individual error handling
+    success_count = 0
+    errors = []
+    db_companies = []
+    
+    for i, company_data in enumerate(companies):
+        try:
+            # Validate required fields
+            if not company_data.name:
+                errors.append(f"Row {i+1}: Company name is required")
+                continue
+                
+            # Create company
+            db_company = Company(**company_data.dict(), organization_id=current_user.organization_id)
+            db.add(db_company)
+            db_companies.append(db_company)
+            success_count += 1
+            
+        except Exception as e:
+            errors.append(f"Row {i+1}: {str(e)}")
+    
+    # Commit all successful companies
+    if db_companies:
+        try:
+            db.commit()
+            for company in db_companies:
+                db.refresh(company)
+                
+            # Create activity for bulk upload
+            create_activity(
+                db,
+                title="Bulk Companies Upload",
+                description=f"Uploaded {success_count} companies",
+                type="company",
+                organization_id=current_user.organization_id
+            )
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Database error during bulk upload: {str(e)}"
+            )
+    
+    return BulkUploadResult(
+        success_count=success_count,
+        error_count=len(companies) - success_count,
+        total_count=len(companies),
+        errors=errors[:10]  # Limit errors to first 10 to avoid huge responses
+    )
 
 @app.post("/api/contacts/bulk", response_model=BulkUploadResult)
 async def bulk_upload_contacts(
