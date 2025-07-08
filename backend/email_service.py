@@ -3,6 +3,7 @@ Email service for NotHubSpot CRM
 """
 import os
 import base64
+import json
 from typing import Optional, List
 from datetime import datetime
 import uuid
@@ -99,7 +100,9 @@ async def send_email(
     print(f"DEBUG: SENDGRID_FROM_NAME: {SENDGRID_FROM_NAME}")
     
     if not SENDGRID_API_KEY:
-        print("Warning: SENDGRID_API_KEY not configured, skipping email send")
+        print("ERROR: SENDGRID_API_KEY not configured, cannot send email")
+        print(f"Attempted to send to: {to_email}")
+        print(f"Subject: {subject}")
         return False
     
     url = "https://api.sendgrid.com/v3/mail/send"
@@ -152,10 +155,17 @@ async def send_email(
                 print(f"Email sent successfully to {to_email}{cc_msg}")
                 return True
             else:
-                print(f"Failed to send email: {response.status_code} - {response.text}")
+                print(f"ERROR: Failed to send email to {to_email}")
+                print(f"Status Code: {response.status_code}")
+                print(f"Response: {response.text}")
+                print(f"Request Data: {json.dumps(data, indent=2)}")
                 return False
     except Exception as e:
-        print(f"Error sending email: {str(e)}")
+        print(f"ERROR: Exception while sending email to {to_email}")
+        print(f"Exception Type: {type(e).__name__}")
+        print(f"Exception Details: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return False
 
 async def send_welcome_email(

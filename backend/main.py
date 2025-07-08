@@ -288,7 +288,9 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",  # Local development
         "https://*.netlify.app",  # Netlify deployments
-        "https://nohubspot.netlify.app",  # Your production domain
+        "https://nohubspot.netlify.app",  # Your Netlify domain
+        "https://nothubspot.app",  # Your custom domain
+        "https://www.nothubspot.app",  # Your custom domain with www
         "https://nohubspot-production.up.railway.app",  # Your Railway domain
         "*"  # Allow all origins for now - you can restrict this later
     ],
@@ -324,6 +326,57 @@ async def debug_invitations(
             }
             for invite in invites
         ]
+    }
+
+# Debug endpoint to test SendGrid (temporary)
+@app.post("/api/debug/test-sendgrid")
+async def test_sendgrid(
+    current_user: User = Depends(get_current_admin_user)
+):
+    """Test SendGrid configuration by sending a test email to the current user"""
+    from email_service import send_email
+    
+    # Check if SendGrid is configured
+    sendgrid_key = os.environ.get("SENDGRID_API_KEY", "")
+    if not sendgrid_key:
+        return {
+            "success": False,
+            "error": "SENDGRID_API_KEY not configured",
+            "details": "Please set SENDGRID_API_KEY in environment variables"
+        }
+    
+    # Send test email
+    test_subject = "Test Email from NotHubSpot"
+    test_html = f"""
+    <h2>SendGrid Test Email</h2>
+    <p>Hi {current_user.first_name},</p>
+    <p>This is a test email to verify SendGrid is working correctly.</p>
+    <p>If you received this email, SendGrid is properly configured!</p>
+    <hr>
+    <p><small>Sent at: {datetime.utcnow().isoformat()}</small></p>
+    """
+    test_text = f"""SendGrid Test Email
+
+Hi {current_user.first_name},
+
+This is a test email to verify SendGrid is working correctly.
+
+If you received this email, SendGrid is properly configured!
+
+Sent at: {datetime.utcnow().isoformat()}"""
+    
+    success = await send_email(
+        to_email=current_user.email,
+        subject=test_subject,
+        html_content=test_html,
+        text_content=test_text
+    )
+    
+    return {
+        "success": success,
+        "message": f"Test email {'sent' if success else 'failed'} to {current_user.email}",
+        "sendgrid_configured": bool(sendgrid_key),
+        "from_email": os.environ.get("SENDGRID_FROM_EMAIL", "noreply@nothubspot.app")
     }
 
 # Health check endpoints
