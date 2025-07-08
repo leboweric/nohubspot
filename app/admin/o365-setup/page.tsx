@@ -78,7 +78,7 @@ export default function O365SetupPage() {
                 <ol className="text-sm text-blue-800 space-y-2 list-decimal list-inside">
                   <li>Go to <a href="https://portal.azure.com" target="_blank" rel="noopener noreferrer" className="underline">Azure Portal</a> → Azure Active Directory → App registrations → New registration</li>
                   <li>Name your app (e.g., "NotHubSpot CRM")</li>
-                  <li>Set redirect URI to: <code className="bg-blue-100 px-1 rounded">{process.env.NEXT_PUBLIC_API_URL || window.location.origin}/api/auth/o365/callback</code></li>
+                  <li>Set redirect URI to: <code className="bg-blue-100 px-1 rounded">{process.env.NEXT_PUBLIC_API_URL || window.location.origin}/api/auth/microsoft/callback</code></li>
                   <li>After registration, copy the Application (client) ID and Directory (tenant) ID</li>
                   <li>Go to "Certificates & secrets" → New client secret → Copy the secret value</li>
                   <li>Go to "API permissions" → Add permission → Microsoft Graph → Delegated permissions:</li>
