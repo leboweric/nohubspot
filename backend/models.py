@@ -139,6 +139,12 @@ class Contact(Base):
     company_name = Column(String(255))  # Denormalized for easier queries
     status = Column(String(50), default="Active")  # Active, Lead, Inactive
     notes = Column(Text)
+    
+    # Privacy and sharing settings
+    is_shared = Column(Boolean, default=False)  # Deprecated - use shared_with_team
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    shared_with_team = Column(Boolean, default=False)  # If true, all team members can see this contact
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     last_activity = Column(DateTime(timezone=True), server_default=func.now())
@@ -151,6 +157,7 @@ class Contact(Base):
     activities = relationship("Activity", foreign_keys="Activity.entity_id", 
                             primaryjoin="and_(cast(Contact.id, String) == Activity.entity_id, Activity.type == 'contact')",
                             overlaps="activities")
+    owner = relationship("User", foreign_keys=[owner_id])
 
 class EmailThread(Base):
     __tablename__ = "email_threads"
@@ -161,12 +168,20 @@ class EmailThread(Base):
     contact_id = Column(Integer, ForeignKey("contacts.id"), nullable=False)
     message_count = Column(Integer, default=0)
     preview = Column(Text)
+    
+    # Privacy settings
+    is_private = Column(Boolean, default=True)  # Private by default
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    shared_with = Column(JSON)  # Array of user IDs who can see this thread
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
     contact = relationship("Contact", back_populates="email_threads")
     messages = relationship("EmailMessage", back_populates="thread", cascade="all, delete-orphan")
+    owner = relationship("User", foreign_keys=[owner_id])
+    sharing_permissions = relationship("EmailSharingPermission", back_populates="email_thread", cascade="all, delete-orphan")
 
 class EmailMessage(Base):
     __tablename__ = "email_messages"
@@ -392,6 +407,12 @@ class O365UserConnection(Base):
     sync_email_enabled = Column(Boolean, default=True)
     sync_contacts_enabled = Column(Boolean, default=True)
     
+    # Email Privacy Settings
+    sync_only_crm_contacts = Column(Boolean, default=True)  # Only sync emails for existing CRM contacts
+    excluded_domains = Column(JSON)  # List of domains to exclude from sync (e.g., ["gmail.com", "yahoo.com"])
+    excluded_keywords = Column(JSON)  # List of keywords to exclude from sync
+    auto_create_contacts = Column(Boolean, default=False)  # Auto-create contacts from emails
+    
     # Connection Status
     is_active = Column(Boolean, default=True)
     last_sync_at = Column(DateTime(timezone=True))
@@ -533,3 +554,23 @@ class EmailEvent(Base):
     
     # Relationships
     tracking = relationship("EmailTracking", back_populates="events")
+
+class EmailSharingPermission(Base):
+    __tablename__ = "email_sharing_permissions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    email_thread_id = Column(Integer, ForeignKey("email_threads.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    # Permission level
+    permission_level = Column(String(50), nullable=False)  # read, write
+    
+    # Audit trail
+    granted_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    granted_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    
+    # Relationships
+    email_thread = relationship("EmailThread", back_populates="sharing_permissions")
+    user = relationship("User", foreign_keys=[user_id])
+    granter = relationship("User", foreign_keys=[granted_by])
+EOF < /dev/null

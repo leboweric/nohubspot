@@ -224,7 +224,14 @@ export default function ContactsPage() {
                   <tr key={contact.id} className="hover:bg-accent/50 transition-colors">
                     <td className="px-6 py-4">
                       <div>
-                        <div className="font-medium">{contact.first_name} {contact.last_name}</div>
+                        <div className="font-medium flex items-center space-x-2">
+                          <span>{contact.first_name} {contact.last_name}</span>
+                          {contact.shared_with_team && (
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full" title="Shared with team">
+                              Team
+                            </span>
+                          )}
+                        </div>
                         <div className="text-sm text-muted-foreground">{contact.title || 'No title'}</div>
                       </div>
                     </td>

@@ -197,7 +197,7 @@ class O365Service:
             raise
             
     async def _process_email_to_crm(self, db: Session, msg: Dict[str, Any], direction: str, organization_id: int):
-        """Process a single email and add to CRM"""
+        """Process a single email and add to CRM with privacy controls"""
         # Extract email addresses
         if direction == "incoming":
             from_email = msg.get("from", {}).get("emailAddress", {}).get("address", "")
@@ -209,6 +209,31 @@ class O365Service:
                 contact_email = recipients[0].get("emailAddress", {}).get("address", "")
             else:
                 return  # Skip if no recipients
+        
+        # Check if email should be synced based on privacy settings
+        if self.user_connection.sync_only_crm_contacts:
+            # Check if contact exists in CRM
+            existing_contact = db.query(Contact).filter(
+                Contact.email == contact_email,
+                Contact.organization_id == organization_id
+            ).first()
+            
+            if not existing_contact and not self.user_connection.auto_create_contacts:
+                # Skip this email - contact doesn't exist and auto-create is disabled
+                return
+        
+        # Check excluded domains
+        if self.user_connection.excluded_domains:
+            email_domain = contact_email.split('@')[-1].lower()
+            if email_domain in [d.lower() for d in self.user_connection.excluded_domains]:
+                return  # Skip emails from excluded domains
+        
+        # Check excluded keywords in subject
+        if self.user_connection.excluded_keywords:
+            subject = msg.get("subject", "").lower()
+            for keyword in self.user_connection.excluded_keywords:
+                if keyword.lower() in subject:
+                    return  # Skip emails with excluded keywords
                 
         # Find or create contact
         contact = db.query(Contact).filter(
@@ -236,7 +261,9 @@ class O365Service:
                 last_name=" ".join(name_parts[1:]) if len(name_parts) > 1 else "Contact",
                 email=contact_email,
                 organization_id=organization_id,
-                status="Active"
+                status="Active",
+                owner_id=self.user_connection.user_id,  # Set owner to the user who created via sync
+                shared_with_team=False  # Private by default
             )
             db.add(contact)
             db.commit()
@@ -258,7 +285,9 @@ class O365Service:
                 subject=subject,
                 contact_id=contact.id,
                 organization_id=organization_id,
-                message_count=0
+                message_count=0,
+                owner_id=self.user_connection.user_id,  # Set owner to the user who synced the email
+                is_private=True  # Private by default
             )
             db.add(thread)
             db.commit()

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { o365IntegrationAPI, handleAPIError } from "@/lib/api"
+import EmailPrivacySettings from "./EmailPrivacySettings"
 
 export default function O365Connection() {
   const [status, setStatus] = useState<any>(null)
@@ -131,9 +132,11 @@ export default function O365Connection() {
           
           <div className="border-t pt-4">
             <h4 className="text-sm font-medium mb-2">Sync Settings</h4>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mb-4">
               Email sync is {status.sync_enabled ? 'enabled' : 'disabled'}
             </p>
+            
+            <EmailPrivacySettings />
           </div>
         </div>
       ) : (

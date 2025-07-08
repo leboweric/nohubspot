@@ -83,6 +83,9 @@ class ContactUpdate(BaseModel):
 class ContactResponse(ContactBase, TimestampMixin):
     id: int
     last_activity: datetime
+    # Privacy fields
+    owner_id: Optional[int] = None
+    shared_with_team: bool = False
     
     class Config:
         from_attributes = True
@@ -478,7 +481,11 @@ class O365UserConnectionBase(BaseModel):
     sync_contacts_enabled: bool = True
 
 class O365UserConnectionUpdate(O365UserConnectionBase):
-    pass
+    # Privacy settings
+    sync_only_crm_contacts: Optional[bool] = None
+    excluded_domains: Optional[List[str]] = None
+    excluded_keywords: Optional[List[str]] = None
+    auto_create_contacts: Optional[bool] = None
 
 class O365UserConnectionResponse(O365UserConnectionBase):
     id: int
@@ -492,6 +499,11 @@ class O365UserConnectionResponse(O365UserConnectionBase):
     last_sync_success: bool = False
     last_error_message: Optional[str] = None
     token_expires_at: datetime
+    # Privacy settings
+    sync_only_crm_contacts: bool = True
+    excluded_domains: Optional[List[str]] = []
+    excluded_keywords: Optional[List[str]] = []
+    auto_create_contacts: bool = False
     created_at: datetime
     updated_at: datetime
     
@@ -662,3 +674,44 @@ class SendGridEvent(BaseModel):
     source: Optional[str] = None
 # Update forward references
 EmailThreadResponse.model_rebuild()
+
+
+# Email Privacy Settings
+class EmailPrivacySettings(BaseModel):
+    sync_only_crm_contacts: bool = True
+    excluded_domains: Optional[List[str]] = []
+    excluded_keywords: Optional[List[str]] = []
+    auto_create_contacts: bool = False
+
+class EmailPrivacySettingsUpdate(BaseModel):
+    sync_only_crm_contacts: Optional[bool] = None
+    excluded_domains: Optional[List[str]] = None
+    excluded_keywords: Optional[List[str]] = None
+    auto_create_contacts: Optional[bool] = None
+
+# Contact Privacy Settings
+class ContactPrivacyUpdate(BaseModel):
+    shared_with_team: Optional[bool] = None
+    owner_id: Optional[int] = None
+
+# Email Thread Sharing
+class EmailThreadSharingUpdate(BaseModel):
+    is_private: Optional[bool] = None
+    shared_with: Optional[List[int]] = None  # User IDs
+
+class EmailSharingPermissionCreate(BaseModel):
+    email_thread_id: int
+    user_id: int
+    permission_level: str = "read"  # read, write
+
+class EmailSharingPermissionResponse(BaseModel):
+    id: int
+    email_thread_id: int
+    user_id: int
+    permission_level: str
+    granted_by: int
+    granted_at: datetime
+    
+    class Config:
+        from_attributes = True
+EOF < /dev/null

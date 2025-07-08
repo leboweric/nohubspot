@@ -35,7 +35,7 @@ def rate_limit_check(client_ip: str, endpoint: str, max_requests: int = 30, wind
     return True
 
 from database import get_db, SessionLocal, engine
-from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, PipelineStage, Deal, EmailTracking, EmailEvent
+from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, PipelineStage, Deal, EmailTracking, EmailEvent, EmailSharingPermission
 from schemas import (
     CompanyCreate, CompanyResponse, CompanyUpdate,
     ContactCreate, ContactResponse, ContactUpdate,
@@ -55,7 +55,9 @@ from schemas import (
     O365TestConnectionRequest, O365TestConnectionResponse,
     PipelineStageCreate, PipelineStageResponse, PipelineStageUpdate,
     DealCreate, DealResponse, DealUpdate,
-    EmailTrackingCreate, EmailTrackingResponse, EmailEventCreate, EmailEventResponse, SendGridEvent
+    EmailTrackingCreate, EmailTrackingResponse, EmailEventCreate, EmailEventResponse, SendGridEvent,
+    ContactPrivacyUpdate, EmailThreadSharingUpdate, EmailSharingPermissionCreate, EmailSharingPermissionResponse,
+    EmailPrivacySettings, EmailPrivacySettingsUpdate
 )
 from crud import (
     create_company, get_companies, get_company, update_company, delete_company,
@@ -2392,6 +2394,99 @@ async def get_contact_email_threads(
         contact_id=contact_id
     )
     return threads
+
+
+# Email Privacy and Sharing Endpoints
+@app.patch("/api/contacts/{contact_id}/privacy")
+async def update_contact_privacy(
+    contact_id: int,
+    privacy_update: ContactPrivacyUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update contact privacy settings (owner only)"""
+    # Get contact
+    contact = db.query(Contact).filter(
+        Contact.id == contact_id,
+        Contact.organization_id == current_user.organization_id
+    ).first()
+    
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+    
+    # Only owner can update privacy settings
+    if contact.owner_id != current_user.id and current_user.role != "owner":
+        raise HTTPException(status_code=403, detail="Only contact owner can update privacy settings")
+    
+    # Update privacy settings
+    if privacy_update.shared_with_team is not None:
+        contact.shared_with_team = privacy_update.shared_with_team
+    
+    if privacy_update.owner_id is not None:
+        # Verify new owner is in same organization
+        new_owner = db.query(User).filter(
+            User.id == privacy_update.owner_id,
+            User.organization_id == current_user.organization_id
+        ).first()
+        if not new_owner:
+            raise HTTPException(status_code=400, detail="Invalid owner ID")
+        contact.owner_id = privacy_update.owner_id
+    
+    db.commit()
+    return {"message": "Contact privacy settings updated"}
+
+
+@app.get("/api/email-privacy-settings", response_model=EmailPrivacySettings)
+async def get_email_privacy_settings(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get current user's email privacy settings"""
+    connection = db.query(O365UserConnection).filter(
+        O365UserConnection.user_id == current_user.id
+    ).first()
+    
+    if not connection:
+        # Return defaults if no connection exists
+        return EmailPrivacySettings()
+    
+    return EmailPrivacySettings(
+        sync_only_crm_contacts=connection.sync_only_crm_contacts,
+        excluded_domains=connection.excluded_domains or [],
+        excluded_keywords=connection.excluded_keywords or [],
+        auto_create_contacts=connection.auto_create_contacts
+    )
+
+
+@app.patch("/api/email-privacy-settings")
+async def update_email_privacy_settings(
+    settings: EmailPrivacySettingsUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update current user's email privacy settings"""
+    connection = db.query(O365UserConnection).filter(
+        O365UserConnection.user_id == current_user.id
+    ).first()
+    
+    if not connection:
+        raise HTTPException(status_code=404, detail="O365 connection not found")
+    
+    # Update settings
+    if settings.sync_only_crm_contacts is not None:
+        connection.sync_only_crm_contacts = settings.sync_only_crm_contacts
+    
+    if settings.excluded_domains is not None:
+        connection.excluded_domains = settings.excluded_domains
+    
+    if settings.excluded_keywords is not None:
+        connection.excluded_keywords = settings.excluded_keywords
+    
+    if settings.auto_create_contacts is not None:
+        connection.auto_create_contacts = settings.auto_create_contacts
+    
+    db.commit()
+    return {"message": "Email privacy settings updated"}
 
 
 # Office 365 Integration Endpoints
