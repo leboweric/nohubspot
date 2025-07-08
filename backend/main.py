@@ -2368,6 +2368,108 @@ async def get_contact_email_threads(
     return threads
 
 
+# Inbound email webhook
+@app.post("/api/webhooks/inbound-email")
+async def process_inbound_email(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """Process inbound emails from SendGrid"""
+    # Verify webhook secret if configured
+    webhook_secret = os.environ.get("SENDGRID_WEBHOOK_SECRET", "")
+    if webhook_secret:
+        provided_secret = request.headers.get("X-Webhook-Secret", "")
+        if provided_secret != webhook_secret:
+            raise HTTPException(status_code=401, detail="Invalid webhook secret")
+    
+    body = await request.json()
+    
+    from_email = body.get("from_email", "")
+    to_email = body.get("to_email", "")
+    subject = body.get("subject", "")
+    content = body.get("content", "")
+    
+    print(f"Processing inbound email from {from_email} to {to_email}")
+    
+    # Find contact by email
+    contact = db.query(Contact).filter(
+        Contact.email == from_email
+    ).first()
+    
+    if not contact:
+        print(f"No contact found for email {from_email}, creating new contact")
+        # Extract name from email if possible
+        email_parts = from_email.split('@')[0].split('.')
+        first_name = email_parts[0].title() if email_parts else "Unknown"
+        last_name = email_parts[1].title() if len(email_parts) > 1 else "Contact"
+        
+        # Create contact - find first organization (improve this later)
+        first_org = db.query(Organization).first()
+        if not first_org:
+            return {"error": "No organization found to assign contact"}
+        
+        contact = Contact(
+            first_name=first_name,
+            last_name=last_name,
+            email=from_email,
+            organization_id=first_org.id,
+            status="Active"
+        )
+        db.add(contact)
+        db.commit()
+        db.refresh(contact)
+    
+    # Find or create email thread
+    threads = db.query(EmailThread).filter(
+        EmailThread.contact_id == contact.id,
+        EmailThread.organization_id == contact.organization_id
+    ).all()
+    
+    # Look for existing thread with same subject
+    thread = None
+    clean_subject = subject.replace("Re: ", "").replace("RE: ", "").strip()
+    for t in threads:
+        if t.subject.replace("Re: ", "").replace("RE: ", "").strip() == clean_subject:
+            thread = t
+            break
+    
+    if not thread:
+        # Create new thread
+        thread = EmailThread(
+            subject=subject,
+            contact_id=contact.id,
+            organization_id=contact.organization_id,
+            message_count=0
+        )
+        db.add(thread)
+        db.commit()
+        db.refresh(thread)
+    
+    # Add message to thread
+    message = EmailMessage(
+        thread_id=thread.id,
+        sender=f"{contact.first_name} {contact.last_name}",
+        content=content,
+        direction="incoming",
+        message_id=f"inbound_{int(time.time())}_{thread.id}"
+    )
+    db.add(message)
+    
+    # Update thread
+    thread.message_count += 1
+    thread.preview = content[:100] + ("..." if len(content) > 100 else "")
+    thread.updated_at = datetime.utcnow()
+    
+    db.commit()
+    
+    return {
+        "success": True,
+        "thread_id": thread.id,
+        "message_id": message.id,
+        "contact_id": contact.id
+    }
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     print(f"🚀 Starting NotHubSpot CRM API on port {port}")
