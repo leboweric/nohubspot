@@ -573,4 +573,3 @@ class EmailSharingPermission(Base):
     email_thread = relationship("EmailThread", back_populates="sharing_permissions")
     user = relationship("User", foreign_keys=[user_id])
     granter = relationship("User", foreign_keys=[granted_by])
-EOF < /dev/null

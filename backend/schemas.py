@@ -714,4 +714,3 @@ class EmailSharingPermissionResponse(BaseModel):
     
     class Config:
         from_attributes = True
-EOF < /dev/null

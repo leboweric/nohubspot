@@ -99,6 +99,7 @@ from ai_chat import process_ai_chat
 from o365_service import O365Service, get_oauth_url, exchange_code_for_tokens
 from o365_encryption import encrypt_access_token, encrypt_refresh_token, decrypt_client_secret, encrypt_client_secret
 from run_migrations import run_migrations
+from cleanup_routes import router as cleanup_router
 
 # Create database tables with error handling
 print("🔨 Starting database initialization...")
@@ -295,6 +296,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include cleanup router (temporary)
+app.include_router(cleanup_router)
 
 # Health check endpoints
 @app.get("/")
