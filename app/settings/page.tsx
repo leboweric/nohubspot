@@ -42,7 +42,7 @@ export default function SettingsPage() {
   })
 
   const isOwner = user?.role === 'owner'
-  const isO365Enabled = process.env.NEXT_PUBLIC_O365_ENABLED === 'true'
+  const isO365Enabled = true  // O365 is now always enabled
 
   // API call monitoring
   const [apiCallCount, setApiCallCount] = useState(0)
