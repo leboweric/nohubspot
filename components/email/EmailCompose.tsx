@@ -213,15 +213,31 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
       <div className="bg-card border rounded-lg w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-lg font-semibold">Compose Email</h2>
-          <button
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              disabled={isSending}
+              className="px-3 py-1 text-sm border rounded-md hover:bg-accent transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSend}
+              disabled={!subject.trim() || !message.trim() || selectedRecipients.length === 0 || isSending}
+              className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={
+                !selectedRecipients.length ? "Add at least one recipient" :
+                !subject.trim() ? "Add a subject" :
+                !message.trim() ? "Add a message" :
+                "Send email"
+              }
+            >
+              {isSending ? "Sending..." : `Send${selectedRecipients.length > 1 ? ` to ${selectedRecipients.length}` : ""}`}
+            </button>
+          </div>
         </div>
 
-        <div className="flex-1 p-4 space-y-4">
+        <div className="flex-1 p-4 space-y-4 overflow-y-auto">
           <div>
             <label className="block text-sm font-medium mb-1">From:</label>
             <div className="px-3 py-2 bg-muted rounded-md text-sm">
@@ -345,23 +361,6 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
               className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring resize-none"
             />
           </div>
-        </div>
-
-        <div className="flex justify-end gap-3 p-4 border-t">
-          <button
-            onClick={onClose}
-            disabled={isSending}
-            className="px-4 py-2 border rounded-md hover:bg-accent transition-colors disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSend}
-            disabled={!subject.trim() || !message.trim() || selectedRecipients.length === 0 || isSending}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
-          >
-            {isSending ? "Sending..." : `Send${selectedRecipients.length > 1 ? ` to ${selectedRecipients.length} recipients` : ""}`}
-          </button>
         </div>
       </div>
     </div>
