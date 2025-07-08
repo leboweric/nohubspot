@@ -84,7 +84,8 @@ async def send_email(
     from_email: Optional[str] = None,
     from_name: Optional[str] = None,
     attachments: Optional[List[dict]] = None,
-    cc_emails: Optional[List[str]] = None
+    cc_emails: Optional[List[str]] = None,
+    disable_tracking: bool = False
 ) -> bool:
     """Send email via SendGrid"""
     # Load environment variables at runtime instead of module import time
@@ -130,6 +131,17 @@ async def send_email(
     # Add attachments if provided
     if attachments:
         data["attachments"] = attachments
+    
+    # Disable click tracking if requested (important for invitation links)
+    if disable_tracking:
+        data["tracking_settings"] = {
+            "click_tracking": {
+                "enable": False
+            },
+            "open_tracking": {
+                "enable": False
+            }
+        }
     
     try:
         async with httpx.AsyncClient() as client:
@@ -177,7 +189,8 @@ async def send_password_reset_email(
         to_email=user_email,
         subject=subject,
         html_content=html_content,
-        text_content=text_content
+        text_content=text_content,
+        disable_tracking=True  # Disable tracking for password reset links
     )
 
 async def send_invite_email(
@@ -204,7 +217,8 @@ async def send_invite_email(
         subject=subject,
         html_content=html_content,
         text_content=text_content,
-        cc_emails=cc_list
+        cc_emails=cc_list,
+        disable_tracking=True  # Disable link tracking to prevent SSL certificate errors
     )
 
 async def send_calendar_invite(
