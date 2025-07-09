@@ -22,20 +22,32 @@ function AcceptInviteContent() {
 
   useEffect(() => {
     // Validate invite code on mount
-    if (!inviteCode) {
-      setError("Invalid invitation link")
-      setCheckingInvite(false)
-      return
+    const validateInvite = async () => {
+      if (!inviteCode) {
+        setError("Invalid invitation link")
+        setCheckingInvite(false)
+        return
+      }
+      
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/invites/validate/${inviteCode}`
+        )
+        
+        if (response.ok) {
+          const data = await response.json()
+          setInviteDetails(data)
+        } else {
+          setError("Invalid or expired invitation")
+        }
+      } catch (err) {
+        setError("Failed to validate invitation")
+      } finally {
+        setCheckingInvite(false)
+      }
     }
     
-    // For now, just mark as valid - in production, you'd verify with backend
-    setCheckingInvite(false)
-    setInviteDetails({
-      valid: true,
-      email: "user@example.com", // This would come from backend
-      organization: "Organization Name",
-      role: "user"
-    })
+    validateInvite()
   }, [inviteCode])
 
   const handleSubmit = async (e: React.FormEvent) => {

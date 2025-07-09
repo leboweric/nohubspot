@@ -712,6 +712,32 @@ async def get_invites(
     """Get all invitations for the organization (admin only)"""
     return get_organization_invites(db, current_user.organization_id, skip, limit)
 
+@app.get("/api/invites/validate/{code}")
+async def validate_invite(code: str, db: Session = Depends(get_db)):
+    """Validate an invitation code and return details"""
+    invite = db.query(UserInvite).filter(
+        UserInvite.invite_code == code,
+        UserInvite.status == "pending"
+    ).first()
+    
+    if not invite:
+        raise HTTPException(
+            status_code=404,
+            detail="Invalid or expired invitation"
+        )
+    
+    # Get organization details
+    organization = db.query(Organization).filter(
+        Organization.id == invite.organization_id
+    ).first()
+    
+    return {
+        "valid": True,
+        "email": invite.email,
+        "organization": organization.name,
+        "role": invite.role
+    }
+
 @app.post("/api/invites/accept", response_model=Token)
 async def accept_invite(invite_accept: UserInviteAccept, db: Session = Depends(get_db)):
     """Accept a user invitation"""

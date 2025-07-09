@@ -389,7 +389,7 @@ def get_invite_email_html(organization_name: str, inviter_name: str, invite_url:
                 <h1>You're Invited to Join {organization_name}!</h1>
             </div>
             <div class="content">
-                <p>Hi there,</p>
+                <p>Hi{f' {recipient_name}' if recipient_name else ' there'},</p>
                 
                 <p><strong>{inviter_name}</strong> has invited you to join <strong>{organization_name}</strong> on NotHubSpot CRM as a <strong>{role_display}</strong>.</p>
                 
