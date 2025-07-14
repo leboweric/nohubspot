@@ -46,6 +46,7 @@ from schemas import (
     ActivityResponse, DashboardStats, BulkUploadResult,
     OrganizationCreate, OrganizationResponse, UserRegister, UserLogin, UserResponse,
     UserInviteCreate, UserInviteResponse, UserInviteAccept, Token,
+    UserAdd, UserAddResponse,
     EmailTemplateCreate, EmailTemplateResponse, EmailTemplateUpdate,
     CalendarEventCreate, CalendarEventResponse, CalendarEventUpdate,
     EventAttendeeCreate, EventAttendeeResponse,
@@ -95,6 +96,7 @@ from email_template_crud import (
     get_template_categories, replace_template_variables
 )
 from ai_service import generate_daily_summary
+from password_utils import generate_temporary_password
 from ai_chat import process_ai_chat
 from o365_service import O365Service, get_oauth_url, exchange_code_for_tokens
 from o365_encryption import encrypt_access_token, encrypt_refresh_token, decrypt_client_secret, encrypt_client_secret
@@ -540,8 +542,8 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
         # Send welcome email (don't wait for it)
         import asyncio
         asyncio.create_task(send_welcome_email(
-            user_email=user.email,
-            first_name=user.first_name or user.email.split('@')[0],
+            to_email=user.email,
+            user_name=f"{user.first_name} {user.last_name}" if user.first_name else user.email.split('@')[0],
             organization_name=organization.name
         ))
         
@@ -820,6 +822,60 @@ async def get_organization_users(
         raise HTTPException(status_code=429, detail="Rate limit exceeded - too many requests")
     
     return get_users_by_organization(db, current_user.organization_id, skip, limit)
+
+# Add user directly (replaces invite system)
+@app.post("/api/users/add", response_model=UserAddResponse)
+async def add_user_directly(
+    user_data: UserAdd,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Add a user directly to the organization with a temporary password"""
+    # Check if user already exists
+    existing_user = get_user_by_email(db, user_data.email)
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A user with this email already exists"
+        )
+    
+    # Generate temporary password
+    temp_password = generate_temporary_password()
+    
+    # Create the user
+    try:
+        new_user = create_user(
+            db=db,
+            email=user_data.email,
+            password=temp_password,
+            first_name=user_data.first_name,
+            last_name=user_data.last_name,
+            organization_id=current_user.organization_id,
+            role=user_data.role,
+            email_verified=True  # Pre-verify since admin is creating
+        )
+        
+        # Send welcome email with temporary password
+        await send_welcome_email(
+            to_email=new_user.email,
+            user_name=f"{new_user.first_name} {new_user.last_name}",
+            organization_name=current_user.organization.name,
+            temporary_password=temp_password,
+            added_by=f"{current_user.first_name} {current_user.last_name}"
+        )
+        
+        return UserAddResponse(
+            user=new_user,
+            temporary_password=temp_password,
+            message=f"User {new_user.email} added successfully. Welcome email sent with temporary password."
+        )
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to add user: {str(e)}"
+        )
 
 # TEMPORARY: Cleanup endpoint for development
 @app.delete("/api/admin/cleanup/organization/{org_name}")

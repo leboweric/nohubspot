@@ -293,6 +293,17 @@ class UserUpdate(BaseModel):
     last_name: Optional[str] = Field(None, max_length=100)
     role: Optional[UserRole] = None
 
+class UserAdd(BaseModel):
+    email: EmailStr
+    first_name: str = Field(..., min_length=1, max_length=100)
+    last_name: str = Field(..., min_length=1, max_length=100)
+    role: UserRole = UserRole.USER
+
+class UserAddResponse(BaseModel):
+    user: UserResponse
+    temporary_password: str
+    message: str
+
 # User invite schemas
 class UserInviteCreate(BaseModel):
     email: EmailStr

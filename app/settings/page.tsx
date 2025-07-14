@@ -18,12 +18,15 @@ export default function SettingsPage() {
   const [showInviteForm, setShowInviteForm] = useState(false)
   const [showSupportModal, setShowSupportModal] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
+  const [inviteFirstName, setInviteFirstName] = useState("")
+  const [inviteLastName, setInviteLastName] = useState("")
   const [inviteRole, setInviteRole] = useState<"user" | "admin">("user")
+  const [tempPassword, setTempPassword] = useState("")
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [users, setUsers] = useState<any[]>([])
-  const [invites, setInvites] = useState<any[]>([])
   const { signature, saveSignature } = useEmailSignature()
   const { user, organization } = getAuthState()
 
@@ -163,21 +166,6 @@ export default function SettingsPage() {
     }
   }
 
-  const loadInvites = async () => {
-    try {
-      const response = await fetchWithCircuitBreaker(`${process.env.NEXT_PUBLIC_API_URL}/api/invites`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
-      })
-      if (response) {
-        const inviteData = await response.json()
-        setInvites(inviteData)
-      }
-    } catch (err) {
-      console.error('Failed to load invites:', err)
-    }
-  }
 
   const handleSaveSignature = async (newSignature: EmailSignature) => {
     try {
@@ -198,7 +186,7 @@ export default function SettingsPage() {
     setLoading(true)
 
     try {
-      const response = await fetchWithCircuitBreaker(`${process.env.NEXT_PUBLIC_API_URL}/api/invites`, {
+      const response = await fetchWithCircuitBreaker(`${process.env.NEXT_PUBLIC_API_URL}/api/users/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -206,52 +194,34 @@ export default function SettingsPage() {
         },
         body: JSON.stringify({
           email: inviteEmail,
+          first_name: inviteFirstName,
+          last_name: inviteLastName,
           role: inviteRole
         })
       })
 
       if (response && response.ok) {
-        setSuccess(`Invitation sent to ${inviteEmail}`)
+        const data = await response.json()
+        setSuccess(`User ${inviteEmail} added successfully!`)
+        setTempPassword(data.temporary_password)
+        setShowPasswordModal(true)
         setInviteEmail("")
+        setInviteFirstName("")
+        setInviteLastName("")
         setShowInviteForm(false)
-        // Debounce reload to prevent immediate re-fetch
-        setTimeout(() => loadInvites(), 1000)
+        // Reload users list
+        setTimeout(() => loadUsers(), 1000)
       } else if (response) {
         const errorData = await response.json()
-        setError(errorData.detail || 'Failed to send invitation')
+        setError(errorData.detail || 'Failed to add user')
       }
     } catch (err) {
-      setError('Failed to send invitation')
+      setError('Failed to add user')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleRevokeInvite = async (inviteId: number) => {
-    setError('')
-    try {
-      const response = await fetchWithCircuitBreaker(`${process.env.NEXT_PUBLIC_API_URL}/api/invites/${inviteId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
-      })
-
-      if (response && response.ok) {
-        setSuccess('Invitation revoked')
-        // Debounce reload to prevent immediate re-fetch
-        setTimeout(() => loadInvites(), 1000)
-      } else if (response) {
-        const errorData = await response.json()
-        setError(errorData.detail || 'Failed to revoke invitation')
-      } else {
-        setError('Network error - please check your connection')
-      }
-    } catch (err) {
-      console.error('Revoke invite error:', err)
-      setError('Failed to revoke invitation: ' + (err instanceof Error ? err.message : 'Unknown error'))
-    }
-  }
 
   const handleSaveO365Config = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -331,7 +301,6 @@ export default function SettingsPage() {
     console.log("Settings page loading...")
     if (isAdmin(user)) {
       loadUsers()
-      loadInvites()
     }
     
     // Only load O365 if explicitly enabled via environment variable
@@ -408,7 +377,7 @@ export default function SettingsPage() {
                   onClick={() => setShowInviteForm(true)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                 >
-                  Invite User
+                  Add User
                 </button>
               </div>
 
@@ -822,9 +791,40 @@ export default function SettingsPage() {
       {showInviteForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Invite User to {organization?.name}</h3>
+            <h3 className="text-lg font-semibold mb-4">Add User to {organization?.name}</h3>
             <form onSubmit={handleSendInvite}>
               <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="inviteFirstName" className="block text-sm font-medium mb-1">
+                      First Name
+                    </label>
+                    <input
+                      id="inviteFirstName"
+                      type="text"
+                      value={inviteFirstName}
+                      onChange={(e) => setInviteFirstName(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="John"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="inviteLastName" className="block text-sm font-medium mb-1">
+                      Last Name
+                    </label>
+                    <input
+                      id="inviteLastName"
+                      type="text"
+                      value={inviteLastName}
+                      onChange={(e) => setInviteLastName(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Doe"
+                      required
+                    />
+                  </div>
+                </div>
+                
                 <div>
                   <label htmlFor="inviteEmail" className="block text-sm font-medium mb-1">
                     Email Address
@@ -869,7 +869,7 @@ export default function SettingsPage() {
                   disabled={loading}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {loading ? 'Sending...' : 'Send Invitation'}
+                  {loading ? 'Adding...' : 'Add User'}
                 </button>
               </div>
             </form>
@@ -1051,6 +1051,60 @@ export default function SettingsPage() {
         isOpen={showSupportModal}
         onClose={() => setShowSupportModal(false)}
       />
+
+      {/* Password Display Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">User Created Successfully!</h3>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-green-800 mb-2">
+                The user has been added and a welcome email has been sent with their login credentials.
+              </p>
+              <p className="text-sm text-green-800">
+                Please save the temporary password below in case they don't receive the email.
+              </p>
+            </div>
+            
+            <div className="bg-gray-100 rounded-lg p-4 mb-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">Temporary Password:</p>
+              <div className="flex items-center justify-between">
+                <code className="bg-white px-3 py-2 rounded border border-gray-300 font-mono text-sm flex-1">
+                  {tempPassword}
+                </code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(tempPassword)
+                    alert('Password copied to clipboard!')
+                  }}
+                  className="ml-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                  title="Copy to clipboard"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <p className="text-sm text-gray-600 mb-6">
+              The user will be required to change this password on their first login.
+            </p>
+            
+            <div className="flex justify-end">
+              <button
+                onClick={() => {
+                  setShowPasswordModal(false)
+                  setTempPassword("")
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
         </div>
       </MainLayout>
     </AuthGuard>

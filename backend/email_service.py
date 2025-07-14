@@ -169,17 +169,40 @@ async def send_email(
         return False
 
 async def send_welcome_email(
-    user_email: str,
-    first_name: str,
-    organization_name: str
+    to_email: str,
+    user_name: str,
+    organization_name: str,
+    temporary_password: str = None,
+    added_by: str = None
 ) -> bool:
     """Send welcome email to new user"""
-    subject = f"Welcome to NotHubSpot, {first_name}! 🎉"
-    html_content = get_welcome_email_html(first_name, organization_name)
-    text_content = get_welcome_email_text(first_name, organization_name)
+    if temporary_password:
+        # New user added directly
+        subject = f"Welcome to {organization_name} on NotHubSpot"
+        from email_templates import get_user_added_email_html, get_user_added_email_text
+        html_content = get_user_added_email_html(
+            user_name=user_name,
+            organization_name=organization_name,
+            user_email=to_email,
+            temporary_password=temporary_password,
+            added_by=added_by
+        )
+        text_content = get_user_added_email_text(
+            user_name=user_name,
+            organization_name=organization_name,
+            user_email=to_email,
+            temporary_password=temporary_password,
+            added_by=added_by
+        )
+    else:
+        # Regular welcome email (for self-registration)
+        subject = f"Welcome to NotHubSpot, {user_name.split()[0]}! 🎉"
+        from email_templates import get_welcome_email_html, get_welcome_email_text
+        html_content = get_welcome_email_html(user_name.split()[0], organization_name)
+        text_content = get_welcome_email_text(user_name.split()[0], organization_name)
     
     return await send_email(
-        to_email=user_email,
+        to_email=to_email,
         subject=subject,
         html_content=html_content,
         text_content=text_content
