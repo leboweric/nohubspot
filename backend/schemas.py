@@ -27,6 +27,7 @@ class CompanyBase(BaseModel):
     postal_code: Optional[str] = Field(None, max_length=20)
     phone: Optional[str] = Field(None, max_length=50)
     annual_revenue: Optional[float] = None
+    primary_account_owner_id: Optional[int] = None
     status: str = Field(default="Active", max_length=50)
 
 class CompanyCreate(CompanyBase):
@@ -44,12 +45,16 @@ class CompanyUpdate(BaseModel):
     postal_code: Optional[str] = Field(None, max_length=20)
     phone: Optional[str] = Field(None, max_length=50)
     annual_revenue: Optional[float] = None
+    primary_account_owner_id: Optional[int] = None
     status: Optional[str] = Field(None, max_length=50)
 
 class CompanyResponse(CompanyBase, TimestampMixin):
     id: int
     contact_count: int
     attachment_count: int
+    
+    # Populated by API
+    primary_account_owner_name: Optional[str] = None
     
     class Config:
         from_attributes = True

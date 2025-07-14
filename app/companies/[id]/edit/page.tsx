@@ -4,13 +4,15 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { INDUSTRIES } from "@/lib/constants"
-import { companyAPI, Company, handleAPIError } from "@/lib/api"
+import { companyAPI, Company, handleAPIError, usersAPI } from "@/lib/api"
+import { User } from "@/lib/auth"
 
 export default function EditCompanyPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const [company, setCompany] = useState<Company | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [users, setUsers] = useState<User[]>([])
   
   const [formData, setFormData] = useState({
     name: "",
@@ -24,7 +26,8 @@ export default function EditCompanyPage({ params }: { params: { id: string } }) 
     phone: "",
     annual_revenue: "",
     description: "",
-    status: "Lead"
+    status: "Lead",
+    primary_account_owner_id: ""
   })
 
   useEffect(() => {
@@ -46,7 +49,8 @@ export default function EditCompanyPage({ params }: { params: { id: string } }) 
           phone: companyData.phone || "",
           annual_revenue: companyData.annual_revenue?.toString() || "",
           description: companyData.description || "",
-          status: companyData.status
+          status: companyData.status,
+          primary_account_owner_id: companyData.primary_account_owner_id?.toString() || ""
         })
       } catch (err) {
         setError(handleAPIError(err))
@@ -57,7 +61,17 @@ export default function EditCompanyPage({ params }: { params: { id: string } }) 
     }
 
     loadCompany()
+    loadUsers()
   }, [params.id])
+
+  const loadUsers = async () => {
+    try {
+      const data = await usersAPI.getAll()
+      setUsers(data)
+    } catch (err) {
+      console.error('Failed to load users:', err)
+    }
+  }
 
   if (loading) {
     return (
@@ -91,7 +105,8 @@ export default function EditCompanyPage({ params }: { params: { id: string } }) 
     try {
       await companyAPI.update(parseInt(params.id), {
         ...formData,
-        annual_revenue: formData.annual_revenue ? parseFloat(formData.annual_revenue) : undefined
+        annual_revenue: formData.annual_revenue ? parseFloat(formData.annual_revenue) : undefined,
+        primary_account_owner_id: formData.primary_account_owner_id ? parseInt(formData.primary_account_owner_id) : undefined
       })
       router.push(`/companies/${params.id}`)
     } catch (err) {
@@ -292,6 +307,26 @@ export default function EditCompanyPage({ params }: { params: { id: string } }) 
             <option value="Lead">Lead</option>
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="primary_account_owner_id" className="block text-sm font-medium mb-2">
+            Primary Account Owner
+          </label>
+          <select
+            id="primary_account_owner_id"
+            name="primary_account_owner_id"
+            value={formData.primary_account_owner_id}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="">Select account owner</option>
+            {users.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.first_name} {user.last_name} ({user.email})
+              </option>
+            ))}
           </select>
         </div>
 

@@ -1,15 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import { INDUSTRIES } from "@/lib/constants"
-import { companyAPI, CompanyCreate, handleAPIError } from "@/lib/api"
+import { companyAPI, CompanyCreate, handleAPIError, usersAPI } from "@/lib/api"
+import { User } from "@/lib/auth"
 
 export default function NewCompanyPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [users, setUsers] = useState<User[]>([])
   const [formData, setFormData] = useState({
     name: "",
     industry: "",
@@ -22,8 +24,22 @@ export default function NewCompanyPage() {
     phone: "",
     annual_revenue: "",
     description: "",
-    status: "Lead"
+    status: "Lead",
+    primary_account_owner_id: ""
   })
+
+  useEffect(() => {
+    loadUsers()
+  }, [])
+
+  const loadUsers = async () => {
+    try {
+      const data = await usersAPI.getAll()
+      setUsers(data)
+    } catch (err) {
+      console.error('Failed to load users:', err)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,7 +58,8 @@ export default function NewCompanyPage() {
         phone: formData.phone || undefined,
         annual_revenue: formData.annual_revenue ? parseFloat(formData.annual_revenue) : undefined,
         description: formData.description || undefined,
-        status: formData.status
+        status: formData.status,
+        primary_account_owner_id: formData.primary_account_owner_id ? parseInt(formData.primary_account_owner_id) : undefined
       }
       
       await companyAPI.create(companyData)
@@ -246,6 +263,26 @@ export default function NewCompanyPage() {
             <option value="Lead">Lead</option>
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="primary_account_owner_id" className="block text-sm font-medium mb-2">
+            Primary Account Owner
+          </label>
+          <select
+            id="primary_account_owner_id"
+            name="primary_account_owner_id"
+            value={formData.primary_account_owner_id}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="">Select account owner</option>
+            {users.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.first_name} {user.last_name} ({user.email})
+              </option>
+            ))}
           </select>
         </div>
 

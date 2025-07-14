@@ -182,6 +182,16 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                 </dd>
               </div>
               <div>
+                <dt className="text-sm font-medium text-muted-foreground">Primary Account Owner</dt>
+                <dd className="mt-1">
+                  {company.primary_account_owner_name ? (
+                    <span>{company.primary_account_owner_name}</span>
+                  ) : (
+                    <span className="text-muted-foreground">Not assigned</span>
+                  )}
+                </dd>
+              </div>
+              <div>
                 <dt className="text-sm font-medium text-muted-foreground">Address</dt>
                 <dd className="mt-1">
                   {company.street_address || company.city || company.state || company.postal_code ? (

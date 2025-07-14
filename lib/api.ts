@@ -1,5 +1,5 @@
 // API client for NotHubSpot CRM backend
-import { getAuthHeaders, clearAuthState } from './auth'
+import { getAuthHeaders, clearAuthState, type User } from './auth'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
@@ -108,6 +108,8 @@ export interface Company {
   status: string
   contact_count: number
   attachment_count: number
+  primary_account_owner_id?: number
+  primary_account_owner_name?: string
   created_at: string
   updated_at: string
 }
@@ -124,6 +126,7 @@ export interface CompanyCreate {
   postal_code?: string
   phone?: string
   annual_revenue?: number
+  primary_account_owner_id?: number
   status?: string
 }
 
@@ -139,6 +142,7 @@ export interface CompanyUpdate {
   postal_code?: string
   phone?: string
   annual_revenue?: number
+  primary_account_owner_id?: number
   status?: string
 }
 
@@ -194,6 +198,17 @@ export const companyAPI = {
       method: 'POST',
       body: JSON.stringify(companies),
     }),
+}
+
+// Users API functions
+export const usersAPI = {
+  // Get all users in the organization
+  getAll: (): Promise<User[]> => 
+    apiRequest('/api/users'),
+    
+  // Get a specific user
+  get: (id: number): Promise<User> =>
+    apiRequest(`/api/users/${id}`),
 }
 
 // Contact API functions

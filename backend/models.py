@@ -114,16 +114,24 @@ class Company(Base):
     status = Column(String(50), default="Active")  # Active, Lead, Inactive
     contact_count = Column(Integer, default=0)
     attachment_count = Column(Integer, default=0)
+    primary_account_owner_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
     organization = relationship("Organization", back_populates="companies", foreign_keys=[organization_id])
+    primary_account_owner = relationship("User", foreign_keys=[primary_account_owner_id])
     contacts = relationship("Contact", back_populates="company_rel", cascade="all, delete-orphan")
     attachments = relationship("Attachment", back_populates="company_rel", cascade="all, delete-orphan")
     activities = relationship("Activity", foreign_keys="Activity.entity_id", 
                             primaryjoin="and_(cast(Company.id, String) == Activity.entity_id, Activity.type == 'company')",
                             overlaps="activities")
+    
+    @property
+    def primary_account_owner_name(self):
+        if self.primary_account_owner:
+            return f"{self.primary_account_owner.first_name} {self.primary_account_owner.last_name}"
+        return None
 
 class Contact(Base):
     __tablename__ = "contacts"

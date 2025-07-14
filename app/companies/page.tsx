@@ -249,6 +249,7 @@ export default function CompaniesPage() {
       // Create CSV headers
       const headers = [
         'Company Name',
+        'Account Owner',
         'Phone Number',
         'City',
         'State/Region',
@@ -265,6 +266,7 @@ export default function CompaniesPage() {
       // Create CSV rows
       const rows = filteredCompanies.map(company => [
         company.name,
+        company.primary_account_owner_name || '',
         company.phone || '',
         company.city || '',
         company.state || '',
@@ -379,6 +381,7 @@ export default function CompaniesPage() {
               <thead>
                 <tr className="border-b">
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Company</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Account Owner</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Phone</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Location</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Industry</th>
@@ -395,6 +398,7 @@ export default function CompaniesPage() {
                         <div className="text-sm text-muted-foreground">{company.website || 'No website'}</div>
                       </div>
                     </td>
+                    <td className="px-6 py-4 text-sm">{company.primary_account_owner_name || '-'}</td>
                     <td className="px-6 py-4 text-sm">{company.phone || '-'}</td>
                     <td className="px-6 py-4 text-sm">
                       {company.city || company.state ? (

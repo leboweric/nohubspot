@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_, or_, func, desc
 from typing import List, Optional
 from datetime import datetime
+from phone_utils import format_phone_number
 
 from models import (
     Company, Contact, EmailThread, EmailMessage, 
@@ -20,7 +21,12 @@ from schemas import (
 
 # Company CRUD operations
 def create_company(db: Session, company: CompanyCreate, organization_id: int) -> Company:
-    db_company = Company(**company.dict(), organization_id=organization_id)
+    company_data = company.dict()
+    # Format phone number if provided
+    if company_data.get('phone'):
+        company_data['phone'] = format_phone_number(company_data['phone'])
+    
+    db_company = Company(**company_data, organization_id=organization_id)
     db.add(db_company)
     db.commit()
     db.refresh(db_company)
@@ -34,7 +40,9 @@ def get_companies(
     search: Optional[str] = None,
     status: Optional[str] = None
 ) -> List[Company]:
-    query = db.query(Company).filter(Company.organization_id == organization_id)
+    query = db.query(Company).options(
+        joinedload(Company.primary_account_owner)
+    ).filter(Company.organization_id == organization_id)
     
     if search:
         search_filter = f"%{search}%"
@@ -52,7 +60,9 @@ def get_companies(
     return query.order_by(desc(Company.created_at)).offset(skip).limit(limit).all()
 
 def get_company(db: Session, company_id: int, organization_id: int) -> Optional[Company]:
-    return db.query(Company).filter(
+    return db.query(Company).options(
+        joinedload(Company.primary_account_owner)
+    ).filter(
         Company.id == company_id,
         Company.organization_id == organization_id
     ).first()
@@ -63,6 +73,10 @@ def update_company(db: Session, company_id: int, company_update: CompanyUpdate, 
         return None
     
     update_data = company_update.dict(exclude_unset=True)
+    # Format phone number if being updated
+    if 'phone' in update_data and update_data['phone']:
+        update_data['phone'] = format_phone_number(update_data['phone'])
+    
     for field, value in update_data.items():
         setattr(db_company, field, value)
     
@@ -83,7 +97,14 @@ def delete_company(db: Session, company_id: int, organization_id: int) -> bool:
 def create_contact(db: Session, contact: ContactCreate, organization_id: int) -> Contact:
     try:
         print(f"CRUD: Creating contact with data: {contact.dict()}")
-        db_contact = Contact(**contact.dict(), organization_id=organization_id)
+        contact_data = contact.dict()
+        # Format phone numbers if provided
+        if contact_data.get('phone'):
+            contact_data['phone'] = format_phone_number(contact_data['phone'])
+        if contact_data.get('mobile_phone'):
+            contact_data['mobile_phone'] = format_phone_number(contact_data['mobile_phone'])
+        
+        db_contact = Contact(**contact_data, organization_id=organization_id)
         print(f"CRUD: Contact object created: {db_contact.first_name} {db_contact.last_name}")
         
         db.add(db_contact)
@@ -156,6 +177,12 @@ def update_contact(db: Session, contact_id: int, contact_update: ContactUpdate, 
     old_company_id = db_contact.company_id
     
     update_data = contact_update.dict(exclude_unset=True)
+    # Format phone numbers if being updated
+    if 'phone' in update_data and update_data['phone']:
+        update_data['phone'] = format_phone_number(update_data['phone'])
+    if 'mobile_phone' in update_data and update_data['mobile_phone']:
+        update_data['mobile_phone'] = format_phone_number(update_data['mobile_phone'])
+    
     for field, value in update_data.items():
         setattr(db_contact, field, value)
     
@@ -410,7 +437,12 @@ def create_or_update_email_signature(
 def bulk_create_companies(db: Session, companies: List[CompanyCreate], organization_id: int) -> List[Company]:
     db_companies = []
     for company_data in companies:
-        db_company = Company(**company_data.dict(), organization_id=organization_id)
+        data = company_data.dict()
+        # Format phone number if provided
+        if data.get('phone'):
+            data['phone'] = format_phone_number(data['phone'])
+        
+        db_company = Company(**data, organization_id=organization_id)
         db.add(db_company)
         db_companies.append(db_company)
     
@@ -423,7 +455,14 @@ def bulk_create_companies(db: Session, companies: List[CompanyCreate], organizat
 def bulk_create_contacts(db: Session, contacts: List[ContactCreate], organization_id: int) -> List[Contact]:
     db_contacts = []
     for contact_data in contacts:
-        db_contact = Contact(**contact_data.dict(), organization_id=organization_id)
+        data = contact_data.dict()
+        # Format phone numbers if provided
+        if data.get('phone'):
+            data['phone'] = format_phone_number(data['phone'])
+        if data.get('mobile_phone'):
+            data['mobile_phone'] = format_phone_number(data['mobile_phone'])
+        
+        db_contact = Contact(**data, organization_id=organization_id)
         db.add(db_contact)
         db_contacts.append(db_contact)
     
