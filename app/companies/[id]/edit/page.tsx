@@ -67,9 +67,10 @@ export default function EditCompanyPage({ params }: { params: { id: string } }) 
   const loadUsers = async () => {
     try {
       const data = await usersAPI.getAll()
-      setUsers(data)
+      setUsers(data || [])
     } catch (err) {
       console.error('Failed to load users:', err)
+      setUsers([]) // Set to empty array on error
     }
   }
 
