@@ -32,9 +32,9 @@ export default function ProjectsPage() {
       const stagesData = await projectStageAPI.getStages()
       setStages(stagesData)
       
-      // If no stages exist, they should be auto-created by migration
+      // If no stages exist, offer to create defaults
       if (stagesData.length === 0) {
-        setError("No project stages found. Please contact support.")
+        setError("No project stages found. Would you like to create default stages?")
         return
       }
       
@@ -45,6 +45,23 @@ export default function ProjectsPage() {
     } catch (err) {
       setError(handleAPIError(err))
     } finally {
+      setLoading(false)
+    }
+  }
+
+  const initializeDefaultStages = async () => {
+    try {
+      setLoading(true)
+      setError("")
+      
+      const result = await projectStageAPI.initializeDefaultStages()
+      setSuccess(result.message)
+      
+      // Reload data
+      await loadProjectData()
+      
+    } catch (err) {
+      setError(handleAPIError(err))
       setLoading(false)
     }
   }
@@ -214,7 +231,17 @@ export default function ProjectsPage() {
           {/* Error/Success Messages */}
           {error && (
             <div className="rounded-md bg-red-50 p-4 mb-6">
-              <div className="text-sm text-red-700">{error}</div>
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-red-700">{error}</div>
+                {error.includes("create default stages") && (
+                  <button
+                    onClick={initializeDefaultStages}
+                    className="ml-4 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+                  >
+                    Create Default Stages
+                  </button>
+                )}
+              </div>
             </div>
           )}
           

@@ -2469,6 +2469,37 @@ async def delete_project_stage_endpoint(
     
     return {"message": "Project stage deleted successfully"}
 
+@app.post("/api/projects/stages/initialize")
+async def create_default_project_stages(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Initialize default project stages for the organization"""
+    # Check if stages already exist
+    existing_stages = get_project_stages(db, current_user.organization_id)
+    if existing_stages:
+        raise HTTPException(status_code=400, detail="Project stages already exist")
+    
+    # Create default stages
+    default_stages = [
+        {"name": "Planning", "description": "Project approved, not yet started", "position": 0, "is_closed": False, "color": "#3B82F6"},
+        {"name": "Active", "description": "Currently in progress", "position": 1, "is_closed": False, "color": "#10B981"},
+        {"name": "Wrapping Up", "description": "Nearing completion", "position": 2, "is_closed": False, "color": "#F59E0B"},
+        {"name": "Closed", "description": "Completed projects", "position": 3, "is_closed": True, "color": "#6B7280"}
+    ]
+    
+    created_stages = []
+    for stage_data in default_stages:
+        from schemas import ProjectStageCreate
+        stage = ProjectStageCreate(**stage_data)
+        db_stage = create_project_stage(db, stage, current_user.organization_id)
+        created_stages.append(db_stage)
+    
+    return {
+        "message": f"Created {len(created_stages)} default project stages",
+        "stages": created_stages
+    }
+
 
 # Project endpoints
 @app.get("/api/projects", response_model=List[ProjectResponse])

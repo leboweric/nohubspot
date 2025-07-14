@@ -1149,6 +1149,11 @@ export const projectStageAPI = {
     apiRequest(`/api/projects/stages/${stageId}`, {
       method: 'DELETE',
     }),
+
+  initializeDefaultStages: (): Promise<{ message: string; stages: ProjectStage[] }> =>
+    apiRequest('/api/projects/stages/initialize', {
+      method: 'POST',
+    }),
 }
 
 // Project API functions
