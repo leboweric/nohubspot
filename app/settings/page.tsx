@@ -27,6 +27,7 @@ export default function SettingsPage() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [users, setUsers] = useState<any[]>([])
+  const [usersLoading, setUsersLoading] = useState(true)
   const { signature, saveSignature } = useEmailSignature()
   const { user, organization } = getAuthState()
 
@@ -105,17 +106,25 @@ export default function SettingsPage() {
 
   const loadUsers = async () => {
     try {
+      setUsersLoading(true)
       const response = await fetchWithCircuitBreaker(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         }
       })
-      if (response) {
+      if (response && response.ok) {
         const userData = await response.json()
-        setUsers(userData)
+        console.log('Loaded users:', userData)
+        setUsers(userData || [])
+      } else {
+        console.error('Failed to load users - response not ok:', response?.status)
+        setUsers([])
       }
     } catch (err) {
       console.error('Failed to load users:', err)
+      setUsers([])
+    } finally {
+      setUsersLoading(false)
     }
   }
 
@@ -384,7 +393,9 @@ export default function SettingsPage() {
               {/* Current Users */}
               <div className="space-y-3">
                 <h3 className="text-sm font-medium">Current Users</h3>
-                {users.length > 0 ? (
+                {usersLoading ? (
+                  <div className="text-sm text-gray-500">Loading users...</div>
+                ) : users.length > 0 ? (
                   <div className="space-y-2">
                     {users.map((teamUser) => (
                       <div key={teamUser.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -417,7 +428,7 @@ export default function SettingsPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-500">Loading users...</div>
+                  <div className="text-sm text-gray-500">No users found</div>
                 )}
               </div>
             </div>
