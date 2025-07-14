@@ -279,7 +279,7 @@ export default function NewCompanyPage() {
             className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">Select account owner</option>
-            {users.map((user) => (
+            {Array.isArray(users) && users.map((user) => (
               <option key={user.id} value={user.id}>
                 {user.first_name} {user.last_name} ({user.email})
               </option>
