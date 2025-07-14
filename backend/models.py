@@ -115,6 +115,7 @@ class Company(Base):
     contact_count = Column(Integer, default=0)
     attachment_count = Column(Integer, default=0)
     primary_account_owner_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    primary_referral_source = Column(Text, nullable=True)  # Free-form text field for referral source
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     

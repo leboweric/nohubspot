@@ -28,6 +28,7 @@ class CompanyBase(BaseModel):
     phone: Optional[str] = Field(None, max_length=50)
     annual_revenue: Optional[float] = None
     primary_account_owner_id: Optional[int] = None
+    primary_referral_source: Optional[str] = None
     status: str = Field(default="Active", max_length=50)
 
 class CompanyCreate(CompanyBase):
@@ -46,6 +47,7 @@ class CompanyUpdate(BaseModel):
     phone: Optional[str] = Field(None, max_length=50)
     annual_revenue: Optional[float] = None
     primary_account_owner_id: Optional[int] = None
+    primary_referral_source: Optional[str] = None
     status: Optional[str] = Field(None, max_length=50)
 
 class CompanyResponse(CompanyBase, TimestampMixin):
