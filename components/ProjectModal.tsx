@@ -42,6 +42,7 @@ export default function ProjectModal({
   const [contacts, setContacts] = useState<Contact[]>([])
   const [projectTypes, setProjectTypes] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
+  const [loadingData, setLoadingData] = useState(false)
   const [error, setError] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
@@ -81,16 +82,25 @@ export default function ProjectModal({
 
   const loadFormData = async () => {
     try {
+      setLoadingData(true)
+      console.log('Loading form data...')
       const [companiesData, contactsData, projectTypesData] = await Promise.all([
         companyAPI.getAll({ limit: 100 }),
         contactAPI.getAll({ limit: 100 }),
         projectAPI.getProjectTypes()
       ])
-      setCompanies(companiesData)
-      setContacts(contactsData)
-      setProjectTypes(projectTypesData)
+      console.log('Companies loaded:', companiesData?.length || 0)
+      console.log('Contacts loaded:', contactsData?.length || 0)
+      console.log('Project types loaded:', projectTypesData?.length || 0)
+      
+      setCompanies(companiesData || [])
+      setContacts(contactsData || [])
+      setProjectTypes(projectTypesData || [])
     } catch (err) {
       console.error('Failed to load form data:', err)
+      setError('Failed to load dropdown data. Please try again.')
+    } finally {
+      setLoadingData(false)
     }
   }
 
@@ -285,9 +295,10 @@ export default function ProjectModal({
               <select
                 value={formData.company_id || ''}
                 onChange={(e) => handleCompanyChange(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loadingData}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               >
-                <option value="">Select Company</option>
+                <option value="">{loadingData ? 'Loading companies...' : 'Select Company'}</option>
                 {companies.map(company => (
                   <option key={company.id} value={company.id}>
                     {company.name}
@@ -305,9 +316,10 @@ export default function ProjectModal({
                   ...prev, 
                   contact_id: e.target.value ? parseInt(e.target.value) : undefined 
                 }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loadingData}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               >
-                <option value="">Select Contact</option>
+                <option value="">{loadingData ? 'Loading contacts...' : 'Select Contact'}</option>
                 {getFilteredContacts().map(contact => (
                   <option key={contact.id} value={contact.id}>
                     {contact.first_name} {contact.last_name}
@@ -400,9 +412,10 @@ export default function ProjectModal({
               <select
                 value={formData.project_type}
                 onChange={(e) => setFormData(prev => ({ ...prev, project_type: e.target.value }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loadingData}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               >
-                <option value="">Select Type</option>
+                <option value="">{loadingData ? 'Loading project types...' : 'Select Type'}</option>
                 {projectTypes.map(type => (
                   <option key={type} value={type}>
                     {type}
