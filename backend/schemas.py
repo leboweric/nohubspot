@@ -626,6 +626,118 @@ class DealResponse(DealBase, TimestampMixin):
         from_attributes = True
 
 
+# Project Stage schemas
+class ProjectStageBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = None
+    position: int = Field(..., ge=0)
+    is_closed: bool = False
+    color: str = Field(default="#3B82F6", pattern="^#[0-9A-Fa-f]{6}$")
+    is_active: bool = True
+
+class ProjectStageCreate(ProjectStageBase):
+    pass
+
+class ProjectStageUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    description: Optional[str] = None
+    position: Optional[int] = Field(None, ge=0)
+    is_closed: Optional[bool] = None
+    color: Optional[str] = Field(None, pattern="^#[0-9A-Fa-f]{6}$")
+    is_active: Optional[bool] = None
+
+class ProjectStageResponse(ProjectStageBase, TimestampMixin):
+    id: int
+    organization_id: int
+    project_count: Optional[int] = 0  # Will be populated by API
+    
+    class Config:
+        from_attributes = True
+
+
+# Project Type enum for validation
+PROJECT_TYPES = [
+    "Annual Giving",
+    "Board Development", 
+    "Capital Campaign",
+    "Individual or Team Coaching",
+    "Communications Strategy",
+    "Consultation Set-Up",
+    "Executive Search",
+    "Feasibility Study",
+    "Fundraising Training",
+    "Fundraising/Resource Development",
+    "Grant Writing",
+    "Interim Development Director",
+    "Interim Executive Director",
+    "Marketing Strategy/Support",
+    "Merger/Partnership",
+    "Mission/Vision/Values",
+    "Organizational Assessment",
+    "Program Evaluation",
+    "Strategic Planning",
+    "Team Training",
+    "Other"
+]
+
+
+# Project schemas
+class ProjectBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    start_date: Optional[datetime] = None
+    projected_end_date: Optional[datetime] = None
+    hourly_rate: Optional[float] = Field(None, ge=0)
+    project_type: Optional[str] = Field(None, max_length=100)
+    projected_hours: Optional[float] = Field(None, ge=0)
+    contact_id: Optional[int] = None
+    company_id: Optional[int] = None
+    assigned_team_members: Optional[List[int]] = Field(default_factory=list)  # User IDs
+    notes: Optional[str] = None
+    tags: Optional[List[str]] = Field(default_factory=list)
+
+class ProjectCreate(ProjectBase):
+    stage_id: int
+
+class ProjectUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = None
+    start_date: Optional[datetime] = None
+    projected_end_date: Optional[datetime] = None
+    actual_end_date: Optional[datetime] = None
+    hourly_rate: Optional[float] = Field(None, ge=0)
+    project_type: Optional[str] = Field(None, max_length=100)
+    projected_hours: Optional[float] = Field(None, ge=0)
+    actual_hours: Optional[float] = Field(None, ge=0)
+    stage_id: Optional[int] = None
+    contact_id: Optional[int] = None
+    company_id: Optional[int] = None
+    assigned_team_members: Optional[List[int]] = None
+    notes: Optional[str] = None
+    tags: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+
+class ProjectResponse(ProjectBase, TimestampMixin):
+    id: int
+    organization_id: int
+    created_by: int
+    stage_id: int
+    actual_end_date: Optional[datetime] = None
+    actual_hours: float = 0.0
+    is_active: bool
+    
+    # Populated by API
+    stage_name: Optional[str] = None
+    stage_color: Optional[str] = None
+    contact_name: Optional[str] = None
+    company_name: Optional[str] = None
+    creator_name: Optional[str] = None
+    assigned_team_member_names: Optional[List[str]] = Field(default_factory=list)  # Names of assigned users
+    
+    class Config:
+        from_attributes = True
+
+
 # Email Tracking schemas
 class EmailTrackingBase(BaseModel):
     message_id: str = Field(..., max_length=255)

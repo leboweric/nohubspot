@@ -7,7 +7,8 @@ from phone_utils import format_phone_number
 from models import (
     Company, Contact, EmailThread, EmailMessage, 
     Task, Attachment, Activity, EmailSignature, CalendarEvent, EventAttendee,
-    O365OrganizationConfig, O365UserConnection, User, PipelineStage, Deal
+    O365OrganizationConfig, O365UserConnection, User, PipelineStage, Deal,
+    ProjectStage, Project
 )
 from schemas import (
     CompanyCreate, CompanyUpdate, ContactCreate, ContactUpdate,
@@ -16,7 +17,8 @@ from schemas import (
     CalendarEventCreate, CalendarEventUpdate, DashboardStats,
     EventAttendeeCreate, EventAttendeeResponse,
     O365OrganizationConfigCreate, O365OrganizationConfigUpdate, O365UserConnectionUpdate,
-    PipelineStageCreate, PipelineStageUpdate, DealCreate, DealUpdate
+    PipelineStageCreate, PipelineStageUpdate, DealCreate, DealUpdate,
+    ProjectStageCreate, ProjectStageUpdate, ProjectCreate, ProjectUpdate
 )
 
 # Company CRUD operations
@@ -951,6 +953,184 @@ def delete_deal(db: Session, deal_id: int, organization_id: int) -> bool:
         description=f"Deleted deal: {db_deal.title}",
         type="deal",
         entity_id=str(db_deal.id),
+        organization_id=organization_id
+    )
+    
+    return True
+
+
+# Project Stage CRUD operations
+def create_project_stage(db: Session, stage: ProjectStageCreate, organization_id: int) -> ProjectStage:
+    db_stage = ProjectStage(**stage.dict(), organization_id=organization_id)
+    db.add(db_stage)
+    db.commit()
+    db.refresh(db_stage)
+    return db_stage
+
+def get_project_stages(db: Session, organization_id: int) -> List[ProjectStage]:
+    return db.query(ProjectStage).filter(
+        ProjectStage.organization_id == organization_id,
+        ProjectStage.is_active == True
+    ).order_by(ProjectStage.position).all()
+
+def get_project_stage(db: Session, stage_id: int, organization_id: int) -> Optional[ProjectStage]:
+    return db.query(ProjectStage).filter(
+        ProjectStage.id == stage_id,
+        ProjectStage.organization_id == organization_id
+    ).first()
+
+def update_project_stage(db: Session, stage_id: int, stage_update: ProjectStageUpdate, organization_id: int) -> Optional[ProjectStage]:
+    db_stage = get_project_stage(db, stage_id, organization_id)
+    if not db_stage:
+        return None
+    
+    update_data = stage_update.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_stage, field, value)
+    
+    db.commit()
+    db.refresh(db_stage)
+    return db_stage
+
+def delete_project_stage(db: Session, stage_id: int, organization_id: int) -> bool:
+    db_stage = get_project_stage(db, stage_id, organization_id)
+    if not db_stage:
+        return False
+    
+    # Check if stage has projects
+    project_count = db.query(Project).filter(Project.stage_id == stage_id).count()
+    if project_count > 0:
+        return False  # Cannot delete stage with projects
+    
+    db.delete(db_stage)
+    db.commit()
+    return True
+
+
+# Project CRUD operations
+def create_project(db: Session, project: ProjectCreate, organization_id: int, created_by: int) -> Project:
+    project_data = project.dict()
+    db_project = Project(**project_data, organization_id=organization_id, created_by=created_by)
+    db.add(db_project)
+    db.commit()
+    db.refresh(db_project)
+    
+    # Log activity
+    create_activity(
+        db,
+        title="Project Created",
+        description=f"Created new project: {db_project.title}",
+        type="project",
+        entity_id=str(db_project.id),
+        organization_id=organization_id
+    )
+    
+    return db_project
+
+def get_projects(
+    db: Session, 
+    organization_id: int,
+    skip: int = 0, 
+    limit: int = 100,
+    search: Optional[str] = None,
+    stage_id: Optional[int] = None,
+    company_id: Optional[int] = None,
+    assigned_to: Optional[int] = None,
+    project_type: Optional[str] = None,
+    is_active: bool = True
+) -> List[Project]:
+    query = db.query(Project).options(
+        joinedload(Project.stage),
+        joinedload(Project.company),
+        joinedload(Project.contact),
+        joinedload(Project.creator)
+    ).filter(
+        Project.organization_id == organization_id,
+        Project.is_active == is_active
+    )
+    
+    if search:
+        search_filter = f"%{search}%"
+        query = query.filter(
+            or_(
+                Project.title.ilike(search_filter),
+                Project.description.ilike(search_filter)
+            )
+        )
+    
+    if stage_id:
+        query = query.filter(Project.stage_id == stage_id)
+    
+    if company_id:
+        query = query.filter(Project.company_id == company_id)
+    
+    if project_type:
+        query = query.filter(Project.project_type == project_type)
+    
+    if assigned_to:
+        # Search in the JSON array of assigned team members
+        query = query.filter(
+            Project.assigned_team_members.op('?')(str(assigned_to))
+        )
+    
+    return query.order_by(desc(Project.created_at)).offset(skip).limit(limit).all()
+
+def get_project(db: Session, project_id: int, organization_id: int) -> Optional[Project]:
+    return db.query(Project).options(
+        joinedload(Project.stage),
+        joinedload(Project.company),
+        joinedload(Project.contact),
+        joinedload(Project.creator)
+    ).filter(
+        Project.id == project_id,
+        Project.organization_id == organization_id
+    ).first()
+
+def update_project(db: Session, project_id: int, project_update: ProjectUpdate, organization_id: int) -> Optional[Project]:
+    db_project = get_project(db, project_id, organization_id)
+    if not db_project:
+        return None
+    
+    update_data = project_update.dict(exclude_unset=True)
+    old_stage_id = db_project.stage_id
+    
+    for field, value in update_data.items():
+        setattr(db_project, field, value)
+    
+    # If stage changed, log activity
+    if "stage_id" in update_data and update_data["stage_id"] != old_stage_id:
+        old_stage = get_project_stage(db, old_stage_id, organization_id)
+        new_stage = get_project_stage(db, update_data["stage_id"], organization_id)
+        
+        if old_stage and new_stage:
+            create_activity(
+                db,
+                title="Project Stage Changed",
+                description=f"Moved project from '{old_stage.name}' to '{new_stage.name}'",
+                type="project",
+                entity_id=str(db_project.id),
+                organization_id=organization_id
+            )
+    
+    db.commit()
+    db.refresh(db_project)
+    return db_project
+
+def delete_project(db: Session, project_id: int, organization_id: int) -> bool:
+    db_project = get_project(db, project_id, organization_id)
+    if not db_project:
+        return False
+    
+    # Soft delete - mark as inactive
+    db_project.is_active = False
+    db.commit()
+    
+    create_activity(
+        db,
+        title="Project Deleted",
+        description=f"Deleted project: {db_project.title}",
+        type="project",
+        entity_id=str(db_project.id),
         organization_id=organization_id
     )
     

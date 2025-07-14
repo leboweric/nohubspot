@@ -35,7 +35,7 @@ def rate_limit_check(client_ip: str, endpoint: str, max_requests: int = 30, wind
     return True
 
 from database import get_db, SessionLocal, engine
-from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, PipelineStage, Deal, EmailTracking, EmailEvent, EmailSharingPermission
+from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, PipelineStage, Deal, EmailTracking, EmailEvent, EmailSharingPermission, ProjectStage, Project
 from schemas import (
     CompanyCreate, CompanyResponse, CompanyUpdate,
     ContactCreate, ContactResponse, ContactUpdate,
@@ -56,6 +56,8 @@ from schemas import (
     O365TestConnectionRequest, O365TestConnectionResponse,
     PipelineStageCreate, PipelineStageResponse, PipelineStageUpdate,
     DealCreate, DealResponse, DealUpdate,
+    ProjectStageCreate, ProjectStageResponse, ProjectStageUpdate,
+    ProjectCreate, ProjectResponse, ProjectUpdate, PROJECT_TYPES,
     EmailTrackingCreate, EmailTrackingResponse, EmailEventCreate, EmailEventResponse, SendGridEvent,
     ContactPrivacyUpdate, EmailThreadSharingUpdate, EmailSharingPermissionCreate, EmailSharingPermissionResponse,
     EmailPrivacySettings, EmailPrivacySettingsUpdate
@@ -75,7 +77,9 @@ from crud import (
     is_org_owner, get_o365_org_config, create_o365_org_config, update_o365_org_config, delete_o365_org_config,
     get_o365_user_connection, get_o365_user_connections_by_org, update_o365_user_connection, delete_o365_user_connection,
     create_pipeline_stage, get_pipeline_stages, get_pipeline_stage, update_pipeline_stage, delete_pipeline_stage, create_default_pipeline_stages,
-    create_deal, get_deals, get_deal, update_deal, delete_deal
+    create_deal, get_deals, get_deal, update_deal, delete_deal,
+    create_project_stage, get_project_stages, get_project_stage, update_project_stage, delete_project_stage,
+    create_project, get_projects, get_project, update_project, delete_project
 )
 from auth_crud import (
     create_organization, get_organization_by_slug, get_organization_by_id,
@@ -2378,6 +2382,221 @@ async def delete_deal_by_id(
         raise HTTPException(status_code=404, detail="Deal not found")
     
     return {"message": "Deal deleted successfully"}
+
+
+# Project Stage endpoints
+@app.get("/api/projects/stages", response_model=List[ProjectStageResponse])
+async def get_project_stages_endpoint(
+    include_inactive: bool = False,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all project stages for the organization"""
+    stages = get_project_stages(db, current_user.organization_id)
+    
+    # Add project counts
+    for stage in stages:
+        stage.project_count = db.query(Project).filter(
+            Project.stage_id == stage.id,
+            Project.is_active == True
+        ).count()
+    
+    return stages
+
+@app.post("/api/projects/stages", response_model=ProjectStageResponse)
+async def create_project_stage_endpoint(
+    stage: ProjectStageCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new project stage"""
+    db_stage = create_project_stage(db, stage, current_user.organization_id)
+    
+    # Create activity log
+    create_activity(
+        db,
+        title="Project Stage Created",
+        description=f"Created project stage: {stage.name}",
+        type="project",
+        organization_id=current_user.organization_id
+    )
+    
+    return db_stage
+
+@app.get("/api/projects/stages/{stage_id}", response_model=ProjectStageResponse)
+async def get_project_stage_endpoint(
+    stage_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get a specific project stage"""
+    stage = get_project_stage(db, stage_id, current_user.organization_id)
+    if not stage:
+        raise HTTPException(status_code=404, detail="Project stage not found")
+    
+    # Add project count
+    stage.project_count = db.query(Project).filter(
+        Project.stage_id == stage.id,
+        Project.is_active == True
+    ).count()
+    
+    return stage
+
+@app.put("/api/projects/stages/{stage_id}", response_model=ProjectStageResponse)
+async def update_project_stage_endpoint(
+    stage_id: int,
+    stage_update: ProjectStageUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update a project stage"""
+    db_stage = update_project_stage(db, stage_id, stage_update, current_user.organization_id)
+    if not db_stage:
+        raise HTTPException(status_code=404, detail="Project stage not found")
+    
+    return db_stage
+
+@app.delete("/api/projects/stages/{stage_id}")
+async def delete_project_stage_endpoint(
+    stage_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a project stage"""
+    success = delete_project_stage(db, stage_id, current_user.organization_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Project stage not found or has projects")
+    
+    return {"message": "Project stage deleted successfully"}
+
+
+# Project endpoints
+@app.get("/api/projects", response_model=List[ProjectResponse])
+async def get_organization_projects(
+    skip: int = 0,
+    limit: int = 100,
+    search: Optional[str] = None,
+    stage_id: Optional[int] = None,
+    company_id: Optional[int] = None,
+    project_type: Optional[str] = None,
+    assigned_to: Optional[int] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all projects for the organization"""
+    projects = get_projects(
+        db, current_user.organization_id, skip, limit, search, 
+        stage_id, company_id, assigned_to, project_type
+    )
+    
+    # Populate additional fields for response
+    for project in projects:
+        # Stage info
+        if project.stage:
+            project.stage_name = project.stage.name
+            project.stage_color = project.stage.color
+        
+        # Company info
+        if project.company:
+            project.company_name = project.company.name
+        
+        # Contact info
+        if project.contact:
+            project.contact_name = f"{project.contact.first_name} {project.contact.last_name}"
+        
+        # Creator info
+        if project.creator:
+            project.creator_name = f"{project.creator.first_name} {project.creator.last_name}"
+        
+        # Assigned team member names
+        if project.assigned_team_members:
+            team_members = db.query(User).filter(
+                User.id.in_(project.assigned_team_members),
+                User.organization_id == current_user.organization_id
+            ).all()
+            project.assigned_team_member_names = [
+                f"{member.first_name} {member.last_name}" for member in team_members
+            ]
+    
+    return projects
+
+@app.post("/api/projects", response_model=ProjectResponse)
+async def create_project_endpoint(
+    project: ProjectCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new project"""
+    db_project = create_project(db, project, current_user.organization_id, current_user.id)
+    return db_project
+
+@app.get("/api/projects/{project_id}", response_model=ProjectResponse)
+async def get_project_endpoint(
+    project_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get a specific project"""
+    project = get_project(db, project_id, current_user.organization_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Populate additional fields
+    if project.stage:
+        project.stage_name = project.stage.name
+        project.stage_color = project.stage.color
+    
+    if project.company:
+        project.company_name = project.company.name
+    
+    if project.contact:
+        project.contact_name = f"{project.contact.first_name} {project.contact.last_name}"
+    
+    if project.creator:
+        project.creator_name = f"{project.creator.first_name} {project.creator.last_name}"
+    
+    if project.assigned_team_members:
+        team_members = db.query(User).filter(
+            User.id.in_(project.assigned_team_members),
+            User.organization_id == current_user.organization_id
+        ).all()
+        project.assigned_team_member_names = [
+            f"{member.first_name} {member.last_name}" for member in team_members
+        ]
+    
+    return project
+
+@app.put("/api/projects/{project_id}", response_model=ProjectResponse)
+async def update_project_endpoint(
+    project_id: int,
+    project_update: ProjectUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update a project"""
+    db_project = update_project(db, project_id, project_update, current_user.organization_id)
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    return db_project
+
+@app.delete("/api/projects/{project_id}")
+async def delete_project_endpoint(
+    project_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a project"""
+    success = delete_project(db, project_id, current_user.organization_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    return {"message": "Project deleted successfully"}
+
+@app.get("/api/projects/types", response_model=List[str])
+async def get_project_types():
+    """Get available project types"""
+    return PROJECT_TYPES
 
 
 # Email Tracking endpoints

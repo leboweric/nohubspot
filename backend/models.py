@@ -501,6 +501,79 @@ class Deal(Base):
                             overlaps="activities")
 
 
+class ProjectStage(Base):
+    __tablename__ = "project_stages"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    name = Column(String(100), nullable=False)  # Planning, Active, Wrapping Up, Closed
+    description = Column(Text)
+    position = Column(Integer, nullable=False)  # Order in pipeline (0, 1, 2, ...)
+    is_closed = Column(Boolean, default=False)  # True for Closed stage
+    color = Column(String(7), default="#3B82F6")  # Hex color for UI
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    organization = relationship("Organization")
+    projects = relationship("Project", back_populates="stage")
+
+
+class Project(Base):
+    __tablename__ = "projects"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    # Project details
+    title = Column(String(255), nullable=False)
+    description = Column(Text)
+    
+    # Dates
+    start_date = Column(DateTime(timezone=True), nullable=True)
+    projected_end_date = Column(DateTime(timezone=True), nullable=True)
+    actual_end_date = Column(DateTime(timezone=True), nullable=True)
+    
+    # Financial details
+    hourly_rate = Column(Float, nullable=True)  # Hourly rate for the project
+    
+    # Project type from the intake form
+    project_type = Column(String(100), nullable=True)  # Annual Giving, Board Development, etc.
+    
+    # Time tracking
+    projected_hours = Column(Float, nullable=True)  # Estimated hours for completion
+    actual_hours = Column(Float, default=0.0)  # Actual hours logged
+    
+    # Relationships
+    stage_id = Column(Integer, ForeignKey("project_stages.id"), nullable=False)
+    contact_id = Column(Integer, ForeignKey("contacts.id"), nullable=True)  # Primary company contact
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
+    
+    # Team assignments (JSON array of user IDs)
+    assigned_team_members = Column(JSON, nullable=True)  # Array of user IDs assigned to project
+    
+    # Status and tracking
+    is_active = Column(Boolean, default=True)
+    notes = Column(Text)
+    tags = Column(JSON)  # Store as JSON array
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    organization = relationship("Organization")
+    creator = relationship("User", foreign_keys=[created_by])
+    stage = relationship("ProjectStage", back_populates="projects")
+    contact = relationship("Contact")
+    company = relationship("Company")
+    activities = relationship("Activity", foreign_keys="Activity.entity_id", 
+                            primaryjoin="and_(cast(Project.id, String) == Activity.entity_id, Activity.type == 'project')",
+                            overlaps="activities")
+
+
 class EmailTracking(Base):
     __tablename__ = "email_tracking"
     
