@@ -10,7 +10,7 @@ import EmailTrackingStatus from "@/components/email/EmailTrackingStatus"
 import TaskCreate from "@/components/tasks/TaskCreate"
 import EventFormModal from "@/components/calendar/EventFormModal"
 import { Task } from "@/components/tasks/types"
-import { contactAPI, Contact, handleAPIError, CalendarEventCreate, calendarAPI, emailThreadAPI, EmailThread, emailTrackingAPI } from "@/lib/api"
+import { contactAPI, Contact, handleAPIError, CalendarEventCreate, calendarAPI, emailThreadAPI, EmailThread, emailTrackingAPI, taskAPI, TaskCreate as TaskCreateType } from "@/lib/api"
 import { getAuthState } from "@/lib/auth"
 
 // Force dynamic rendering to prevent static generation issues with auth
@@ -196,25 +196,30 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
     }
   }
 
-  const handleCreateTask = (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newTask: Task = {
-      ...taskData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-    
-    // Save to localStorage
+  const handleCreateTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      const existingTasks = JSON.parse(localStorage.getItem('tasks') || '[]')
-      existingTasks.unshift(newTask)
-      localStorage.setItem('tasks', JSON.stringify(existingTasks))
+      // Convert the task data to match the API format
+      const apiTaskData: TaskCreateType = {
+        title: taskData.title,
+        description: taskData.description || undefined,
+        due_date: taskData.dueDate || undefined,
+        priority: taskData.priority,
+        status: taskData.status,
+        assigned_to: taskData.assignedTo || undefined,
+        entity_type: 'contact',
+        entity_id: params.id
+      }
+      
+      await taskAPI.create(apiTaskData)
+      setShowCreateTask(false)
+      alert('Task created successfully!')
+      
+      // Optionally refresh the page or update local state
+      // to show the new task in the UI
     } catch (error) {
-      console.error('Failed to save task:', error)
+      console.error('Failed to create task:', error)
+      alert(`Failed to create task: ${handleAPIError(error)}`)
     }
-    
-    setShowCreateTask(false)
-    alert('Task created successfully!')
   }
 
   if (loading) {
