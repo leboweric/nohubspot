@@ -305,7 +305,7 @@ class O365Service:
             
             # Strip HTML tags for preview (basic implementation)
             text_content = re.sub('<[^<]+?>', '', body_content)
-            text_content = re.sub('\s+', ' ', text_content).strip()
+            text_content = re.sub(r'\s+', ' ', text_content).strip()
             # Also decode HTML entities
             text_content = text_content.replace('&nbsp;', ' ').replace('&lt;', '<').replace('&gt;', '>').replace('&amp;', '&').replace('&#39;', "'").replace('&quot;', '"')
             
