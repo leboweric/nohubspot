@@ -44,7 +44,7 @@ from schemas import (
     EmailMessageCreate, EmailMessageResponse, AttachmentResponse,
     EmailSignatureCreate, EmailSignatureResponse, EmailSignatureUpdate,
     ActivityResponse, DashboardStats, BulkUploadResult,
-    OrganizationCreate, OrganizationResponse, UserRegister, UserLogin, UserResponse,
+    OrganizationCreate, OrganizationResponse, UserRegister, UserLogin, UserResponse, UserCreate,
     UserInviteCreate, UserInviteResponse, UserInviteAccept, Token,
     UserAdd, UserAddResponse,
     EmailTemplateCreate, EmailTemplateResponse, EmailTemplateUpdate,
@@ -844,16 +844,24 @@ async def add_user_directly(
     
     # Create the user
     try:
-        new_user = create_user(
-            db=db,
+        # Create UserCreate object
+        user_create = UserCreate(
             email=user_data.email,
             password=temp_password,
             first_name=user_data.first_name,
             last_name=user_data.last_name,
-            organization_id=current_user.organization_id,
-            role=user_data.role,
-            email_verified=True  # Pre-verify since admin is creating
+            role=user_data.role
         )
+        
+        new_user = create_user(
+            db=db,
+            user=user_create,
+            organization_id=current_user.organization_id
+        )
+        
+        # Pre-verify the email since admin is creating
+        new_user.email_verified = True
+        db.commit()
         
         # Send welcome email with temporary password
         await send_welcome_email(
