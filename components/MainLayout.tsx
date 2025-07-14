@@ -24,6 +24,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     { name: "Calendar", href: "/calendar" },
     { name: "Tasks", href: "/tasks" },
     { name: "Pipeline", href: "/pipeline" },
+    { name: "Projects", href: "/projects" },
     { name: "Templates", href: "/templates" },
     { name: "Settings", href: "/settings" },
   ]

@@ -948,6 +948,106 @@ export interface DealUpdate {
   is_active?: boolean
 }
 
+// Project interfaces
+export interface ProjectStage {
+  id: number
+  organization_id: number
+  name: string
+  description?: string
+  position: number
+  is_closed: boolean
+  color: string
+  is_active: boolean
+  project_count?: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ProjectStageCreate {
+  name: string
+  description?: string
+  position: number
+  is_closed?: boolean
+  color?: string
+  is_active?: boolean
+}
+
+export interface ProjectStageUpdate {
+  name?: string
+  description?: string
+  position?: number
+  is_closed?: boolean
+  color?: string
+  is_active?: boolean
+}
+
+export interface Project {
+  id: number
+  organization_id: number
+  created_by: number
+  title: string
+  description?: string
+  start_date?: string
+  projected_end_date?: string
+  actual_end_date?: string
+  hourly_rate?: number
+  project_type?: string
+  projected_hours?: number
+  actual_hours: number
+  stage_id: number
+  contact_id?: number
+  company_id?: number
+  assigned_team_members?: number[]
+  is_active: boolean
+  notes?: string
+  tags?: string[]
+  created_at: string
+  updated_at: string
+  
+  // Populated by API
+  stage_name?: string
+  stage_color?: string
+  contact_name?: string
+  company_name?: string
+  creator_name?: string
+  assigned_team_member_names?: string[]
+}
+
+export interface ProjectCreate {
+  title: string
+  description?: string
+  start_date?: string
+  projected_end_date?: string
+  hourly_rate?: number
+  project_type?: string
+  projected_hours?: number
+  stage_id: number
+  contact_id?: number
+  company_id?: number
+  assigned_team_members?: number[]
+  notes?: string
+  tags?: string[]
+}
+
+export interface ProjectUpdate {
+  title?: string
+  description?: string
+  start_date?: string
+  projected_end_date?: string
+  actual_end_date?: string
+  hourly_rate?: number
+  project_type?: string
+  projected_hours?: number
+  actual_hours?: number
+  stage_id?: number
+  contact_id?: number
+  company_id?: number
+  assigned_team_members?: number[]
+  notes?: string
+  tags?: string[]
+  is_active?: boolean
+}
+
 // Pipeline API functions
 export const pipelineAPI = {
   // Stage operations
@@ -1022,6 +1122,83 @@ export const dealAPI = {
     apiRequest(`/api/deals/${dealId}`, {
       method: 'DELETE',
     }),
+}
+
+// Project Stage API functions
+export const projectStageAPI = {
+  // Stage operations
+  getStages: (includeInactive = false): Promise<ProjectStage[]> =>
+    apiRequest(`/api/projects/stages?include_inactive=${includeInactive}`),
+
+  createStage: (stage: ProjectStageCreate): Promise<ProjectStage> =>
+    apiRequest('/api/projects/stages', {
+      method: 'POST',
+      body: JSON.stringify(stage),
+    }),
+
+  getStage: (stageId: number): Promise<ProjectStage> =>
+    apiRequest(`/api/projects/stages/${stageId}`),
+
+  updateStage: (stageId: number, stage: ProjectStageUpdate): Promise<ProjectStage> =>
+    apiRequest(`/api/projects/stages/${stageId}`, {
+      method: 'PUT',
+      body: JSON.stringify(stage),
+    }),
+
+  deleteStage: (stageId: number): Promise<{ message: string }> =>
+    apiRequest(`/api/projects/stages/${stageId}`, {
+      method: 'DELETE',
+    }),
+}
+
+// Project API functions
+export const projectAPI = {
+  getProjects: (params?: {
+    skip?: number
+    limit?: number
+    stage_id?: number
+    contact_id?: number
+    company_id?: number
+    assigned_to?: number
+    project_type?: string
+    include_inactive?: boolean
+  }): Promise<Project[]> => {
+    const searchParams = new URLSearchParams()
+    if (params?.skip) searchParams.append('skip', params.skip.toString())
+    if (params?.limit) searchParams.append('limit', params.limit.toString())
+    if (params?.stage_id) searchParams.append('stage_id', params.stage_id.toString())
+    if (params?.contact_id) searchParams.append('contact_id', params.contact_id.toString())
+    if (params?.company_id) searchParams.append('company_id', params.company_id.toString())
+    if (params?.assigned_to) searchParams.append('assigned_to', params.assigned_to.toString())
+    if (params?.project_type) searchParams.append('project_type', params.project_type)
+    if (params?.include_inactive) searchParams.append('include_inactive', params.include_inactive.toString())
+
+    const url = `/api/projects${searchParams.toString() ? '?' + searchParams.toString() : ''}`
+    return apiRequest(url)
+  },
+
+  createProject: (project: ProjectCreate): Promise<Project> =>
+    apiRequest('/api/projects', {
+      method: 'POST',
+      body: JSON.stringify(project),
+    }),
+
+  getProject: (projectId: number): Promise<Project> =>
+    apiRequest(`/api/projects/${projectId}`),
+
+  updateProject: (projectId: number, project: ProjectUpdate): Promise<Project> =>
+    apiRequest(`/api/projects/${projectId}`, {
+      method: 'PUT',
+      body: JSON.stringify(project),
+    }),
+
+  deleteProject: (projectId: number): Promise<{ message: string }> =>
+    apiRequest(`/api/projects/${projectId}`, {
+      method: 'DELETE',
+    }),
+
+  getProjectTypes: (): Promise<string[]> =>
+    apiRequest('/api/projects/types'),
 }
 
 // Email tracking API functions
