@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { getAuthState, logout, isAdmin } from "@/lib/auth"
+import FloatingSupportButton from "./FloatingSupportButton"
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -162,6 +163,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <main className="flex-1 bg-gray-50">
         {children}
       </main>
+
+      {/* Floating Support Button - only show when authenticated */}
+      {isAuthenticated && <FloatingSupportButton />}
     </div>
   )
 }
