@@ -26,9 +26,10 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def standardize_phone_numbers():
+def standardize_phone_numbers(organization_id: int = None):
     """
     Standardize all phone numbers in the database to format: (XXX) XXX-XXXX
+    If organization_id is provided, only process that organization's data.
     """
     db = next(get_db())
     
@@ -48,7 +49,10 @@ def standardize_phone_numbers():
         
         # Process Companies
         logger.info("Processing companies...")
-        companies = db.query(Company).filter(Company.phone.isnot(None)).all()
+        query = db.query(Company).filter(Company.phone.isnot(None))
+        if organization_id:
+            query = query.filter(Company.organization_id == organization_id)
+        companies = query.all()
         stats['companies_processed'] = len(companies)
         
         for company in companies:
@@ -63,7 +67,10 @@ def standardize_phone_numbers():
         
         # Process Contacts
         logger.info("Processing contacts...")
-        contacts = db.query(Contact).filter(Contact.phone.isnot(None)).all()
+        query = db.query(Contact).filter(Contact.phone.isnot(None))
+        if organization_id:
+            query = query.filter(Contact.organization_id == organization_id)
+        contacts = query.all()
         stats['contacts_processed'] = len(contacts)
         
         for contact in contacts:
@@ -78,7 +85,10 @@ def standardize_phone_numbers():
         
         # Process Email Signatures
         logger.info("Processing email signatures...")
-        signatures = db.query(EmailSignature).filter(EmailSignature.phone.isnot(None)).all()
+        query = db.query(EmailSignature).filter(EmailSignature.phone.isnot(None))
+        if organization_id:
+            query = query.filter(EmailSignature.organization_id == organization_id)
+        signatures = query.all()
         stats['email_signatures_processed'] = len(signatures)
         
         for signature in signatures:
@@ -111,56 +121,86 @@ def standardize_phone_numbers():
         db.close()
 
 
-def dry_run():
+def dry_run(organization_id: int = None):
     """
     Preview what changes would be made without actually updating the database.
+    Returns a dictionary with preview data.
     """
     db = next(get_db())
     
     try:
         logger.info("Running in DRY RUN mode - no changes will be made")
         
+        preview_data = {
+            'companies': [],
+            'contacts': [],
+            'email_signatures': [],
+            'summary': {
+                'companies_to_update': 0,
+                'contacts_to_update': 0,
+                'email_signatures_to_update': 0,
+                'total_changes': 0
+            }
+        }
+        
         # Check Companies
-        logger.info("\n=== Companies that would be updated ===")
-        companies = db.query(Company).filter(Company.phone.isnot(None)).all()
-        company_changes = 0
+        query = db.query(Company).filter(Company.phone.isnot(None))
+        if organization_id:
+            query = query.filter(Company.organization_id == organization_id)
+        companies = query.all()
         
         for company in companies:
             if company.phone:
                 formatted_phone = format_phone_number(company.phone)
                 if company.phone != formatted_phone:
-                    logger.info(f"Company '{company.name}': '{company.phone}' -> '{formatted_phone}'")
-                    company_changes += 1
+                    preview_data['companies'].append({
+                        'name': company.name,
+                        'current': company.phone,
+                        'formatted': formatted_phone
+                    })
+                    preview_data['summary']['companies_to_update'] += 1
         
         # Check Contacts
-        logger.info("\n=== Contacts that would be updated ===")
-        contacts = db.query(Contact).filter(Contact.phone.isnot(None)).all()
-        contact_changes = 0
+        query = db.query(Contact).filter(Contact.phone.isnot(None))
+        if organization_id:
+            query = query.filter(Contact.organization_id == organization_id)
+        contacts = query.all()
         
         for contact in contacts:
             if contact.phone:
                 formatted_phone = format_phone_number(contact.phone)
                 if contact.phone != formatted_phone:
-                    logger.info(f"Contact '{contact.first_name} {contact.last_name}': '{contact.phone}' -> '{formatted_phone}'")
-                    contact_changes += 1
+                    preview_data['contacts'].append({
+                        'name': f"{contact.first_name} {contact.last_name}",
+                        'current': contact.phone,
+                        'formatted': formatted_phone
+                    })
+                    preview_data['summary']['contacts_to_update'] += 1
         
         # Check Email Signatures
-        logger.info("\n=== Email Signatures that would be updated ===")
-        signatures = db.query(EmailSignature).filter(EmailSignature.phone.isnot(None)).all()
-        signature_changes = 0
+        query = db.query(EmailSignature).filter(EmailSignature.phone.isnot(None))
+        if organization_id:
+            query = query.filter(EmailSignature.organization_id == organization_id)
+        signatures = query.all()
         
         for signature in signatures:
             if signature.phone:
                 formatted_phone = format_phone_number(signature.phone)
                 if signature.phone != formatted_phone:
-                    logger.info(f"Email signature '{signature.name}': '{signature.phone}' -> '{formatted_phone}'")
-                    signature_changes += 1
+                    preview_data['email_signatures'].append({
+                        'name': signature.name,
+                        'current': signature.phone,
+                        'formatted': formatted_phone
+                    })
+                    preview_data['summary']['email_signatures_to_update'] += 1
         
-        logger.info(f"\n=== DRY RUN Summary ===")
-        logger.info(f"Companies that would be updated: {company_changes}")
-        logger.info(f"Contacts that would be updated: {contact_changes}")
-        logger.info(f"Email signatures that would be updated: {signature_changes}")
-        logger.info(f"Total changes that would be made: {company_changes + contact_changes + signature_changes}")
+        preview_data['summary']['total_changes'] = (
+            preview_data['summary']['companies_to_update'] + 
+            preview_data['summary']['contacts_to_update'] + 
+            preview_data['summary']['email_signatures_to_update']
+        )
+        
+        return preview_data
         
     except Exception as e:
         logger.error(f"Error during dry run: {str(e)}")

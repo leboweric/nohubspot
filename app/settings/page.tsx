@@ -5,6 +5,7 @@ import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import SignatureBuilder, { EmailSignature } from "@/components/signature/SignatureBuilder"
 import SupportModal from "@/components/support/SupportModal"
+import PhoneStandardizationModal from "@/components/PhoneStandardizationModal"
 import O365Connection from "@/components/settings/O365Connection"
 import { useEmailSignature } from "@/components/signature/SignatureManager"
 import { getAuthState, isAdmin } from "@/lib/auth"
@@ -17,6 +18,9 @@ export default function SettingsPage() {
   const [showSignatureBuilder, setShowSignatureBuilder] = useState(false)
   const [showInviteForm, setShowInviteForm] = useState(false)
   const [showSupportModal, setShowSupportModal] = useState(false)
+  const [showPhoneModal, setShowPhoneModal] = useState(false)
+  const [phonePreviewData, setPhonePreviewData] = useState(null)
+  const [isLoadingPhone, setIsLoadingPhone] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
   const [inviteFirstName, setInviteFirstName] = useState("")
   const [inviteLastName, setInviteLastName] = useState("")
@@ -693,6 +697,7 @@ export default function SettingsPage() {
                   <button
                     onClick={async () => {
                       try {
+                        setIsLoadingPhone(true)
                         const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
                         const response = await fetch(`${baseUrl}/api/admin/standardize-phone-numbers?dry_run=true`, {
                           method: 'POST',
@@ -702,43 +707,56 @@ export default function SettingsPage() {
                           },
                         })
                         if (response.ok) {
-                          alert('Dry run completed. Check the server logs for details.')
+                          const data = await response.json()
+                          setPhonePreviewData(data)
+                          setShowPhoneModal(true)
                         } else {
-                          alert('Failed to run phone standardization dry run')
+                          alert('Failed to run phone standardization preview')
                         }
                       } catch (error) {
-                        alert('Error running dry run')
+                        alert('Error running preview')
+                      } finally {
+                        setIsLoadingPhone(false)
                       }
                     }}
-                    className="px-3 py-1.5 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                    className="px-3 py-1.5 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors disabled:bg-gray-400"
+                    disabled={isLoadingPhone}
                   >
-                    Preview Changes
+                    {isLoadingPhone ? 'Loading...' : 'Preview Changes'}
                   </button>
                   <button
                     onClick={async () => {
-                      if (confirm('This will standardize all phone numbers in your database. Continue?')) {
-                        try {
-                          const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
-                          const response = await fetch(`${baseUrl}/api/admin/standardize-phone-numbers`, {
-                            method: 'POST',
-                            headers: {
-                              'Authorization': `Bearer ${getAuthState().token}`,
-                              'Content-Type': 'application/json',
-                            },
-                          })
-                          if (response.ok) {
-                            alert('Phone number standardization completed successfully!')
+                      try {
+                        setIsLoadingPhone(true)
+                        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
+                        const response = await fetch(`${baseUrl}/api/admin/standardize-phone-numbers?dry_run=true`, {
+                          method: 'POST',
+                          headers: {
+                            'Authorization': `Bearer ${getAuthState().token}`,
+                            'Content-Type': 'application/json',
+                          },
+                        })
+                        if (response.ok) {
+                          const data = await response.json()
+                          if (data.summary.total_changes === 0) {
+                            alert('All phone numbers are already properly formatted!')
                           } else {
-                            alert('Failed to standardize phone numbers')
+                            setPhonePreviewData(data)
+                            setShowPhoneModal(true)
                           }
-                        } catch (error) {
-                          alert('Error standardizing phone numbers')
+                        } else {
+                          alert('Failed to check phone numbers')
                         }
+                      } catch (error) {
+                        alert('Error checking phone numbers')
+                      } finally {
+                        setIsLoadingPhone(false)
                       }
                     }}
-                    className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-400"
+                    disabled={isLoadingPhone}
                   >
-                    Standardize Now
+                    {isLoadingPhone ? 'Loading...' : 'Standardize Now'}
                   </button>
                 </div>
               </div>
@@ -1055,6 +1073,42 @@ export default function SettingsPage() {
       <SupportModal
         isOpen={showSupportModal}
         onClose={() => setShowSupportModal(false)}
+      />
+
+      {/* Phone Standardization Modal */}
+      <PhoneStandardizationModal
+        isOpen={showPhoneModal}
+        onClose={() => {
+          setShowPhoneModal(false)
+          setPhonePreviewData(null)
+        }}
+        previewData={phonePreviewData}
+        isLoading={isLoadingPhone}
+        onConfirm={async () => {
+          try {
+            setIsLoadingPhone(true)
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
+            const response = await fetch(`${baseUrl}/api/admin/standardize-phone-numbers`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${getAuthState().token}`,
+                'Content-Type': 'application/json',
+              },
+            })
+            if (response.ok) {
+              const result = await response.json()
+              alert(result.message)
+              setShowPhoneModal(false)
+              setPhonePreviewData(null)
+            } else {
+              alert('Failed to standardize phone numbers')
+            }
+          } catch (error) {
+            alert('Error standardizing phone numbers')
+          } finally {
+            setIsLoadingPhone(false)
+          }
+        }}
       />
 
       {/* Password Display Modal */}

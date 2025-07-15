@@ -3502,12 +3502,12 @@ async def standardize_phone_numbers_endpoint(
         if dry_run:
             # Import here to avoid circular imports
             from scripts.standardize_phone_numbers import dry_run as run_dry_run
-            run_dry_run()
-            return {"message": "Dry run completed. Check logs for details."}
+            preview_data = run_dry_run(organization_id=current_user.organization_id)
+            return preview_data
         else:
             from scheduler import trigger_phone_standardization
-            trigger_phone_standardization()
-            return {"message": "Phone number standardization triggered successfully."}
+            stats = trigger_phone_standardization(organization_id=current_user.organization_id)
+            return {"message": "Phone number standardization completed successfully!", "stats": stats}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -40,14 +40,16 @@ def init_scheduler():
         logger.info(f"Scheduled job: {job.name} - Next run: {job.next_run_time}")
 
 
-def run_phone_standardization():
+def run_phone_standardization(organization_id=None):
     """Wrapper function to run phone standardization with error handling."""
     try:
         logger.info("Starting scheduled phone number standardization...")
-        stats = standardize_phone_numbers()
+        stats = standardize_phone_numbers(organization_id=organization_id)
         logger.info(f"Phone standardization completed: {stats}")
+        return stats
     except Exception as e:
         logger.error(f"Error in scheduled phone standardization: {str(e)}", exc_info=True)
+        raise
 
 
 def shutdown_scheduler():
@@ -58,7 +60,7 @@ def shutdown_scheduler():
 
 
 # Manual trigger functions for testing
-def trigger_phone_standardization():
+def trigger_phone_standardization(organization_id=None):
     """Manually trigger phone standardization job."""
     logger.info("Manually triggering phone standardization...")
-    run_phone_standardization()
+    return run_phone_standardization(organization_id=organization_id)
