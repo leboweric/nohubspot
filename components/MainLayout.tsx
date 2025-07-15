@@ -36,7 +36,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
               <Link href="/dashboard" className="text-xl font-semibold text-blue-600">
-                NotHubSpot
+                <span className="font-bold">N</span>ot<span className="font-bold">H</span>ub<span className="font-bold">S</span>pot
               </Link>
               
               {isAuthenticated && (
