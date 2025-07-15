@@ -693,10 +693,12 @@ export default function SettingsPage() {
                   <button
                     onClick={async () => {
                       try {
-                        const response = await fetch('/api/admin/standardize-phone-numbers?dry_run=true', {
+                        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
+                        const response = await fetch(`${baseUrl}/api/admin/standardize-phone-numbers?dry_run=true`, {
                           method: 'POST',
                           headers: {
                             'Authorization': `Bearer ${getAuthState().token}`,
+                            'Content-Type': 'application/json',
                           },
                         })
                         if (response.ok) {
@@ -716,10 +718,12 @@ export default function SettingsPage() {
                     onClick={async () => {
                       if (confirm('This will standardize all phone numbers in your database. Continue?')) {
                         try {
-                          const response = await fetch('/api/admin/standardize-phone-numbers', {
+                          const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
+                          const response = await fetch(`${baseUrl}/api/admin/standardize-phone-numbers`, {
                             method: 'POST',
                             headers: {
                               'Authorization': `Bearer ${getAuthState().token}`,
+                              'Content-Type': 'application/json',
                             },
                           })
                           if (response.ok) {
