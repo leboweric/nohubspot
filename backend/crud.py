@@ -8,7 +8,7 @@ from models import (
     Company, Contact, EmailThread, EmailMessage, 
     Task, Attachment, Activity, EmailSignature, CalendarEvent, EventAttendee,
     O365OrganizationConfig, O365UserConnection, User, PipelineStage, Deal,
-    ProjectStage, Project
+    ProjectStage, Project, ProjectType
 )
 from schemas import (
     CompanyCreate, CompanyUpdate, ContactCreate, ContactUpdate,
@@ -18,7 +18,8 @@ from schemas import (
     EventAttendeeCreate, EventAttendeeResponse,
     O365OrganizationConfigCreate, O365OrganizationConfigUpdate, O365UserConnectionUpdate,
     PipelineStageCreate, PipelineStageUpdate, DealCreate, DealUpdate,
-    ProjectStageCreate, ProjectStageUpdate, ProjectCreate, ProjectUpdate
+    ProjectStageCreate, ProjectStageUpdate, ProjectCreate, ProjectUpdate,
+    ProjectTypeCreate, ProjectTypeUpdate
 )
 
 # Company CRUD operations
@@ -1138,33 +1139,33 @@ def delete_project(db: Session, project_id: int, organization_id: int) -> bool:
 
 
 # Project Type CRUD operations
-def get_project_types(db: Session, organization_id: int, include_inactive: bool = False) -> List[models.ProjectType]:
-    query = db.query(models.ProjectType).filter(
-        models.ProjectType.organization_id == organization_id
+def get_project_types(db: Session, organization_id: int, include_inactive: bool = False) -> List[ProjectType]:
+    query = db.query(ProjectType).filter(
+        ProjectType.organization_id == organization_id
     )
     
     if not include_inactive:
-        query = query.filter(models.ProjectType.is_active == True)
+        query = query.filter(ProjectType.is_active == True)
     
-    return query.order_by(models.ProjectType.display_order, models.ProjectType.name).all()
+    return query.order_by(ProjectType.display_order, ProjectType.name).all()
 
-def get_project_type(db: Session, project_type_id: int, organization_id: int) -> models.ProjectType:
-    return db.query(models.ProjectType).filter(
-        models.ProjectType.id == project_type_id,
-        models.ProjectType.organization_id == organization_id
+def get_project_type(db: Session, project_type_id: int, organization_id: int) -> ProjectType:
+    return db.query(ProjectType).filter(
+        ProjectType.id == project_type_id,
+        ProjectType.organization_id == organization_id
     ).first()
 
 def create_project_type(
     db: Session, 
-    project_type: schemas.ProjectTypeCreate, 
+    project_type: ProjectTypeCreate, 
     organization_id: int
-) -> models.ProjectType:
+) -> ProjectType:
     # Get the next display order
-    max_order = db.query(func.max(models.ProjectType.display_order)).filter(
-        models.ProjectType.organization_id == organization_id
+    max_order = db.query(func.max(ProjectType.display_order)).filter(
+        ProjectType.organization_id == organization_id
     ).scalar() or 0
     
-    db_project_type = models.ProjectType(
+    db_project_type = ProjectType(
         **project_type.dict(),
         organization_id=organization_id,
         display_order=project_type.display_order if project_type.display_order > 0 else max_order + 1
@@ -1179,9 +1180,9 @@ def create_project_type(
 def update_project_type(
     db: Session,
     project_type_id: int,
-    project_type_update: schemas.ProjectTypeUpdate,
+    project_type_update: ProjectTypeUpdate,
     organization_id: int
-) -> Optional[models.ProjectType]:
+) -> Optional[ProjectType]:
     db_project_type = get_project_type(db, project_type_id, organization_id)
     if not db_project_type:
         return None
@@ -1200,10 +1201,10 @@ def delete_project_type(db: Session, project_type_id: int, organization_id: int)
         return False
     
     # Check if any projects are using this type
-    projects_using_type = db.query(models.Project).filter(
-        models.Project.organization_id == organization_id,
-        models.Project.project_type == db_project_type.name,
-        models.Project.is_active == True
+    projects_using_type = db.query(Project).filter(
+        Project.organization_id == organization_id,
+        Project.project_type == db_project_type.name,
+        Project.is_active == True
     ).count()
     
     if projects_using_type > 0:
