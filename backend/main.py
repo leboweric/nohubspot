@@ -2561,6 +2561,11 @@ async def create_project_endpoint(
     db_project = create_project(db, project, current_user.organization_id, current_user.id)
     return db_project
 
+@app.get("/api/projects/types", response_model=List[str])
+async def get_project_types():
+    """Get available project types"""
+    return PROJECT_TYPES
+
 @app.get("/api/projects/{project_id}", response_model=ProjectResponse)
 async def get_project_endpoint(
     project_id: int,
@@ -2623,11 +2628,6 @@ async def delete_project_endpoint(
         raise HTTPException(status_code=404, detail="Project not found")
     
     return {"message": "Project deleted successfully"}
-
-@app.get("/api/projects/types", response_model=List[str])
-async def get_project_types():
-    """Get available project types"""
-    return PROJECT_TYPES
 
 
 # Email Tracking endpoints
