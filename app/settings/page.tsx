@@ -8,7 +8,7 @@ import SupportModal from "@/components/support/SupportModal"
 import O365Connection from "@/components/settings/O365Connection"
 import { useEmailSignature } from "@/components/signature/SignatureManager"
 import { getAuthState, isAdmin } from "@/lib/auth"
-import { o365API, o365IntegrationAPI, O365OrganizationConfig, O365UserConnection, handleAPIError } from "@/lib/api"
+import { o365API, o365IntegrationAPI, O365OrganizationConfig, O365UserConnection, handleAPIError, usersAPI } from "@/lib/api"
 
 // Force dynamic rendering to prevent static generation issues with auth
 export const dynamic = 'force-dynamic'
@@ -107,19 +107,9 @@ export default function SettingsPage() {
   const loadUsers = async () => {
     try {
       setUsersLoading(true)
-      const response = await fetchWithCircuitBreaker(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
-      })
-      if (response && response.ok) {
-        const userData = await response.json()
-        console.log('Loaded users:', userData)
-        setUsers(userData || [])
-      } else {
-        console.error('Failed to load users - response not ok:', response?.status)
-        setUsers([])
-      }
+      const userData = await usersAPI.getAll()
+      console.log('Loaded users:', userData)
+      setUsers(userData || [])
     } catch (err) {
       console.error('Failed to load users:', err)
       setUsers([])

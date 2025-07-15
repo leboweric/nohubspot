@@ -421,7 +421,7 @@ async def health_check():
     except Exception as e:
         return {"status": "unhealthy", "timestamp": datetime.utcnow(), "error": str(e)}
 
-@app.get("/api/users")  # Railway healthcheck endpoint
+@app.get("/api/health/users")  # Railway healthcheck endpoint
 async def users_health():
     return {"status": "ok", "message": "NotHubSpot CRM API is running"}
 
