@@ -3512,6 +3512,57 @@ async def standardize_phone_numbers_endpoint(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/admin/find-duplicates")
+async def find_duplicates_endpoint(
+    record_type: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Find duplicate companies or contacts.
+    """
+    try:
+        from scripts.find_duplicates import find_duplicate_companies, find_duplicate_contacts
+        
+        if record_type == "companies":
+            duplicates = find_duplicate_companies(current_user.organization_id)
+        elif record_type == "contacts":
+            duplicates = find_duplicate_contacts(current_user.organization_id)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid record type. Must be 'companies' or 'contacts'")
+        
+        return duplicates
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/admin/delete-duplicates")
+async def delete_duplicates_endpoint(
+    request: dict,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete selected duplicate records.
+    """
+    try:
+        from scripts.find_duplicates import delete_duplicate_records
+        
+        record_type = request.get("record_type")
+        record_ids = request.get("record_ids", [])
+        
+        if not record_type or record_type not in ["companies", "contacts"]:
+            raise HTTPException(status_code=400, detail="Invalid record type")
+        
+        if not record_ids:
+            raise HTTPException(status_code=400, detail="No record IDs provided")
+        
+        result = delete_duplicate_records(record_type, record_ids, current_user.organization_id)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     print(f"🚀 Starting NotHubSpot CRM API on port {port}")

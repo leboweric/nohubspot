@@ -6,6 +6,7 @@ import MainLayout from "@/components/MainLayout"
 import SignatureBuilder, { EmailSignature } from "@/components/signature/SignatureBuilder"
 import SupportModal from "@/components/support/SupportModal"
 import PhoneStandardizationModal from "@/components/PhoneStandardizationModal"
+import DuplicatesModal from "@/components/DuplicatesModal"
 import O365Connection from "@/components/settings/O365Connection"
 import { useEmailSignature } from "@/components/signature/SignatureManager"
 import { getAuthState, isAdmin } from "@/lib/auth"
@@ -21,6 +22,10 @@ export default function SettingsPage() {
   const [showPhoneModal, setShowPhoneModal] = useState(false)
   const [phonePreviewData, setPhonePreviewData] = useState(null)
   const [isLoadingPhone, setIsLoadingPhone] = useState(false)
+  const [showDuplicatesModal, setShowDuplicatesModal] = useState(false)
+  const [duplicatesData, setDuplicatesData] = useState(null)
+  const [duplicatesType, setDuplicatesType] = useState<'companies' | 'contacts'>('companies')
+  const [isLoadingDuplicates, setIsLoadingDuplicates] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
   const [inviteFirstName, setInviteFirstName] = useState("")
   const [inviteLastName, setInviteLastName] = useState("")
@@ -760,6 +765,73 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </div>
+              
+              <div className="border-t pt-4 mt-4">
+                <h3 className="text-sm font-medium mb-2">Duplicate Detection</h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Find and remove duplicate companies and contacts from your database.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      try {
+                        setIsLoadingDuplicates(true)
+                        setDuplicatesType('companies')
+                        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
+                        const response = await fetch(`${baseUrl}/api/admin/find-duplicates?record_type=companies`, {
+                          headers: {
+                            'Authorization': `Bearer ${getAuthState().token}`,
+                          },
+                        })
+                        if (response.ok) {
+                          const data = await response.json()
+                          setDuplicatesData(data)
+                          setShowDuplicatesModal(true)
+                        } else {
+                          alert('Failed to find duplicate companies')
+                        }
+                      } catch (error) {
+                        alert('Error finding duplicates')
+                      } finally {
+                        setIsLoadingDuplicates(false)
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors disabled:bg-purple-400"
+                    disabled={isLoadingDuplicates}
+                  >
+                    {isLoadingDuplicates ? 'Searching...' : 'Find Duplicate Companies'}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        setIsLoadingDuplicates(true)
+                        setDuplicatesType('contacts')
+                        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
+                        const response = await fetch(`${baseUrl}/api/admin/find-duplicates?record_type=contacts`, {
+                          headers: {
+                            'Authorization': `Bearer ${getAuthState().token}`,
+                          },
+                        })
+                        if (response.ok) {
+                          const data = await response.json()
+                          setDuplicatesData(data)
+                          setShowDuplicatesModal(true)
+                        } else {
+                          alert('Failed to find duplicate contacts')
+                        }
+                      } catch (error) {
+                        alert('Error finding duplicates')
+                      } finally {
+                        setIsLoadingDuplicates(false)
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors disabled:bg-purple-400"
+                    disabled={isLoadingDuplicates}
+                  >
+                    {isLoadingDuplicates ? 'Searching...' : 'Find Duplicate Contacts'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1107,6 +1179,49 @@ export default function SettingsPage() {
             alert('Error standardizing phone numbers')
           } finally {
             setIsLoadingPhone(false)
+          }
+        }}
+      />
+
+      {/* Duplicates Modal */}
+      <DuplicatesModal
+        isOpen={showDuplicatesModal}
+        onClose={() => {
+          setShowDuplicatesModal(false)
+          setDuplicatesData(null)
+        }}
+        duplicatesData={duplicatesData}
+        recordType={duplicatesType}
+        isLoading={isLoadingDuplicates}
+        onDelete={async (selectedIds) => {
+          if (confirm(`Are you sure you want to delete ${selectedIds.length} ${duplicatesType}? This action cannot be undone.`)) {
+            try {
+              setIsLoadingDuplicates(true)
+              const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
+              const response = await fetch(`${baseUrl}/api/admin/delete-duplicates`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${getAuthState().token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  record_type: duplicatesType,
+                  record_ids: selectedIds
+                })
+              })
+              if (response.ok) {
+                const result = await response.json()
+                alert(result.message)
+                setShowDuplicatesModal(false)
+                setDuplicatesData(null)
+              } else {
+                alert('Failed to delete duplicates')
+              }
+            } catch (error) {
+              alert('Error deleting duplicates')
+            } finally {
+              setIsLoadingDuplicates(false)
+            }
           }
         }}
       />
