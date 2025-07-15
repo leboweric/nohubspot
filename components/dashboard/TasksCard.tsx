@@ -15,11 +15,19 @@ export default function TasksCard() {
         setLoading(true)
         setError(null)
         
-        // Get all tasks
-        const allTasks = await taskAPI.getAll({
-          status: 'pending',
-          limit: 100
-        })
+        // Get all pending and in-progress tasks
+        const [pendingTasks, inProgressTasks] = await Promise.all([
+          taskAPI.getAll({
+            status: 'pending',
+            limit: 100
+          }),
+          taskAPI.getAll({
+            status: 'in_progress',
+            limit: 100
+          })
+        ])
+        
+        const allTasks = [...pendingTasks, ...inProgressTasks]
         
         // Filter for overdue and today's tasks
         const now = new Date()
