@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import and_, or_, func, desc
+from sqlalchemy import and_, or_, func, desc, asc
 from typing import List, Optional
 from datetime import datetime
 from phone_utils import format_phone_number
@@ -41,7 +41,9 @@ def get_companies(
     skip: int = 0, 
     limit: int = 100, 
     search: Optional[str] = None,
-    status: Optional[str] = None
+    status: Optional[str] = None,
+    sort_by: Optional[str] = None,
+    sort_order: Optional[str] = "asc"
 ) -> List[Company]:
     query = db.query(Company).options(
         joinedload(Company.primary_account_owner)
@@ -60,7 +62,26 @@ def get_companies(
     if status:
         query = query.filter(Company.status == status)
     
-    return query.order_by(desc(Company.created_at)).offset(skip).limit(limit).all()
+    # Apply sorting
+    if sort_by:
+        if sort_by == "name":
+            order_column = Company.name
+        elif sort_by == "location":
+            order_column = Company.location
+        elif sort_by == "created_at":
+            order_column = Company.created_at
+        else:
+            order_column = Company.created_at  # default
+        
+        if sort_order == "desc":
+            query = query.order_by(desc(order_column))
+        else:
+            query = query.order_by(asc(order_column))
+    else:
+        # Default sort by created_at desc (newest first)
+        query = query.order_by(desc(Company.created_at))
+    
+    return query.offset(skip).limit(limit).all()
 
 def get_company(db: Session, company_id: int, organization_id: int) -> Optional[Company]:
     return db.query(Company).options(

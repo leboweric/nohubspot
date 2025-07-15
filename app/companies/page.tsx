@@ -12,6 +12,8 @@ export default function CompaniesPage() {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [showBulkUpload, setShowBulkUpload] = useState(false)
+  const [sortBy, setSortBy] = useState<string | undefined>(undefined)
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
   // Load companies from API
   const loadCompanies = useCallback(async () => {
@@ -22,7 +24,9 @@ export default function CompaniesPage() {
       
       const data = await companyAPI.getAll({ 
         search: searchTerm || undefined,
-        limit: 1000 // Get all companies for now
+        limit: 1000, // Get all companies for now
+        sort_by: sortBy,
+        sort_order: sortOrder
       })
       
       console.log('Companies loaded successfully:', data.length)
@@ -43,7 +47,7 @@ export default function CompaniesPage() {
     } finally {
       setLoading(false)
     }
-  }, [searchTerm])
+  }, [searchTerm, sortBy, sortOrder])
 
   // Load companies on mount only
   useEffect(() => {
@@ -85,6 +89,18 @@ export default function CompaniesPage() {
 
   // Since we're using API search, no need for client-side filtering
   const filteredCompanies = companies
+
+  // Handle sorting
+  const handleSort = (column: string) => {
+    if (sortBy === column) {
+      // Toggle sort order
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      // New column, default to ascending
+      setSortBy(column)
+      setSortOrder('asc')
+    }
+  }
 
   const handleDelete = async (companyId: number, companyName: string) => {
     const confirmed = confirm(`Are you sure you want to delete ${companyName}? This action cannot be undone.`)
@@ -380,10 +396,34 @@ export default function CompaniesPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Company</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">
+                    <button
+                      onClick={() => handleSort('name')}
+                      className="flex items-center gap-1 hover:text-foreground transition-colors"
+                    >
+                      Company
+                      {sortBy === 'name' && (
+                        <span className="text-xs">
+                          {sortOrder === 'asc' ? '▲' : '▼'}
+                        </span>
+                      )}
+                    </button>
+                  </th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Account Owner</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Phone</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Location</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">
+                    <button
+                      onClick={() => handleSort('location')}
+                      className="flex items-center gap-1 hover:text-foreground transition-colors"
+                    >
+                      Location
+                      {sortBy === 'location' && (
+                        <span className="text-xs">
+                          {sortOrder === 'asc' ? '▲' : '▼'}
+                        </span>
+                      )}
+                    </button>
+                  </th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Industry</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Status</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Actions</th>

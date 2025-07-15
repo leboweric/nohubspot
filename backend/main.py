@@ -1473,10 +1473,12 @@ async def read_companies(
     limit: int = 100, 
     search: Optional[str] = None,
     status: Optional[str] = None,
+    sort_by: Optional[str] = None,
+    sort_order: Optional[str] = "asc",
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    return get_companies(db, current_user.organization_id, skip=skip, limit=limit, search=search, status=status)
+    return get_companies(db, current_user.organization_id, skip=skip, limit=limit, search=search, status=status, sort_by=sort_by, sort_order=sort_order)
 
 @app.get("/api/companies/{company_id}", response_model=CompanyResponse)
 async def read_company(

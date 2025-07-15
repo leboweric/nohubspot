@@ -153,12 +153,16 @@ export const companyAPI = {
     limit?: number
     search?: string
     status?: string
+    sort_by?: string
+    sort_order?: 'asc' | 'desc'
   }): Promise<Company[]> => {
     const searchParams = new URLSearchParams()
     if (params?.skip) searchParams.append('skip', params.skip.toString())
     if (params?.limit) searchParams.append('limit', params.limit.toString())
     if (params?.search) searchParams.append('search', params.search)
     if (params?.status) searchParams.append('status', params.status)
+    if (params?.sort_by) searchParams.append('sort_by', params.sort_by)
+    if (params?.sort_order) searchParams.append('sort_order', params.sort_order)
     
     return apiRequest(`/api/companies?${searchParams}`)
   },
