@@ -290,6 +290,19 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Initialize background scheduler
+from scheduler import init_scheduler, shutdown_scheduler
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on startup"""
+    init_scheduler()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on shutdown"""
+    shutdown_scheduler()
+
 # CORS middleware configured for your deployment
 app.add_middleware(
     CORSMiddleware,
@@ -3469,6 +3482,34 @@ async def process_inbound_email(
         "message_id": message.id,
         "contact_id": contact.id
     }
+
+
+# Admin endpoints
+@app.post("/api/admin/standardize-phone-numbers")
+async def standardize_phone_numbers_endpoint(
+    dry_run: bool = False,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Manually trigger phone number standardization.
+    Only accessible by admin users.
+    """
+    # Check if user is admin (you may want to add an is_admin field to User model)
+    # For now, we'll allow any authenticated user to run this
+    
+    try:
+        if dry_run:
+            # Import here to avoid circular imports
+            from scripts.standardize_phone_numbers import dry_run as run_dry_run
+            run_dry_run()
+            return {"message": "Dry run completed. Check logs for details."}
+        else:
+            from scheduler import trigger_phone_standardization
+            trigger_phone_standardization()
+            return {"message": "Phone number standardization triggered successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":

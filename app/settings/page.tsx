@@ -671,6 +671,77 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* Data Management Section */}
+        {isOwner && (
+          <div className="bg-card border rounded-lg p-6">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <h2 className="text-lg font-semibold">Data Management</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Manage and standardize your organization's data.
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-4 space-y-4">
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-medium mb-2">Phone Number Standardization</h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Standardize all phone numbers to format: (XXX) XXX-XXXX. This runs automatically every night at 2 AM.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/admin/standardize-phone-numbers?dry_run=true', {
+                          method: 'POST',
+                          headers: {
+                            'Authorization': `Bearer ${getAuthState().token}`,
+                          },
+                        })
+                        if (response.ok) {
+                          alert('Dry run completed. Check the server logs for details.')
+                        } else {
+                          alert('Failed to run phone standardization dry run')
+                        }
+                      } catch (error) {
+                        alert('Error running dry run')
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                  >
+                    Preview Changes
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (confirm('This will standardize all phone numbers in your database. Continue?')) {
+                        try {
+                          const response = await fetch('/api/admin/standardize-phone-numbers', {
+                            method: 'POST',
+                            headers: {
+                              'Authorization': `Bearer ${getAuthState().token}`,
+                            },
+                          })
+                          if (response.ok) {
+                            alert('Phone number standardization completed successfully!')
+                          } else {
+                            alert('Failed to standardize phone numbers')
+                          }
+                        } catch (error) {
+                          alert('Error standardizing phone numbers')
+                        }
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    Standardize Now
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Support Section - Contact Support Feature */}
         {console.log("Rendering support section...")}
         <div className="bg-card border rounded-lg p-6">
