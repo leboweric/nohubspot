@@ -2644,9 +2644,41 @@ async def initialize_default_project_types(
     if existing_types:
         return {"message": "Project types already exist", "count": len(existing_types)}
     
-    # Create default project types
+    # Check if this is Strategic Consulting & Coaching
+    organization = get_organization_by_id(db, current_user.organization_id)
+    if organization and organization.name == "Strategic Consulting & Coaching, LLC":
+        # Use SCC-specific project types
+        scc_types = [
+            "Annual Giving",
+            "Board Development",
+            "Capital Campaign",
+            "Church Administration",
+            "Church Search",
+            "Communication Strategies",
+            "Conflict Resolution/Mediation",
+            "Feasibility Study",
+            "Gift Acceptance Policies",
+            "Human Resources",
+            "Leadership Development/Training",
+            "Major Gifts",
+            "Other",
+            "Pastoral Counseling",
+            "Planned Giving",
+            "Search - Other",
+            "Social Media",
+            "Staff Search",
+            "Stewardship Campaign",
+            "Strategic Planning",
+            "Vision Framing"
+        ]
+        types_to_create = scc_types
+    else:
+        # Use default project types for other organizations
+        types_to_create = PROJECT_TYPES
+    
+    # Create project types
     created_types = []
-    for i, type_name in enumerate(PROJECT_TYPES):
+    for i, type_name in enumerate(types_to_create):
         project_type = ProjectTypeCreate(
             name=type_name,
             display_order=i,
@@ -2655,7 +2687,7 @@ async def initialize_default_project_types(
         created_type = create_project_type(db, project_type, current_user.organization_id)
         created_types.append(created_type)
     
-    return {"message": f"Created {len(created_types)} default project types", "types": created_types}
+    return {"message": f"Created {len(created_types)} project types", "types": created_types}
 
 @app.get("/api/projects/{project_id}", response_model=ProjectResponse)
 async def get_project_endpoint(
