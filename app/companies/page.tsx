@@ -20,7 +20,7 @@ export default function CompaniesPage() {
     try {
       setLoading(true)
       setError(null)
-      console.log('Loading companies with search term:', searchTerm)
+      console.log('Loading companies with search term:', searchTerm, 'sort:', sortBy, sortOrder)
       
       const data = await companyAPI.getAll({ 
         search: searchTerm || undefined,
@@ -66,6 +66,13 @@ export default function CompaniesPage() {
 
     return () => clearTimeout(timeoutId)
   }, [searchTerm, loadCompanies])
+
+  // Reload when sort changes
+  useEffect(() => {
+    if (sortBy !== undefined) {
+      loadCompanies()
+    }
+  }, [sortBy, sortOrder, loadCompanies])
 
   // Throttled reload on window focus with cooldown
   useEffect(() => {
