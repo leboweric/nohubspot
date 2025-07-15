@@ -196,7 +196,7 @@ export default function ProjectsPage() {
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-semibold">Project Management</h1>
+                <h1 className="text-2xl font-semibold">Project Tracking</h1>
                 <p className="text-muted-foreground mt-1">
                   Track your projects through each stage from planning to completion
                 </p>
