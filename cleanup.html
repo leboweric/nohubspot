@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cleanup Organization</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 600px; 
+            margin: 50px auto; 
+            padding: 20px; 
+        }
+        button { 
+            background: #dc2626; 
+            color: white; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 16px; 
+        }
+        button:hover { background: #b91c1c; }
+        #result { 
+            margin-top: 20px; 
+            padding: 10px; 
+            border-radius: 5px; 
+            white-space: pre-wrap; 
+        }
+        .success { background: #dcfce7; border: 1px solid #16a34a; }
+        .error { background: #fef2f2; border: 1px solid #dc2626; }
+    </style>
+</head>
+<body>
+    <h1>🗑️ Cleanup Organization</h1>
+    <p>Click the button below to delete the "profitbuilder network" organization and all associated data.</p>
+    
+    <button onclick="cleanupOrganization()">
+        Delete Profitbuilder Network Organization
+    </button>
+    
+    <div id="result"></div>
+
+    <script>
+        async function cleanupOrganization() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = 'Deleting organization...';
+            resultDiv.className = '';
+            
+            try {
+                const response = await fetch('https://nohubspot-production.up.railway.app/api/admin/cleanup/organization/profitbuilder', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.textContent = `✅ Success!\n\n${JSON.stringify(data, null, 2)}`;
+                    resultDiv.className = 'success';
+                } else {
+                    resultDiv.textContent = `❌ Error: ${data.detail || 'Unknown error'}`;
+                    resultDiv.className = 'error';
+                }
+            } catch (error) {
+                resultDiv.textContent = `❌ Network Error: ${error.message}`;
+                resultDiv.className = 'error';
+            }
+        }
+    </script>
+</body>
+</html>

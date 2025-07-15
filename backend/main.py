@@ -35,7 +35,7 @@ def rate_limit_check(client_ip: str, endpoint: str, max_requests: int = 30, wind
     return True
 
 from database import get_db, SessionLocal, engine
-from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, PipelineStage, Deal, EmailTracking, EmailEvent, EmailSharingPermission, ProjectStage, Project
+from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, PipelineStage, Deal, EmailTracking, EmailEvent, EmailSharingPermission, ProjectStage, Project, ProjectType
 from schemas import (
     CompanyCreate, CompanyResponse, CompanyUpdate,
     ContactCreate, ContactResponse, ContactUpdate,
@@ -58,6 +58,7 @@ from schemas import (
     DealCreate, DealResponse, DealUpdate,
     ProjectStageCreate, ProjectStageResponse, ProjectStageUpdate,
     ProjectCreate, ProjectResponse, ProjectUpdate, PROJECT_TYPES,
+    ProjectTypeCreate, ProjectTypeResponse, ProjectTypeUpdate,
     EmailTrackingCreate, EmailTrackingResponse, EmailEventCreate, EmailEventResponse, SendGridEvent,
     ContactPrivacyUpdate, EmailThreadSharingUpdate, EmailSharingPermissionCreate, EmailSharingPermissionResponse,
     EmailPrivacySettings, EmailPrivacySettingsUpdate
@@ -79,7 +80,8 @@ from crud import (
     create_pipeline_stage, get_pipeline_stages, get_pipeline_stage, update_pipeline_stage, delete_pipeline_stage, create_default_pipeline_stages,
     create_deal, get_deals, get_deal, update_deal, delete_deal,
     create_project_stage, get_project_stages, get_project_stage, update_project_stage, delete_project_stage,
-    create_project, get_projects, get_project, update_project, delete_project
+    create_project, get_projects, get_project, update_project, delete_project,
+    get_project_types, get_project_type, create_project_type, update_project_type, delete_project_type
 )
 from auth_crud import (
     create_organization, get_organization_by_slug, get_organization_by_id,
@@ -2562,9 +2564,98 @@ async def create_project_endpoint(
     return db_project
 
 @app.get("/api/projects/types", response_model=List[str])
-async def get_project_types():
-    """Get available project types"""
-    return PROJECT_TYPES
+async def get_project_types_list(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get available project types for the current organization"""
+    project_types = get_project_types(db, current_user.organization_id)
+    
+    # If no project types exist yet, return the default list for backward compatibility
+    if not project_types:
+        return PROJECT_TYPES
+    
+    # Return just the names for the dropdown
+    return [pt.name for pt in project_types]
+
+# Project Type management endpoints
+@app.get("/api/project-types", response_model=List[ProjectTypeResponse])
+async def get_organization_project_types(
+    include_inactive: bool = False,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all project types for the organization"""
+    return get_project_types(db, current_user.organization_id, include_inactive)
+
+@app.post("/api/project-types", response_model=ProjectTypeResponse)
+async def create_project_type_endpoint(
+    project_type: ProjectTypeCreate,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new project type (admin only)"""
+    return create_project_type(db, project_type, current_user.organization_id)
+
+@app.get("/api/project-types/{type_id}", response_model=ProjectTypeResponse)
+async def get_project_type_endpoint(
+    type_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get a specific project type"""
+    project_type = get_project_type(db, type_id, current_user.organization_id)
+    if not project_type:
+        raise HTTPException(status_code=404, detail="Project type not found")
+    return project_type
+
+@app.put("/api/project-types/{type_id}", response_model=ProjectTypeResponse)
+async def update_project_type_endpoint(
+    type_id: int,
+    project_type_update: ProjectTypeUpdate,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Update a project type (admin only)"""
+    updated_type = update_project_type(db, type_id, project_type_update, current_user.organization_id)
+    if not updated_type:
+        raise HTTPException(status_code=404, detail="Project type not found")
+    return updated_type
+
+@app.delete("/api/project-types/{type_id}")
+async def delete_project_type_endpoint(
+    type_id: int,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a project type (admin only)"""
+    success = delete_project_type(db, type_id, current_user.organization_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Project type not found")
+    return {"message": "Project type deleted successfully"}
+
+@app.post("/api/project-types/initialize")
+async def initialize_default_project_types(
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Initialize default project types for the organization"""
+    existing_types = get_project_types(db, current_user.organization_id, include_inactive=True)
+    if existing_types:
+        return {"message": "Project types already exist", "count": len(existing_types)}
+    
+    # Create default project types
+    created_types = []
+    for i, type_name in enumerate(PROJECT_TYPES):
+        project_type = ProjectTypeCreate(
+            name=type_name,
+            display_order=i,
+            is_active=True
+        )
+        created_type = create_project_type(db, project_type, current_user.organization_id)
+        created_types.append(created_type)
+    
+    return {"message": f"Created {len(created_types)} default project types", "types": created_types}
 
 @app.get("/api/projects/{project_id}", response_model=ProjectResponse)
 async def get_project_endpoint(

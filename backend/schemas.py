@@ -738,6 +738,30 @@ class ProjectResponse(ProjectBase, TimestampMixin):
         from_attributes = True
 
 
+# Project Type schemas
+class ProjectTypeBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = Field(None, max_length=255)
+    display_order: int = Field(default=0)
+    is_active: bool = Field(default=True)
+
+class ProjectTypeCreate(ProjectTypeBase):
+    pass
+
+class ProjectTypeUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    description: Optional[str] = Field(None, max_length=255)
+    display_order: Optional[int] = None
+    is_active: Optional[bool] = None
+
+class ProjectTypeResponse(ProjectTypeBase, TimestampMixin):
+    id: int
+    organization_id: int
+    
+    class Config:
+        from_attributes = True
+
+
 # Email Tracking schemas
 class EmailTrackingBase(BaseModel):
     message_id: str = Field(..., max_length=255)

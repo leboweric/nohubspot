@@ -1135,3 +1135,84 @@ def delete_project(db: Session, project_id: int, organization_id: int) -> bool:
     )
     
     return True
+
+
+# Project Type CRUD operations
+def get_project_types(db: Session, organization_id: int, include_inactive: bool = False) -> List[models.ProjectType]:
+    query = db.query(models.ProjectType).filter(
+        models.ProjectType.organization_id == organization_id
+    )
+    
+    if not include_inactive:
+        query = query.filter(models.ProjectType.is_active == True)
+    
+    return query.order_by(models.ProjectType.display_order, models.ProjectType.name).all()
+
+def get_project_type(db: Session, project_type_id: int, organization_id: int) -> models.ProjectType:
+    return db.query(models.ProjectType).filter(
+        models.ProjectType.id == project_type_id,
+        models.ProjectType.organization_id == organization_id
+    ).first()
+
+def create_project_type(
+    db: Session, 
+    project_type: schemas.ProjectTypeCreate, 
+    organization_id: int
+) -> models.ProjectType:
+    # Get the next display order
+    max_order = db.query(func.max(models.ProjectType.display_order)).filter(
+        models.ProjectType.organization_id == organization_id
+    ).scalar() or 0
+    
+    db_project_type = models.ProjectType(
+        **project_type.dict(),
+        organization_id=organization_id,
+        display_order=project_type.display_order if project_type.display_order > 0 else max_order + 1
+    )
+    
+    db.add(db_project_type)
+    db.commit()
+    db.refresh(db_project_type)
+    
+    return db_project_type
+
+def update_project_type(
+    db: Session,
+    project_type_id: int,
+    project_type_update: schemas.ProjectTypeUpdate,
+    organization_id: int
+) -> Optional[models.ProjectType]:
+    db_project_type = get_project_type(db, project_type_id, organization_id)
+    if not db_project_type:
+        return None
+    
+    for field, value in project_type_update.dict(exclude_unset=True).items():
+        setattr(db_project_type, field, value)
+    
+    db.commit()
+    db.refresh(db_project_type)
+    
+    return db_project_type
+
+def delete_project_type(db: Session, project_type_id: int, organization_id: int) -> bool:
+    db_project_type = get_project_type(db, project_type_id, organization_id)
+    if not db_project_type:
+        return False
+    
+    # Check if any projects are using this type
+    projects_using_type = db.query(models.Project).filter(
+        models.Project.organization_id == organization_id,
+        models.Project.project_type == db_project_type.name,
+        models.Project.is_active == True
+    ).count()
+    
+    if projects_using_type > 0:
+        # Soft delete if in use
+        db_project_type.is_active = False
+        db.commit()
+    else:
+        # Hard delete if not in use
+        db.delete(db_project_type)
+        db.commit()
+    
+    return True

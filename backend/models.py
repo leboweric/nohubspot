@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, JSON, Float, Enum, cast
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, JSON, Float, Enum, cast, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -572,6 +572,29 @@ class Project(Base):
     activities = relationship("Activity", foreign_keys="Activity.entity_id", 
                             primaryjoin="and_(cast(Project.id, String) == Activity.entity_id, Activity.type == 'project')",
                             overlaps="activities")
+
+
+class ProjectType(Base):
+    __tablename__ = "project_types"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    name = Column(String(100), nullable=False)
+    description = Column(String(255))
+    display_order = Column(Integer, default=0)
+    is_active = Column(Boolean, default=True)
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    organization = relationship("Organization")
+    
+    # Unique constraint to prevent duplicate types per organization
+    __table_args__ = (
+        UniqueConstraint('organization_id', 'name', name='_org_project_type_uc'),
+    )
 
 
 class EmailTracking(Base):

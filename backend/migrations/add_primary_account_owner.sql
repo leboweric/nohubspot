@@ -11,5 +11,3 @@ ON companies(primary_account_owner_id);
 
 -- Add comment to document the column
 COMMENT ON COLUMN companies.primary_account_owner_id IS 'The user (Sales Rep) who is the primary owner of this company account';
-
--- Note: Foreign key constraint will be added separately to avoid issues with semicolon parsing in DO blocks
