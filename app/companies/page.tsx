@@ -47,20 +47,16 @@ export default function CompaniesPage() {
     }
   }, [searchTerm])
 
-  // Load companies on mount only
+  // Load companies on mount
   useEffect(() => {
-    if (searchTerm === '') {
-      loadCompanies()
-    }
+    loadCompanies()
   }, []) // Only run on mount
 
-  // Debounced search with increased delay
+  // Debounced search
   useEffect(() => {
-    if (searchTerm === '') return // Don't search on empty string
-    
     const timeoutId = setTimeout(() => {
       loadCompanies()
-    }, 1000) // Increased from 300ms to 1000ms
+    }, searchTerm === '' ? 0 : 1000) // Immediate reload on empty, debounced on search
 
     return () => clearTimeout(timeoutId)
   }, [searchTerm, loadCompanies])
@@ -352,6 +348,11 @@ export default function CompaniesPage() {
           placeholder="Search companies..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+            }
+          }}
           disabled={loading}
           className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
         />
