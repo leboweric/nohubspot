@@ -71,15 +71,15 @@ def get_companies(
         elif sort_by == "created_at":
             order_column = Company.created_at
         else:
-            order_column = Company.created_at  # default
+            order_column = Company.name  # default to name
         
         if sort_order == "desc":
             query = query.order_by(desc(order_column))
         else:
             query = query.order_by(asc(order_column))
     else:
-        # Default sort by created_at desc (newest first)
-        query = query.order_by(desc(Company.created_at))
+        # Default sort by name ascending (alphabetical)
+        query = query.order_by(asc(Company.name))
     
     return query.offset(skip).limit(limit).all()
 
