@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import and_, or_, func, desc, asc
+from sqlalchemy import and_, or_, func, desc, asc, text
 from typing import List, Optional
 from datetime import datetime
 from phone_utils import format_phone_number
@@ -45,6 +45,17 @@ def get_companies(
     sort_by: Optional[str] = None,
     sort_order: Optional[str] = "asc"
 ) -> List[Company]:
+    # First, fix any NULL values in the database
+    db.execute(text("""
+        UPDATE companies 
+        SET contact_count = COALESCE(contact_count, 0),
+            attachment_count = COALESCE(attachment_count, 0),
+            status = COALESCE(status, 'Active')
+        WHERE organization_id = :org_id 
+        AND (contact_count IS NULL OR attachment_count IS NULL OR status IS NULL)
+    """), {"org_id": organization_id})
+    db.commit()
+    
     query = db.query(Company).options(
         joinedload(Company.primary_account_owner)
     ).filter(Company.organization_id == organization_id)

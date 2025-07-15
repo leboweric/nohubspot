@@ -52,8 +52,8 @@ class CompanyUpdate(BaseModel):
 
 class CompanyResponse(CompanyBase, TimestampMixin):
     id: int
-    contact_count: int
-    attachment_count: int
+    contact_count: int = 0
+    attachment_count: int = 0
     
     # Populated by API
     primary_account_owner_name: Optional[str] = None
