@@ -2478,6 +2478,54 @@ async def fix_project_stages(
         "fixed_count": fixed_count
     }
 
+@app.get("/api/projects/debug")
+async def debug_projects(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Debug project data"""
+    # Get raw project data
+    projects = db.execute(text("""
+        SELECT 
+            p.id,
+            p.title,
+            p.stage_id,
+            p.is_active,
+            ps.name as stage_name,
+            ps.id as stage_id_from_join
+        FROM projects p
+        LEFT JOIN project_stages ps ON p.stage_id = ps.id AND ps.organization_id = p.organization_id
+        WHERE p.organization_id = :org_id
+        AND p.is_active = true
+        LIMIT 5
+    """), {"org_id": current_user.organization_id}).fetchall()
+    
+    stages = db.execute(text("""
+        SELECT id, name, position
+        FROM project_stages
+        WHERE organization_id = :org_id
+        AND is_active = true
+        ORDER BY position
+    """), {"org_id": current_user.organization_id}).fetchall()
+    
+    return {
+        "sample_projects": [
+            {
+                "id": p.id,
+                "title": p.title,
+                "stage_id": p.stage_id,
+                "is_active": p.is_active,
+                "stage_name": p.stage_name,
+                "stage_id_from_join": p.stage_id_from_join
+            }
+            for p in projects
+        ],
+        "available_stages": [
+            {"id": s.id, "name": s.name, "position": s.position}
+            for s in stages
+        ]
+    }
+
 @app.get("/api/projects/stages/diagnostic")
 async def diagnose_project_stages(
     current_user: User = Depends(get_current_active_user),

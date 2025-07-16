@@ -71,6 +71,35 @@ export default function ProjectsPage() {
     return projects.filter(project => project.stage_id === stageId && project.is_active)
   }
 
+  const debugProjects = async () => {
+    try {
+      const response = await fetch('/api/projects/debug', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to run debug')
+      }
+      
+      const debug = await response.json()
+      console.log('Debug data:', debug)
+      
+      alert(`Debug Results:
+Sample Projects:
+${debug.sample_projects.map((p: any) => `- "${p.title}" stage_id=${p.stage_id} stage_name=${p.stage_name || 'NULL'}`).join('\n')}
+
+Available Stages:
+${debug.available_stages.map((s: any) => `- ${s.name} (ID: ${s.id})`).join('\n')}
+      `)
+    } catch (err) {
+      setError(handleAPIError(err))
+    }
+  }
+
   const diagnoseProjects = async () => {
     try {
       const response = await fetch('/api/projects/stages/diagnostic', {
@@ -322,12 +351,20 @@ These projects have stage IDs that don't match any of your organization's stages
                           Click diagnose to see why.
                         </div>
                       </div>
-                      <button
-                        onClick={diagnoseProjects}
-                        className="ml-4 px-3 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700"
-                      >
-                        Diagnose Issue
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={debugProjects}
+                          className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                        >
+                          Debug
+                        </button>
+                        <button
+                          onClick={diagnoseProjects}
+                          className="px-3 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700"
+                        >
+                          Diagnose Issue
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )
