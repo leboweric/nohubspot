@@ -1181,6 +1181,11 @@ export default function SettingsPage() {
                   <li>Generate a client secret in "Certificates & secrets"</li>
                   <li>Grant these API permissions: Calendar.ReadWrite, Mail.Send, Contacts.ReadWrite</li>
                 </ol>
+                <p className="text-sm text-blue-800 mt-2">
+                  <a href="/docs/office-365-setup-guide.html" target="_blank" rel="noopener noreferrer" className="underline">
+                    View detailed setup guide →
+                  </a>
+                </p>
               </div>
 
               {/* Configuration Form */}

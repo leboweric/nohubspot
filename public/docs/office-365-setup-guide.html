@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office 365 Integration Setup Guide - NotHubSpot CRM</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #0078d4;
+            border-bottom: 3px solid #0078d4;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #333;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #555;
+        }
+        .step {
+            background: #f8f9fa;
+            border-left: 4px solid #0078d4;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        code {
+            background: #f1f3f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .warning::before {
+            content: "⚠️ ";
+            font-size: 1.2em;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .success::before {
+            content: "✅ ";
+            font-size: 1.2em;
+        }
+        .info {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .info::before {
+            content: "ℹ️ ";
+            font-size: 1.2em;
+        }
+        ul {
+            line-height: 1.8;
+        }
+        .button {
+            display: inline-block;
+            background: #0078d4;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .button:hover {
+            background: #106ebe;
+        }
+        pre {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        .toc {
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .toc h3 {
+            margin-top: 0;
+        }
+        .toc a {
+            color: #0078d4;
+            text-decoration: none;
+        }
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        .permission-list {
+            background: #f0f8ff;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        @media print {
+            body {
+                background: white;
+            }
+            .container {
+                box-shadow: none;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Office 365 Integration Setup Guide</h1>
+        <p><strong>NotHubSpot CRM</strong> - Complete guide for connecting Microsoft Office 365</p>
+        
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ol>
+                <li><a href="#prerequisites">Prerequisites</a></li>
+                <li><a href="#step1">Register an Application in Azure AD</a></li>
+                <li><a href="#step2">Configure API Permissions</a></li>
+                <li><a href="#step3">Create a Client Secret</a></li>
+                <li><a href="#step4">Configure NotHubSpot</a></li>
+                <li><a href="#step5">Connect Your Office 365 Account</a></li>
+                <li><a href="#troubleshooting">Troubleshooting</a></li>
+            </ol>
+        </div>
+
+        <h2 id="prerequisites">Prerequisites</h2>
+        <ul>
+            <li>Admin access to your Azure Active Directory</li>
+            <li>NotHubSpot CRM organization owner privileges (for initial setup)</li>
+            <li>Office 365 Business or Enterprise subscription</li>
+        </ul>
+
+        <h2 id="step1">Step 1: Register an Application in Azure AD</h2>
+        <div class="step">
+            <ol>
+                <li>Go to <a href="https://portal.azure.com/" target="_blank">Azure Portal</a></li>
+                <li>Navigate to <strong>Azure Active Directory</strong> > <strong>App registrations</strong></li>
+                <li>Click <strong>"New registration"</strong></li>
+                <li>Fill in the application details:
+                    <ul>
+                        <li><strong>Name</strong>: NotHubSpot CRM Integration</li>
+                        <li><strong>Supported account types</strong>:
+                            <ul>
+                                <li>"Single tenant" - Only users in your organization</li>
+                                <li>"Multitenant" - Users from any organization</li>
+                            </ul>
+                        </li>
+                        <li><strong>Redirect URI</strong>:
+                            <ul>
+                                <li>Platform: <strong>Web</strong></li>
+                                <li>URI: <code>https://your-domain.com/api/auth/microsoft/callback</code></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li>Click <strong>"Register"</strong></li>
+            </ol>
+            <div class="success">
+                Save these values from the Overview page:
+                <ul>
+                    <li><strong>Application (client) ID</strong></li>
+                    <li><strong>Directory (tenant) ID</strong></li>
+                </ul>
+            </div>
+        </div>
+
+        <h2 id="step2">Step 2: Configure API Permissions</h2>
+        <div class="step">
+            <ol>
+                <li>In your app registration, go to <strong>"API permissions"</strong></li>
+                <li>Click <strong>"Add a permission"</strong></li>
+                <li>Choose <strong>"Microsoft Graph"</strong></li>
+                <li>Select <strong>"Delegated permissions"</strong></li>
+                <li>Add these permissions:
+                    <div class="permission-list">
+                        <ul>
+                            <li><code>User.Read</code> - Sign in and read user profile</li>
+                            <li><code>Mail.Read</code> - Read user mail</li>
+                            <li><code>Mail.ReadWrite</code> - Read and write user mail</li>
+                            <li><code>Mail.Send</code> - Send mail as the user</li>
+                            <li><code>Calendars.ReadWrite</code> - Have full access to user calendars</li>
+                            <li><code>Contacts.ReadWrite</code> - Have full access to user contacts</li>
+                            <li><code>offline_access</code> - Maintain access to data</li>
+                        </ul>
+                    </div>
+                </li>
+                <li>Click <strong>"Add permissions"</strong></li>
+            </ol>
+            <div class="warning">
+                <strong>Important</strong>: If you're an admin, click <strong>"Grant admin consent"</strong> to pre-approve permissions for all users.
+            </div>
+        </div>
+
+        <h2 id="step3">Step 3: Create a Client Secret</h2>
+        <div class="step">
+            <ol>
+                <li>Go to <strong>"Certificates & secrets"</strong></li>
+                <li>Click <strong>"New client secret"</strong></li>
+                <li>Add a description (e.g., "NotHubSpot Integration")</li>
+                <li>Choose expiration period (recommended: 24 months)</li>
+                <li>Click <strong>"Add"</strong></li>
+            </ol>
+            <div class="warning">
+                <strong>CRITICAL</strong>: Copy the secret value immediately! You won't be able to see it again after leaving this page.
+            </div>
+        </div>
+
+        <h2 id="step4">Step 4: Configure NotHubSpot</h2>
+        <div class="step">
+            <h3>For Organization Owners:</h3>
+            <ol>
+                <li>Log in to NotHubSpot CRM</li>
+                <li>Go to <strong>Settings</strong></li>
+                <li>Find <strong>"Office 365 Configuration"</strong> section</li>
+                <li>Click <strong>"Configure Office 365"</strong></li>
+                <li>Enter your Azure AD details:
+                    <ul>
+                        <li><strong>Client ID</strong>: The Application ID from Step 1</li>
+                        <li><strong>Client Secret</strong>: The secret from Step 3</li>
+                        <li><strong>Tenant ID</strong>: The Directory ID from Step 1</li>
+                    </ul>
+                </li>
+                <li>Configure features:
+                    <ul>
+                        <li>✓ Calendar Sync</li>
+                        <li>✓ Email Sending</li>
+                        <li>✓ Contact Sync</li>
+                    </ul>
+                </li>
+                <li>Click <strong>"Save Configuration"</strong></li>
+            </ol>
+        </div>
+
+        <h2 id="step5">Step 5: Connect Your Office 365 Account</h2>
+        <div class="step">
+            <h3>For All Users:</h3>
+            <ol>
+                <li>Go to <strong>Settings</strong> in NotHubSpot</li>
+                <li>Find <strong>"Office 365 Integration"</strong> section</li>
+                <li>Click <strong>"Connect Office 365"</strong></li>
+                <li>You'll be redirected to Microsoft login</li>
+                <li>Sign in with your Office 365 account</li>
+                <li>Review and accept the permissions</li>
+                <li>You'll be redirected back to NotHubSpot</li>
+            </ol>
+            
+            <div class="info">
+                <h4>Privacy Settings</h4>
+                <p>After connecting, you can configure:</p>
+                <ul>
+                    <li><strong>Sync only CRM contacts</strong>: Only sync emails from existing contacts</li>
+                    <li><strong>Excluded domains</strong>: Never sync emails from these domains</li>
+                    <li><strong>Excluded keywords</strong>: Skip emails with these keywords</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2 id="troubleshooting">Troubleshooting</h2>
+        
+        <h3>"AADSTS50011: Reply URL mismatch" error</h3>
+        <ul>
+            <li>Verify the redirect URI in Azure exactly matches your NotHubSpot URL</li>
+            <li>Check for trailing slashes - they must match exactly</li>
+            <li>Ensure you're using HTTPS in production</li>
+            <li>Example: <code>https://app.nothubspot.com/api/auth/microsoft/callback</code></li>
+        </ul>
+
+        <h3>"Insufficient privileges" error</h3>
+        <ul>
+            <li>Ensure admin consent was granted for all permissions</li>
+            <li>Check that all required permissions are added in Azure AD</li>
+            <li>Try disconnecting and reconnecting your account</li>
+        </ul>
+
+        <h3>"Invalid client secret" error</h3>
+        <ul>
+            <li>Client secrets expire - check expiration date in Azure</li>
+            <li>Ensure no extra spaces when copying the secret</li>
+            <li>Try creating a new client secret if needed</li>
+        </ul>
+
+        <h3>Emails not syncing</h3>
+        <ul>
+            <li>Check privacy settings aren't too restrictive</li>
+            <li>Verify <code>Mail.Read</code> permission is granted</li>
+            <li>Check Office 365 connection status in Settings</li>
+            <li>Ensure you have emails in your inbox</li>
+        </ul>
+
+        <h3>Calendar events missing</h3>
+        <ul>
+            <li>Ensure <code>Calendars.ReadWrite</code> permission is granted</li>
+            <li>Check that calendar sync is enabled in configuration</li>
+            <li>Verify events exist in the sync time range</li>
+        </ul>
+
+        <div class="warning">
+            <h3>Security Best Practices</h3>
+            <ul>
+                <li><strong>Rotate client secrets</strong> regularly (before expiration)</li>
+                <li><strong>Limit permissions</strong> to only what's needed</li>
+                <li><strong>Use conditional access</strong> in Azure AD if available</li>
+                <li><strong>Monitor sign-in logs</strong> in Azure AD</li>
+                <li><strong>Enable MFA</strong> for all Office 365 accounts</li>
+            </ul>
+        </div>
+
+        <div class="info">
+            <h3>Common Configuration Patterns</h3>
+            <h4>Single Organization Setup</h4>
+            <ul>
+                <li>Account type: Single tenant</li>
+                <li>Users: Only from your organization</li>
+                <li>Best for: Internal company CRM</li>
+            </ul>
+            
+            <h4>Multi-Organization Setup</h4>
+            <ul>
+                <li>Account type: Multitenant</li>
+                <li>Users: From any Office 365 organization</li>
+                <li>Best for: CRM used by multiple companies</li>
+            </ul>
+        </div>
+
+        <hr style="margin: 40px 0;">
+        
+        <p><strong>Need help?</strong> Contact NotHubSpot support with:</p>
+        <ul>
+            <li>Screenshot of the error</li>
+            <li>Your Azure AD app registration ID</li>
+            <li>Organization details</li>
+        </ul>
+        
+        <p style="text-align: center; color: #666; margin-top: 40px;">
+            NotHubSpot CRM - Office 365 Integration Guide<br>
+            Last updated: December 2024
+        </p>
+    </div>
+</body>
+</html>

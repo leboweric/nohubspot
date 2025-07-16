@@ -142,7 +142,15 @@ export default function O365Connection() {
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Connect your Office 365 account to sync emails automatically
+            Connect your Office 365 account to sync emails automatically.{' '}
+            <a 
+              href="/docs/office-365-setup-guide.html" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              View setup guide
+            </a>
           </p>
           
           <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
