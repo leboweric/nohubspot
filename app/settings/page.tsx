@@ -11,7 +11,7 @@ import O365Connection from "@/components/settings/O365Connection"
 import GoogleConnection from "@/components/settings/GoogleConnection"
 import { useEmailSignature } from "@/components/signature/SignatureManager"
 import { getAuthState, isAdmin } from "@/lib/auth"
-import { o365API, o365IntegrationAPI, O365OrganizationConfig, O365UserConnection, handleAPIError, usersAPI } from "@/lib/api"
+import { o365API, o365IntegrationAPI, O365OrganizationConfig, O365UserConnection, googleAPI, googleIntegrationAPI, handleAPIError, usersAPI } from "@/lib/api"
 
 // Force dynamic rendering to prevent static generation issues with auth
 export const dynamic = 'force-dynamic'
@@ -57,6 +57,20 @@ export default function SettingsPage() {
 
   const isOwner = user?.role === 'owner'
   const isO365Enabled = true  // O365 is now always enabled
+
+  // Google Workspace integration state
+  const [googleConfig, setGoogleConfig] = useState<any>(null)
+  const [googleLoading, setGoogleLoading] = useState(false)
+  const [showGoogleConfig, setShowGoogleConfig] = useState(false)
+  const [googleFormData, setGoogleFormData] = useState({
+    client_id: '',
+    client_secret: '',
+    project_id: '',
+    gmail_sync_enabled: true,
+    calendar_sync_enabled: true,
+    contact_sync_enabled: true,
+    drive_sync_enabled: false
+  })
 
   // API call monitoring
   const [apiCallCount, setApiCallCount] = useState(0)
@@ -125,6 +139,24 @@ export default function SettingsPage() {
       setUsers([])
     } finally {
       setUsersLoading(false)
+    }
+  }
+
+  const loadGoogleConfig = async () => {
+    try {
+      const config = await googleAPI.getOrganizationConfig()
+      setGoogleConfig(config)
+      setGoogleFormData({
+        client_id: config.client_id || '',
+        client_secret: '',
+        project_id: config.project_id || '',
+        gmail_sync_enabled: config.gmail_sync_enabled,
+        calendar_sync_enabled: config.calendar_sync_enabled,
+        contact_sync_enabled: config.contact_sync_enabled,
+        drive_sync_enabled: config.drive_sync_enabled
+      })
+    } catch (err) {
+      console.error('Failed to load Google config:', err)
     }
   }
 
@@ -303,6 +335,60 @@ export default function SettingsPage() {
     }
   }
 
+  const handleSaveGoogleConfig = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setGoogleLoading(true)
+    setError("")
+    setSuccess("")
+
+    try {
+      if (googleConfig) {
+        // Update existing config
+        await googleAPI.updateOrganizationConfig(googleFormData)
+        setSuccess('Google Workspace configuration updated successfully')
+      } else {
+        // Create new config
+        await googleAPI.createOrganizationConfig(googleFormData)
+        setSuccess('Google Workspace configuration created successfully')
+      }
+      
+      // Reload config
+      await loadGoogleConfig()
+      setShowGoogleConfig(false)
+    } catch (err) {
+      setError(handleAPIError(err))
+    } finally {
+      setGoogleLoading(false)
+    }
+  }
+
+  const handleDeleteGoogleConfig = async () => {
+    if (!confirm('Are you sure you want to delete the Google Workspace configuration? This will disconnect all users.')) return
+
+    setGoogleLoading(true)
+    setError("")
+    setSuccess("")
+
+    try {
+      await googleAPI.deleteOrganizationConfig()
+      setGoogleConfig(null)
+      setGoogleFormData({
+        client_id: '',
+        client_secret: '',
+        project_id: '',
+        gmail_sync_enabled: true,
+        calendar_sync_enabled: true,
+        contact_sync_enabled: true,
+        drive_sync_enabled: false
+      })
+      setSuccess('Google Workspace configuration deleted successfully')
+    } catch (err) {
+      setError(handleAPIError(err))
+    } finally {
+      setGoogleLoading(false)
+    }
+  }
+
   // Load data on mount
   useEffect(() => {
     if (hasLoaded) return
@@ -318,6 +404,11 @@ export default function SettingsPage() {
         loadO365Config()
       }
       loadO365UserConnection()
+    }
+    
+    // Load Google config for owners
+    if (isOwner) {
+      loadGoogleConfig()
     }
     
     setHasLoaded(true)
@@ -661,6 +752,93 @@ export default function SettingsPage() {
 
         {/* Office 365 Connection Component - For all users */}
         <O365Connection />
+
+        {/* Google Workspace Organization Configuration - For owners only */}
+        {isOwner && (
+          <div className="bg-card border rounded-lg p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h2 className="text-lg font-semibold">Google Workspace Configuration</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Configure Google Workspace integration for your organization
+                </p>
+              </div>
+              <button
+                onClick={() => setShowGoogleConfig(!showGoogleConfig)}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+              >
+                {googleConfig ? 'Manage Configuration' : 'Configure Google Workspace'}
+              </button>
+            </div>
+
+            {/* Configuration Status */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Configuration Status</label>
+                <div className="flex items-center space-x-2">
+                  {googleConfig ? (
+                    <>
+                      <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                      <span className="text-sm text-green-600">Configured</span>
+                      {googleConfig.last_test_success ? (
+                        <span className="text-xs text-green-500">✓ Test successful</span>
+                      ) : (
+                        <span className="text-xs text-red-500">⚠ Test failed</span>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="h-2 w-2 rounded-full bg-gray-400"></div>
+                      <span className="text-sm text-gray-600">Not configured</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Features Status */}
+              {googleConfig && (
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <div className={`h-2 w-2 rounded-full ${googleConfig.gmail_sync_enabled ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                      <span className="text-sm font-medium">Gmail Sync</span>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {googleConfig.gmail_sync_enabled ? 'Enabled' : 'Disabled'}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <div className={`h-2 w-2 rounded-full ${googleConfig.calendar_sync_enabled ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                      <span className="text-sm font-medium">Calendar Sync</span>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {googleConfig.calendar_sync_enabled ? 'Enabled' : 'Disabled'}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <div className={`h-2 w-2 rounded-full ${googleConfig.contact_sync_enabled ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                      <span className="text-sm font-medium">Contact Sync</span>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {googleConfig.contact_sync_enabled ? 'Enabled' : 'Disabled'}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <div className={`h-2 w-2 rounded-full ${googleConfig.drive_sync_enabled ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                      <span className="text-sm font-medium">Drive Sync</span>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {googleConfig.drive_sync_enabled ? 'Enabled' : 'Disabled'}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Google Workspace Connection Component - For all users */}
         <GoogleConnection />
@@ -1128,6 +1306,185 @@ export default function SettingsPage() {
                       className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                     >
                       {o365Loading ? 'Saving...' : (o365Config ? 'Update Configuration' : 'Save Configuration')}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Google Workspace Configuration Modal */}
+      {showGoogleConfig && isOwner && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-semibold">Google Workspace Configuration</h3>
+              <button
+                onClick={() => setShowGoogleConfig(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Instructions */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-medium text-blue-900 mb-2">Google Cloud Project Required</h4>
+                <p className="text-sm text-blue-800 mb-3">
+                  Before configuring, you need to create a Google Cloud Project:
+                </p>
+                <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                  <li>Go to Google Cloud Console → Create a new project</li>
+                  <li>Enable Gmail API, Calendar API, People API, and Drive API</li>
+                  <li>Configure OAuth consent screen</li>
+                  <li>Create OAuth 2.0 credentials (Web application)</li>
+                  <li>Add redirect URI: <code className="bg-blue-100 px-1 rounded">{process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/auth/google/callback</code></li>
+                </ol>
+                <p className="text-sm text-blue-800 mt-2">
+                  <a href="/docs/google-workspace-setup-guide.html" target="_blank" className="underline">
+                    View detailed setup guide →
+                  </a>
+                </p>
+              </div>
+
+              {/* Configuration Form */}
+              <form onSubmit={handleSaveGoogleConfig} className="space-y-4">
+                <div>
+                  <label htmlFor="google_client_id" className="block text-sm font-medium mb-1">
+                    Client ID
+                  </label>
+                  <input
+                    id="google_client_id"
+                    type="text"
+                    value={googleFormData.client_id}
+                    onChange={(e) => setGoogleFormData({...googleFormData, client_id: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="xxxxxxxxxx.apps.googleusercontent.com"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="google_client_secret" className="block text-sm font-medium mb-1">
+                    Client Secret
+                  </label>
+                  <input
+                    id="google_client_secret"
+                    type="password"
+                    value={googleFormData.client_secret}
+                    onChange={(e) => setGoogleFormData({...googleFormData, client_secret: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter client secret"
+                    required={!googleConfig}
+                  />
+                  {googleConfig && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Leave blank to keep current secret
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="google_project_id" className="block text-sm font-medium mb-1">
+                    Project ID (Optional)
+                  </label>
+                  <input
+                    id="google_project_id"
+                    type="text"
+                    value={googleFormData.project_id}
+                    onChange={(e) => setGoogleFormData({...googleFormData, project_id: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="your-project-id"
+                  />
+                </div>
+
+                {/* Feature Toggles */}
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-900">Integration Features</h4>
+                  
+                  <div className="flex items-center space-x-2">
+                    <input
+                      id="gmail_sync"
+                      type="checkbox"
+                      checked={googleFormData.gmail_sync_enabled}
+                      onChange={(e) => setGoogleFormData({...googleFormData, gmail_sync_enabled: e.target.checked})}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="gmail_sync" className="text-sm font-medium">
+                      Gmail Sync
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <input
+                      id="google_calendar_sync"
+                      type="checkbox"
+                      checked={googleFormData.calendar_sync_enabled}
+                      onChange={(e) => setGoogleFormData({...googleFormData, calendar_sync_enabled: e.target.checked})}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="google_calendar_sync" className="text-sm font-medium">
+                      Calendar Sync
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <input
+                      id="google_contact_sync"
+                      type="checkbox"
+                      checked={googleFormData.contact_sync_enabled}
+                      onChange={(e) => setGoogleFormData({...googleFormData, contact_sync_enabled: e.target.checked})}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="google_contact_sync" className="text-sm font-medium">
+                      Contact Sync
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <input
+                      id="google_drive_sync"
+                      type="checkbox"
+                      checked={googleFormData.drive_sync_enabled}
+                      onChange={(e) => setGoogleFormData({...googleFormData, drive_sync_enabled: e.target.checked})}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="google_drive_sync" className="text-sm font-medium">
+                      Drive Sync (Future Feature)
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex justify-between space-x-3 pt-4">
+                  <div>
+                    {googleConfig && (
+                      <button
+                        type="button"
+                        onClick={handleDeleteGoogleConfig}
+                        disabled={googleLoading}
+                        className="px-4 py-2 text-red-600 border border-red-300 rounded-md hover:bg-red-50 disabled:opacity-50"
+                      >
+                        Delete Configuration
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowGoogleConfig(false)}
+                      className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={googleLoading}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {googleLoading ? 'Saving...' : (googleConfig ? 'Update Configuration' : 'Save Configuration')}
                     </button>
                   </div>
                 </div>

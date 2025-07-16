@@ -1383,6 +1383,36 @@ export const o365IntegrationAPI = {
     })
 }
 
+// Google API endpoints for organization config
+export const googleAPI = {
+  // Organization Configuration
+  getOrganizationConfig: (): Promise<any> =>
+    apiRequest('/api/settings/google/organization'),
+  
+  createOrganizationConfig: (config: any): Promise<any> =>
+    apiRequest('/api/settings/google/organization', {
+      method: 'POST',
+      body: JSON.stringify(config)
+    }),
+  
+  updateOrganizationConfig: (config: any): Promise<any> =>
+    apiRequest('/api/settings/google/organization', {
+      method: 'PUT',
+      body: JSON.stringify(config)
+    }),
+  
+  deleteOrganizationConfig: (): Promise<any> =>
+    apiRequest('/api/settings/google/organization', {
+      method: 'DELETE'
+    }),
+  
+  testConfiguration: (config: any): Promise<any> =>
+    apiRequest('/api/settings/google/test', {
+      method: 'POST',
+      body: JSON.stringify(config)
+    })
+}
+
 // Google Workspace Integration API
 export const googleIntegrationAPI = {
   getStatus: (): Promise<{
