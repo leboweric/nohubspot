@@ -175,6 +175,41 @@ def get_contacts(
     company_id: Optional[int] = None,
     status: Optional[str] = None
 ) -> List[Contact]:
+    # First, fix any NULL statuses or invalid emails for this organization
+    db.execute(text("""
+        UPDATE contacts 
+        SET status = COALESCE(status, 'Active')
+        WHERE organization_id = :org_id 
+        AND status IS NULL
+    """), {"org_id": organization_id})
+    
+    # Fix emails with parentheses - remove the parenthetical part
+    db.execute(text("""
+        UPDATE contacts 
+        SET email = REGEXP_REPLACE(email, '\\([^)]*\\)', '', 'g')
+        WHERE organization_id = :org_id 
+        AND email LIKE '%(%)%'
+    """), {"org_id": organization_id})
+    
+    # Fix email with spaces
+    db.execute(text("""
+        UPDATE contacts 
+        SET email = REPLACE(email, ' ', '')
+        WHERE organization_id = :org_id 
+        AND email LIKE '% %'
+    """), {"org_id": organization_id})
+    
+    # Fix entries that are domains without @ sign (add info@ prefix)
+    db.execute(text("""
+        UPDATE contacts 
+        SET email = 'info@' || email
+        WHERE organization_id = :org_id 
+        AND email NOT LIKE '%@%'
+        AND email LIKE '%.%'
+    """), {"org_id": organization_id})
+    
+    db.commit()
+    
     query = db.query(Contact).filter(Contact.organization_id == organization_id)
     
     if search:
