@@ -2488,10 +2488,10 @@ async def delete_project_stage_endpoint(
 
 @app.post("/api/projects/stages/fix")
 async def fix_project_stages(
-    current_user: User = Depends(get_current_admin_user),
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """Fix project stages - ensure all projects have valid stage_ids (admin only)"""
+    """Fix project stages - ensure all projects have valid stage_ids"""
     # Get existing stages
     stages = db.query(ProjectStage).filter(
         ProjectStage.organization_id == current_user.organization_id
