@@ -76,10 +76,10 @@ CREATE TABLE IF NOT EXISTS google_user_connections (
 );
 
 -- Create indexes for performance
-CREATE INDEX idx_google_org_configs_org_id ON google_organization_configs(organization_id);
-CREATE INDEX idx_google_user_connections_user_id ON google_user_connections(user_id);
-CREATE INDEX idx_google_user_connections_org_id ON google_user_connections(organization_id);
-CREATE INDEX idx_google_user_connections_status ON google_user_connections(connection_status);
+CREATE INDEX IF NOT EXISTS idx_google_org_configs_org_id ON google_organization_configs(organization_id);
+CREATE INDEX IF NOT EXISTS idx_google_user_connections_user_id ON google_user_connections(user_id);
+CREATE INDEX IF NOT EXISTS idx_google_user_connections_org_id ON google_user_connections(organization_id);
+CREATE INDEX IF NOT EXISTS idx_google_user_connections_status ON google_user_connections(connection_status);
 
 -- Add triggers for updated_at timestamp
 CREATE OR REPLACE FUNCTION update_google_updated_at()
@@ -89,6 +89,10 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Drop triggers if they exist before creating
+DROP TRIGGER IF EXISTS google_org_configs_updated_at ON google_organization_configs;
+DROP TRIGGER IF EXISTS google_user_connections_updated_at ON google_user_connections;
 
 CREATE TRIGGER google_org_configs_updated_at
     BEFORE UPDATE ON google_organization_configs

@@ -289,24 +289,25 @@ except Exception as e:
     print(f"❌ Database initialization failed: {e}")
     print("⚠️  The application will continue but database operations may fail")
 
+# Initialize background scheduler
+from scheduler import init_scheduler, shutdown_scheduler
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application lifespan"""
+    # Startup
+    init_scheduler()
+    yield
+    # Shutdown
+    shutdown_scheduler()
+
 app = FastAPI(
     title="NotHubSpot CRM API",
     description="Backend API for NotHubSpot CRM - The HubSpot Alternative",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
-
-# Initialize background scheduler
-from scheduler import init_scheduler, shutdown_scheduler
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize services on startup"""
-    init_scheduler()
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on shutdown"""
-    shutdown_scheduler()
 
 # CORS middleware configured for your deployment
 app.add_middleware(
