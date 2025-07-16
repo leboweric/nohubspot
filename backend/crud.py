@@ -1122,6 +1122,32 @@ def get_projects(
         WHERE organization_id = :org_id 
         AND actual_hours IS NULL
     """), {"org_id": organization_id})
+    
+    # Fix projects with invalid stage_ids
+    # First get valid stage_ids for this organization
+    valid_stages = db.execute(text("""
+        SELECT id FROM project_stages 
+        WHERE organization_id = :org_id 
+        ORDER BY position
+        LIMIT 1
+    """), {"org_id": organization_id}).first()
+    
+    if valid_stages:
+        default_stage_id = valid_stages[0]
+        # Update any projects with invalid stage_ids
+        db.execute(text("""
+            UPDATE projects p
+            SET stage_id = :default_stage_id
+            WHERE p.organization_id = :org_id
+            AND (
+                p.stage_id IS NULL
+                OR p.stage_id NOT IN (
+                    SELECT id FROM project_stages 
+                    WHERE organization_id = :org_id
+                )
+            )
+        """), {"org_id": organization_id, "default_stage_id": default_stage_id})
+    
     db.commit()
     
     query = db.query(Project).options(
