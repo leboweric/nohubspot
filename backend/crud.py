@@ -238,7 +238,7 @@ def get_contacts(
     if status:
         query = query.filter(Contact.status == status)
     
-    return query.order_by(desc(Contact.last_activity)).offset(skip).limit(limit).all()
+    return query.order_by(Contact.first_name.asc()).offset(skip).limit(limit).all()
 
 def get_contact(db: Session, contact_id: int, organization_id: int) -> Optional[Contact]:
     return db.query(Contact).filter(
