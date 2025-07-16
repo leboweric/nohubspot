@@ -40,7 +40,27 @@ export default function ProjectsPage() {
       
       // Load all projects
       const projectsData = await projectAPI.getProjects({ limit: 100 })
-      setProjects(projectsData)
+      console.log('Loaded projects:', projectsData)
+      console.log('Loaded stages:', stagesData)
+      
+      // Debug: Check stage_id mapping
+      const stageIds = new Set(stagesData.map((s: any) => s.id))
+      const projectsWithInvalidStages = projectsData.filter((p: any) => !stageIds.has(p.stage_id))
+      if (projectsWithInvalidStages.length > 0) {
+        console.warn('Projects with invalid stage_ids:', projectsWithInvalidStages)
+        console.warn('Available stage IDs:', Array.from(stageIds))
+      }
+      
+      // Temporary fix: If projects have invalid stage_ids, assign them to the first stage
+      const fixedProjects = projectsData.map((project: any) => {
+        if (!stageIds.has(project.stage_id) && stagesData.length > 0) {
+          console.log(`Fixing project "${project.title}" stage_id from ${project.stage_id} to ${stagesData[0].id}`)
+          return { ...project, stage_id: stagesData[0].id }
+        }
+        return project
+      })
+      
+      setProjects(fixedProjects)
       
     } catch (err) {
       setError(handleAPIError(err))
