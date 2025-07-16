@@ -146,6 +146,7 @@ export default function GoogleConnection() {
             <a 
               href="/docs/google-workspace-setup-guide.html" 
               target="_blank" 
+              rel="noopener noreferrer"
               className="text-blue-600 hover:underline"
             >
               View setup guide

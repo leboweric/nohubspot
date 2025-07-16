@@ -1344,7 +1344,7 @@ export default function SettingsPage() {
                   <li>Add redirect URI: <code className="bg-blue-100 px-1 rounded">{process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/auth/google/callback</code></li>
                 </ol>
                 <p className="text-sm text-blue-800 mt-2">
-                  <a href="/docs/google-workspace-setup-guide.html" target="_blank" className="underline">
+                  <a href="/docs/google-workspace-setup-guide.html" target="_blank" rel="noopener noreferrer" className="underline">
                     View detailed setup guide →
                   </a>
                 </p>
