@@ -723,7 +723,7 @@ class ProjectResponse(ProjectBase, TimestampMixin):
     created_by: int
     stage_id: int
     actual_end_date: Optional[datetime] = None
-    actual_hours: float = 0.0
+    actual_hours: Optional[float] = 0.0
     is_active: bool
     
     # Populated by API

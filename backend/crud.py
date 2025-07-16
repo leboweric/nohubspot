@@ -1115,6 +1115,15 @@ def get_projects(
     project_type: Optional[str] = None,
     is_active: bool = True
 ) -> List[Project]:
+    # Fix any NULL actual_hours for this organization
+    db.execute(text("""
+        UPDATE projects 
+        SET actual_hours = COALESCE(actual_hours, 0.0)
+        WHERE organization_id = :org_id 
+        AND actual_hours IS NULL
+    """), {"org_id": organization_id})
+    db.commit()
+    
     query = db.query(Project).options(
         joinedload(Project.stage),
         joinedload(Project.company),
