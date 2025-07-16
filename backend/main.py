@@ -2478,6 +2478,55 @@ async def fix_project_stages(
         "fixed_count": fixed_count
     }
 
+@app.get("/api/projects/stages/diagnostic")
+async def diagnose_project_stages(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Diagnose project stage issues"""
+    org_id = current_user.organization_id
+    
+    # Get all stages
+    stages = db.query(ProjectStage).filter(
+        ProjectStage.organization_id == org_id
+    ).all()
+    
+    # Get all projects
+    projects = db.query(Project).filter(
+        Project.organization_id == org_id,
+        Project.is_active == True
+    ).all()
+    
+    # Find projects with invalid stage_ids
+    valid_stage_ids = {s.id for s in stages}
+    invalid_projects = []
+    valid_projects = []
+    
+    for project in projects:
+        if project.stage_id not in valid_stage_ids:
+            invalid_projects.append({
+                "id": project.id,
+                "title": project.title,
+                "stage_id": project.stage_id,
+                "issue": "stage_id not in valid stages"
+            })
+        else:
+            valid_projects.append({
+                "id": project.id,
+                "title": project.title,
+                "stage_id": project.stage_id
+            })
+    
+    return {
+        "organization_id": org_id,
+        "stages": [{"id": s.id, "name": s.name, "position": s.position} for s in stages],
+        "total_projects": len(projects),
+        "valid_projects_count": len(valid_projects),
+        "invalid_projects_count": len(invalid_projects),
+        "invalid_projects": invalid_projects[:10],  # First 10 for brevity
+        "sample_valid_projects": valid_projects[:5]
+    }
+
 @app.get("/api/projects/stages/{stage_id}", response_model=ProjectStageResponse)
 async def get_project_stage_endpoint(
     stage_id: int,

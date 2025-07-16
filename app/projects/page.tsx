@@ -71,6 +71,55 @@ export default function ProjectsPage() {
     return projects.filter(project => project.stage_id === stageId && project.is_active)
   }
 
+  const diagnoseProjects = async () => {
+    try {
+      const response = await fetch('/api/projects/stages/diagnostic', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to run diagnostic')
+      }
+      
+      const diagnostic = await response.json()
+      
+      // Show diagnostic info in alert for now
+      const message = `
+Diagnostic Results:
+- Organization ID: ${diagnostic.organization_id}
+- Total Projects: ${diagnostic.total_projects}
+- Valid Projects: ${diagnostic.valid_projects_count}
+- Invalid Projects: ${diagnostic.invalid_projects_count}
+
+Available Stages:
+${diagnostic.stages.map((s: any) => `- ${s.name} (ID: ${s.id})`).join('\n')}
+
+${diagnostic.invalid_projects_count > 0 ? `
+Invalid Projects (first 10):
+${diagnostic.invalid_projects.map((p: any) => `- "${p.title}" has stage_id: ${p.stage_id}`).join('\n')}
+
+These projects have stage IDs that don't match any of your organization's stages.
+` : ''}
+      `
+      
+      alert(message)
+      
+      // If there are invalid projects, offer to fix them
+      if (diagnostic.invalid_projects_count > 0) {
+        if (confirm('Would you like to reassign these projects to the Planning stage?')) {
+          // For now, show instructions
+          alert('Please run the SQL migration: fix_project_stage_assignments.sql in your database to fix this issue.')
+        }
+      }
+    } catch (err) {
+      setError(handleAPIError(err))
+    }
+  }
+
   const formatCurrency = (value: number, currency = 'USD') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -250,6 +299,41 @@ export default function ProjectsPage() {
             <div className="rounded-md bg-green-50 p-4 mb-6">
               <div className="text-sm text-green-700">{success}</div>
             </div>
+          )}
+
+          {/* Diagnostic Button - Show when projects exist but aren't visible */}
+          {stages.length > 0 && projects.length > 0 && (
+            (() => {
+              const visibleProjects = projects.filter(p => 
+                p.is_active && stages.some(stage => stage.id === p.stage_id)
+              ).length
+              const activeProjects = projects.filter(p => p.is_active).length
+              
+              if (activeProjects > visibleProjects) {
+                return (
+                  <div className="rounded-md bg-yellow-50 p-4 mb-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm text-yellow-700 font-medium">
+                          Projects Not Showing in Kanban
+                        </div>
+                        <div className="text-xs text-yellow-600 mt-1">
+                          {activeProjects} active projects found, but only {visibleProjects} are visible.
+                          Click diagnose to see why.
+                        </div>
+                      </div>
+                      <button
+                        onClick={diagnoseProjects}
+                        className="ml-4 px-3 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700"
+                      >
+                        Diagnose Issue
+                      </button>
+                    </div>
+                  </div>
+                )
+              }
+              return null
+            })()
           )}
 
 
