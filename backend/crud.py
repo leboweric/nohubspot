@@ -7,7 +7,9 @@ from phone_utils import format_phone_number
 from models import (
     Company, Contact, EmailThread, EmailMessage, 
     Task, Attachment, Activity, EmailSignature, CalendarEvent, EventAttendee,
-    O365OrganizationConfig, O365UserConnection, User, PipelineStage, Deal,
+    O365OrganizationConfig, O365UserConnection, 
+    GoogleOrganizationConfig, GoogleUserConnection,
+    User, PipelineStage, Deal,
     ProjectStage, Project, ProjectType
 )
 from schemas import (
@@ -17,6 +19,7 @@ from schemas import (
     CalendarEventCreate, CalendarEventUpdate, DashboardStats,
     EventAttendeeCreate, EventAttendeeResponse,
     O365OrganizationConfigCreate, O365OrganizationConfigUpdate, O365UserConnectionUpdate,
+    GoogleOrganizationConfigCreate, GoogleOrganizationConfigUpdate, GoogleUserConnectionUpdate,
     PipelineStageCreate, PipelineStageUpdate, DealCreate, DealUpdate,
     ProjectStageCreate, ProjectStageUpdate, ProjectCreate, ProjectUpdate,
     ProjectTypeCreate, ProjectTypeUpdate
@@ -797,6 +800,124 @@ def update_o365_user_connection(
 def delete_o365_user_connection(db: Session, user_id: int) -> bool:
     """Delete O365 user connection"""
     db_connection = get_o365_user_connection(db, user_id)
+    if not db_connection:
+        return False
+    
+    db.delete(db_connection)
+    db.commit()
+    return True
+
+# Google Workspace Organization Configuration CRUD operations
+def get_google_org_config(db: Session, organization_id: int) -> Optional[GoogleOrganizationConfig]:
+    """Get Google organization configuration"""
+    return db.query(GoogleOrganizationConfig).filter(
+        GoogleOrganizationConfig.organization_id == organization_id
+    ).first()
+
+def create_google_org_config(
+    db: Session, 
+    config: GoogleOrganizationConfigCreate, 
+    organization_id: int
+) -> GoogleOrganizationConfig:
+    """Create Google organization configuration"""
+    from google_encryption import encrypt_client_secret
+    
+    # Encrypt client secret if provided
+    encrypted_secret = None
+    if config.client_secret:
+        encrypted_secret = encrypt_client_secret(config.client_secret)
+    
+    db_config = GoogleOrganizationConfig(
+        organization_id=organization_id,
+        client_id=config.client_id,
+        client_secret_encrypted=encrypted_secret,
+        project_id=config.project_id,
+        gmail_sync_enabled=config.gmail_sync_enabled,
+        calendar_sync_enabled=config.calendar_sync_enabled,
+        contact_sync_enabled=config.contact_sync_enabled,
+        drive_sync_enabled=config.drive_sync_enabled,
+        is_configured=bool(config.client_id and encrypted_secret)
+    )
+    
+    db.add(db_config)
+    db.commit()
+    db.refresh(db_config)
+    return db_config
+
+def update_google_org_config(
+    db: Session,
+    organization_id: int,
+    config_update: GoogleOrganizationConfigUpdate
+) -> Optional[GoogleOrganizationConfig]:
+    """Update Google organization configuration"""
+    from google_encryption import encrypt_client_secret
+    
+    db_config = get_google_org_config(db, organization_id)
+    if not db_config:
+        return None
+    
+    update_data = config_update.dict(exclude_unset=True)
+    
+    # Handle client secret encryption
+    if "client_secret" in update_data and update_data["client_secret"]:
+        update_data["client_secret_encrypted"] = encrypt_client_secret(update_data["client_secret"])
+        del update_data["client_secret"]
+    
+    # Update fields
+    for field, value in update_data.items():
+        setattr(db_config, field, value)
+    
+    # Update is_configured status
+    db_config.is_configured = bool(db_config.client_id and db_config.client_secret_encrypted)
+    
+    db.commit()
+    db.refresh(db_config)
+    return db_config
+
+def delete_google_org_config(db: Session, organization_id: int) -> bool:
+    """Delete Google organization configuration and all user connections"""
+    db_config = get_google_org_config(db, organization_id)
+    if not db_config:
+        return False
+    
+    db.delete(db_config)
+    db.commit()
+    return True
+
+# Google User Connection CRUD operations
+def get_google_user_connection(db: Session, user_id: int) -> Optional[GoogleUserConnection]:
+    """Get Google user connection"""
+    return db.query(GoogleUserConnection).filter(
+        GoogleUserConnection.user_id == user_id
+    ).first()
+
+def get_google_user_connections_by_org(db: Session, organization_id: int) -> List[GoogleUserConnection]:
+    """Get all Google user connections for an organization"""
+    return db.query(GoogleUserConnection).filter(
+        GoogleUserConnection.organization_id == organization_id
+    ).all()
+
+def update_google_user_connection(
+    db: Session,
+    user_id: int,
+    connection_update: GoogleUserConnectionUpdate
+) -> Optional[GoogleUserConnection]:
+    """Update Google user connection preferences"""
+    db_connection = get_google_user_connection(db, user_id)
+    if not db_connection:
+        return None
+    
+    update_data = connection_update.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_connection, field, value)
+    
+    db.commit()
+    db.refresh(db_connection)
+    return db_connection
+
+def delete_google_user_connection(db: Session, user_id: int) -> bool:
+    """Delete Google user connection"""
+    db_connection = get_google_user_connection(db, user_id)
     if not db_connection:
         return False
     

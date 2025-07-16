@@ -35,7 +35,7 @@ def rate_limit_check(client_ip: str, endpoint: str, max_requests: int = 30, wind
     return True
 
 from database import get_db, SessionLocal, engine
-from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, PipelineStage, Deal, EmailTracking, EmailEvent, EmailSharingPermission, ProjectStage, Project, ProjectType
+from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, GoogleOrganizationConfig, GoogleUserConnection, PipelineStage, Deal, EmailTracking, EmailEvent, EmailSharingPermission, ProjectStage, Project, ProjectType
 from schemas import (
     CompanyCreate, CompanyResponse, CompanyUpdate,
     ContactCreate, ContactResponse, ContactUpdate,
@@ -54,6 +54,9 @@ from schemas import (
     O365OrganizationConfigCreate, O365OrganizationConfigUpdate, O365OrganizationConfigResponse,
     O365UserConnectionUpdate, O365UserConnectionResponse,
     O365TestConnectionRequest, O365TestConnectionResponse,
+    GoogleOrganizationConfigCreate, GoogleOrganizationConfigUpdate, GoogleOrganizationConfigResponse,
+    GoogleUserConnectionUpdate, GoogleUserConnectionResponse,
+    GoogleTestConnectionRequest, GoogleTestConnectionResponse,
     PipelineStageCreate, PipelineStageResponse, PipelineStageUpdate,
     DealCreate, DealResponse, DealUpdate,
     ProjectStageCreate, ProjectStageResponse, ProjectStageUpdate,
@@ -77,6 +80,8 @@ from crud import (
     update_calendar_event, delete_calendar_event, get_upcoming_events, get_today_events,
     is_org_owner, get_o365_org_config, create_o365_org_config, update_o365_org_config, delete_o365_org_config,
     get_o365_user_connection, get_o365_user_connections_by_org, update_o365_user_connection, delete_o365_user_connection,
+    get_google_org_config, create_google_org_config, update_google_org_config, delete_google_org_config,
+    get_google_user_connection, get_google_user_connections_by_org, update_google_user_connection, delete_google_user_connection,
     create_pipeline_stage, get_pipeline_stages, get_pipeline_stage, update_pipeline_stage, delete_pipeline_stage, create_default_pipeline_stages,
     create_deal, get_deals, get_deal, update_deal, delete_deal,
     create_project_stage, get_project_stages, get_project_stage, update_project_stage, delete_project_stage,
@@ -1378,6 +1383,180 @@ async def disconnect_user_o365_connection(
         raise HTTPException(status_code=404, detail="Office 365 connection not found")
     
     return {"message": "Office 365 connection disconnected successfully"}
+
+# Google Workspace Integration endpoints
+@app.get("/api/settings/google/organization", response_model=GoogleOrganizationConfigResponse)
+async def get_organization_google_config(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get Google Workspace organization configuration (Owner only)"""
+    if not is_org_owner(current_user):
+        raise HTTPException(
+            status_code=403, 
+            detail="Only organization owners can view Google Workspace settings"
+        )
+    
+    config = get_google_org_config(db, current_user.organization_id)
+    if not config:
+        # Return default empty config
+        return GoogleOrganizationConfigResponse(
+            id=0,
+            organization_id=current_user.organization_id,
+            client_id=None,
+            project_id=None,
+            gmail_sync_enabled=True,
+            calendar_sync_enabled=True,
+            contact_sync_enabled=True,
+            drive_sync_enabled=False,
+            is_configured=False,
+            last_test_at=None,
+            last_test_success=False,
+            last_error_message=None,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+    
+    return config
+
+@app.post("/api/settings/google/organization", response_model=GoogleOrganizationConfigResponse)
+async def create_organization_google_config(
+    config: GoogleOrganizationConfigCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create Google Workspace organization configuration (Owner only)"""
+    if not is_org_owner(current_user):
+        raise HTTPException(
+            status_code=403, 
+            detail="Only organization owners can configure Google Workspace settings"
+        )
+    
+    # Check if config already exists
+    existing_config = get_google_org_config(db, current_user.organization_id)
+    if existing_config:
+        raise HTTPException(
+            status_code=400,
+            detail="Google Workspace configuration already exists. Use PUT to update."
+        )
+    
+    try:
+        db_config = create_google_org_config(db, config, current_user.organization_id)
+        
+        # Create activity log
+        create_activity(
+            db,
+            title="Google Workspace Configuration Created",
+            description=f"Google Workspace integration configured for organization",
+            activity_type="integration",
+            user_id=current_user.id,
+            organization_id=current_user.organization_id
+        )
+        
+        return db_config
+    except Exception as e:
+        print(f"Error creating Google config: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create Google Workspace configuration")
+
+@app.put("/api/settings/google/organization", response_model=GoogleOrganizationConfigResponse)
+async def update_organization_google_config(
+    config_update: GoogleOrganizationConfigUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update Google Workspace organization configuration (Owner only)"""
+    if not is_org_owner(current_user):
+        raise HTTPException(
+            status_code=403, 
+            detail="Only organization owners can configure Google Workspace settings"
+        )
+    
+    try:
+        db_config = update_google_org_config(db, current_user.organization_id, config_update)
+        if not db_config:
+            # Create new config if it doesn't exist
+            create_config = GoogleOrganizationConfigCreate(**config_update.dict(exclude_unset=True))
+            db_config = create_google_org_config(db, create_config, current_user.organization_id)
+        
+        # Create activity log
+        create_activity(
+            db,
+            title="Google Workspace Configuration Updated",
+            description=f"Google Workspace integration settings updated",
+            activity_type="integration",
+            user_id=current_user.id,
+            organization_id=current_user.organization_id
+        )
+        
+        return db_config
+    except Exception as e:
+        print(f"Error updating Google config: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to update Google Workspace configuration")
+
+@app.delete("/api/settings/google/organization")
+async def delete_organization_google_config(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete Google Workspace organization configuration (Owner only)"""
+    if not is_org_owner(current_user):
+        raise HTTPException(
+            status_code=403, 
+            detail="Only organization owners can configure Google Workspace settings"
+        )
+    
+    success = delete_google_org_config(db, current_user.organization_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Google Workspace configuration not found")
+    
+    # Create activity log
+    create_activity(
+        db,
+        title="Google Workspace Configuration Deleted",
+        description=f"Google Workspace integration disabled for organization",
+        activity_type="integration",
+        user_id=current_user.id,
+        organization_id=current_user.organization_id
+    )
+    
+    return {"message": "Google Workspace configuration deleted successfully"}
+
+@app.get("/api/settings/google/user", response_model=GoogleUserConnectionResponse)
+async def get_user_google_connection(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get current user's Google Workspace connection"""
+    connection = get_google_user_connection(db, current_user.id)
+    if not connection:
+        raise HTTPException(status_code=404, detail="Google Workspace connection not found")
+    
+    return connection
+
+@app.put("/api/settings/google/user", response_model=GoogleUserConnectionResponse)
+async def update_user_google_connection(
+    connection_update: GoogleUserConnectionUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update current user's Google Workspace connection preferences"""
+    connection = update_google_user_connection(db, current_user.id, connection_update)
+    if not connection:
+        raise HTTPException(status_code=404, detail="Google Workspace connection not found")
+    
+    return connection
+
+@app.delete("/api/settings/google/user")
+async def disconnect_user_google_connection(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Disconnect current user's Google Workspace connection"""
+    success = delete_google_user_connection(db, current_user.id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Google Workspace connection not found")
+    
+    return {"message": "Google Workspace connection disconnected successfully"}
 
 @app.post("/api/ai/chat")
 async def ai_chat(

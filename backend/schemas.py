@@ -543,6 +543,100 @@ class O365TestConnectionResponse(BaseModel):
     message: str
     error_details: Optional[str] = None
 
+# Google Workspace Organization Configuration schemas
+class GoogleOrganizationConfigBase(BaseModel):
+    client_id: Optional[str] = None
+    project_id: Optional[str] = None
+    gmail_sync_enabled: bool = True
+    calendar_sync_enabled: bool = True
+    contact_sync_enabled: bool = True
+    drive_sync_enabled: bool = False
+
+class GoogleOrganizationConfigCreate(GoogleOrganizationConfigBase):
+    client_secret: Optional[str] = None  # Will be encrypted before storing
+
+class GoogleOrganizationConfigUpdate(BaseModel):
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None  # Will be encrypted before storing
+    project_id: Optional[str] = None
+    gmail_sync_enabled: Optional[bool] = None
+    calendar_sync_enabled: Optional[bool] = None
+    contact_sync_enabled: Optional[bool] = None
+    drive_sync_enabled: Optional[bool] = None
+
+class GoogleOrganizationConfigResponse(GoogleOrganizationConfigBase):
+    id: int
+    organization_id: int
+    is_configured: bool
+    last_test_at: Optional[datetime] = None
+    last_test_success: bool = False
+    last_error_message: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    # Security: Never expose client_secret in responses
+    client_secret: Optional[str] = None  # Always None for security
+    
+    class Config:
+        from_attributes = True
+
+# Google User Connection schemas
+class GoogleUserConnectionBase(BaseModel):
+    sync_gmail_enabled: bool = True
+    sync_calendar_enabled: bool = True
+    sync_contacts_enabled: bool = True
+    sync_drive_enabled: bool = False
+
+class GoogleUserConnectionUpdate(GoogleUserConnectionBase):
+    # Privacy settings
+    sync_only_crm_contacts: Optional[bool] = None
+    excluded_email_domains: Optional[List[str]] = None
+    excluded_email_keywords: Optional[List[str]] = None
+    include_sent_emails: Optional[bool] = None
+
+class GoogleUserConnectionResponse(GoogleUserConnectionBase):
+    id: int
+    user_id: int
+    google_user_id: str
+    google_email: str
+    google_display_name: Optional[str] = None
+    google_picture_url: Optional[str] = None
+    scopes_granted: Optional[List[str]] = None
+    connection_status: str = "active"
+    last_gmail_sync: Optional[datetime] = None
+    last_calendar_sync: Optional[datetime] = None
+    last_contacts_sync: Optional[datetime] = None
+    last_drive_sync: Optional[datetime] = None
+    sync_error_count: int = 0
+    last_sync_error: Optional[str] = None
+    token_expires_at: datetime
+    # Privacy settings
+    sync_only_crm_contacts: bool = True
+    excluded_email_domains: Optional[List[str]] = []
+    excluded_email_keywords: Optional[List[str]] = []
+    include_sent_emails: bool = True
+    connection_established_at: datetime
+    created_at: datetime
+    updated_at: datetime
+    
+    # Security: Never expose tokens in responses
+    access_token_encrypted: Optional[str] = None  # Always None for security
+    refresh_token_encrypted: Optional[str] = None  # Always None for security
+    
+    class Config:
+        from_attributes = True
+
+# Google Test Connection Request/Response
+class GoogleTestConnectionRequest(BaseModel):
+    client_id: str
+    client_secret: str
+    project_id: Optional[str] = None
+
+class GoogleTestConnectionResponse(BaseModel):
+    success: bool
+    message: str
+    project_info: Optional[dict] = None
+
 # Pipeline Stage schemas
 class PipelineStageBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)

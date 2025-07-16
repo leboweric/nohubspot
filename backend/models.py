@@ -437,6 +437,90 @@ class O365UserConnection(Base):
     organization = relationship("Organization")
     org_config = relationship("O365OrganizationConfig", back_populates="user_connections")
 
+class GoogleOrganizationConfig(Base):
+    __tablename__ = "google_organization_configs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, unique=True)
+    
+    # Google Cloud Project Details
+    client_id = Column(String(255), nullable=True)  # OAuth 2.0 Client ID
+    client_secret_encrypted = Column(Text, nullable=True)  # Encrypted client secret
+    project_id = Column(String(255), nullable=True)  # Google Cloud Project ID
+    
+    # Integration Feature Toggles
+    gmail_sync_enabled = Column(Boolean, default=True)
+    calendar_sync_enabled = Column(Boolean, default=True)
+    contact_sync_enabled = Column(Boolean, default=True)
+    drive_sync_enabled = Column(Boolean, default=False)
+    
+    # Configuration Status
+    is_configured = Column(Boolean, default=False)
+    last_test_at = Column(DateTime(timezone=True))
+    last_test_success = Column(Boolean, default=False)
+    last_error_message = Column(Text)
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    organization = relationship("Organization")
+    user_connections = relationship("GoogleUserConnection", back_populates="org_config", cascade="all, delete-orphan")
+
+class GoogleUserConnection(Base):
+    __tablename__ = "google_user_connections"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
+    org_config_id = Column(Integer, ForeignKey("google_organization_configs.id"), nullable=False)
+    
+    # Google Account Information
+    google_user_id = Column(String(255), nullable=False)  # Google unique user ID
+    google_email = Column(String(255), nullable=False)  # User's Google email
+    google_display_name = Column(String(255))  # User's display name from Google
+    google_picture_url = Column(String(500))  # Profile picture URL
+    
+    # OAuth Tokens (Encrypted)
+    access_token_encrypted = Column(Text, nullable=False)
+    refresh_token_encrypted = Column(Text, nullable=False)
+    token_expires_at = Column(DateTime(timezone=True), nullable=False)
+    scopes_granted = Column(JSON)  # List of granted scopes
+    
+    # User Sync Preferences
+    sync_gmail_enabled = Column(Boolean, default=True)
+    sync_calendar_enabled = Column(Boolean, default=True)
+    sync_contacts_enabled = Column(Boolean, default=True)
+    sync_drive_enabled = Column(Boolean, default=False)
+    
+    # Email Privacy Settings (matching O365 pattern)
+    sync_only_crm_contacts = Column(Boolean, default=True)
+    excluded_email_domains = Column(JSON, default=list)  # List of domains to exclude from sync
+    excluded_email_keywords = Column(JSON, default=list)  # Keywords to exclude from sync
+    include_sent_emails = Column(Boolean, default=True)
+    
+    # Sync Status
+    last_gmail_sync = Column(DateTime(timezone=True))
+    last_calendar_sync = Column(DateTime(timezone=True))
+    last_contacts_sync = Column(DateTime(timezone=True))
+    last_drive_sync = Column(DateTime(timezone=True))
+    sync_error_count = Column(Integer, default=0)
+    last_sync_error = Column(Text)
+    
+    # Connection Status
+    connection_status = Column(String(50), default="active")  # active, error, revoked
+    connection_established_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    user = relationship("User")
+    organization = relationship("Organization")
+    org_config = relationship("GoogleOrganizationConfig", back_populates="user_connections")
+
 class PipelineStage(Base):
     __tablename__ = "pipeline_stages"
     
