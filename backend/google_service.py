@@ -5,6 +5,7 @@ import os
 import json
 import asyncio
 import re
+import base64
 from datetime import datetime, timedelta, timezone
 from typing import Optional, List, Dict, Any
 import httpx

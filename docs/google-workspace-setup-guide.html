@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Workspace Integration Setup Guide - NotHubSpot CRM</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1a73e8;
+            border-bottom: 3px solid #1a73e8;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #333;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #555;
+        }
+        .step {
+            background: #f8f9fa;
+            border-left: 4px solid #1a73e8;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        code {
+            background: #f1f3f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .warning::before {
+            content: "⚠️ ";
+            font-size: 1.2em;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .success::before {
+            content: "✅ ";
+            font-size: 1.2em;
+        }
+        ul {
+            line-height: 1.8;
+        }
+        .button {
+            display: inline-block;
+            background: #1a73e8;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .button:hover {
+            background: #1557b0;
+        }
+        pre {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        .toc {
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .toc h3 {
+            margin-top: 0;
+        }
+        .toc a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+        .toc a:hover {
+            text-decoration: underline;
+        }
+        @media print {
+            body {
+                background: white;
+            }
+            .container {
+                box-shadow: none;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Google Workspace Integration Setup Guide</h1>
+        <p><strong>NotHubSpot CRM</strong> - Complete guide for connecting your Google Workspace account</p>
+        
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ol>
+                <li><a href="#prerequisites">Prerequisites</a></li>
+                <li><a href="#step1">Create a Google Cloud Project</a></li>
+                <li><a href="#step2">Enable Required APIs</a></li>
+                <li><a href="#step3">Configure OAuth Consent Screen</a></li>
+                <li><a href="#step4">Create OAuth 2.0 Credentials</a></li>
+                <li><a href="#step5">Set Environment Variables</a></li>
+                <li><a href="#step6">Connect Your Google Account</a></li>
+                <li><a href="#troubleshooting">Troubleshooting</a></li>
+            </ol>
+        </div>
+
+        <h2 id="prerequisites">Prerequisites</h2>
+        <ul>
+            <li>Admin access to your Google Workspace domain</li>
+            <li>Access to Google Cloud Console</li>
+            <li>NotHubSpot CRM admin privileges</li>
+        </ul>
+
+        <h2 id="step1">Step 1: Create a Google Cloud Project</h2>
+        <div class="step">
+            <ol>
+                <li>Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a></li>
+                <li>Click on the project dropdown at the top of the page</li>
+                <li>Click <strong>"New Project"</strong></li>
+                <li>Enter a project name (e.g., "NotHubSpot CRM Integration")</li>
+                <li>Click <strong>"Create"</strong></li>
+            </ol>
+        </div>
+
+        <h2 id="step2">Step 2: Enable Required APIs</h2>
+        <div class="step">
+            <p>In your Google Cloud Project, go to <strong>"APIs & Services" > "Library"</strong></p>
+            <p>Search for and enable these APIs:</p>
+            <ul>
+                <li><strong>Gmail API</strong> - For email sync</li>
+                <li><strong>Google Calendar API</strong> - For calendar integration (future feature)</li>
+                <li><strong>Google People API</strong> - For contacts sync (future feature)</li>
+                <li><strong>Google Drive API</strong> - For document management (future feature)</li>
+            </ul>
+            <p>Click on each API and press the <strong>"Enable"</strong> button.</p>
+        </div>
+
+        <h2 id="step3">Step 3: Configure OAuth Consent Screen</h2>
+        <div class="step">
+            <ol>
+                <li>Go to <strong>"APIs & Services" > "OAuth consent screen"</strong></li>
+                <li>Choose user type:
+                    <ul>
+                        <li><strong>Internal</strong> - If you only want users in your Google Workspace to use this</li>
+                        <li><strong>External</strong> - If you want any Google account to connect</li>
+                    </ul>
+                </li>
+                <li>Click <strong>"Create"</strong></li>
+                <li>Fill in the required information:
+                    <ul>
+                        <li><strong>App name</strong>: NotHubSpot CRM</li>
+                        <li><strong>User support email</strong>: Your support email</li>
+                        <li><strong>Application home page</strong>: Your NotHubSpot URL</li>
+                        <li><strong>Authorized domains</strong>: Add your domain</li>
+                        <li><strong>Developer contact information</strong>: Your email</li>
+                    </ul>
+                </li>
+                <li>Click <strong>"Save and Continue"</strong></li>
+                <li>Add scopes - Click <strong>"Add or Remove Scopes"</strong> and select:
+                    <ul>
+                        <li><code>openid</code></li>
+                        <li><code>email</code></li>
+                        <li><code>profile</code></li>
+                        <li><code>.../auth/gmail.readonly</code></li>
+                        <li><code>.../auth/gmail.send</code></li>
+                        <li><code>.../auth/calendar.readonly</code></li>
+                        <li><code>.../auth/contacts.readonly</code></li>
+                    </ul>
+                </li>
+                <li>Click <strong>"Update"</strong> then <strong>"Save and Continue"</strong></li>
+                <li>If External app type, add test users</li>
+                <li>Review and click <strong>"Back to Dashboard"</strong></li>
+            </ol>
+        </div>
+
+        <h2 id="step4">Step 4: Create OAuth 2.0 Credentials</h2>
+        <div class="step">
+            <ol>
+                <li>Go to <strong>"APIs & Services" > "Credentials"</strong></li>
+                <li>Click <strong>"Create Credentials" > "OAuth client ID"</strong></li>
+                <li>Choose <strong>"Web application"</strong> as the application type</li>
+                <li>Fill in:
+                    <ul>
+                        <li><strong>Name</strong>: NotHubSpot CRM Web Client</li>
+                        <li><strong>Authorized JavaScript origins</strong>:
+                            <pre>https://your-nothubspot-domain.com
+http://localhost:3000</pre>
+                        </li>
+                        <li><strong>Authorized redirect URIs</strong>:
+                            <pre>https://your-nothubspot-domain.com/auth/google/callback
+http://localhost:3000/auth/google/callback</pre>
+                        </li>
+                    </ul>
+                </li>
+                <li>Click <strong>"Create"</strong></li>
+            </ol>
+            <div class="warning">
+                <strong>IMPORTANT</strong>: Save the Client ID and Client Secret immediately. You won't be able to see the secret again!
+            </div>
+        </div>
+
+        <h2 id="step5">Step 5: Set Environment Variables</h2>
+        <div class="step">
+            <p>Add these to your NotHubSpot environment variables:</p>
+            <pre># Google OAuth Settings
+GOOGLE_CLIENT_ID=your-client-id-here
+GOOGLE_CLIENT_SECRET=your-client-secret-here
+GOOGLE_REDIRECT_URI=https://your-domain.com/auth/google/callback
+
+# Optional: Set default project ID
+GOOGLE_PROJECT_ID=your-project-id</pre>
+            <p>For Railway deployment, add these in your Railway project settings under <strong>"Variables"</strong>.</p>
+        </div>
+
+        <h2 id="step6">Step 6: Connect Your Google Account</h2>
+        <div class="step">
+            <h3>For Organization Users:</h3>
+            <ol>
+                <li>Log in to NotHubSpot CRM</li>
+                <li>Go to <strong>Settings</strong></li>
+                <li>Find the <strong>"Google Workspace Integration"</strong> section</li>
+                <li>Click <strong>"Connect Google Workspace"</strong></li>
+                <li>You'll be redirected to Google to authorize the connection</li>
+                <li>Grant the requested permissions</li>
+                <li>You'll be redirected back to NotHubSpot with your account connected</li>
+            </ol>
+            
+            <div class="success">
+                Once connected, you can configure privacy settings like excluded domains and sync preferences.
+            </div>
+        </div>
+
+        <h2 id="troubleshooting">Troubleshooting</h2>
+        
+        <h3>"Access blocked" error</h3>
+        <ul>
+            <li>Make sure your OAuth consent screen is properly configured</li>
+            <li>If using "External" type, ensure the user is added as a test user</li>
+            <li>Verify all required APIs are enabled</li>
+        </ul>
+
+        <h3>"Invalid redirect URI" error</h3>
+        <ul>
+            <li>Double-check the redirect URI in Google Cloud Console matches exactly</li>
+            <li>Include both http://localhost and your production URL during development</li>
+            <li>Ensure no trailing slashes in the URIs</li>
+        </ul>
+
+        <h3>"Insufficient permissions" error</h3>
+        <ul>
+            <li>Verify all required scopes are added in OAuth consent screen</li>
+            <li>User may need to disconnect and reconnect to grant new permissions</li>
+        </ul>
+
+        <h3>Connection successful but no emails syncing</h3>
+        <ul>
+            <li>Check privacy settings - you may have restrictive filters</li>
+            <li>Ensure you have emails in your Gmail account</li>
+            <li>Check the sync status in Settings for any error messages</li>
+        </ul>
+
+        <div class="warning">
+            <h3>Security Best Practices</h3>
+            <ul>
+                <li><strong>Never share your Client Secret</strong> - Keep it secure and encrypted</li>
+                <li><strong>Use environment variables</strong> - Don't hardcode credentials</li>
+                <li><strong>Limit scopes</strong> - Only request permissions you actually use</li>
+                <li><strong>Regular audits</strong> - Review connected accounts periodically</li>
+                <li><strong>Secure your Google Cloud Project</strong> - Use 2FA and limit admin access</li>
+            </ul>
+        </div>
+
+        <hr style="margin: 40px 0;">
+        
+        <p><strong>Need help?</strong> Contact NotHubSpot support with:</p>
+        <ul>
+            <li>Screenshot of the error</li>
+            <li>Steps to reproduce</li>
+            <li>Your organization ID</li>
+        </ul>
+        
+        <p style="text-align: center; color: #666; margin-top: 40px;">
+            NotHubSpot CRM - Google Workspace Integration Guide<br>
+            Last updated: <?php echo date('F Y'); ?>
+        </p>
+    </div>
+</body>
+</html>

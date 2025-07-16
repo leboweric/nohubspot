@@ -8,6 +8,7 @@ import SupportModal from "@/components/support/SupportModal"
 import PhoneStandardizationModal from "@/components/PhoneStandardizationModal"
 import DuplicatesModal from "@/components/DuplicatesModal"
 import O365Connection from "@/components/settings/O365Connection"
+import GoogleConnection from "@/components/settings/GoogleConnection"
 import { useEmailSignature } from "@/components/signature/SignatureManager"
 import { getAuthState, isAdmin } from "@/lib/auth"
 import { o365API, o365IntegrationAPI, O365OrganizationConfig, O365UserConnection, handleAPIError, usersAPI } from "@/lib/api"
@@ -660,6 +661,9 @@ export default function SettingsPage() {
 
         {/* Office 365 Connection Component - For all users */}
         <O365Connection />
+
+        {/* Google Workspace Connection Component - For all users */}
+        <GoogleConnection />
 
         {/* System Settings Section */}
         <div className="bg-card border rounded-lg p-6">

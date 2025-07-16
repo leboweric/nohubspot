@@ -1382,3 +1382,40 @@ export const o365IntegrationAPI = {
       method: 'DELETE'
     })
 }
+
+// Google Workspace Integration API
+export const googleIntegrationAPI = {
+  getStatus: (): Promise<{
+    connected: boolean
+    email?: string
+    display_name?: string
+    last_sync?: string
+    sync_enabled?: boolean
+    message?: string
+  }> => apiRequest('/api/google/status'),
+  
+  getAuthUrl: (): Promise<{ auth_url: string }> =>
+    apiRequest('/api/google/auth/url'),
+  
+  handleCallback: (code: string, state?: string): Promise<{
+    success: boolean
+    message: string
+    email?: string
+  }> => apiRequest('/api/google/auth/callback', {
+    method: 'POST',
+    body: JSON.stringify({ code, state })
+  }),
+  
+  syncEmails: (): Promise<{
+    success: boolean
+    synced_count: number
+    last_sync: string
+  }> => apiRequest('/api/google/sync', {
+    method: 'POST'
+  }),
+  
+  disconnect: (): Promise<{ success: boolean; message: string }> =>
+    apiRequest('/api/google/disconnect', {
+      method: 'DELETE'
+    })
+}

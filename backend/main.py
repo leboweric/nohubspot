@@ -3699,6 +3699,287 @@ async def disconnect_o365(
     return {"success": True, "message": "Office 365 disconnected"}
 
 
+# Google Workspace OAuth Endpoints
+@app.get("/api/google/auth/url")
+async def get_google_auth_url(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get Google OAuth URL for user authorization"""
+    from google_service import get_google_auth_url
+    import secrets
+    
+    # Check if organization has Google configured
+    org_config = get_google_org_config(db, current_user.organization_id)
+    
+    # Use environment variables as fallback if no org config
+    if not org_config or not org_config.client_id:
+        # Check for environment variables
+        env_client_id = os.environ.get("GOOGLE_CLIENT_ID")
+        
+        if not env_client_id:
+            raise HTTPException(
+                status_code=400, 
+                detail="Google Workspace integration not configured for your organization"
+            )
+        
+        client_id = env_client_id
+    else:
+        client_id = org_config.client_id
+    
+    # Generate state token for CSRF protection
+    state = secrets.token_urlsafe(32)
+    
+    # Store state in session or cache (implement as needed)
+    # For now, we'll include user_id in the state
+    
+    redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI", "https://nohubspot-production.up.railway.app/api/auth/google/callback")
+    
+    auth_url = get_google_auth_url(client_id, redirect_uri, state)
+    
+    return {
+        "auth_url": auth_url,
+        "state": state
+    }
+
+class GoogleCallbackRequest(BaseModel):
+    code: str
+    state: Optional[str] = None
+
+@app.post("/api/google/auth/callback")
+async def google_auth_callback(
+    callback_data: GoogleCallbackRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Handle Google OAuth callback"""
+    from google_service import exchange_code_for_tokens, GoogleService
+    from google_encryption import encrypt_access_token, encrypt_refresh_token
+    
+    code = callback_data.code
+    state = callback_data.state
+    
+    # Get org config
+    org_config = get_google_org_config(db, current_user.organization_id)
+    
+    # Determine configuration source
+    if not org_config or not org_config.client_id:
+        # Use environment variables
+        env_client_id = os.environ.get("GOOGLE_CLIENT_ID")
+        env_client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+        
+        if not all([env_client_id, env_client_secret]):
+            raise HTTPException(status_code=400, detail="Google not configured")
+        
+        client_id = env_client_id
+        client_secret = env_client_secret
+        
+        # Create org config if it doesn't exist
+        if not org_config:
+            from google_encryption import encrypt_client_secret
+            org_config = GoogleOrganizationConfig(
+                organization_id=current_user.organization_id,
+                client_id=client_id,
+                client_secret_encrypted=encrypt_client_secret(client_secret),
+                is_configured=True
+            )
+            db.add(org_config)
+            db.commit()
+            db.refresh(org_config)
+    else:
+        client_id = org_config.client_id
+        from google_encryption import decrypt_client_secret
+        client_secret = decrypt_client_secret(org_config.client_secret_encrypted)
+    
+    redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI", "https://nohubspot-production.up.railway.app/api/auth/google/callback")
+    
+    try:
+        # Exchange code for tokens
+        token_data = await exchange_code_for_tokens(code, client_id, client_secret, redirect_uri)
+        
+        # Create temporary connection to get user info
+        temp_connection = GoogleUserConnection(
+            user_id=current_user.id,
+            organization_id=current_user.organization_id,
+            org_config_id=org_config.id,
+            google_user_id="temp",
+            google_email="temp",
+            access_token_encrypted=encrypt_access_token(token_data["access_token"]),
+            refresh_token_encrypted=encrypt_refresh_token(token_data["refresh_token"]),
+            token_expires_at=datetime.utcnow() + timedelta(seconds=token_data.get("expires_in", 3600)),
+            scopes_granted=token_data.get("scope", "").split() if token_data.get("scope") else []
+        )
+        
+        # Get user info from Google
+        async with GoogleService(temp_connection, org_config) as service:
+            user_info = await service.get_user_info()
+        
+        # Check if connection already exists
+        existing_connection = db.query(GoogleUserConnection).filter(
+            GoogleUserConnection.user_id == current_user.id
+        ).first()
+        
+        if existing_connection:
+            # Update existing connection
+            existing_connection.google_user_id = user_info.get("id", "")
+            existing_connection.google_email = user_info.get("email", "")
+            existing_connection.google_display_name = user_info.get("name", "")
+            existing_connection.google_picture_url = user_info.get("picture", "")
+            existing_connection.access_token_encrypted = encrypt_access_token(token_data["access_token"])
+            existing_connection.refresh_token_encrypted = encrypt_refresh_token(token_data["refresh_token"])
+            existing_connection.token_expires_at = datetime.utcnow() + timedelta(seconds=token_data.get("expires_in", 3600))
+            existing_connection.scopes_granted = token_data.get("scope", "").split() if token_data.get("scope") else []
+            existing_connection.connection_status = "active"
+            existing_connection.sync_error_count = 0
+            existing_connection.last_sync_error = None
+            
+            db_connection = existing_connection
+        else:
+            # Create new connection
+            db_connection = GoogleUserConnection(
+                user_id=current_user.id,
+                organization_id=current_user.organization_id,
+                org_config_id=org_config.id,
+                google_user_id=user_info.get("id", ""),
+                google_email=user_info.get("email", ""),
+                google_display_name=user_info.get("name", ""),
+                google_picture_url=user_info.get("picture", ""),
+                access_token_encrypted=encrypt_access_token(token_data["access_token"]),
+                refresh_token_encrypted=encrypt_refresh_token(token_data["refresh_token"]),
+                token_expires_at=datetime.utcnow() + timedelta(seconds=token_data.get("expires_in", 3600)),
+                scopes_granted=token_data.get("scope", "").split() if token_data.get("scope") else []
+            )
+            db.add(db_connection)
+        
+        db.commit()
+        
+        # Create activity log
+        create_activity(
+            db,
+            title="Google Workspace Connected",
+            description=f"Connected Google account: {user_info.get('email', '')}",
+            activity_type="integration",
+            user_id=current_user.id,
+            organization_id=current_user.organization_id
+        )
+        
+        return {
+            "success": True,
+            "message": "Google Workspace connected successfully",
+            "email": user_info.get("email", ""),
+            "display_name": user_info.get("name", "")
+        }
+        
+    except Exception as e:
+        print(f"Google OAuth callback error: {str(e)}")
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Failed to connect Google Workspace: {str(e)}"
+        )
+
+
+@app.get("/api/google/status")
+async def get_google_connection_status(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get current user's Google connection status"""
+    connection = db.query(GoogleUserConnection).filter(
+        GoogleUserConnection.user_id == current_user.id
+    ).first()
+    
+    if not connection:
+        return {
+            "connected": False,
+            "message": "No Google Workspace connection found"
+        }
+    
+    return {
+        "connected": connection.connection_status == "active",
+        "email": connection.google_email,
+        "display_name": connection.google_display_name,
+        "picture_url": connection.google_picture_url,
+        "last_gmail_sync": connection.last_gmail_sync,
+        "last_calendar_sync": connection.last_calendar_sync,
+        "last_contacts_sync": connection.last_contacts_sync,
+        "connection_status": connection.connection_status
+    }
+
+
+@app.post("/api/google/sync")
+async def sync_google_data(
+    sync_type: Optional[str] = "gmail",  # gmail, calendar, contacts, all
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Manually trigger Google data sync"""
+    connection = db.query(GoogleUserConnection).filter(
+        GoogleUserConnection.user_id == current_user.id,
+        GoogleUserConnection.connection_status == "active"
+    ).first()
+    
+    if not connection:
+        raise HTTPException(status_code=400, detail="No active Google connection")
+    
+    org_config = get_google_org_config(db, current_user.organization_id)
+    if not org_config:
+        raise HTTPException(status_code=400, detail="Google not configured")
+    
+    try:
+        async with GoogleService(connection, org_config) as service:
+            synced_items = {}
+            
+            if sync_type in ["gmail", "all"] and connection.sync_gmail_enabled:
+                await service.sync_gmail_messages(
+                    db, 
+                    since_date=connection.last_gmail_sync
+                )
+                synced_items["gmail"] = "completed"
+            
+            # Additional sync types can be implemented here
+            # if sync_type in ["calendar", "all"] and connection.sync_calendar_enabled:
+            #     synced_items["calendar"] = await service.sync_calendar_events(db)
+            
+            # if sync_type in ["contacts", "all"] and connection.sync_contacts_enabled:
+            #     synced_items["contacts"] = await service.sync_contacts(db)
+        
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": f"Google {sync_type} sync completed",
+            "synced": synced_items
+        }
+        
+    except Exception as e:
+        print(f"Google sync error: {str(e)}")
+        connection.sync_error_count += 1
+        connection.last_sync_error = str(e)
+        db.commit()
+        
+        raise HTTPException(
+            status_code=500,
+            detail=f"Sync failed: {str(e)}"
+        )
+
+
+@app.delete("/api/google/disconnect")
+async def disconnect_google(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Disconnect Google integration"""
+    connection = db.query(GoogleUserConnection).filter(
+        GoogleUserConnection.user_id == current_user.id
+    ).first()
+    
+    if connection:
+        db.delete(connection)
+        db.commit()
+        
+    return {"success": True, "message": "Google Workspace disconnected"}
+
+
 # Inbound email webhook
 @app.post("/api/webhooks/inbound-email")
 async def process_inbound_email(
