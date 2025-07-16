@@ -2486,6 +2486,47 @@ async def delete_project_stage_endpoint(
     
     return {"message": "Project stage deleted successfully"}
 
+@app.post("/api/projects/stages/fix")
+async def fix_project_stages(
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Fix project stages - ensure all projects have valid stage_ids (admin only)"""
+    # Get existing stages
+    stages = db.query(ProjectStage).filter(
+        ProjectStage.organization_id == current_user.organization_id
+    ).order_by(ProjectStage.position).all()
+    
+    if not stages:
+        raise HTTPException(status_code=400, detail="No project stages found. Please create stages first.")
+    
+    # Get all projects
+    projects = db.query(Project).filter(
+        Project.organization_id == current_user.organization_id
+    ).all()
+    
+    # Get valid stage IDs
+    valid_stage_ids = {s.id for s in stages}
+    default_stage = stages[0]  # First stage (Planning) as default
+    
+    # Fix projects with invalid stage_ids
+    fixed_count = 0
+    for project in projects:
+        if project.stage_id not in valid_stage_ids:
+            project.stage_id = default_stage.id
+            fixed_count += 1
+    
+    db.commit()
+    
+    return {
+        "message": f"Fixed {fixed_count} projects with invalid stage_ids",
+        "total_projects": len(projects),
+        "default_stage": {
+            "id": default_stage.id,
+            "name": default_stage.name
+        }
+    }
+
 @app.post("/api/projects/stages/initialize")
 async def create_default_project_stages(
     current_user: User = Depends(get_current_active_user),

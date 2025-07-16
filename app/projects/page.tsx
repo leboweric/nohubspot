@@ -66,6 +66,38 @@ export default function ProjectsPage() {
     }
   }
 
+  const fixProjectStages = async () => {
+    try {
+      setError("")
+      setLoading(true)
+      
+      // Call the fix endpoint
+      const response = await fetch('/api/projects/stages/fix', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to fix project stages')
+      }
+      
+      const result = await response.json()
+      
+      // Reload project data
+      await loadProjectData()
+      
+      setSuccess(`Fixed ${result.fixed_count} projects. They have been assigned to the Planning stage.`)
+      setTimeout(() => setSuccess(""), 5000)
+    } catch (err) {
+      setError(handleAPIError(err))
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const getProjectsForStage = (stageId: number) => {
     return projects.filter(project => project.stage_id === stageId && project.is_active)
   }
@@ -249,6 +281,35 @@ export default function ProjectsPage() {
             <div className="rounded-md bg-green-50 p-4 mb-6">
               <div className="text-sm text-green-700">{success}</div>
             </div>
+          )}
+
+          {/* Fix Projects Button - Show when projects exist but aren't visible in stages */}
+          {stages.length > 0 && projects.length > 0 && (
+            (() => {
+              const projectsInStages = projects.filter(p => 
+                p.is_active && stages.some(stage => stage.id === p.stage_id)
+              ).length
+              const activeProjects = projects.filter(p => p.is_active).length
+              
+              if (activeProjects > 0 && projectsInStages === 0) {
+                return (
+                  <div className="rounded-md bg-yellow-50 p-4 mb-6">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-yellow-700">
+                        Found {activeProjects} active projects but they're not assigned to valid stages.
+                      </div>
+                      <button
+                        onClick={fixProjectStages}
+                        className="ml-4 px-3 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700"
+                      >
+                        Fix Project Stages
+                      </button>
+                    </div>
+                  </div>
+                )
+              }
+              return null
+            })()
           )}
 
           {/* Project Overview */}
