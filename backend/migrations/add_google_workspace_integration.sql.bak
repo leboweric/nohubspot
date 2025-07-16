@@ -1,4 +1,4 @@
--- Add Google Workspace Integration Tables (Simplified version without triggers)
+-- Add Google Workspace Integration Tables
 
 -- Google Organization Configuration Table
 CREATE TABLE IF NOT EXISTS google_organization_configs (
@@ -80,6 +80,24 @@ CREATE INDEX IF NOT EXISTS idx_google_org_configs_org_id ON google_organization_
 CREATE INDEX IF NOT EXISTS idx_google_user_connections_user_id ON google_user_connections(user_id);
 CREATE INDEX IF NOT EXISTS idx_google_user_connections_org_id ON google_user_connections(organization_id);
 CREATE INDEX IF NOT EXISTS idx_google_user_connections_status ON google_user_connections(connection_status);
+
+-- Note: Triggers will use the existing update_updated_at() function from the main schema
+-- which should already exist in the database
+
+-- Drop triggers if they exist before creating
+DROP TRIGGER IF EXISTS google_org_configs_updated_at ON google_organization_configs;
+DROP TRIGGER IF EXISTS google_user_connections_updated_at ON google_user_connections;
+
+-- Create triggers using the existing update_updated_at function
+CREATE TRIGGER google_org_configs_updated_at
+    BEFORE UPDATE ON google_organization_configs
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER google_user_connections_updated_at
+    BEFORE UPDATE ON google_user_connections
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
 
 -- Add comment for documentation
 COMMENT ON TABLE google_organization_configs IS 'Stores Google Workspace OAuth configuration for organizations';
