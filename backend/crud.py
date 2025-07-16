@@ -199,6 +199,14 @@ def get_contacts(
         AND email LIKE '% %'
     """), {"org_id": organization_id})
     
+    # Fix emails with consecutive periods
+    db.execute(text("""
+        UPDATE contacts 
+        SET email = REGEXP_REPLACE(email, '\\.{2,}', '.', 'g')
+        WHERE organization_id = :org_id 
+        AND email LIKE '%..%'
+    """), {"org_id": organization_id})
+    
     # Fix entries that are domains without @ sign (add info@ prefix)
     db.execute(text("""
         UPDATE contacts 

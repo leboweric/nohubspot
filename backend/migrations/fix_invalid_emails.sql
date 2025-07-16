@@ -26,6 +26,13 @@ SET email = REPLACE(email, ' ', ''),
 WHERE organization_id = 7 
 AND email LIKE '% %';
 
+-- Fix emails with consecutive periods
+UPDATE contacts 
+SET email = REGEXP_REPLACE(email, '\.{2,}', '.', 'g'),
+    updated_at = NOW()
+WHERE organization_id = 7 
+AND email LIKE '%..%';
+
 -- Fix entries that are domains without @ sign (add info@ prefix)
 UPDATE contacts 
 SET email = 'info@' || email,
