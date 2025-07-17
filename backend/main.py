@@ -1386,141 +1386,7 @@ async def disconnect_user_o365_connection(
     return {"message": "Office 365 connection disconnected successfully"}
 
 # Google Workspace Integration endpoints
-@app.get("/api/settings/google/organization", response_model=GoogleOrganizationConfigResponse)
-async def get_organization_google_config(
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
-):
-    """Get Google Workspace organization configuration (Owner only)"""
-    if not is_org_owner(current_user):
-        raise HTTPException(
-            status_code=403, 
-            detail="Only organization owners can view Google Workspace settings"
-        )
-    
-    config = get_google_org_config(db, current_user.organization_id)
-    if not config:
-        # Return default empty config
-        return GoogleOrganizationConfigResponse(
-            id=0,
-            organization_id=current_user.organization_id,
-            client_id=None,
-            project_id=None,
-            gmail_sync_enabled=True,
-            calendar_sync_enabled=True,
-            contact_sync_enabled=True,
-            drive_sync_enabled=False,
-            is_configured=False,
-            last_test_at=None,
-            last_test_success=False,
-            last_error_message=None,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
-        )
-    
-    return config
-
-@app.post("/api/settings/google/organization", response_model=GoogleOrganizationConfigResponse)
-async def create_organization_google_config(
-    config: GoogleOrganizationConfigCreate,
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
-):
-    """Create Google Workspace organization configuration (Owner only)"""
-    if not is_org_owner(current_user):
-        raise HTTPException(
-            status_code=403, 
-            detail="Only organization owners can configure Google Workspace settings"
-        )
-    
-    # Check if config already exists
-    existing_config = get_google_org_config(db, current_user.organization_id)
-    if existing_config:
-        raise HTTPException(
-            status_code=400,
-            detail="Google Workspace configuration already exists. Use PUT to update."
-        )
-    
-    try:
-        db_config = create_google_org_config(db, config, current_user.organization_id)
-        
-        # Create activity log
-        create_activity(
-            db,
-            title="Google Workspace Configuration Created",
-            description=f"Google Workspace integration configured for organization",
-            activity_type="integration",
-            user_id=current_user.id,
-            organization_id=current_user.organization_id
-        )
-        
-        return db_config
-    except Exception as e:
-        print(f"Error creating Google config: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to create Google Workspace configuration")
-
-@app.put("/api/settings/google/organization", response_model=GoogleOrganizationConfigResponse)
-async def update_organization_google_config(
-    config_update: GoogleOrganizationConfigUpdate,
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
-):
-    """Update Google Workspace organization configuration (Owner only)"""
-    if not is_org_owner(current_user):
-        raise HTTPException(
-            status_code=403, 
-            detail="Only organization owners can configure Google Workspace settings"
-        )
-    
-    try:
-        db_config = update_google_org_config(db, current_user.organization_id, config_update)
-        if not db_config:
-            # Create new config if it doesn't exist
-            create_config = GoogleOrganizationConfigCreate(**config_update.dict(exclude_unset=True))
-            db_config = create_google_org_config(db, create_config, current_user.organization_id)
-        
-        # Create activity log
-        create_activity(
-            db,
-            title="Google Workspace Configuration Updated",
-            description=f"Google Workspace integration settings updated",
-            activity_type="integration",
-            user_id=current_user.id,
-            organization_id=current_user.organization_id
-        )
-        
-        return db_config
-    except Exception as e:
-        print(f"Error updating Google config: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to update Google Workspace configuration")
-
-@app.delete("/api/settings/google/organization")
-async def delete_organization_google_config(
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
-):
-    """Delete Google Workspace organization configuration (Owner only)"""
-    if not is_org_owner(current_user):
-        raise HTTPException(
-            status_code=403, 
-            detail="Only organization owners can configure Google Workspace settings"
-        )
-    
-    success = delete_google_org_config(db, current_user.organization_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Google Workspace configuration not found")
-    
-    # Create activity log
-    create_activity(
-        db,
-        title="Google Workspace Configuration Deleted",
-        description=f"Google Workspace integration disabled for organization",
-        activity_type="integration",
-        user_id=current_user.id,
-        organization_id=current_user.organization_id
-    )
-    
-    return {"message": "Google Workspace configuration deleted successfully"}
+# Organization-level configuration endpoints removed - using centralized OAuth only
 
 @app.get("/api/settings/google/user", response_model=GoogleUserConnectionResponse)
 async def get_user_google_connection(
@@ -3710,33 +3576,19 @@ async def get_google_auth_url(
     from google_service import get_google_auth_url
     import secrets
     
-    # Check if organization has Google configured
-    org_config = get_google_org_config(db, current_user.organization_id)
-    
-    # Use environment variables as fallback if no org config
-    if not org_config or not org_config.client_id:
-        # Check for environment variables
-        env_client_id = os.environ.get("GOOGLE_CLIENT_ID")
-        
-        if not env_client_id:
-            raise HTTPException(
-                status_code=400, 
-                detail="Google Workspace integration not configured for your organization"
-            )
-        
-        client_id = env_client_id
-    else:
-        client_id = org_config.client_id
+    # Check if centralized Google OAuth is configured
+    if not os.environ.get("GOOGLE_CLIENT_ID"):
+        raise HTTPException(
+            status_code=400,
+            detail="Google Workspace integration is not configured on this server."
+        )
     
     # Generate state token for CSRF protection
     state = secrets.token_urlsafe(32)
     
-    # Store state in session or cache (implement as needed)
-    # For now, we'll include user_id in the state
-    
     redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI", "https://nohubspot-production.up.railway.app/api/auth/google/callback")
     
-    auth_url = get_google_auth_url(client_id, redirect_uri, state)
+    auth_url = get_google_auth_url(redirect_uri, state)
     
     return {
         "auth_url": auth_url,
@@ -3760,49 +3612,24 @@ async def google_auth_callback(
     code = callback_data.code
     state = callback_data.state
     
-    # Get org config
-    org_config = get_google_org_config(db, current_user.organization_id)
-    
-    # Determine configuration source
-    if not org_config or not org_config.client_id:
-        # Use environment variables
-        env_client_id = os.environ.get("GOOGLE_CLIENT_ID")
-        env_client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
-        
-        if not all([env_client_id, env_client_secret]):
-            raise HTTPException(status_code=400, detail="Google not configured")
-        
-        client_id = env_client_id
-        client_secret = env_client_secret
-        
-        # Create org config if it doesn't exist
-        if not org_config:
-            from google_encryption import encrypt_client_secret
-            org_config = GoogleOrganizationConfig(
-                organization_id=current_user.organization_id,
-                client_id=client_id,
-                client_secret_encrypted=encrypt_client_secret(client_secret),
-                is_configured=True
-            )
-            db.add(org_config)
-            db.commit()
-            db.refresh(org_config)
-    else:
-        client_id = org_config.client_id
-        from google_encryption import decrypt_client_secret
-        client_secret = decrypt_client_secret(org_config.client_secret_encrypted)
+    # Check if centralized Google OAuth is configured
+    if not os.environ.get("GOOGLE_CLIENT_ID") or not os.environ.get("GOOGLE_CLIENT_SECRET"):
+        raise HTTPException(
+            status_code=400,
+            detail="Google Workspace integration is not configured on this server."
+        )
     
     redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI", "https://nohubspot-production.up.railway.app/api/auth/google/callback")
     
     try:
-        # Exchange code for tokens
-        token_data = await exchange_code_for_tokens(code, client_id, client_secret, redirect_uri)
+        # Exchange code for tokens using centralized credentials
+        token_data = await exchange_code_for_tokens(code, redirect_uri)
         
         # Create temporary connection to get user info
         temp_connection = GoogleUserConnection(
             user_id=current_user.id,
             organization_id=current_user.organization_id,
-            org_config_id=org_config.id,
+            org_config_id=None,  # No org config in simplified approach
             google_user_id="temp",
             google_email="temp",
             access_token_encrypted=encrypt_access_token(token_data["access_token"]),
@@ -3811,8 +3638,8 @@ async def google_auth_callback(
             scopes_granted=token_data.get("scope", "").split() if token_data.get("scope") else []
         )
         
-        # Get user info from Google
-        async with GoogleService(temp_connection, org_config) as service:
+        # Get user info from Google (no org_config needed)
+        async with GoogleService(temp_connection) as service:
             user_info = await service.get_user_info()
         
         # Check if connection already exists
@@ -3840,7 +3667,7 @@ async def google_auth_callback(
             db_connection = GoogleUserConnection(
                 user_id=current_user.id,
                 organization_id=current_user.organization_id,
-                org_config_id=org_config.id,
+                org_config_id=None,  # No org config in simplified approach
                 google_user_id=user_info.get("id", ""),
                 google_email=user_info.get("email", ""),
                 google_display_name=user_info.get("name", ""),
@@ -3922,12 +3749,8 @@ async def sync_google_data(
     if not connection:
         raise HTTPException(status_code=400, detail="No active Google connection")
     
-    org_config = get_google_org_config(db, current_user.organization_id)
-    if not org_config:
-        raise HTTPException(status_code=400, detail="Google not configured")
-    
     try:
-        async with GoogleService(connection, org_config) as service:
+        async with GoogleService(connection) as service:
             synced_items = {}
             
             if sync_type in ["gmail", "all"] and connection.sync_gmail_enabled:

@@ -41,7 +41,7 @@ GOOGLE_SCOPES = [
 ]
 
 class GoogleService:
-    def __init__(self, user_connection: GoogleUserConnection, org_config: GoogleOrganizationConfig):
+    def __init__(self, user_connection: GoogleUserConnection, org_config: Optional[GoogleOrganizationConfig] = None):
         self.user_connection = user_connection
         self.org_config = org_config
         self.access_token = None
@@ -69,10 +69,16 @@ class GoogleService:
     async def refresh_access_token(self):
         """Refresh the access token using the refresh token"""
         refresh_token = decrypt_refresh_token(self.user_connection.refresh_token_encrypted)
-        client_secret = decrypt_client_secret(self.org_config.client_secret_encrypted)
+        
+        # Always use centralized OAuth credentials
+        client_id = GOOGLE_CLIENT_ID
+        client_secret = GOOGLE_CLIENT_SECRET
+        
+        if not client_id or not client_secret:
+            raise Exception("Google OAuth credentials not configured")
         
         data = {
-            "client_id": self.org_config.client_id,
+            "client_id": client_id,
             "client_secret": client_secret,
             "refresh_token": refresh_token,
             "grant_type": "refresh_token"
@@ -325,10 +331,13 @@ class GoogleService:
         return True
 
 # Utility functions for OAuth flow
-def get_google_auth_url(client_id: str, redirect_uri: str, state: str) -> str:
-    """Generate Google OAuth authorization URL"""
+def get_google_auth_url(redirect_uri: str, state: str) -> str:
+    """Generate Google OAuth authorization URL using centralized credentials"""
+    if not GOOGLE_CLIENT_ID:
+        raise Exception("Google OAuth client ID not configured")
+        
     params = {
-        "client_id": client_id,
+        "client_id": GOOGLE_CLIENT_ID,
         "redirect_uri": redirect_uri,
         "response_type": "code",
         "scope": " ".join(GOOGLE_SCOPES),
@@ -340,12 +349,15 @@ def get_google_auth_url(client_id: str, redirect_uri: str, state: str) -> str:
     from urllib.parse import urlencode
     return f"{GOOGLE_OAUTH_AUTHORIZE_URL}?{urlencode(params)}"
 
-async def exchange_code_for_tokens(code: str, client_id: str, client_secret: str, redirect_uri: str) -> Dict[str, Any]:
-    """Exchange authorization code for access and refresh tokens"""
+async def exchange_code_for_tokens(code: str, redirect_uri: str) -> Dict[str, Any]:
+    """Exchange authorization code for access and refresh tokens using centralized credentials"""
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        raise Exception("Google OAuth credentials not configured")
+        
     data = {
         "code": code,
-        "client_id": client_id,
-        "client_secret": client_secret,
+        "client_id": GOOGLE_CLIENT_ID,
+        "client_secret": GOOGLE_CLIENT_SECRET,
         "redirect_uri": redirect_uri,
         "grant_type": "authorization_code"
     }

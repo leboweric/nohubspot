@@ -133,15 +133,7 @@ export default function GoogleConnection() {
           <div className="border-t pt-4">
             <h4 className="text-sm font-medium mb-2">Sync Settings</h4>
             <p className="text-sm text-muted-foreground mb-4">
-              Email sync is {status.sync_enabled ? 'enabled' : 'disabled'}.{' '}
-              <a 
-                href="/docs/google-workspace-setup-guide.html" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
-              >
-                View setup guide
-              </a>
+              Email sync is {status.sync_enabled ? 'enabled' : 'disabled'}.
             </p>
             
             <EmailPrivacySettings />
@@ -150,15 +142,7 @@ export default function GoogleConnection() {
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Connect your Google Workspace account to sync emails automatically.{' '}
-            <a 
-              href="/docs/google-workspace-setup-guide.html" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
-              View setup guide
-            </a>
+            Connect your Google Workspace account to sync emails automatically.
           </p>
           
           <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
