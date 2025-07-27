@@ -7,6 +7,7 @@ import TaskList from "@/components/tasks/TaskList"
 import TaskCreate from "@/components/tasks/TaskCreate"
 import { TaskStats } from "@/components/tasks/types"
 import { taskAPI, Task, TaskCreate as TaskCreateType, handleAPIError } from "@/lib/api"
+import ModernSelect from "@/components/ui/ModernSelect"
 
 
 export default function TasksPage() {
@@ -251,31 +252,33 @@ export default function TasksPage() {
             className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
           />
           
-          <select
+          <ModernSelect
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+            onChange={(value) => setFilterStatus(value as string)}
             disabled={loading}
-            className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-          >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
+            options={[
+              { value: "all", label: "All Status" },
+              { value: "pending", label: "Pending" },
+              { value: "in_progress", label: "In Progress" },
+              { value: "completed", label: "Completed" },
+              { value: "cancelled", label: "Cancelled" }
+            ]}
+            placeholder="Filter by status"
+          />
 
-          <select
+          <ModernSelect
             value={filterPriority}
-            onChange={(e) => setFilterPriority(e.target.value)}
+            onChange={(value) => setFilterPriority(value as string)}
             disabled={loading}
-            className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-          >
-            <option value="all">All Priority</option>
-            <option value="urgent">Urgent</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
-          </select>
+            options={[
+              { value: "all", label: "All Priority" },
+              { value: "urgent", label: "Urgent" },
+              { value: "high", label: "High" },
+              { value: "medium", label: "Medium" },
+              { value: "low", label: "Low" }
+            ]}
+            placeholder="Filter by priority"
+          />
 
           <div className="text-sm text-muted-foreground flex items-center">
             Showing {filteredTasks.length} of {tasks.length} tasks

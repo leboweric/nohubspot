@@ -342,27 +342,27 @@ export default function ProjectModal({
                 Primary Contact
               </label>
               {formData.company_id ? (
-                <select
+                <ModernSelect
                   value={formData.contact_id || ''}
-                  onChange={(e) => setFormData(prev => ({ 
+                  onChange={(value) => setFormData(prev => ({ 
                     ...prev, 
-                    contact_id: e.target.value ? parseInt(e.target.value) : undefined 
+                    contact_id: value ? value as number : undefined 
                   }))}
                   disabled={loadingData || loadingContacts}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                >
-                  <option value="">
-                    {loadingContacts ? 'Loading contacts...' : 
-                     companyContacts.length === 0 ? 'No contacts for this company' : 
-                     'Select Contact'}
-                  </option>
-                  {companyContacts.map(contact => (
-                    <option key={contact.id} value={contact.id}>
-                      {contact.first_name} {contact.last_name}
-                      {contact.title && ` - ${contact.title}`}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { 
+                      value: '', 
+                      label: loadingContacts ? 'Loading contacts...' : 
+                             companyContacts.length === 0 ? 'No contacts for this company' : 
+                             'Select Contact'
+                    },
+                    ...companyContacts.map(contact => ({
+                      value: contact.id,
+                      label: `${contact.first_name} ${contact.last_name}${contact.title ? ` - ${contact.title}` : ''}`
+                    }))
+                  ]}
+                  placeholder="Select contact"
+                />
               ) : (
                 <div className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50 text-gray-500">
                   Please select a company first
@@ -451,35 +451,33 @@ export default function ProjectModal({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Project Type
               </label>
-              <select
+              <ModernSelect
                 value={formData.project_type}
-                onChange={(e) => setFormData(prev => ({ ...prev, project_type: e.target.value }))}
+                onChange={(value) => setFormData(prev => ({ ...prev, project_type: value as string }))}
                 disabled={loadingData}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-              >
-                <option value="">{loadingData ? 'Loading project types...' : 'Select Type'}</option>
-                {projectTypes.map(type => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: '', label: loadingData ? 'Loading project types...' : 'Select Type' },
+                  ...projectTypes.map(type => ({
+                    value: type,
+                    label: type
+                  }))
+                ]}
+                placeholder="Select type"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Project Stage
               </label>
-              <select
+              <ModernSelect
                 value={formData.stage_id}
-                onChange={(e) => setFormData(prev => ({ ...prev, stage_id: parseInt(e.target.value) }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {stages.map(stage => (
-                  <option key={stage.id} value={stage.id}>
-                    {stage.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => setFormData(prev => ({ ...prev, stage_id: value as number }))}
+                options={stages.map(stage => ({
+                  value: stage.id,
+                  label: stage.name
+                }))}
+                placeholder="Select stage"
+              />
             </div>
           </div>
 

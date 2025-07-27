@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Task } from "@/lib/api"
 import { getAuthState } from "@/lib/auth"
+import ModernSelect from "@/components/ui/ModernSelect"
 
 interface TaskCreateProps {
   isOpen: boolean
@@ -158,39 +159,37 @@ export default function TaskCreate({
               <label htmlFor="type" className="block text-sm font-medium mb-1">
                 Task Type
               </label>
-              <select
-                id="type"
-                name="type"
+              <ModernSelect
                 value={formData.type}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="call">Call</option>
-                <option value="email">Email</option>
-                <option value="meeting">Meeting</option>
-                <option value="follow_up">Follow Up</option>
-                <option value="demo">Demo</option>
-                <option value="proposal">Proposal</option>
-                <option value="other">Other</option>
-              </select>
+                onChange={(value) => setFormData(prev => ({ ...prev, type: value as 'call' | 'email' | 'meeting' | 'follow_up' | 'demo' | 'proposal' | 'other' }))}
+                options={[
+                  { value: "call", label: "Call" },
+                  { value: "email", label: "Email" },
+                  { value: "meeting", label: "Meeting" },
+                  { value: "follow_up", label: "Follow Up" },
+                  { value: "demo", label: "Demo" },
+                  { value: "proposal", label: "Proposal" },
+                  { value: "other", label: "Other" }
+                ]}
+                placeholder="Select task type"
+              />
             </div>
 
             <div>
               <label htmlFor="priority" className="block text-sm font-medium mb-1">
                 Priority
               </label>
-              <select
-                id="priority"
-                name="priority"
+              <ModernSelect
                 value={formData.priority}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
-              </select>
+                onChange={(value) => setFormData(prev => ({ ...prev, priority: value as 'low' | 'medium' | 'high' | 'urgent' }))}
+                options={[
+                  { value: "low", label: "Low" },
+                  { value: "medium", label: "Medium" },
+                  { value: "high", label: "High" },
+                  { value: "urgent", label: "Urgent" }
+                ]}
+                placeholder="Select priority"
+              />
             </div>
           </div>
 
