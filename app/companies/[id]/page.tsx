@@ -5,10 +5,11 @@ import { useRef, useState, useEffect } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import EventFormModal from "@/components/calendar/EventFormModal"
-import { companyAPI, Company, handleAPIError, CalendarEventCreate, calendarAPI } from "@/lib/api"
+import { companyAPI, Company, handleAPIError, CalendarEventCreate, calendarAPI, contactAPI, Contact } from "@/lib/api"
 
 export default function CompanyDetailPage({ params }: { params: { id: string } }) {
   const [company, setCompany] = useState<Company | null>(null)
+  const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -29,6 +30,22 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
 
     loadCompany()
   }, [params.id])
+
+  // Load contacts when company is loaded
+  useEffect(() => {
+    const loadContacts = async () => {
+      if (!company) return
+      
+      try {
+        const contactsData = await contactAPI.getAll({ company_id: company.id })
+        setContacts(contactsData)
+      } catch (err) {
+        console.error('Failed to load contacts:', err)
+      }
+    }
+
+    loadContacts()
+  }, [company])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [showScheduleEvent, setShowScheduleEvent] = useState(false)
@@ -232,6 +249,62 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
           <div className="bg-card border rounded-lg p-6">
             <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
             <p className="text-muted-foreground">No recent activity to display.</p>
+          </div>
+
+          <div className="bg-card border rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Contacts ({contacts.length})</h2>
+              <Link 
+                href={`/contacts/new?company=${encodeURIComponent(company.name)}`}
+                className="text-sm text-primary hover:underline"
+              >
+                Add Contact
+              </Link>
+            </div>
+            
+            {contacts.length > 0 ? (
+              <div className="space-y-3">
+                {contacts.map(contact => (
+                  <div key={contact.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors">
+                    <div className="flex-1">
+                      <Link 
+                        href={`/contacts/${contact.id}`}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        {contact.first_name} {contact.last_name}
+                      </Link>
+                      <div className="text-sm text-muted-foreground">
+                        {contact.title && <span>{contact.title} • </span>}
+                        <a href={`mailto:${contact.email}`} className="hover:underline">
+                          {contact.email}
+                        </a>
+                        {contact.phone && (
+                          <span> • <a href={`tel:${contact.phone}`} className="hover:underline">{contact.phone}</a></span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Link 
+                        href={`/contacts/${contact.id}/edit`}
+                        className="text-sm text-muted-foreground hover:text-foreground"
+                      >
+                        Edit
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-8">
+                No contacts yet. 
+                <Link 
+                  href={`/contacts/new?company=${encodeURIComponent(company.name)}`}
+                  className="text-primary hover:underline ml-1"
+                >
+                  Add the first contact
+                </Link>
+              </p>
+            )}
           </div>
         </div>
 
