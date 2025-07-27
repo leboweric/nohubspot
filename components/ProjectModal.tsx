@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react'
 import { ProjectStage, Project, ProjectCreate, companyAPI, contactAPI, Company, Contact, projectAPI, usersAPI, User } from '@/lib/api'
 import CompanyAutocomplete from '@/components/CompanyAutocomplete'
-import ContactAutocomplete from '@/components/ContactAutocomplete'
 
 interface ProjectModalProps {
   isOpen: boolean
@@ -42,6 +41,8 @@ export default function ProjectModal({
 
   const [projectTypes, setProjectTypes] = useState<string[]>([])
   const [users, setUsers] = useState<User[]>([])
+  const [companyContacts, setCompanyContacts] = useState<Contact[]>([])
+  const [loadingContacts, setLoadingContacts] = useState(false)
   const [loading, setLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(false)
   const [error, setError] = useState('')
@@ -80,6 +81,37 @@ export default function ProjectModal({
       setFormData(prev => ({ ...prev, stage_id: defaultStageId }))
     }
   }, [project, defaultStageId])
+
+  // Load contacts when company changes
+  useEffect(() => {
+    const loadCompanyContacts = async () => {
+      if (!formData.company_id) {
+        setCompanyContacts([])
+        return
+      }
+
+      try {
+        setLoadingContacts(true)
+        const contacts = await contactAPI.getAll({ 
+          company_id: formData.company_id,
+          limit: 100
+        })
+        setCompanyContacts(contacts)
+        
+        // If current contact is not in the new company's contacts, clear it
+        if (formData.contact_id && !contacts.find(c => c.id === formData.contact_id)) {
+          setFormData(prev => ({ ...prev, contact_id: undefined }))
+        }
+      } catch (err) {
+        console.error('Failed to load company contacts:', err)
+        setCompanyContacts([])
+      } finally {
+        setLoadingContacts(false)
+      }
+    }
+
+    loadCompanyContacts()
+  }, [formData.company_id])
 
   const loadFormData = async () => {
     try {
@@ -308,18 +340,33 @@ export default function ProjectModal({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Primary Contact
               </label>
-              <ContactAutocomplete
-                value={formData.contact_id}
-                onChange={(contactId, contactName) => {
-                  setFormData(prev => ({ 
+              {formData.company_id ? (
+                <select
+                  value={formData.contact_id || ''}
+                  onChange={(e) => setFormData(prev => ({ 
                     ...prev, 
-                    contact_id: contactId
-                  }))
-                }}
-                companyId={formData.company_id}
-                disabled={loadingData}
-                placeholder="Type to search contacts..."
-              />
+                    contact_id: e.target.value ? parseInt(e.target.value) : undefined 
+                  }))}
+                  disabled={loadingData || loadingContacts}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                  <option value="">
+                    {loadingContacts ? 'Loading contacts...' : 
+                     companyContacts.length === 0 ? 'No contacts for this company' : 
+                     'Select Contact'}
+                  </option>
+                  {companyContacts.map(contact => (
+                    <option key={contact.id} value={contact.id}>
+                      {contact.first_name} {contact.last_name}
+                      {contact.title && ` - ${contact.title}`}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-50 text-gray-500">
+                  Please select a company first
+                </div>
+              )}
             </div>
           </div>
 
