@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "NotHubSpot CRM",
+  title: "NHS CRM",
   description: "A simple CRM system for managing companies and contacts"
 }
 

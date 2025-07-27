@@ -34,8 +34,8 @@ export default function HomePage() {
       {/* Navigation */}
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="text-xl font-bold text-blue-600">
-            NotHubSpot
+          <div className="text-3xl font-bold text-blue-600">
+            NHS
           </div>
           <div className="flex items-center space-x-4">
             <Link
@@ -62,7 +62,7 @@ export default function HomePage() {
             <span className="text-blue-600"> works</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            NotHubSpot is a simple, powerful CRM designed for teams who want to focus on building relationships, not fighting with software.
+            NHS is a simple, powerful CRM designed for teams who want to focus on building relationships, not fighting with software.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -144,7 +144,7 @@ export default function HomePage() {
             Ready to get started?
           </h2>
           <p className="text-xl text-blue-100 mb-8">
-            Join thousands of teams already using NotHubSpot to build better relationships.
+            Join thousands of teams already using NHS to build better relationships.
           </p>
           <Link
             href="/auth/register"
@@ -159,7 +159,7 @@ export default function HomePage() {
       <footer className="bg-gray-900 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <div className="text-2xl font-bold text-white mb-4">NotHubSpot</div>
+            <div className="text-2xl font-bold text-white mb-4">NHS</div>
             <p className="text-gray-400">
               The CRM alternative that puts relationships first.
             </p>

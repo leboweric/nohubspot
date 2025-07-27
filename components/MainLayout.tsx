@@ -36,8 +36,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
-              <Link href="/dashboard" className="text-xl font-semibold text-blue-600">
-                <span className="font-bold">NHS</span>
+              <Link href="/dashboard" className="text-3xl font-bold text-blue-600 hover:text-blue-700 transition-colors">
+                <span className="tracking-tight">NHS</span>
               </Link>
               
               {isAuthenticated && (

@@ -90,7 +90,7 @@ export default function RegisterPage() {
             Create your organization
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Start your CRM journey with NotHubSpot
+            Start your CRM journey with NHS
           </p>
         </div>
         
