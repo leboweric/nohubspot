@@ -6,7 +6,7 @@ import MainLayout from "@/components/MainLayout"
 import EmailCompose, { EmailMessage } from "@/components/email/EmailCompose"
 import TasksCard from "@/components/dashboard/TasksCard"
 import { getAuthState } from "@/lib/auth"
-import { dashboardAPI, Activity, handleAPIError, o365IntegrationAPI, projectAPI, dealAPI } from "@/lib/api"
+import { dashboardAPI, Activity, handleAPIError, o365IntegrationAPI, projectAPI, dealAPI, companyAPI, contactAPI } from "@/lib/api"
 
 // Force dynamic rendering to prevent static generation issues with auth
 export const dynamic = 'force-dynamic'
@@ -16,6 +16,7 @@ export default function DashboardPage() {
   const [organizationName, setOrganizationName] = useState("")
   const [firstName, setFirstName] = useState("")
   const [recentActivity, setRecentActivity] = useState<Activity[]>([])
+  const [rawActivities, setRawActivities] = useState<Activity[]>([])
   const [activitiesLoading, setActivitiesLoading] = useState(true)
   const [o365Connected, setO365Connected] = useState(false)
   const [metrics, setMetrics] = useState({
@@ -29,6 +30,9 @@ export default function DashboardPage() {
   
   // Get auth state - will be null during SSR
   const { organization, user } = getAuthState()
+  
+  // Cache for entity names to avoid repeated lookups
+  const [entityCache, setEntityCache] = useState<Record<string, string>>({})
   
   useEffect(() => {
     if (organization) {
@@ -45,7 +49,8 @@ export default function DashboardPage() {
       try {
         setActivitiesLoading(true)
         const activities = await dashboardAPI.getActivities(5)
-        setRecentActivity(activities)
+        console.log('Recent activities:', activities)
+        setRawActivities(activities)
       } catch (err) {
         console.error('Failed to load activities:', err)
         // Keep loading state as false so UI shows empty state
@@ -109,6 +114,94 @@ export default function DashboardPage() {
     checkO365Status()
     loadMetrics()
   }, [])
+  
+  // Enhance activities when raw activities change
+  useEffect(() => {
+    const enhanceActivities = async () => {
+      if (rawActivities.length === 0) {
+        setRecentActivity([])
+        return
+      }
+      
+      const enhanced = await Promise.all(
+        rawActivities.map(async (activity) => {
+          try {
+            // Skip if no entity_id
+            if (!activity.entity_id || !activity.type) {
+              return activity
+            }
+            
+            const cacheKey = `${activity.type}-${activity.entity_id}`
+            
+            // Check cache first
+            if (entityCache[cacheKey]) {
+              const enhancedDesc = activity.description?.replace(/\b(project|deal|company|contact)\b/gi, `"${entityCache[cacheKey]}"`) || 
+                                 activity.title.replace(/\b(project|deal|company|contact)\b/gi, `"${entityCache[cacheKey]}"`)
+              return {
+                ...activity,
+                description: enhancedDesc
+              }
+            }
+            
+            let entityName = ''
+            
+            // Fetch entity based on type
+            if (activity.type.toLowerCase().includes('project')) {
+              try {
+                const project = await projectAPI.getProject(parseInt(activity.entity_id))
+                entityName = project.title
+              } catch (err) {
+                console.error('Failed to fetch project:', err)
+              }
+            } else if (activity.type.toLowerCase().includes('deal')) {
+              try {
+                const deal = await dealAPI.getDeal(parseInt(activity.entity_id))
+                entityName = deal.title
+              } catch (err) {
+                console.error('Failed to fetch deal:', err)
+              }
+            } else if (activity.type.toLowerCase().includes('company')) {
+              try {
+                const company = await companyAPI.get(parseInt(activity.entity_id))
+                entityName = company.name
+              } catch (err) {
+                console.error('Failed to fetch company:', err)
+              }
+            } else if (activity.type.toLowerCase().includes('contact')) {
+              try {
+                const contact = await contactAPI.get(parseInt(activity.entity_id))
+                entityName = `${contact.first_name} ${contact.last_name}`
+              } catch (err) {
+                console.error('Failed to fetch contact:', err)
+              }
+            }
+            
+            // Update cache
+            if (entityName) {
+              setEntityCache(prev => ({ ...prev, [cacheKey]: entityName }))
+              
+              // Return enhanced activity
+              const enhancedDesc = activity.description?.replace(/\b(project|deal|company|contact)\b/gi, `"${entityName}"`) || 
+                                 activity.title.replace(/\b(project|deal|company|contact)\b/gi, `"${entityName}"`)
+              return {
+                ...activity,
+                description: enhancedDesc
+              }
+            }
+            
+            return activity
+          } catch (err) {
+            console.error('Failed to enhance activity:', err)
+            return activity
+          }
+        })
+      )
+      
+      setRecentActivity(enhanced)
+    }
+    
+    enhanceActivities()
+  }, [rawActivities, entityCache])
 
   const handleEmailSent = (email: EmailMessage) => {
     setShowEmailCompose(false)
