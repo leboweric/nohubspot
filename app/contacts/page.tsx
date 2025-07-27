@@ -42,7 +42,11 @@ export default function ContactsPage() {
 
   const loadCompanies = async () => {
     try {
-      const companyData = await companyAPI.getAll({ limit: 100 })
+      const companyData = await companyAPI.getAll({ 
+        limit: 1000,  // Increased to get all companies
+        sort_by: 'name',
+        sort_order: 'asc'
+      })
       setCompanies(companyData)
     } catch (err) {
       console.error('Failed to load companies:', err)
