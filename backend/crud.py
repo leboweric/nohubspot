@@ -1432,3 +1432,28 @@ def delete_project_type(db: Session, project_type_id: int, organization_id: int)
         db.commit()
     
     return True
+
+def recalculate_all_contact_counts(db: Session, organization_id: int) -> dict:
+    """Recalculate contact counts for all companies in an organization"""
+    # Get all companies for the organization
+    companies = db.query(Company).filter(Company.organization_id == organization_id).all()
+    
+    updated_count = 0
+    for company in companies:
+        # Count actual contacts for this company
+        actual_count = db.query(Contact).filter(
+            Contact.company_id == company.id,
+            Contact.organization_id == organization_id
+        ).count()
+        
+        # Update if different
+        if company.contact_count != actual_count:
+            company.contact_count = actual_count
+            updated_count += 1
+    
+    db.commit()
+    
+    return {
+        "companies_checked": len(companies),
+        "companies_updated": updated_count
+    }

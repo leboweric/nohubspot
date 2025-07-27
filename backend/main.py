@@ -86,7 +86,8 @@ from crud import (
     create_deal, get_deals, get_deal, update_deal, delete_deal,
     create_project_stage, get_project_stages, get_project_stage, update_project_stage, delete_project_stage,
     create_project, get_projects, get_project, update_project, delete_project,
-    get_project_types, get_project_type, create_project_type, update_project_type, delete_project_type
+    get_project_types, get_project_type, create_project_type, update_project_type, delete_project_type,
+    recalculate_all_contact_counts
 )
 from auth_crud import (
     create_organization, get_organization_by_slug, get_organization_by_id,
@@ -3981,6 +3982,24 @@ async def delete_duplicates_endpoint(
         
         result = delete_duplicate_records(record_type, record_ids, current_user.organization_id)
         return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/admin/recalculate-contact-counts")
+async def recalculate_contact_counts_endpoint(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Recalculate contact counts for all companies in the organization.
+    This fixes any discrepancies in the contact_count field.
+    """
+    try:
+        result = recalculate_all_contact_counts(db, current_user.organization_id)
+        return {
+            "message": "Contact counts recalculated successfully",
+            "details": result
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
