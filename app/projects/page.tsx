@@ -273,6 +273,112 @@ These projects have stage IDs that don't match any of your organization's stages
     }
   }
 
+  const handleExportProjects = () => {
+    try {
+      // Create CSV headers
+      const headers = [
+        'Project Title',
+        'Stage',
+        'Status',
+        'Company',
+        'Primary Contact',
+        'Consultant',
+        'Project Type',
+        'Start Date',
+        'Projected End Date',
+        'Actual End Date',
+        'Hourly Rate',
+        'Projected Hours',
+        'Actual Hours',
+        'Projected Value',
+        'Description',
+        'Notes',
+        'Tags',
+        'Created Date',
+        'Last Updated'
+      ]
+      
+      // Filter active projects if selectedStage is set (for list view)
+      const projectsToExport = projects.filter(project => {
+        if (!project.is_active) return false
+        if (viewMode === 'list' && selectedStage !== null) {
+          return project.stage_id === selectedStage
+        }
+        return true
+      })
+      
+      // Create CSV rows
+      const rows = projectsToExport.map(project => {
+        const stage = stages.find(s => s.id === project.stage_id)
+        const projectedValue = calculateProjectValue(project)
+        
+        return [
+          project.title,
+          stage?.name || '',
+          project.is_active ? 'Active' : 'Inactive',
+          project.company_name || '',
+          project.contact_name || '',
+          project.assigned_team_member_names?.join(', ') || '',
+          project.project_type || '',
+          project.start_date ? formatDate(project.start_date) : '',
+          project.projected_end_date ? formatDate(project.projected_end_date) : '',
+          project.actual_end_date ? formatDate(project.actual_end_date) : '',
+          project.hourly_rate?.toString() || '',
+          project.projected_hours?.toString() || '',
+          project.actual_hours?.toString() || '0',
+          projectedValue ? formatCurrency(projectedValue) : '',
+          project.description || '',
+          project.notes || '',
+          project.tags?.join(', ') || '',
+          formatDate(project.created_at),
+          formatDate(project.updated_at)
+        ]
+      })
+      
+      // Combine headers and rows
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => 
+          row.map(cell => {
+            // Escape quotes and wrap in quotes if contains comma, newline, or quotes
+            const escaped = cell.replace(/"/g, '""')
+            return /[,"\n]/.test(cell) ? `"${escaped}"` : escaped
+          }).join(',')
+        )
+      ].join('\n')
+      
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      
+      link.setAttribute('href', url)
+      link.setAttribute('download', `projects_export_${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = 'hidden'
+      
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      // Clean up
+      URL.revokeObjectURL(url)
+      
+      // Show success message with context
+      const filterInfo = []
+      if (viewMode === 'list' && selectedStage !== null) {
+        const stage = stages.find(s => s.id === selectedStage)
+        if (stage) filterInfo.push(`in ${stage.name} stage`)
+      }
+      
+      const filterText = filterInfo.length > 0 ? ` (${filterInfo.join(', ')})` : ''
+      setSuccess(`Successfully exported ${projectsToExport.length} projects${filterText} to CSV!`)
+      setTimeout(() => setSuccess(""), 3000)
+    } catch (error) {
+      console.error('Failed to export projects:', error)
+      setError('Failed to export projects. Please try again.')
+    }
+  }
+
   if (loading) {
     return (
       <AuthGuard>
@@ -301,28 +407,39 @@ These projects have stage IDs that don't match any of your organization's stages
                 </p>
               </div>
               
-              {/* View Toggle */}
-              <div className="flex bg-gray-100 rounded-lg p-1">
+              <div className="flex items-center gap-4">
+                {/* Export Button */}
                 <button
-                  onClick={() => setViewMode('kanban')}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                    viewMode === 'kanban'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                  onClick={handleExportProjects}
+                  disabled={loading || projects.length === 0}
+                  className="px-4 py-2 border border-green-200 rounded-md hover:bg-green-50 hover:border-green-300 transition-all text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  📋 Board
+                  📥 Export to CSV
                 </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                    viewMode === 'list'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  📄 List
-                </button>
+                
+                {/* View Toggle */}
+                <div className="flex bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setViewMode('kanban')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      viewMode === 'kanban'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    📋 Board
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      viewMode === 'list'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    📄 List
+                  </button>
+                </div>
               </div>
             </div>
           </div>
