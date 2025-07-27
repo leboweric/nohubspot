@@ -308,9 +308,9 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">Company</dt>
                 <dd className="mt-1">
-                  {contact.company_id ? (
+                  {contact.company_id && contact.company_name ? (
                     <Link href={`/companies/${contact.company_id}`} className="text-primary hover:underline">
-                      {contact.company_name || 'View Company'}
+                      {contact.company_name}
                     </Link>
                   ) : contact.company_name ? (
                     <span className="text-foreground">{contact.company_name}</span>
