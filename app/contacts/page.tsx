@@ -5,6 +5,7 @@ import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import BulkUpload, { BulkUploadData, FieldMapping } from "@/components/upload/BulkUpload"
 import { contactAPI, Contact, ContactCreate, handleAPIError, companyAPI, Company } from "@/lib/api"
+import ModernSelect from "@/components/ui/ModernSelect"
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -299,33 +300,34 @@ export default function ContactsPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Status
             </label>
-            <select
+            <ModernSelect
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="all">All Statuses</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
+              onChange={(value) => setStatusFilter(value as string)}
+              options={[
+                { value: "all", label: "All Statuses" },
+                { value: "Active", label: "Active" },
+                { value: "Inactive", label: "Inactive" }
+              ]}
+              placeholder="Select status"
+            />
           </div>
           
           <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Company
             </label>
-            <select
+            <ModernSelect
               value={companyFilter}
-              onChange={(e) => setCompanyFilter(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="all">All Companies</option>
-              {companies.map(company => (
-                <option key={company.id} value={company.id.toString()}>
-                  {company.name}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setCompanyFilter(value as string)}
+              options={[
+                { value: "all", label: "All Companies" },
+                ...companies.map(company => ({
+                  value: company.id.toString(),
+                  label: company.name
+                }))
+              ]}
+              placeholder="Select company"
+            />
           </div>
         </div>
       </div>

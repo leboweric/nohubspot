@@ -5,6 +5,7 @@ import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import BulkUpload, { BulkUploadData, FieldMapping } from "@/components/upload/BulkUpload"
 import { companyAPI, Company, CompanyCreate, handleAPIError, usersAPI, User } from "@/lib/api"
+import ModernSelect from "@/components/ui/ModernSelect"
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([])
@@ -399,33 +400,34 @@ export default function CompaniesPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Status
             </label>
-            <select
+            <ModernSelect
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="all">All Statuses</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
+              onChange={(value) => setStatusFilter(value as string)}
+              options={[
+                { value: "all", label: "All Statuses" },
+                { value: "Active", label: "Active" },
+                { value: "Inactive", label: "Inactive" }
+              ]}
+              placeholder="Select status"
+            />
           </div>
           
           <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Account Owner
             </label>
-            <select
+            <ModernSelect
               value={accountOwnerFilter}
-              onChange={(e) => setAccountOwnerFilter(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="all">All Owners</option>
-              {users.map(user => (
-                <option key={user.id} value={user.id.toString()}>
-                  {user.first_name} {user.last_name}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setAccountOwnerFilter(value as string)}
+              options={[
+                { value: "all", label: "All Owners" },
+                ...users.map(user => ({
+                  value: user.id.toString(),
+                  label: `${user.first_name} ${user.last_name}`
+                }))
+              ]}
+              placeholder="Select owner"
+            />
           </div>
         </div>
       </div>

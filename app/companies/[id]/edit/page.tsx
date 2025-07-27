@@ -6,6 +6,7 @@ import Link from "next/link"
 import { INDUSTRIES } from "@/lib/constants"
 import { companyAPI, Company, handleAPIError, usersAPI } from "@/lib/api"
 import { User } from "@/lib/auth"
+import ModernSelect from "@/components/ui/ModernSelect"
 
 export default function EditCompanyPage({ params }: { params: { id: string } }) {
   const router = useRouter()
@@ -153,20 +154,18 @@ export default function EditCompanyPage({ params }: { params: { id: string } }) 
           <label htmlFor="industry" className="block text-sm font-medium mb-2">
             Industry
           </label>
-          <select
-            id="industry"
-            name="industry"
+          <ModernSelect
             value={formData.industry}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <option value="">Select an industry</option>
-            {INDUSTRIES.map((industry) => (
-              <option key={industry} value={industry}>
-                {industry}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => setFormData(prev => ({ ...prev, industry: value as string }))}
+            options={[
+              { value: "", label: "Select an industry" },
+              ...INDUSTRIES.map((industry) => ({
+                value: industry,
+                label: industry
+              }))
+            ]}
+            placeholder="Select industry"
+          />
         </div>
 
         <div>
@@ -298,37 +297,34 @@ export default function EditCompanyPage({ params }: { params: { id: string } }) 
           <label htmlFor="status" className="block text-sm font-medium mb-2">
             Status
           </label>
-          <select
-            id="status"
-            name="status"
+          <ModernSelect
             value={formData.status}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <option value="Lead">Lead</option>
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-          </select>
+            onChange={(value) => setFormData(prev => ({ ...prev, status: value as string }))}
+            options={[
+              { value: "Lead", label: "Lead" },
+              { value: "Active", label: "Active" },
+              { value: "Inactive", label: "Inactive" }
+            ]}
+            placeholder="Select status"
+          />
         </div>
 
         <div>
           <label htmlFor="primary_account_owner_id" className="block text-sm font-medium mb-2">
             Primary Account Owner
           </label>
-          <select
-            id="primary_account_owner_id"
-            name="primary_account_owner_id"
+          <ModernSelect
             value={formData.primary_account_owner_id}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <option value="">Select account owner</option>
-            {Array.isArray(users) && users.map((user) => (
-              <option key={user.id} value={user.id}>
-                {user.first_name} {user.last_name} ({user.email})
-              </option>
-            ))}
-          </select>
+            onChange={(value) => setFormData(prev => ({ ...prev, primary_account_owner_id: value as number }))}
+            options={[
+              { value: "", label: "Select account owner" },
+              ...users.map((user) => ({
+                value: user.id,
+                label: `${user.first_name} ${user.last_name} (${user.email})`
+              }))
+            ]}
+            placeholder="Select owner"
+          />
         </div>
 
         <div>

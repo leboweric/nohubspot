@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { PipelineStage, Deal, DealCreate, companyAPI, contactAPI, Company, Contact } from '@/lib/api'
+import ModernSelect from '@/components/ui/ModernSelect'
 
 interface DealModalProps {
   isOpen: boolean
@@ -269,16 +270,17 @@ export default function DealModal({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Currency
               </label>
-              <select
+              <ModernSelect
                 value={formData.currency}
-                onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="GBP">GBP</option>
-                <option value="CAD">CAD</option>
-              </select>
+                onChange={(value) => setFormData(prev => ({ ...prev, currency: value as string }))}
+                options={[
+                  { value: "USD", label: "USD" },
+                  { value: "EUR", label: "EUR" },
+                  { value: "GBP", label: "GBP" },
+                  { value: "CAD", label: "CAD" }
+                ]}
+                placeholder="Select currency"
+              />
             </div>
           </div>
 
@@ -288,17 +290,15 @@ export default function DealModal({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Pipeline Stage
               </label>
-              <select
+              <ModernSelect
                 value={formData.stage_id}
-                onChange={(e) => setFormData(prev => ({ ...prev, stage_id: parseInt(e.target.value) }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {stages.map(stage => (
-                  <option key={stage.id} value={stage.id}>
-                    {stage.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => setFormData(prev => ({ ...prev, stage_id: value as number }))}
+                options={stages.map(stage => ({
+                  value: stage.id,
+                  label: stage.name
+                }))}
+                placeholder="Select stage"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -324,47 +324,46 @@ export default function DealModal({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Company
               </label>
-              <select
+              <ModernSelect
                 value={formData.company_id || ''}
-                onChange={(e) => handleCompanyChange(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select company...</option>
-                {companies.map(company => (
-                  <option key={company.id} value={company.id}>
-                    {company.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => handleCompanyChange(value.toString())}
+                options={[
+                  { value: '', label: 'Select company...' },
+                  ...companies.map(company => ({
+                    value: company.id,
+                    label: company.name
+                  }))
+                ]}
+                placeholder="Select company"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Primary Contact
               </label>
-              <select
+              <ModernSelect
                 value={formData.contact_id || ''}
-                onChange={(e) => setFormData(prev => ({ 
+                onChange={(value) => setFormData(prev => ({ 
                   ...prev, 
-                  contact_id: e.target.value ? parseInt(e.target.value) : undefined 
+                  contact_id: value ? value as number : undefined 
                 }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                options={[
+                  { 
+                    value: '', 
+                    label: !formData.company_id 
+                      ? "Select company first..." 
+                      : getFilteredContacts().length === 0 
+                        ? "No contacts in this company" 
+                        : "Select contact..."
+                  },
+                  ...getFilteredContacts().map(contact => ({
+                    value: contact.id,
+                    label: `${contact.first_name} ${contact.last_name}${contact.title ? ` - ${contact.title}` : ''}`
+                  }))
+                ]}
+                placeholder="Select contact"
                 disabled={!formData.company_id && getFilteredContacts().length === 0}
-              >
-                <option value="">
-                  {!formData.company_id 
-                    ? "Select company first..." 
-                    : getFilteredContacts().length === 0 
-                      ? "No contacts in this company" 
-                      : "Select contact..."
-                  }
-                </option>
-                {getFilteredContacts().map(contact => (
-                  <option key={contact.id} value={contact.id}>
-                    {contact.first_name} {contact.last_name}
-                    {contact.title && ` - ${contact.title}`}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
           </div>
 

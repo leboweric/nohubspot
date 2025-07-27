@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { contactAPI, companyAPI, Contact, Company, handleAPIError } from "@/lib/api"
 import { normalizePhoneNumber } from "@/lib/phoneUtils"
+import ModernSelect from "@/components/ui/ModernSelect"
 
 export default function EditContactPage({ params }: { params: { id: string } }) {
   const router = useRouter()
@@ -221,21 +222,18 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
               Loading companies...
             </div>
           ) : (
-            <select
-              id="company_id"
-              name="company_id"
-              required
+            <ModernSelect
               value={formData.company_id}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="">Select a company</option>
-              {companies.map(company => (
-                <option key={company.id} value={company.id}>
-                  {company.name}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setFormData(prev => ({ ...prev, company_id: value as number }))}
+              options={[
+                { value: "", label: "Select a company" },
+                ...companies.map(company => ({
+                  value: company.id,
+                  label: company.name
+                }))
+              ]}
+              placeholder="Select company"
+            />
           )}
           {companies.length === 0 && !loadingCompanies && (
             <p className="text-sm text-gray-600 mt-1">
@@ -248,17 +246,16 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
           <label htmlFor="status" className="block text-sm font-medium mb-2">
             Status
           </label>
-          <select
-            id="status"
-            name="status"
+          <ModernSelect
             value={formData.status}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <option value="Lead">Lead</option>
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-          </select>
+            onChange={(value) => setFormData(prev => ({ ...prev, status: value as string }))}
+            options={[
+              { value: "Lead", label: "Lead" },
+              { value: "Active", label: "Active" },
+              { value: "Inactive", label: "Inactive" }
+            ]}
+            placeholder="Select status"
+          />
         </div>
 
         <div className="flex gap-4">
