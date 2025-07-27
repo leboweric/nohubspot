@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { ProjectStage, Project, ProjectCreate, companyAPI, contactAPI, Company, Contact, projectAPI, userAPI, User } from '@/lib/api'
+import { ProjectStage, Project, ProjectCreate, companyAPI, contactAPI, Company, Contact, projectAPI, usersAPI, User } from '@/lib/api'
 
 interface ProjectModalProps {
   isOpen: boolean
@@ -89,7 +89,7 @@ export default function ProjectModal({
         companyAPI.getAll({ limit: 100 }),
         contactAPI.getAll({ limit: 100 }),
         projectAPI.getProjectTypes(),
-        userAPI.getAll()
+        usersAPI.getAll()
       ])
       console.log('Companies loaded:', companiesData?.length || 0)
       console.log('Contacts loaded:', contactsData?.length || 0)
