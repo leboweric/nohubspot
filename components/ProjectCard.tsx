@@ -140,7 +140,7 @@ export default function ProjectCard({ project, isDragging = false, onEdit }: Pro
           <div className="flex items-center">
             <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2"></span>
             <span className="truncate">
-              Team: {project.assigned_team_member_names.slice(0, 2).join(', ')}
+              Consultant{project.assigned_team_member_names.length > 1 ? 's' : ''}: {project.assigned_team_member_names.slice(0, 2).join(', ')}
               {project.assigned_team_member_names.length > 2 && ` +${project.assigned_team_member_names.length - 2}`}
             </span>
           </div>

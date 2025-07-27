@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { ProjectStage, Project, ProjectCreate, companyAPI, contactAPI, Company, Contact, projectAPI } from '@/lib/api'
+import { ProjectStage, Project, ProjectCreate, companyAPI, contactAPI, Company, Contact, projectAPI, userAPI, User } from '@/lib/api'
 
 interface ProjectModalProps {
   isOpen: boolean
@@ -41,6 +41,7 @@ export default function ProjectModal({
   const [companies, setCompanies] = useState<Company[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [projectTypes, setProjectTypes] = useState<string[]>([])
+  const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(false)
   const [error, setError] = useState('')
@@ -84,18 +85,21 @@ export default function ProjectModal({
     try {
       setLoadingData(true)
       console.log('Loading form data...')
-      const [companiesData, contactsData, projectTypesData] = await Promise.all([
+      const [companiesData, contactsData, projectTypesData, usersData] = await Promise.all([
         companyAPI.getAll({ limit: 100 }),
         contactAPI.getAll({ limit: 100 }),
-        projectAPI.getProjectTypes()
+        projectAPI.getProjectTypes(),
+        userAPI.getAll()
       ])
       console.log('Companies loaded:', companiesData?.length || 0)
       console.log('Contacts loaded:', contactsData?.length || 0)
       console.log('Project types loaded:', projectTypesData?.length || 0)
+      console.log('Users loaded:', usersData?.length || 0)
       
       setCompanies(companiesData || [])
       setContacts(contactsData || [])
       setProjectTypes(projectTypesData || [])
+      setUsers(usersData || [])
     } catch (err) {
       console.error('Failed to load form data:', err)
       setError('Failed to load dropdown data. Please try again.')
@@ -439,6 +443,53 @@ export default function ProjectModal({
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* Consultants */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Consultant(s)
+            </label>
+            <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-300 rounded-md p-3">
+              {loadingData ? (
+                <p className="text-gray-500 text-sm">Loading consultants...</p>
+              ) : users.length === 0 ? (
+                <p className="text-gray-500 text-sm">No consultants available</p>
+              ) : (
+                users.map(user => (
+                  <label key={user.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                    <input
+                      type="checkbox"
+                      checked={formData.assigned_team_members?.includes(user.id) || false}
+                      onChange={(e) => {
+                        const currentMembers = formData.assigned_team_members || []
+                        if (e.target.checked) {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            assigned_team_members: [...currentMembers, user.id]
+                          }))
+                        } else {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            assigned_team_members: currentMembers.filter(id => id !== user.id)
+                          }))
+                        }
+                      }}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">
+                      {user.first_name} {user.last_name} 
+                      {user.role === 'admin' && <span className="text-xs text-gray-500 ml-1">(Admin)</span>}
+                    </span>
+                  </label>
+                ))
+              )}
+            </div>
+            {formData.assigned_team_members && formData.assigned_team_members.length > 0 && (
+              <p className="text-xs text-gray-500 mt-1">
+                {formData.assigned_team_members.length} consultant{formData.assigned_team_members.length > 1 ? 's' : ''} selected
+              </p>
+            )}
           </div>
 
           {/* Notes */}
