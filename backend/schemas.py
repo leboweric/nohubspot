@@ -283,7 +283,7 @@ class UserResponse(UserBase):
     id: int
     organization_id: int
     is_active: bool
-    email_verified: bool
+    email_verified: Optional[bool] = False
     last_login: Optional[datetime] = None
     created_at: datetime
     

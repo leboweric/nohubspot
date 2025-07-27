@@ -85,21 +85,50 @@ export default function ProjectModal({
     try {
       setLoadingData(true)
       console.log('Loading form data...')
-      const [companiesData, contactsData, projectTypesData, usersData] = await Promise.all([
-        companyAPI.getAll({ limit: 100 }),
-        contactAPI.getAll({ limit: 100 }),
-        projectAPI.getProjectTypes(),
-        usersAPI.getAll()
-      ])
-      console.log('Companies loaded:', companiesData?.length || 0)
-      console.log('Contacts loaded:', contactsData?.length || 0)
-      console.log('Project types loaded:', projectTypesData?.length || 0)
-      console.log('Users loaded:', usersData?.length || 0)
+      
+      // Load each resource separately to better handle errors
+      let companiesData: Company[] = []
+      let contactsData: Contact[] = []
+      let projectTypesData: string[] = []
+      let usersData: User[] = []
+      
+      try {
+        companiesData = await companyAPI.getAll({ limit: 100 })
+        console.log('Companies loaded:', companiesData?.length || 0)
+      } catch (err) {
+        console.error('Failed to load companies:', err)
+      }
+      
+      try {
+        contactsData = await contactAPI.getAll({ limit: 100 })
+        console.log('Contacts loaded:', contactsData?.length || 0)
+      } catch (err) {
+        console.error('Failed to load contacts:', err)
+      }
+      
+      try {
+        projectTypesData = await projectAPI.getProjectTypes()
+        console.log('Project types loaded:', projectTypesData?.length || 0)
+      } catch (err) {
+        console.error('Failed to load project types:', err)
+      }
+      
+      try {
+        usersData = await usersAPI.getAll()
+        console.log('Users loaded:', usersData?.length || 0)
+      } catch (err) {
+        console.error('Failed to load users:', err)
+      }
       
       setCompanies(companiesData || [])
       setContacts(contactsData || [])
       setProjectTypes(projectTypesData || [])
       setUsers(usersData || [])
+      
+      // Clear error if at least some data loaded
+      if (companiesData.length > 0 || contactsData.length > 0 || projectTypesData.length > 0 || usersData.length > 0) {
+        setError('')
+      }
     } catch (err) {
       console.error('Failed to load form data:', err)
       setError('Failed to load dropdown data. Please try again.')
@@ -302,7 +331,7 @@ export default function ProjectModal({
                 disabled={loadingData}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               >
-                <option value="">{loadingData ? 'Loading companies...' : 'Select Company'}</option>
+                <option value="">{loadingData ? 'Loading companies...' : companies.length === 0 ? 'No companies available' : 'Select Company'}</option>
                 {companies.map(company => (
                   <option key={company.id} value={company.id}>
                     {company.name}
