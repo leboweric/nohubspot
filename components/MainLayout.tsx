@@ -2,7 +2,9 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
 import { getAuthState, logout, isAdmin } from "@/lib/auth"
+import { o365IntegrationAPI } from "@/lib/api"
 import FloatingSupportButton from "./FloatingSupportButton"
 
 interface MainLayoutProps {
@@ -13,10 +15,28 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { user, organization, isAuthenticated } = getAuthState()
+  const [o365Connected, setO365Connected] = useState(false)
 
   const handleLogout = () => {
     logout()
   }
+
+  // Check O365 connection status
+  useEffect(() => {
+    const checkO365Status = async () => {
+      try {
+        const status = await o365IntegrationAPI.getStatus()
+        setO365Connected(status.connected)
+      } catch (err) {
+        console.error('Failed to check O365 status:', err)
+        setO365Connected(false)
+      }
+    }
+
+    if (isAuthenticated) {
+      checkO365Status()
+    }
+  }, [isAuthenticated])
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard" },
@@ -26,7 +46,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     { name: "Tasks", href: "/tasks" },
     { name: "Pipeline", href: "/pipeline" },
     { name: "Projects", href: "/projects" },
-    { name: "Templates", href: "/templates" },
+    ...(o365Connected ? [{ name: "Templates", href: "/templates" }] : []),
     { name: "Settings", href: "/settings" },
   ]
 
