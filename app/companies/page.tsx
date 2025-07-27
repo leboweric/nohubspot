@@ -22,7 +22,7 @@ export default function CompaniesPage() {
       
       const data = await companyAPI.getAll({ 
         search: searchTerm || undefined,
-        limit: 1000, // Get all companies for now
+        limit: 100, // Reduced for better performance
         sort_by: 'name',
         sort_order: 'asc'
       })

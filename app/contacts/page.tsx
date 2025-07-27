@@ -20,7 +20,7 @@ export default function ContactsPage() {
       setError(null)
       const data = await contactAPI.getAll({ 
         search: searchTerm || undefined,
-        limit: 1000 // Get all contacts for now
+        limit: 100 // Reduced for better performance
       })
       setContacts(data)
     } catch (err) {
