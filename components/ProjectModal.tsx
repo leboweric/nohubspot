@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react'
 import { ProjectStage, Project, ProjectCreate, companyAPI, contactAPI, Company, Contact, projectAPI, usersAPI, User } from '@/lib/api'
+import CompanyAutocomplete from '@/components/CompanyAutocomplete'
+import ContactAutocomplete from '@/components/ContactAutocomplete'
 
 interface ProjectModalProps {
   isOpen: boolean
@@ -38,8 +40,6 @@ export default function ProjectModal({
     tags: []
   })
 
-  const [companies, setCompanies] = useState<Company[]>([])
-  const [contacts, setContacts] = useState<Contact[]>([])
   const [projectTypes, setProjectTypes] = useState<string[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
@@ -87,24 +87,8 @@ export default function ProjectModal({
       console.log('Loading form data...')
       
       // Load each resource separately to better handle errors
-      let companiesData: Company[] = []
-      let contactsData: Contact[] = []
       let projectTypesData: string[] = []
       let usersData: User[] = []
-      
-      try {
-        companiesData = await companyAPI.getAll({ limit: 100 })
-        console.log('Companies loaded:', companiesData?.length || 0)
-      } catch (err) {
-        console.error('Failed to load companies:', err)
-      }
-      
-      try {
-        contactsData = await contactAPI.getAll({ limit: 100 })
-        console.log('Contacts loaded:', contactsData?.length || 0)
-      } catch (err) {
-        console.error('Failed to load contacts:', err)
-      }
       
       try {
         projectTypesData = await projectAPI.getProjectTypes()
@@ -120,13 +104,11 @@ export default function ProjectModal({
         console.error('Failed to load users:', err)
       }
       
-      setCompanies(companiesData || [])
-      setContacts(contactsData || [])
       setProjectTypes(projectTypesData || [])
       setUsers(usersData || [])
       
       // Clear error if at least some data loaded
-      if (companiesData.length > 0 || contactsData.length > 0 || projectTypesData.length > 0 || usersData.length > 0) {
+      if (projectTypesData.length > 0 || usersData.length > 0) {
         setError('')
       }
     } catch (err) {
@@ -137,14 +119,6 @@ export default function ProjectModal({
     }
   }
 
-  // Filter contacts based on selected company
-  const getFilteredContacts = () => {
-    if (!formData.company_id) {
-      return contacts // Show all contacts if no company selected
-    }
-    return contacts.filter(contact => contact.company_id === formData.company_id)
-  }
-
   // Handle company change and reset contact if needed
   const handleCompanyChange = (companyId: string) => {
     const newCompanyId = companyId ? parseInt(companyId) : undefined
@@ -152,13 +126,9 @@ export default function ProjectModal({
     setFormData(prev => {
       const updatedFormData = { ...prev, company_id: newCompanyId }
       
-      // If changing company, check if current contact is still valid
-      if (prev.contact_id && newCompanyId) {
-        const currentContact = contacts.find(c => c.id === prev.contact_id)
-        if (currentContact && currentContact.company_id !== newCompanyId) {
-          // Reset contact if it doesn't belong to the new company
-          updatedFormData.contact_id = undefined
-        }
+      // Reset contact when company changes
+      if (prev.company_id !== newCompanyId) {
+        updatedFormData.contact_id = undefined
       }
       
       return updatedFormData
@@ -325,40 +295,31 @@ export default function ProjectModal({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Company
               </label>
-              <select
-                value={formData.company_id || ''}
-                onChange={(e) => handleCompanyChange(e.target.value)}
+              <CompanyAutocomplete
+                value={formData.company_id}
+                onChange={(companyId, companyName) => {
+                  handleCompanyChange(companyId?.toString() || '')
+                }}
                 disabled={loadingData}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-              >
-                <option value="">{loadingData ? 'Loading companies...' : companies.length === 0 ? 'No companies available' : 'Select Company'}</option>
-                {companies.map(company => (
-                  <option key={company.id} value={company.id}>
-                    {company.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="Type to search companies..."
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Primary Contact
               </label>
-              <select
-                value={formData.contact_id || ''}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  contact_id: e.target.value ? parseInt(e.target.value) : undefined 
-                }))}
+              <ContactAutocomplete
+                value={formData.contact_id}
+                onChange={(contactId, contactName) => {
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    contact_id: contactId
+                  }))
+                }}
+                companyId={formData.company_id}
                 disabled={loadingData}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-              >
-                <option value="">{loadingData ? 'Loading contacts...' : 'Select Contact'}</option>
-                {getFilteredContacts().map(contact => (
-                  <option key={contact.id} value={contact.id}>
-                    {contact.first_name} {contact.last_name}
-                  </option>
-                ))}
-              </select>
+                placeholder="Type to search contacts..."
+              />
             </div>
           </div>
 
