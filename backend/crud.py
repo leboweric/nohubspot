@@ -1457,3 +1457,36 @@ def recalculate_all_contact_counts(db: Session, organization_id: int) -> dict:
         "companies_checked": len(companies),
         "companies_updated": updated_count
     }
+
+def sync_contact_company_names(db: Session, organization_id: int) -> dict:
+    """Sync company_name field for all contacts in an organization"""
+    # Update contacts with company_id but missing or wrong company_name
+    result = db.execute(text("""
+        UPDATE contacts con
+        SET company_name = c.name
+        FROM companies c
+        WHERE con.company_id = c.id
+          AND con.organization_id = :org_id
+          AND c.organization_id = :org_id
+          AND (con.company_name IS NULL OR con.company_name != c.name)
+    """), {"org_id": organization_id})
+    
+    contacts_updated = result.rowcount
+    
+    # Clear company_name for contacts with no company_id
+    result = db.execute(text("""
+        UPDATE contacts
+        SET company_name = NULL
+        WHERE company_id IS NULL
+          AND company_name IS NOT NULL
+          AND organization_id = :org_id
+    """), {"org_id": organization_id})
+    
+    orphans_cleared = result.rowcount
+    
+    db.commit()
+    
+    return {
+        "contacts_updated": contacts_updated,
+        "orphans_cleared": orphans_cleared
+    }

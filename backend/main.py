@@ -87,7 +87,7 @@ from crud import (
     create_project_stage, get_project_stages, get_project_stage, update_project_stage, delete_project_stage,
     create_project, get_projects, get_project, update_project, delete_project,
     get_project_types, get_project_type, create_project_type, update_project_type, delete_project_type,
-    recalculate_all_contact_counts
+    recalculate_all_contact_counts, sync_contact_company_names
 )
 from auth_crud import (
     create_organization, get_organization_by_slug, get_organization_by_id,
@@ -3998,6 +3998,24 @@ async def recalculate_contact_counts_endpoint(
         result = recalculate_all_contact_counts(db, current_user.organization_id)
         return {
             "message": "Contact counts recalculated successfully",
+            "details": result
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/admin/sync-contact-company-names")
+async def sync_contact_company_names_endpoint(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Sync company names for all contacts in the organization.
+    This fixes any discrepancies in the denormalized company_name field.
+    """
+    try:
+        result = sync_contact_company_names(db, current_user.organization_id)
+        return {
+            "message": "Contact company names synced successfully",
             "details": result
         }
     except Exception as e:
