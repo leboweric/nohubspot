@@ -78,8 +78,8 @@ export default function DealModal({
   const loadFormData = async () => {
     try {
       const [companiesData, contactsData] = await Promise.all([
-        companyAPI.getAll({ limit: 100 }),
-        contactAPI.getAll({ limit: 100 })
+        companyAPI.getAll({ limit: 1000 }), // Increased to get all companies
+        contactAPI.getAll({ limit: 1000 })   // Increased to get more contacts
       ])
       setCompanies(companiesData)
       setContacts(contactsData)
