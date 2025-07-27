@@ -129,11 +129,11 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
 
   // Load email threads and activity stats when contact is loaded
   useEffect(() => {
-    if (contact) {
+    if (contact && o365Connected) {
       loadEmailThreads()
       loadActivityStats()
     }
-  }, [contact])
+  }, [contact, o365Connected])
   const [showNoteModal, setShowNoteModal] = useState(false)
   const [newNote, setNewNote] = useState("")
   const [showEmailCompose, setShowEmailCompose] = useState(false)
@@ -347,16 +347,17 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
             <p className="text-sm">{contact.notes}</p>
           </div>
 
-          <div className="bg-card border rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Communication History</h2>
-              <button
-                onClick={() => setShowEmailThread(true)}
-                className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-              >
-                View Thread
-              </button>
-            </div>
+          {o365Connected && (
+            <div className="bg-card border rounded-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Communication History</h2>
+                <button
+                  onClick={() => setShowEmailThread(true)}
+                  className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                >
+                  View Thread
+                </button>
+              </div>
             
             {emailsLoading ? (
               <div className="space-y-3">
@@ -410,12 +411,13 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                 <p className="text-sm text-muted-foreground mt-1">Start a conversation by sending an email</p>
               </div>
             )}
-          </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-6">
           {/* Email Engagement Tracking */}
-          <EmailTrackingStatus contactId={contact.id} />
+          {o365Connected && <EmailTrackingStatus contactId={contact.id} />}
           
           <div className="bg-card border rounded-lg p-6">
             <h2 className="text-lg font-semibold mb-4">Actions</h2>
@@ -446,10 +448,12 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
           <div className="bg-card border rounded-lg p-6">
             <h2 className="text-lg font-semibold mb-4">Activity Summary</h2>
             <dl className="space-y-3">
-              <div className="flex justify-between">
-                <dt className="text-sm text-muted-foreground">Emails Sent</dt>
-                <dd className="text-sm font-medium">{activityStats.emailsSent}</dd>
-              </div>
+              {o365Connected && (
+                <div className="flex justify-between">
+                  <dt className="text-sm text-muted-foreground">Emails Sent</dt>
+                  <dd className="text-sm font-medium">{activityStats.emailsSent}</dd>
+                </div>
+              )}
               <div className="flex justify-between">
                 <dt className="text-sm text-muted-foreground">Calls Made</dt>
                 <dd className="text-sm font-medium">{activityStats.callsMade}</dd>
@@ -464,21 +468,23 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
       </div>
 
       {/* Email Compose Modal */}
-      <EmailCompose
-        isOpen={showEmailCompose}
-        onClose={() => setShowEmailCompose(false)}
-        recipientEmail={contact?.email || ""}
-        recipientName={`${contact?.first_name} ${contact?.last_name}` || ""}
-        onSend={handleEmailSent}
-        senderName={user?.first_name && user?.last_name 
-          ? `${user?.first_name} ${user?.last_name}`
-          : user?.email?.split('@')[0] || "Sales Rep"
-        }
-        senderEmail={user?.email || "sales@company.com"}
-      />
+      {o365Connected && (
+        <EmailCompose
+          isOpen={showEmailCompose}
+          onClose={() => setShowEmailCompose(false)}
+          recipientEmail={contact?.email || ""}
+          recipientName={`${contact?.first_name} ${contact?.last_name}` || ""}
+          onSend={handleEmailSent}
+          senderName={user?.first_name && user?.last_name 
+            ? `${user?.first_name} ${user?.last_name}`
+            : user?.email?.split('@')[0] || "Sales Rep"
+          }
+          senderEmail={user?.email || "sales@company.com"}
+        />
+      )}
 
       {/* Email Thread Modal */}
-      {showEmailThread && (
+      {o365Connected && showEmailThread && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-card border rounded-lg w-full max-w-4xl mx-4 h-[80vh] flex flex-col">
             <div className="flex items-center justify-between p-4 border-b">
