@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import BulkUpload, { BulkUploadData, FieldMapping } from "@/components/upload/BulkUpload"
-import { companyAPI, Company, CompanyCreate, handleAPIError } from "@/lib/api"
+import { companyAPI, Company, CompanyCreate, handleAPIError, usersAPI, User } from "@/lib/api"
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([])
@@ -12,6 +12,9 @@ export default function CompaniesPage() {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [showBulkUpload, setShowBulkUpload] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [accountOwnerFilter, setAccountOwnerFilter] = useState<string>("all")
+  const [users, setUsers] = useState<User[]>([])
 
   // Load companies from API
   const loadCompanies = useCallback(async () => {
@@ -47,10 +50,20 @@ export default function CompaniesPage() {
     }
   }, [searchTerm])
 
-  // Load companies on mount
+  // Load companies and users on mount
   useEffect(() => {
     loadCompanies()
+    loadUsers()
   }, []) // Only run on mount
+
+  const loadUsers = async () => {
+    try {
+      const userData = await usersAPI.getAll()
+      setUsers(userData)
+    } catch (err) {
+      console.error('Failed to load users:', err)
+    }
+  }
 
   // Debounced search
   useEffect(() => {
@@ -81,8 +94,23 @@ export default function CompaniesPage() {
     return () => window.removeEventListener('focus', handleFocus)
   }, [loadCompanies])
 
-  // Since we're using API search, no need for client-side filtering
-  const filteredCompanies = companies
+  // Apply client-side filters on top of server-side search
+  const filteredCompanies = companies.filter(company => {
+    // Status filter
+    if (statusFilter !== "all" && company.status !== statusFilter) {
+      return false
+    }
+    
+    // Account owner filter
+    if (accountOwnerFilter !== "all") {
+      const ownerId = parseInt(accountOwnerFilter)
+      if (company.primary_account_owner_id !== ownerId) {
+        return false
+      }
+    }
+    
+    return true
+  })
 
   const handleDelete = async (companyId: number, companyName: string) => {
     const confirmed = confirm(`Are you sure you want to delete ${companyName}? This action cannot be undone.`)
@@ -306,7 +334,16 @@ export default function CompaniesPage() {
       // Clean up
       URL.revokeObjectURL(url)
       
-      alert(`Successfully exported ${filteredCompanies.length} companies to CSV!`)
+      const filterInfo = []
+      if (searchTerm) filterInfo.push(`matching "${searchTerm}"`)
+      if (statusFilter !== "all") filterInfo.push(`with status: ${statusFilter}`)
+      if (accountOwnerFilter !== "all") {
+        const owner = users.find(u => u.id.toString() === accountOwnerFilter)
+        if (owner) filterInfo.push(`owned by ${owner.first_name} ${owner.last_name}`)
+      }
+      
+      const filterText = filterInfo.length > 0 ? ` (${filterInfo.join(', ')})` : ''
+      alert(`Successfully exported ${filteredCompanies.length} companies${filterText} to CSV!`)
     } catch (error) {
       console.error('Failed to export companies:', error)
       alert('Failed to export companies. Please try again.')
@@ -342,7 +379,7 @@ export default function CompaniesPage() {
         </div>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 space-y-4">
         <input
           type="text"
           placeholder="Search companies..."
@@ -356,6 +393,41 @@ export default function CompaniesPage() {
           disabled={loading}
           className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
         />
+        
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Status
+            </label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="all">All Statuses</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+          
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Account Owner
+            </label>
+            <select
+              value={accountOwnerFilter}
+              onChange={(e) => setAccountOwnerFilter(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="all">All Owners</option>
+              {users.map(user => (
+                <option key={user.id} value={user.id.toString()}>
+                  {user.first_name} {user.last_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
       {error && (
