@@ -244,10 +244,19 @@ def get_contacts(
     return query.order_by(Contact.first_name.asc()).offset(skip).limit(limit).all()
 
 def get_contact(db: Session, contact_id: int, organization_id: int) -> Optional[Contact]:
-    return db.query(Contact).filter(
+    contact = db.query(Contact).options(
+        joinedload(Contact.company_rel)
+    ).filter(
         Contact.id == contact_id,
         Contact.organization_id == organization_id
     ).first()
+    
+    # If company_rel is loaded but company_name is empty, sync it
+    if contact and contact.company_rel and not contact.company_name:
+        contact.company_name = contact.company_rel.name
+        db.commit()
+    
+    return contact
 
 def update_contact(db: Session, contact_id: int, contact_update: ContactUpdate, organization_id: int) -> Optional[Contact]:
     db_contact = get_contact(db, contact_id, organization_id)
