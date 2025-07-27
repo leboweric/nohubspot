@@ -7,7 +7,7 @@ import EmailCompose, { EmailMessage } from "@/components/email/EmailCompose"
 import DailySummaryCard from "@/components/dashboard/DailySummaryCard"
 import TasksCard from "@/components/dashboard/TasksCard"
 import { getAuthState } from "@/lib/auth"
-import { dashboardAPI, Activity, handleAPIError, o365IntegrationAPI } from "@/lib/api"
+import { dashboardAPI, Activity, handleAPIError, o365IntegrationAPI, projectAPI, dealAPI } from "@/lib/api"
 
 // Force dynamic rendering to prevent static generation issues with auth
 export const dynamic = 'force-dynamic'
@@ -19,6 +19,14 @@ export default function DashboardPage() {
   const [recentActivity, setRecentActivity] = useState<Activity[]>([])
   const [activitiesLoading, setActivitiesLoading] = useState(true)
   const [o365Connected, setO365Connected] = useState(false)
+  const [metrics, setMetrics] = useState({
+    activeProjects: 0,
+    totalProjectValue: 0,
+    projectedHours: 0,
+    activeDeals: 0,
+    totalPipelineValue: 0
+  })
+  const [metricsLoading, setMetricsLoading] = useState(true)
   
   // Get auth state - will be null during SSR
   const { organization, user } = getAuthState()
@@ -58,8 +66,49 @@ export default function DashboardPage() {
       }
     }
 
+    const loadMetrics = async () => {
+      try {
+        setMetricsLoading(true)
+        
+        // Load projects and deals in parallel
+        const [projects, deals] = await Promise.all([
+          projectAPI.getProjects({ limit: 1000 }),
+          dealAPI.getDeals({ limit: 1000 })
+        ])
+        
+        // Calculate project metrics
+        const activeProjects = projects.filter(p => p.is_active)
+        const totalProjectValue = activeProjects.reduce((sum, project) => {
+          const value = (project.hourly_rate || 0) * (project.projected_hours || 0)
+          return sum + value
+        }, 0)
+        const projectedHours = activeProjects.reduce((sum, project) => {
+          return sum + (project.projected_hours || 0)
+        }, 0)
+        
+        // Calculate deal metrics
+        const activeDeals = deals.filter(d => d.is_active)
+        const totalPipelineValue = activeDeals.reduce((sum, deal) => {
+          return sum + deal.value
+        }, 0)
+        
+        setMetrics({
+          activeProjects: activeProjects.length,
+          totalProjectValue,
+          projectedHours,
+          activeDeals: activeDeals.length,
+          totalPipelineValue
+        })
+      } catch (err) {
+        console.error('Failed to load metrics:', err)
+      } finally {
+        setMetricsLoading(false)
+      }
+    }
+
     loadActivities()
     checkO365Status()
+    loadMetrics()
   }, [])
 
   const handleEmailSent = (email: EmailMessage) => {
@@ -81,6 +130,16 @@ export default function DashboardPage() {
     return date.toLocaleDateString()
   }
 
+  // Helper function to format currency
+  const formatCurrency = (value: number) => {
+    if (value >= 1000000) {
+      return `$${(value / 1000000).toFixed(1)}M`
+    } else if (value >= 1000) {
+      return `$${(value / 1000).toFixed(0)}K`
+    }
+    return `$${value.toLocaleString()}`
+  }
+
   return (
     <AuthGuard>
       <MainLayout>
@@ -95,6 +154,102 @@ export default function DashboardPage() {
         <DailySummaryCard />
       </div>
 
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        {/* Active Projects */}
+        <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Active Projects</p>
+              <p className="text-2xl font-bold mt-1">
+                {metricsLoading ? (
+                  <span className="animate-pulse bg-gray-200 h-8 w-16 block rounded"></span>
+                ) : (
+                  metrics.activeProjects
+                )}
+              </p>
+            </div>
+            <div className="text-3xl">📋</div>
+          </div>
+          <a href="/projects" className="text-xs text-primary hover:underline mt-2 block">
+            View all projects →
+          </a>
+        </div>
+
+        {/* Total Project Value */}
+        <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Project Value</p>
+              <p className="text-2xl font-bold mt-1 text-green-600">
+                {metricsLoading ? (
+                  <span className="animate-pulse bg-gray-200 h-8 w-24 block rounded"></span>
+                ) : (
+                  formatCurrency(metrics.totalProjectValue)
+                )}
+              </p>
+            </div>
+            <div className="text-3xl">💰</div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">Total projected revenue</p>
+        </div>
+
+        {/* Projected Hours */}
+        <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Projected Hours</p>
+              <p className="text-2xl font-bold mt-1 text-blue-600">
+                {metricsLoading ? (
+                  <span className="animate-pulse bg-gray-200 h-8 w-16 block rounded"></span>
+                ) : (
+                  metrics.projectedHours.toLocaleString()
+                )}
+              </p>
+            </div>
+            <div className="text-3xl">⏱️</div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">Total hours planned</p>
+        </div>
+
+        {/* Active Deals */}
+        <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Active Deals</p>
+              <p className="text-2xl font-bold mt-1">
+                {metricsLoading ? (
+                  <span className="animate-pulse bg-gray-200 h-8 w-16 block rounded"></span>
+                ) : (
+                  metrics.activeDeals
+                )}
+              </p>
+            </div>
+            <div className="text-3xl">🎯</div>
+          </div>
+          <a href="/pipeline" className="text-xs text-primary hover:underline mt-2 block">
+            View pipeline →
+          </a>
+        </div>
+
+        {/* Pipeline Value */}
+        <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Pipeline Value</p>
+              <p className="text-2xl font-bold mt-1 text-purple-600">
+                {metricsLoading ? (
+                  <span className="animate-pulse bg-gray-200 h-8 w-24 block rounded"></span>
+                ) : (
+                  formatCurrency(metrics.totalPipelineValue)
+                )}
+              </p>
+            </div>
+            <div className="text-3xl">📈</div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">Total potential revenue</p>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Tasks */}
