@@ -21,6 +21,21 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
   const [contact, setContact] = useState<Contact | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showNoteModal, setShowNoteModal] = useState(false)
+  const [newNote, setNewNote] = useState("")
+  const [showEmailCompose, setShowEmailCompose] = useState(false)
+  const [showEmailThread, setShowEmailThread] = useState(false)
+  const [showCreateTask, setShowCreateTask] = useState(false)
+  const [showScheduleEvent, setShowScheduleEvent] = useState(false)
+  const [emailThreads, setEmailThreads] = useState<EmailThread[]>([])
+  const [emails, setEmails] = useState<EmailMessage[]>([])
+  const [emailsLoading, setEmailsLoading] = useState(false)
+  const [activityStats, setActivityStats] = useState({
+    emailsSent: 0,
+    callsMade: 0,
+    meetings: 0
+  })
+  const [o365Connected, setO365Connected] = useState(false)
 
   useEffect(() => {
     const loadContact = async () => {
@@ -134,21 +149,6 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
       loadActivityStats()
     }
   }, [contact, o365Connected])
-  const [showNoteModal, setShowNoteModal] = useState(false)
-  const [newNote, setNewNote] = useState("")
-  const [showEmailCompose, setShowEmailCompose] = useState(false)
-  const [showEmailThread, setShowEmailThread] = useState(false)
-  const [showCreateTask, setShowCreateTask] = useState(false)
-  const [showScheduleEvent, setShowScheduleEvent] = useState(false)
-  const [emailThreads, setEmailThreads] = useState<EmailThread[]>([])
-  const [emails, setEmails] = useState<EmailMessage[]>([])
-  const [emailsLoading, setEmailsLoading] = useState(false)
-  const [activityStats, setActivityStats] = useState({
-    emailsSent: 0,
-    callsMade: 0,
-    meetings: 0
-  })
-  const [o365Connected, setO365Connected] = useState(false)
 
   const handleSendEmail = () => {
     setShowEmailCompose(true)
