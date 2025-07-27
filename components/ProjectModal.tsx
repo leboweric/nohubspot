@@ -445,51 +445,28 @@ export default function ProjectModal({
             </div>
           </div>
 
-          {/* Consultants */}
+          {/* Consultant */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Consultant(s)
+              Consultant
             </label>
-            <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-300 rounded-md p-3">
-              {loadingData ? (
-                <p className="text-gray-500 text-sm">Loading consultants...</p>
-              ) : users.length === 0 ? (
-                <p className="text-gray-500 text-sm">No consultants available</p>
-              ) : (
-                users.map(user => (
-                  <label key={user.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
-                    <input
-                      type="checkbox"
-                      checked={formData.assigned_team_members?.includes(user.id) || false}
-                      onChange={(e) => {
-                        const currentMembers = formData.assigned_team_members || []
-                        if (e.target.checked) {
-                          setFormData(prev => ({ 
-                            ...prev, 
-                            assigned_team_members: [...currentMembers, user.id]
-                          }))
-                        } else {
-                          setFormData(prev => ({ 
-                            ...prev, 
-                            assigned_team_members: currentMembers.filter(id => id !== user.id)
-                          }))
-                        }
-                      }}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">
-                      {user.first_name} {user.last_name} 
-                      {user.role === 'admin' && <span className="text-xs text-gray-500 ml-1">(Admin)</span>}
-                    </span>
-                  </label>
-                ))
-              )}
-            </div>
-            {formData.assigned_team_members && formData.assigned_team_members.length > 0 && (
-              <p className="text-xs text-gray-500 mt-1">
-                {formData.assigned_team_members.length} consultant{formData.assigned_team_members.length > 1 ? 's' : ''} selected
-              </p>
-            )}
+            <select
+              value={formData.assigned_team_members?.[0] || ''}
+              onChange={(e) => setFormData(prev => ({ 
+                ...prev, 
+                assigned_team_members: e.target.value ? [parseInt(e.target.value)] : []
+              }))}
+              disabled={loadingData}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              <option value="">{loadingData ? 'Loading consultants...' : 'Select Consultant'}</option>
+              {users.map(user => (
+                <option key={user.id} value={user.id}>
+                  {user.first_name} {user.last_name}
+                  {user.role === 'admin' ? ' (Admin)' : ''}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Notes */}
