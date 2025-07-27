@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import EmailCompose, { EmailMessage } from "@/components/email/EmailCompose"
-import DailySummaryCard from "@/components/dashboard/DailySummaryCard"
 import TasksCard from "@/components/dashboard/TasksCard"
 import { getAuthState } from "@/lib/auth"
 import { dashboardAPI, Activity, handleAPIError, o365IntegrationAPI, projectAPI, dealAPI } from "@/lib/api"
@@ -147,11 +146,6 @@ export default function DashboardPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-semibold">{organizationName} Dashboard</h1>
         <p className="text-muted-foreground mt-1">Welcome back{firstName ? `, ${firstName}` : ''}. Here's your CRM overview.</p>
-      </div>
-
-      {/* AI Daily Summary */}
-      <div className="mb-8">
-        <DailySummaryCard />
       </div>
 
       {/* Key Metrics */}
