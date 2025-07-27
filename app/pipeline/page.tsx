@@ -165,6 +165,106 @@ export default function PipelinePage() {
     }
   }
 
+  const handleExportDeals = () => {
+    try {
+      // Create CSV headers
+      const headers = [
+        'Deal Title',
+        'Stage',
+        'Value',
+        'Currency',
+        'Probability %',
+        'Weighted Value',
+        'Company',
+        'Contact',
+        'Assigned To',
+        'Expected Close Date',
+        'Actual Close Date',
+        'Status',
+        'Description',
+        'Notes',
+        'Tags',
+        'Created Date',
+        'Last Updated'
+      ]
+      
+      // Filter active deals if selectedStage is set (for list view)
+      const dealsToExport = deals.filter(deal => {
+        if (!deal.is_active) return false
+        if (viewMode === 'list' && selectedStage !== null) {
+          return deal.stage_id === selectedStage
+        }
+        return true
+      })
+      
+      // Create CSV rows
+      const rows = dealsToExport.map(deal => {
+        const stage = stages.find(s => s.id === deal.stage_id)
+        return [
+          deal.title,
+          stage?.name || '',
+          deal.value.toString(),
+          deal.currency,
+          deal.probability.toString(),
+          (deal.value * deal.probability / 100).toFixed(2),
+          deal.company_name || '',
+          deal.contact_name || '',
+          deal.assignee_name || '',
+          deal.expected_close_date ? new Date(deal.expected_close_date).toLocaleDateString() : '',
+          deal.actual_close_date ? new Date(deal.actual_close_date).toLocaleDateString() : '',
+          deal.is_active ? 'Active' : 'Inactive',
+          deal.description || '',
+          deal.notes || '',
+          deal.tags?.join(', ') || '',
+          new Date(deal.created_at).toLocaleDateString(),
+          new Date(deal.updated_at).toLocaleDateString()
+        ]
+      })
+      
+      // Combine headers and rows
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => 
+          row.map(cell => {
+            // Escape quotes and wrap in quotes if contains comma, newline, or quotes
+            const escaped = cell.replace(/"/g, '""')
+            return /[,"\n]/.test(cell) ? `"${escaped}"` : escaped
+          }).join(',')
+        )
+      ].join('\n')
+      
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      
+      link.setAttribute('href', url)
+      link.setAttribute('download', `deals_export_${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = 'hidden'
+      
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      // Clean up
+      URL.revokeObjectURL(url)
+      
+      // Show success message with context
+      const filterInfo = []
+      if (viewMode === 'list' && selectedStage !== null) {
+        const stage = stages.find(s => s.id === selectedStage)
+        if (stage) filterInfo.push(`in ${stage.name} stage`)
+      }
+      
+      const filterText = filterInfo.length > 0 ? ` (${filterInfo.join(', ')})` : ''
+      setSuccess(`Successfully exported ${dealsToExport.length} deals${filterText} to CSV!`)
+      setTimeout(() => setSuccess(""), 3000)
+    } catch (error) {
+      console.error('Failed to export deals:', error)
+      setError('Failed to export deals. Please try again.')
+    }
+  }
+
   if (loading) {
     return (
       <AuthGuard>
@@ -193,28 +293,39 @@ export default function PipelinePage() {
                 </p>
               </div>
               
-              {/* View Toggle */}
-              <div className="flex bg-gray-100 rounded-lg p-1">
+              <div className="flex items-center gap-4">
+                {/* Export Button */}
                 <button
-                  onClick={() => setViewMode('kanban')}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                    viewMode === 'kanban'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                  onClick={handleExportDeals}
+                  disabled={loading || deals.length === 0}
+                  className="px-4 py-2 border border-green-200 rounded-md hover:bg-green-50 hover:border-green-300 transition-all text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  📋 Board
+                  📥 Export to CSV
                 </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                    viewMode === 'list'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  📄 List
-                </button>
+                
+                {/* View Toggle */}
+                <div className="flex bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setViewMode('kanban')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      viewMode === 'kanban'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    📋 Board
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      viewMode === 'list'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    📄 List
+                  </button>
+                </div>
               </div>
             </div>
           </div>
