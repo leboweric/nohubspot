@@ -7,7 +7,7 @@ import EmailCompose, { EmailMessage } from "@/components/email/EmailCompose"
 import DailySummaryCard from "@/components/dashboard/DailySummaryCard"
 import TasksCard from "@/components/dashboard/TasksCard"
 import { getAuthState } from "@/lib/auth"
-import { dashboardAPI, Activity, handleAPIError } from "@/lib/api"
+import { dashboardAPI, Activity, handleAPIError, o365IntegrationAPI } from "@/lib/api"
 
 // Force dynamic rendering to prevent static generation issues with auth
 export const dynamic = 'force-dynamic'
@@ -18,6 +18,7 @@ export default function DashboardPage() {
   const [firstName, setFirstName] = useState("")
   const [recentActivity, setRecentActivity] = useState<Activity[]>([])
   const [activitiesLoading, setActivitiesLoading] = useState(true)
+  const [o365Connected, setO365Connected] = useState(false)
   
   // Get auth state - will be null during SSR
   const { organization, user } = getAuthState()
@@ -31,7 +32,7 @@ export default function DashboardPage() {
     }
   }, [organization, user])
   
-  // Load recent activities
+  // Load recent activities and O365 status
   useEffect(() => {
     const loadActivities = async () => {
       try {
@@ -46,7 +47,19 @@ export default function DashboardPage() {
       }
     }
 
+    const checkO365Status = async () => {
+      try {
+        const status = await o365IntegrationAPI.getStatus()
+        setO365Connected(status.connected)
+      } catch (err) {
+        console.error('Failed to check O365 status:', err)
+        // Default to false if we can't check
+        setO365Connected(false)
+      }
+    }
+
     loadActivities()
+    checkO365Status()
   }, [])
 
   const handleEmailSent = (email: EmailMessage) => {
@@ -105,15 +118,17 @@ export default function DashboardPage() {
                 <span className="group-hover:text-green-700">Add New Contact</span>
               </div>
             </a>
-            <button 
-              onClick={() => setShowEmailCompose(true)}
-              className="block w-full text-left px-4 py-3 border border-purple-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-all group"
-            >
-              <div className="flex items-center">
-                <span className="text-purple-600 mr-3">✉️</span>
-                <span className="group-hover:text-purple-700">Send Email</span>
-              </div>
-            </button>
+            {o365Connected && (
+              <button 
+                onClick={() => setShowEmailCompose(true)}
+                className="block w-full text-left px-4 py-3 border border-purple-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-all group"
+              >
+                <div className="flex items-center">
+                  <span className="text-purple-600 mr-3">✉️</span>
+                  <span className="group-hover:text-purple-700">Send Email</span>
+                </div>
+              </button>
+            )}
           </div>
         </div>
 

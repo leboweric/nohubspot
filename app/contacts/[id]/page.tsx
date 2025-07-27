@@ -10,7 +10,7 @@ import EmailTrackingStatus from "@/components/email/EmailTrackingStatus"
 import TaskCreate from "@/components/tasks/TaskCreate"
 import EventFormModal from "@/components/calendar/EventFormModal"
 import { Task } from "@/components/tasks/types"
-import { contactAPI, Contact, handleAPIError, CalendarEventCreate, calendarAPI, emailThreadAPI, EmailThread, emailTrackingAPI, taskAPI, TaskCreate as TaskCreateType } from "@/lib/api"
+import { contactAPI, Contact, handleAPIError, CalendarEventCreate, calendarAPI, emailThreadAPI, EmailThread, emailTrackingAPI, taskAPI, TaskCreate as TaskCreateType, o365IntegrationAPI } from "@/lib/api"
 import { getAuthState } from "@/lib/auth"
 
 // Force dynamic rendering to prevent static generation issues with auth
@@ -37,7 +37,18 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
       }
     }
 
+    const checkO365Status = async () => {
+      try {
+        const status = await o365IntegrationAPI.getStatus()
+        setO365Connected(status.connected)
+      } catch (err) {
+        console.error('Failed to check O365 status:', err)
+        setO365Connected(false)
+      }
+    }
+
     loadContact()
+    checkO365Status()
   }, [params.id])
 
   // Load email threads for this contact
@@ -137,6 +148,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
     callsMade: 0,
     meetings: 0
   })
+  const [o365Connected, setO365Connected] = useState(false)
 
   const handleSendEmail = () => {
     setShowEmailCompose(true)
@@ -408,9 +420,11 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
           <div className="bg-card border rounded-lg p-6">
             <h2 className="text-lg font-semibold mb-4">Actions</h2>
             <div className="space-y-2">
-              <button onClick={handleSendEmail} className="w-full text-left px-4 py-2 border rounded-md hover:bg-accent transition-colors">
-                Send Email
-              </button>
+              {o365Connected && (
+                <button onClick={handleSendEmail} className="w-full text-left px-4 py-2 border rounded-md hover:bg-accent transition-colors">
+                  Send Email
+                </button>
+              )}
               <button onClick={handleScheduleCall} className="w-full text-left px-4 py-2 border rounded-md hover:bg-accent transition-colors">
                 Schedule Call
               </button>
