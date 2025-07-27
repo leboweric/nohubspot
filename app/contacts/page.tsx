@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import BulkUpload, { BulkUploadData, FieldMapping } from "@/components/upload/BulkUpload"
-import { contactAPI, Contact, ContactCreate, handleAPIError } from "@/lib/api"
+import { contactAPI, Contact, ContactCreate, handleAPIError, companyAPI, Company } from "@/lib/api"
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -12,6 +12,9 @@ export default function ContactsPage() {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [showBulkUpload, setShowBulkUpload] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [companyFilter, setCompanyFilter] = useState<string>("all")
+  const [companies, setCompanies] = useState<Company[]>([])
 
   // Load contacts from API
   const loadContacts = async () => {
@@ -31,10 +34,20 @@ export default function ContactsPage() {
     }
   }
 
-  // Load contacts on mount and when search term changes
+  // Load contacts and companies on mount
   useEffect(() => {
     loadContacts()
+    loadCompanies()
   }, []) // Load initially
+
+  const loadCompanies = async () => {
+    try {
+      const companyData = await companyAPI.getAll({ limit: 100 })
+      setCompanies(companyData)
+    } catch (err) {
+      console.error('Failed to load companies:', err)
+    }
+  }
 
   // Debounced search with increased delay
   useEffect(() => {
@@ -67,8 +80,23 @@ export default function ContactsPage() {
     return () => window.removeEventListener('focus', handleFocus)
   }, [])
 
-  // Since we're using API search, no need for client-side filtering
-  const filteredContacts = contacts
+  // Apply client-side filters on top of server-side search
+  const filteredContacts = contacts.filter(contact => {
+    // Status filter
+    if (statusFilter !== "all" && contact.status !== statusFilter) {
+      return false
+    }
+    
+    // Company filter
+    if (companyFilter !== "all") {
+      const companyId = parseInt(companyFilter)
+      if (contact.company_id !== companyId) {
+        return false
+      }
+    }
+    
+    return true
+  })
 
   const handleDelete = async (contactId: number, contactName: string) => {
     const confirmed = confirm(`Are you sure you want to delete ${contactName}? This action cannot be undone.`)
@@ -153,6 +181,76 @@ export default function ContactsPage() {
     { key: 'notes', label: 'Notes' }
   ]
 
+  const handleExportContacts = () => {
+    try {
+      // Create CSV headers
+      const headers = [
+        'First Name',
+        'Last Name',
+        'Email',
+        'Phone',
+        'Job Title',
+        'Company',
+        'Status',
+        'Notes'
+      ]
+      
+      // Create CSV rows
+      const rows = filteredContacts.map(contact => [
+        contact.first_name,
+        contact.last_name,
+        contact.email,
+        contact.phone || '',
+        contact.title || '',
+        contact.company_name || '',
+        contact.status,
+        contact.notes || ''
+      ])
+      
+      // Combine headers and rows
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => 
+          row.map(cell => {
+            // Escape quotes and wrap in quotes if contains comma, newline, or quotes
+            const escaped = cell.replace(/"/g, '""')
+            return /[,"\n]/.test(cell) ? `"${escaped}"` : escaped
+          }).join(',')
+        )
+      ].join('\n')
+      
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      
+      link.setAttribute('href', url)
+      link.setAttribute('download', `contacts_export_${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = 'hidden'
+      
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      // Clean up
+      URL.revokeObjectURL(url)
+      
+      const filterInfo = []
+      if (searchTerm) filterInfo.push(`matching "${searchTerm}"`)
+      if (statusFilter !== "all") filterInfo.push(`with status: ${statusFilter}`)
+      if (companyFilter !== "all") {
+        const company = companies.find(c => c.id.toString() === companyFilter)
+        if (company) filterInfo.push(`from ${company.name}`)
+      }
+      
+      const filterText = filterInfo.length > 0 ? ` (${filterInfo.join(', ')})` : ''
+      alert(`Successfully exported ${filteredContacts.length} contacts${filterText} to CSV!`)
+    } catch (error) {
+      console.error('Failed to export contacts:', error)
+      alert('Failed to export contacts. Please try again.')
+    }
+  }
+
   return (
     <AuthGuard>
       <MainLayout>
@@ -165,9 +263,16 @@ export default function ContactsPage() {
         <div className="flex gap-3">
           <button
             onClick={() => setShowBulkUpload(true)}
-            className="px-4 py-2 border border-green-200 rounded-md hover:bg-green-50 hover:border-green-300 transition-all text-green-700"
+            className="px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-all text-blue-700"
           >
             📂 Bulk Upload
+          </button>
+          <button
+            onClick={handleExportContacts}
+            disabled={loading || filteredContacts.length === 0}
+            className="px-4 py-2 border border-green-200 rounded-md hover:bg-green-50 hover:border-green-300 transition-all text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            📥 Export to CSV
           </button>
           <a href="/contacts/new" className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors shadow-sm">
             ➕ Add Contact
@@ -175,7 +280,7 @@ export default function ContactsPage() {
         </div>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 space-y-4">
         <input
           type="text"
           placeholder="Search contacts..."
@@ -184,6 +289,41 @@ export default function ContactsPage() {
           disabled={loading}
           className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
         />
+        
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Status
+            </label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="all">All Statuses</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+          
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Company
+            </label>
+            <select
+              value={companyFilter}
+              onChange={(e) => setCompanyFilter(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="all">All Companies</option>
+              {companies.map(company => (
+                <option key={company.id} value={company.id.toString()}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
       {error && (
