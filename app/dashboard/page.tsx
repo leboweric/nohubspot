@@ -150,6 +150,48 @@ export default function DashboardPage() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        {/* Active Deals */}
+        <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Active Deals</p>
+              <p className="text-2xl font-bold mt-1">
+                {metricsLoading ? (
+                  <span className="animate-pulse bg-gray-200 h-8 w-16 block rounded"></span>
+                ) : (
+                  metrics.activeDeals
+                )}
+              </p>
+            </div>
+            <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <a href="/pipeline" className="text-xs text-primary hover:underline mt-2 block">
+            View pipeline →
+          </a>
+        </div>
+
+        {/* Pipeline Value */}
+        <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Pipeline Value</p>
+              <p className="text-2xl font-bold mt-1 text-purple-600">
+                {metricsLoading ? (
+                  <span className="animate-pulse bg-gray-200 h-8 w-24 block rounded"></span>
+                ) : (
+                  formatCurrency(metrics.totalPipelineValue)
+                )}
+              </p>
+            </div>
+            <svg className="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">Total potential revenue</p>
+        </div>
+
         {/* Active Projects */}
         <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
@@ -210,48 +252,6 @@ export default function DashboardPage() {
             </svg>
           </div>
           <p className="text-xs text-muted-foreground mt-2">Total hours planned</p>
-        </div>
-
-        {/* Active Deals */}
-        <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Active Deals</p>
-              <p className="text-2xl font-bold mt-1">
-                {metricsLoading ? (
-                  <span className="animate-pulse bg-gray-200 h-8 w-16 block rounded"></span>
-                ) : (
-                  metrics.activeDeals
-                )}
-              </p>
-            </div>
-            <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          </div>
-          <a href="/pipeline" className="text-xs text-primary hover:underline mt-2 block">
-            View pipeline →
-          </a>
-        </div>
-
-        {/* Pipeline Value */}
-        <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Pipeline Value</p>
-              <p className="text-2xl font-bold mt-1 text-purple-600">
-                {metricsLoading ? (
-                  <span className="animate-pulse bg-gray-200 h-8 w-24 block rounded"></span>
-                ) : (
-                  formatCurrency(metrics.totalPipelineValue)
-                )}
-              </p>
-            </div>
-            <svg className="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">Total potential revenue</p>
         </div>
       </div>
 
