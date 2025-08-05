@@ -215,11 +215,11 @@ export default function NewContactPage() {
           ) : (
             <ModernSelect
               value={formData.company_id}
-              onChange={(value) => setFormData(prev => ({ ...prev, company_id: value as number }))}
+              onChange={(value) => setFormData(prev => ({ ...prev, company_id: value as string }))}
               options={[
                 { value: "", label: "Select a company" },
                 ...(Array.isArray(companies) ? companies : []).map(company => ({
-                  value: company.id,
+                  value: company.id.toString(),
                   label: company.name
                 }))
               ]}
