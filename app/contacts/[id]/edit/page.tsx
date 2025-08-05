@@ -30,8 +30,8 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
     const loadCompanies = async () => {
       try {
         setLoadingCompanies(true)
-        const companiesData = await companyAPI.getAll({ limit: 1000 })
-        setCompanies(companiesData)
+        const response = await companyAPI.getAll({ limit: 1000 })
+        setCompanies(response.items || [])
       } catch (err) {
         console.error('Failed to load companies:', err)
         setError('Failed to load companies. Please refresh the page.')
@@ -227,7 +227,7 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
               onChange={(value) => setFormData(prev => ({ ...prev, company_id: value as number }))}
               options={[
                 { value: "", label: "Select a company" },
-                ...companies.map(company => ({
+                ...(Array.isArray(companies) ? companies : []).map(company => ({
                   value: company.id,
                   label: company.name
                 }))
