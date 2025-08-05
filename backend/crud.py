@@ -82,6 +82,8 @@ def get_companies(
             order_column = Company.name
         elif sort_by == "location":
             order_column = Company.location
+        elif sort_by == "postal_code":
+            order_column = Company.postal_code
         elif sort_by == "created_at":
             order_column = Company.created_at
         else:
