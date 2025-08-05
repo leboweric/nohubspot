@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react'
 import { ProjectStage, Project, ProjectCreate, companyAPI, contactAPI, Company, Contact, projectAPI, usersAPI, User } from '@/lib/api'
-import CompanyAutocomplete from '@/components/CompanyAutocomplete'
 import ModernSelect from '@/components/ui/ModernSelect'
 
 interface ProjectModalProps {
@@ -42,6 +41,7 @@ export default function ProjectModal({
 
   const [projectTypes, setProjectTypes] = useState<string[]>([])
   const [users, setUsers] = useState<User[]>([])
+  const [companies, setCompanies] = useState<Company[]>([])
   const [companyContacts, setCompanyContacts] = useState<Contact[]>([])
   const [loadingContacts, setLoadingContacts] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -122,6 +122,7 @@ export default function ProjectModal({
       // Load each resource separately to better handle errors
       let projectTypesData: string[] = []
       let usersData: User[] = []
+      let companiesData: Company[] = []
       
       try {
         projectTypesData = await projectAPI.getProjectTypes()
@@ -137,11 +138,19 @@ export default function ProjectModal({
         console.error('Failed to load users:', err)
       }
       
+      try {
+        companiesData = await companyAPI.getAll({ limit: 1000 })
+        console.log('Companies loaded:', companiesData?.length || 0)
+      } catch (err) {
+        console.error('Failed to load companies:', err)
+      }
+      
       setProjectTypes(projectTypesData || [])
       setUsers(usersData || [])
+      setCompanies(companiesData || [])
       
       // Clear error if at least some data loaded
-      if (projectTypesData.length > 0 || usersData.length > 0) {
+      if (projectTypesData.length > 0 || usersData.length > 0 || companiesData.length > 0) {
         setError('')
       }
     } catch (err) {
@@ -328,13 +337,18 @@ export default function ProjectModal({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Company
               </label>
-              <CompanyAutocomplete
-                value={formData.company_id}
-                onChange={(companyId, companyName) => {
-                  handleCompanyChange(companyId?.toString() || '')
-                }}
+              <ModernSelect
+                value={formData.company_id || ''}
+                onChange={(value) => handleCompanyChange(value.toString())}
                 disabled={loadingData}
-                placeholder="Type to search companies..."
+                options={[
+                  { value: '', label: 'Select company...' },
+                  ...companies.map(company => ({
+                    value: company.id,
+                    label: company.name
+                  }))
+                ]}
+                placeholder="Select company"
               />
             </div>
             <div>
@@ -495,7 +509,13 @@ export default function ProjectModal({
               disabled={loadingData}
               options={[
                 { value: '', label: loadingData ? 'Loading consultants...' : 'Select Consultant' },
-                ...users.map(user => ({
+                ...users
+                  .filter(user => 
+                    // Exclude Eric Lebow and Super User from consultant dropdown
+                    user.email !== 'elebow@strategic-cc.com' && 
+                    user.email !== 'superuser+7@nothubspot.com'
+                  )
+                  .map(user => ({
                   value: user.id,
                   label: `${user.first_name} ${user.last_name}${user.role === 'admin' ? ' (Admin)' : ''}`
                 }))
