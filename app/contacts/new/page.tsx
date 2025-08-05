@@ -47,13 +47,8 @@ export default function NewContactPage() {
     const companyIdParam = searchParams.get('companyId')
     const companyNameParam = searchParams.get('company')
     
-    console.log('URL params:', { companyIdParam, companyNameParam })
-    console.log('Current formData.company_id:', formData.company_id)
-    console.log('Companies loaded:', companies.length)
-    
     // First try to use companyId if provided
     if (companyIdParam) {
-      console.log('Setting company_id from URL param:', companyIdParam)
       setFormData(prev => ({
         ...prev,
         company_id: companyIdParam
@@ -63,7 +58,6 @@ export default function NewContactPage() {
     else if (companyNameParam && companies.length > 0) {
       const company = companies.find(c => c.name.toLowerCase() === companyNameParam.toLowerCase())
       if (company) {
-        console.log('Found company by name, setting id:', company.id.toString())
         setFormData(prev => ({
           ...prev,
           company_id: company.id.toString()
@@ -221,10 +215,7 @@ export default function NewContactPage() {
           ) : (
             <ModernSelect
               value={formData.company_id}
-              onChange={(value) => {
-                console.log('Company selected:', value)
-                setFormData(prev => ({ ...prev, company_id: value as string }))
-              }}
+              onChange={(value) => setFormData(prev => ({ ...prev, company_id: value as string }))}
               options={[
                 { value: "", label: "Select a company" },
                 ...(Array.isArray(companies) ? companies : []).map(company => ({
