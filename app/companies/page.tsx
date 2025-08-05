@@ -17,6 +17,8 @@ export default function CompaniesPage() {
   const [accountOwnerFilter, setAccountOwnerFilter] = useState<string>("all")
   const [zipCodeFilter, setZipCodeFilter] = useState<string>("")
   const [users, setUsers] = useState<User[]>([])
+  const [sortBy, setSortBy] = useState<'name' | 'postal_code'>('name')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
   // Load companies from API
   const loadCompanies = useCallback(async () => {
@@ -28,8 +30,8 @@ export default function CompaniesPage() {
       const data = await companyAPI.getAll({ 
         search: searchTerm || undefined,
         limit: 100, // Reduced for better performance
-        sort_by: 'name',
-        sort_order: 'asc'
+        sort_by: sortBy,
+        sort_order: sortOrder
       })
       
       console.log('Companies loaded successfully:', data.length)
@@ -50,7 +52,7 @@ export default function CompaniesPage() {
     } finally {
       setLoading(false)
     }
-  }, [searchTerm])
+  }, [searchTerm, sortBy, sortOrder])
 
   // Load companies and users on mount
   useEffect(() => {
@@ -304,9 +306,9 @@ export default function CompaniesPage() {
         'Phone Number',
         'City',
         'State/Region',
+        'Postal Code',
         'Industry',
         'Street Address',
-        'Postal Code',
         'Annual Revenue',
         'Website',
         'Status',
@@ -321,9 +323,9 @@ export default function CompaniesPage() {
         company.phone || '',
         company.city || '',
         company.state || '',
+        company.postal_code || '',
         company.industry || '',
         company.street_address || '',
-        company.postal_code || '',
         company.annual_revenue?.toString() || '',
         company.website || '',
         company.status,
@@ -498,10 +500,35 @@ export default function CompaniesPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Company</th>
+                  <th 
+                    className="text-left px-6 py-3 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground"
+                    onClick={() => {
+                      if (sortBy === 'name') {
+                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+                      } else {
+                        setSortBy('name')
+                        setSortOrder('asc')
+                      }
+                    }}
+                  >
+                    Company {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Account Owner</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Phone</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Location</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">City, State</th>
+                  <th 
+                    className="text-left px-6 py-3 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground"
+                    onClick={() => {
+                      if (sortBy === 'postal_code') {
+                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+                      } else {
+                        setSortBy('postal_code')
+                        setSortOrder('asc')
+                      }
+                    }}
+                  >
+                    Zip Code {sortBy === 'postal_code' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  </th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Industry</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Status</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Actions</th>
@@ -527,6 +554,7 @@ export default function CompaniesPage() {
                         </span>
                       ) : '-'}
                     </td>
+                    <td className="px-6 py-4 text-sm font-medium">{company.postal_code || '-'}</td>
                     <td className="px-6 py-4 text-sm">{company.industry || '-'}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
