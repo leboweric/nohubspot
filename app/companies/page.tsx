@@ -70,9 +70,17 @@ export default function CompaniesPage() {
   const loadUsers = async () => {
     try {
       const userData = await usersAPI.getAll()
-      setUsers(userData)
+      console.log('Users loaded:', userData)
+      // Ensure userData is an array
+      if (Array.isArray(userData)) {
+        setUsers(userData)
+      } else {
+        console.error('Users data is not an array:', userData)
+        setUsers([])
+      }
     } catch (err) {
       console.error('Failed to load users:', err)
+      setUsers([])
     }
   }
 
@@ -458,7 +466,7 @@ export default function CompaniesPage() {
               onChange={(value) => setAccountOwnerFilter(value as string)}
               options={[
                 { value: "all", label: "All Owners" },
-                ...users.map(user => ({
+                ...(Array.isArray(users) ? users : []).map(user => ({
                   value: user.id.toString(),
                   label: `${user.first_name} ${user.last_name}`
                 }))
@@ -545,7 +553,7 @@ export default function CompaniesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {filteredCompanies.map((company) => (
+                {(Array.isArray(filteredCompanies) ? filteredCompanies : []).map((company) => (
                   <tr key={company.id} className="hover:bg-accent/50 transition-colors">
                     <td className="px-6 py-4">
                       <div>
