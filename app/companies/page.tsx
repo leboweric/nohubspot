@@ -61,11 +61,20 @@ export default function CompaniesPage() {
     }
   }, [searchTerm, sortBy, sortOrder, currentPage, recordsPerPage])
 
-  // Load companies and users on mount
+  // Load companies when component mounts or pagination/sorting changes
   useEffect(() => {
-    loadCompanies()
+    // Debounce search
+    const timeoutId = setTimeout(() => {
+      loadCompanies()
+    }, searchTerm ? 500 : 0)
+    
+    return () => clearTimeout(timeoutId)
+  }, [currentPage, recordsPerPage, sortBy, sortOrder, searchTerm])
+  
+  // Load users on mount
+  useEffect(() => {
     loadUsers()
-  }, []) // Only run on mount
+  }, [])
 
   const loadUsers = async () => {
     try {
@@ -86,13 +95,10 @@ export default function CompaniesPage() {
 
   // Debounced search
   useEffect(() => {
-    setCurrentPage(1) // Reset to first page when search changes
-    const timeoutId = setTimeout(() => {
-      loadCompanies()
-    }, searchTerm === '' ? 0 : 1000) // Immediate reload on empty, debounced on search
-
-    return () => clearTimeout(timeoutId)
-  }, [searchTerm, loadCompanies])
+    if (searchTerm !== '') {
+      setCurrentPage(1) // Reset to first page when search changes
+    }
+  }, [searchTerm])
 
   // Throttled reload on window focus with cooldown
   useEffect(() => {
