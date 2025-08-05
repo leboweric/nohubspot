@@ -15,6 +15,7 @@ export default function CompaniesPage() {
   const [showBulkUpload, setShowBulkUpload] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [accountOwnerFilter, setAccountOwnerFilter] = useState<string>("all")
+  const [zipCodeFilter, setZipCodeFilter] = useState<string>("")
   const [users, setUsers] = useState<User[]>([])
 
   // Load companies from API
@@ -106,6 +107,29 @@ export default function CompaniesPage() {
     if (accountOwnerFilter !== "all") {
       const ownerId = parseInt(accountOwnerFilter)
       if (company.primary_account_owner_id !== ownerId) {
+        return false
+      }
+    }
+    
+    // Zip code filter (supports multiple zip codes)
+    if (zipCodeFilter.trim()) {
+      // Split by comma or space and clean up
+      const zipCodes = zipCodeFilter
+        .split(/[,\s]+/)
+        .map(zip => zip.trim())
+        .filter(zip => zip.length > 0)
+      
+      if (zipCodes.length > 0 && company.postal_code) {
+        // Check if company's postal code matches any of the filter zip codes
+        const companyZip = company.postal_code.trim()
+        const matches = zipCodes.some(filterZip => 
+          companyZip.startsWith(filterZip) // Allows partial matching like "123" matches "12345"
+        )
+        if (!matches) {
+          return false
+        }
+      } else if (zipCodes.length > 0 && !company.postal_code) {
+        // If filter is set but company has no zip code, exclude it
         return false
       }
     }
@@ -342,6 +366,9 @@ export default function CompaniesPage() {
         const owner = users.find(u => u.id.toString() === accountOwnerFilter)
         if (owner) filterInfo.push(`owned by ${owner.first_name} ${owner.last_name}`)
       }
+      if (zipCodeFilter.trim()) {
+        filterInfo.push(`in zip codes: ${zipCodeFilter}`)
+      }
       
       const filterText = filterInfo.length > 0 ? ` (${filterInfo.join(', ')})` : ''
       alert(`Successfully exported ${filteredCompanies.length} companies${filterText} to CSV!`)
@@ -427,6 +454,20 @@ export default function CompaniesPage() {
                 }))
               ]}
               placeholder="Select owner"
+            />
+          </div>
+          
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Zip Codes
+            </label>
+            <input
+              type="text"
+              placeholder="e.g., 12345, 67890, 555"
+              value={zipCodeFilter}
+              onChange={(e) => setZipCodeFilter(e.target.value)}
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+              title="Enter one or more zip codes separated by commas or spaces. Partial zip codes are supported."
             />
           </div>
         </div>
