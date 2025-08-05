@@ -40,9 +40,9 @@ export default function CompaniesPage() {
         sort_order: sortOrder
       })
       
-      console.log('Companies loaded successfully:', response.items.length, 'Total:', response.total)
-      setCompanies(response.items)
-      setTotalCompanies(response.total)
+      console.log('Companies loaded successfully:', response.items?.length || 0, 'Total:', response.total || 0)
+      setCompanies(response.items || [])
+      setTotalCompanies(response.total || 0)
     } catch (err) {
       const errorMessage = handleAPIError(err)
       setError(errorMessage)
@@ -107,7 +107,7 @@ export default function CompaniesPage() {
   }, [loadCompanies])
 
   // Apply client-side filters on top of server-side search
-  const filteredCompanies = companies.filter(company => {
+  const filteredCompanies = (companies || []).filter(company => {
     // Status filter
     if (statusFilter !== "all" && company.status !== statusFilter) {
       return false
