@@ -44,10 +44,19 @@ export default function NewContactPage() {
   }, [])
 
   useEffect(() => {
-    const companyParam = searchParams.get('company')
-    if (companyParam && companies.length > 0) {
-      // Find company by name and set the ID
-      const company = companies.find(c => c.name.toLowerCase() === companyParam.toLowerCase())
+    const companyIdParam = searchParams.get('companyId')
+    const companyNameParam = searchParams.get('company')
+    
+    // First try to use companyId if provided
+    if (companyIdParam) {
+      setFormData(prev => ({
+        ...prev,
+        company_id: companyIdParam
+      }))
+    } 
+    // Fallback to company name search if only name is provided
+    else if (companyNameParam && companies.length > 0) {
+      const company = companies.find(c => c.name.toLowerCase() === companyNameParam.toLowerCase())
       if (company) {
         setFormData(prev => ({
           ...prev,
