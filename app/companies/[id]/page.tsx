@@ -255,7 +255,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Contacts ({contacts.length})</h2>
               <Link 
-                href={`/contacts/new?companyId=${company.id}&company=${encodeURIComponent(company.name)}`}
+                href={`/contacts/new?companyId=${company.id.toString()}&company=${encodeURIComponent(company.name)}`}
                 className="text-sm text-primary hover:underline"
               >
                 Add Contact
@@ -298,7 +298,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
               <p className="text-muted-foreground text-center py-8">
                 No contacts yet. 
                 <Link 
-                  href={`/contacts/new?companyId=${company.id}&company=${encodeURIComponent(company.name)}`}
+                  href={`/contacts/new?companyId=${company.id.toString()}&company=${encodeURIComponent(company.name)}`}
                   className="text-primary hover:underline ml-1"
                 >
                   Add the first contact
@@ -329,7 +329,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
               <Link href={`/companies/${params.id}/edit`} className="block w-full text-left px-4 py-2 border rounded-md hover:bg-accent transition-colors">
                 Edit Company
               </Link>
-              <Link href={`/contacts/new?companyId=${company.id}&company=${encodeURIComponent(company.name)}`} className="block w-full text-left px-4 py-2 border rounded-md hover:bg-accent transition-colors">
+              <Link href={`/contacts/new?companyId=${company.id.toString()}&company=${encodeURIComponent(company.name)}`} className="block w-full text-left px-4 py-2 border rounded-md hover:bg-accent transition-colors">
                 Add Contact
               </Link>
               <button onClick={handleScheduleMeeting} className="w-full text-left px-4 py-2 border rounded-md hover:bg-accent transition-colors">
