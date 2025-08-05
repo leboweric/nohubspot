@@ -43,14 +43,16 @@ export default function ContactsPage() {
 
   const loadCompanies = async () => {
     try {
-      const companyData = await companyAPI.getAll({ 
+      const response = await companyAPI.getAll({ 
         limit: 1000,  // Increased to get all companies
         sort_by: 'name',
         sort_order: 'asc'
       })
-      setCompanies(companyData)
+      // Handle paginated response
+      setCompanies(response.items || [])
     } catch (err) {
       console.error('Failed to load companies:', err)
+      setCompanies([])
     }
   }
 
@@ -86,7 +88,7 @@ export default function ContactsPage() {
   }, [])
 
   // Apply client-side filters on top of server-side search
-  const filteredContacts = contacts.filter(contact => {
+  const filteredContacts = (Array.isArray(contacts) ? contacts : []).filter(contact => {
     // Status filter
     if (statusFilter !== "all" && contact.status !== statusFilter) {
       return false
@@ -321,7 +323,7 @@ export default function ContactsPage() {
               onChange={(value) => setCompanyFilter(value as string)}
               options={[
                 { value: "all", label: "All Companies" },
-                ...companies.map(company => ({
+                ...(Array.isArray(companies) ? companies : []).map(company => ({
                   value: company.id.toString(),
                   label: company.name
                 }))
@@ -366,7 +368,7 @@ export default function ContactsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {filteredContacts.map((contact) => (
+                {(Array.isArray(filteredContacts) ? filteredContacts : []).map((contact) => (
                   <tr key={contact.id} className="hover:bg-accent/50 transition-colors">
                     <td className="px-6 py-4">
                       <div>
