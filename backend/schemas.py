@@ -61,6 +61,13 @@ class CompanyResponse(CompanyBase, TimestampMixin):
     class Config:
         from_attributes = True
 
+class CompanyPaginatedResponse(BaseModel):
+    items: List[CompanyResponse]
+    total: int
+    page: int
+    per_page: int
+    pages: int
+
 # Contact schemas
 class ContactBase(BaseModel):
     first_name: str = Field(..., min_length=1, max_length=100)

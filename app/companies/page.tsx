@@ -19,6 +19,9 @@ export default function CompaniesPage() {
   const [users, setUsers] = useState<User[]>([])
   const [sortBy, setSortBy] = useState<'name' | 'postal_code'>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalCompanies, setTotalCompanies] = useState(0)
+  const [recordsPerPage, setRecordsPerPage] = useState(100)
 
   // Load companies from API
   const loadCompanies = useCallback(async () => {
@@ -27,15 +30,19 @@ export default function CompaniesPage() {
       setError(null)
       console.log('Loading companies with search term:', searchTerm)
       
-      const data = await companyAPI.getAll({ 
+      const skip = (currentPage - 1) * recordsPerPage
+      
+      const response = await companyAPI.getAll({ 
         search: searchTerm || undefined,
-        limit: 100, // Reduced for better performance
+        skip: skip,
+        limit: recordsPerPage,
         sort_by: sortBy,
         sort_order: sortOrder
       })
       
-      console.log('Companies loaded successfully:', data.length)
-      setCompanies(data)
+      console.log('Companies loaded successfully:', response.items.length, 'Total:', response.total)
+      setCompanies(response.items)
+      setTotalCompanies(response.total)
     } catch (err) {
       const errorMessage = handleAPIError(err)
       setError(errorMessage)
@@ -52,7 +59,7 @@ export default function CompaniesPage() {
     } finally {
       setLoading(false)
     }
-  }, [searchTerm, sortBy, sortOrder])
+  }, [searchTerm, sortBy, sortOrder, currentPage, recordsPerPage])
 
   // Load companies and users on mount
   useEffect(() => {
@@ -71,6 +78,7 @@ export default function CompaniesPage() {
 
   // Debounced search
   useEffect(() => {
+    setCurrentPage(1) // Reset to first page when search changes
     const timeoutId = setTimeout(() => {
       loadCompanies()
     }, searchTerm === '' ? 0 : 1000) // Immediate reload on empty, debounced on search
@@ -509,6 +517,7 @@ export default function CompaniesPage() {
                         setSortBy('name')
                         setSortOrder('asc')
                       }
+                      setCurrentPage(1)
                     }}
                   >
                     Company {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
@@ -525,6 +534,7 @@ export default function CompaniesPage() {
                         setSortBy('postal_code')
                         setSortOrder('asc')
                       }
+                      setCurrentPage(1)
                     }}
                   >
                     Zip Code {sortBy === 'postal_code' && (sortOrder === 'asc' ? '↑' : '↓')}
@@ -591,6 +601,55 @@ export default function CompaniesPage() {
                 <p className="text-muted-foreground">
                   {searchTerm ? `No companies found matching "${searchTerm}"` : "No companies yet. Add your first company to get started."}
                 </p>
+              </div>
+            )}
+            
+            {/* Pagination Controls */}
+            {totalCompanies > 0 && (
+              <div className="flex items-center justify-between px-6 py-4 border-t">
+                <div className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * recordsPerPage) + 1} to {Math.min(currentPage * recordsPerPage, totalCompanies)} of {totalCompanies} companies
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-muted-foreground">Show:</label>
+                    <select
+                      value={recordsPerPage}
+                      onChange={(e) => {
+                        setRecordsPerPage(Number(e.target.value))
+                        setCurrentPage(1)
+                      }}
+                      className="px-2 py-1 border rounded-md text-sm"
+                    >
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                      <option value={250}>250</option>
+                    </select>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
+                    >
+                      Previous
+                    </button>
+                    
+                    <span className="text-sm text-muted-foreground">
+                      Page {currentPage} of {Math.ceil(totalCompanies / recordsPerPage)}
+                    </span>
+                    
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(Math.ceil(totalCompanies / recordsPerPage), prev + 1))}
+                      disabled={currentPage >= Math.ceil(totalCompanies / recordsPerPage)}
+                      className="px-3 py-1 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </>

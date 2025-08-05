@@ -3,7 +3,7 @@ from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from sqlalchemy import text
+from sqlalchemy import text, or_
 from typing import List, Optional
 import os
 import uvicorn
@@ -37,7 +37,7 @@ def rate_limit_check(client_ip: str, endpoint: str, max_requests: int = 30, wind
 from database import get_db, SessionLocal, engine
 from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, GoogleOrganizationConfig, GoogleUserConnection, PipelineStage, Deal, EmailTracking, EmailEvent, EmailSharingPermission, ProjectStage, Project, ProjectType
 from schemas import (
-    CompanyCreate, CompanyResponse, CompanyUpdate,
+    CompanyCreate, CompanyResponse, CompanyUpdate, CompanyPaginatedResponse,
     ContactCreate, ContactResponse, ContactUpdate,
     TaskCreate, TaskResponse, TaskUpdate,
     EmailThreadCreate, EmailThreadResponse,
@@ -1514,7 +1514,7 @@ async def create_new_company(
             detail=f"Failed to create company: {str(e)}"
         )
 
-@app.get("/api/companies", response_model=List[CompanyResponse])
+@app.get("/api/companies", response_model=CompanyPaginatedResponse)
 async def read_companies(
     skip: int = 0, 
     limit: int = 100, 
@@ -1525,7 +1525,39 @@ async def read_companies(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    return get_companies(db, current_user.organization_id, skip=skip, limit=limit, search=search, status=status, sort_by=sort_by, sort_order=sort_order)
+    # Get companies
+    companies = get_companies(db, current_user.organization_id, skip=skip, limit=limit, search=search, status=status, sort_by=sort_by, sort_order=sort_order)
+    
+    # Get total count - we need to create a count function
+    from sqlalchemy import func
+    query = db.query(func.count(Company.id)).filter(Company.organization_id == current_user.organization_id)
+    
+    if search:
+        search_filter = f"%{search}%"
+        query = query.filter(
+            or_(
+                Company.name.ilike(search_filter),
+                Company.industry.ilike(search_filter),
+                Company.website.ilike(search_filter)
+            )
+        )
+    
+    if status:
+        query = query.filter(Company.status == status)
+    
+    total = query.scalar()
+    
+    # Calculate pagination info
+    page = (skip // limit) + 1
+    pages = (total + limit - 1) // limit  # Ceiling division
+    
+    return CompanyPaginatedResponse(
+        items=companies,
+        total=total,
+        page=page,
+        per_page=limit,
+        pages=pages
+    )
 
 @app.get("/api/companies/{company_id}", response_model=CompanyResponse)
 async def read_company(

@@ -146,6 +146,14 @@ export interface CompanyUpdate {
   status?: string
 }
 
+export interface CompanyPaginatedResponse {
+  items: Company[]
+  total: number
+  page: number
+  per_page: number
+  pages: number
+}
+
 export const companyAPI = {
   // Get all companies
   getAll: (params?: {
@@ -155,7 +163,7 @@ export const companyAPI = {
     status?: string
     sort_by?: string
     sort_order?: 'asc' | 'desc'
-  }): Promise<Company[]> => {
+  }): Promise<CompanyPaginatedResponse> => {
     const searchParams = new URLSearchParams()
     if (params?.skip) searchParams.append('skip', params.skip.toString())
     if (params?.limit) searchParams.append('limit', params.limit.toString())
