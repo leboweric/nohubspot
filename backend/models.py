@@ -240,11 +240,14 @@ class Attachment(Base):
     file_type = Column(String(100))
     file_url = Column(String(500))
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
     uploaded_by = Column(String(255))
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Relationships
     company_rel = relationship("Company", back_populates="attachments")
+    project_rel = relationship("Project", back_populates="attachments")
 
 class Activity(Base):
     __tablename__ = "activities"
@@ -653,6 +656,7 @@ class Project(Base):
     stage = relationship("ProjectStage", back_populates="projects")
     contact = relationship("Contact")
     company = relationship("Company")
+    attachments = relationship("Attachment", back_populates="project_rel", cascade="all, delete-orphan")
     activities = relationship("Activity", foreign_keys="Activity.entity_id", 
                             primaryjoin="and_(cast(Project.id, String) == Activity.entity_id, Activity.type == 'project')",
                             overlaps="activities")

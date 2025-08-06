@@ -18,7 +18,7 @@ import {
 } from '@dnd-kit/sortable'
 import { ProjectStage, Project } from '@/lib/api'
 import ProjectKanbanColumn from './ProjectKanbanColumn'
-import ProjectCard from './ProjectCard'
+import ProjectCardWithAttachments from './ProjectCardWithAttachments'
 
 interface ProjectKanbanBoardProps {
   stages: ProjectStage[]
@@ -114,7 +114,7 @@ export default function ProjectKanbanBoard({
         <DragOverlay>
           {activeProject ? (
             <div className="rotate-2 opacity-90">
-              <ProjectCard project={activeProject} isDragging />
+              <ProjectCardWithAttachments project={activeProject} isDragging />
             </div>
           ) : null}
         </DragOverlay>

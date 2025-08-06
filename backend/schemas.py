@@ -186,6 +186,7 @@ class AttachmentBase(BaseModel):
     file_type: Optional[str] = Field(None, max_length=100)
     file_url: Optional[str] = Field(None, max_length=500)
     company_id: Optional[int] = None
+    project_id: Optional[int] = None
     uploaded_by: Optional[str] = Field(None, max_length=255)
 
 class AttachmentCreate(AttachmentBase):

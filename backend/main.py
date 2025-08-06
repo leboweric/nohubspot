@@ -41,7 +41,7 @@ from schemas import (
     ContactCreate, ContactResponse, ContactUpdate,
     TaskCreate, TaskResponse, TaskUpdate,
     EmailThreadCreate, EmailThreadResponse,
-    EmailMessageCreate, EmailMessageResponse, AttachmentResponse,
+    EmailMessageCreate, EmailMessageResponse, AttachmentCreate, AttachmentResponse,
     EmailSignatureCreate, EmailSignatureResponse, EmailSignatureUpdate,
     ActivityResponse, DashboardStats, BulkUploadResult,
     OrganizationCreate, OrganizationResponse, UserRegister, UserLogin, UserResponse, UserCreate,
@@ -2963,6 +2963,105 @@ async def delete_project_endpoint(
         raise HTTPException(status_code=404, detail="Project not found")
     
     return {"message": "Project deleted successfully"}
+
+
+# Project Attachment endpoints
+@app.post("/api/projects/{project_id}/attachments", response_model=AttachmentResponse)
+async def upload_project_attachment(
+    project_id: int,
+    attachment: AttachmentCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Upload an attachment to a project"""
+    # Verify project exists and belongs to user's organization
+    project = get_project(db, project_id, current_user.organization_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Create the attachment
+    db_attachment = Attachment(
+        **attachment.dict(exclude={'project_id'}),
+        project_id=project_id,
+        organization_id=current_user.organization_id,
+        uploaded_by=f"{current_user.first_name} {current_user.last_name}"
+    )
+    
+    db.add(db_attachment)
+    db.commit()
+    db.refresh(db_attachment)
+    
+    # Log activity
+    activity = Activity(
+        organization_id=current_user.organization_id,
+        title=f"File attached to project",
+        description=f"File '{attachment.name}' was attached to project '{project.title}'",
+        type="attachment",
+        entity_id=str(project_id),
+        created_by=f"{current_user.first_name} {current_user.last_name}"
+    )
+    db.add(activity)
+    db.commit()
+    
+    return db_attachment
+
+@app.get("/api/projects/{project_id}/attachments", response_model=List[AttachmentResponse])
+async def get_project_attachments(
+    project_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all attachments for a project"""
+    # Verify project exists and belongs to user's organization
+    project = get_project(db, project_id, current_user.organization_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    attachments = db.query(Attachment).filter(
+        Attachment.project_id == project_id,
+        Attachment.organization_id == current_user.organization_id
+    ).order_by(Attachment.created_at.desc()).all()
+    
+    return attachments
+
+@app.delete("/api/attachments/{attachment_id}")
+async def delete_attachment(
+    attachment_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete an attachment"""
+    attachment = db.query(Attachment).filter(
+        Attachment.id == attachment_id,
+        Attachment.organization_id == current_user.organization_id
+    ).first()
+    
+    if not attachment:
+        raise HTTPException(status_code=404, detail="Attachment not found")
+    
+    # Get project info for activity log
+    project = None
+    if attachment.project_id:
+        project = db.query(Project).filter(Project.id == attachment.project_id).first()
+    
+    # Delete the attachment
+    db.delete(attachment)
+    db.commit()
+    
+    # Log activity
+    if project:
+        activity = Activity(
+            organization_id=current_user.organization_id,
+            title=f"File removed from project",
+            description=f"File '{attachment.name}' was removed from project '{project.title}'",
+            type="attachment",
+            entity_id=str(project.id),
+            created_by=f"{current_user.first_name} {current_user.last_name}"
+        )
+        db.add(activity)
+        db.commit()
+    
+    return {"message": "Attachment deleted successfully"}
 
 
 # Email Tracking endpoints

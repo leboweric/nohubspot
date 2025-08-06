@@ -3,7 +3,7 @@
 import React from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { ProjectStage, Project } from '@/lib/api'
-import ProjectCard from './ProjectCard'
+import ProjectCardWithAttachments from './ProjectCardWithAttachments'
 
 interface ProjectKanbanColumnProps {
   stage: ProjectStage
@@ -78,7 +78,7 @@ export default function ProjectKanbanColumn({
           </div>
         ) : (
           projects.map((project) => (
-            <ProjectCard key={project.id} project={project} onEdit={onEditProject} />
+            <ProjectCardWithAttachments key={project.id} project={project} onEdit={onEditProject} />
           ))
         )}
 
