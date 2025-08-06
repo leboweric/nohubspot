@@ -3007,7 +3007,7 @@ async def upload_project_attachment(
     activity = Activity(
         organization_id=current_user.organization_id,
         title=f"File attached to project",
-        description=f"File '{attachment.name}' was attached to project '{project.title}'",
+        description=f"File '{file.filename}' was attached to project '{project.title}'",
         type="attachment",
         entity_id=str(project_id),
         created_by=f"{current_user.first_name} {current_user.last_name}"
@@ -3015,7 +3015,19 @@ async def upload_project_attachment(
     db.add(activity)
     db.commit()
     
-    return db_attachment
+    # Return attachment without file_data to avoid sending large binary in response
+    return AttachmentResponse(
+        id=db_attachment.id,
+        name=db_attachment.name,
+        description=db_attachment.description,
+        file_size=db_attachment.file_size,
+        file_type=db_attachment.file_type,
+        file_url=db_attachment.file_url,
+        company_id=db_attachment.company_id,
+        project_id=db_attachment.project_id,
+        uploaded_by=db_attachment.uploaded_by,
+        created_at=db_attachment.created_at
+    )
 
 @app.get("/api/projects/{project_id}/attachments", response_model=List[AttachmentResponse])
 async def get_project_attachments(
