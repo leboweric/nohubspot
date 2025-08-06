@@ -3,7 +3,7 @@
 import React from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { PipelineStage, Deal } from '@/lib/api'
-import DealCard from './DealCard'
+import DealCardWithAttachments from './DealCardWithAttachments'
 
 interface KanbanColumnProps {
   stage: PipelineStage
@@ -66,7 +66,7 @@ export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal }: Ka
           </div>
         ) : (
           deals.map((deal) => (
-            <DealCard key={deal.id} deal={deal} onEdit={onEditDeal} />
+            <DealCardWithAttachments key={deal.id} deal={deal} onEdit={onEditDeal} />
           ))
         )}
 

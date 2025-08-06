@@ -242,6 +242,7 @@ class Attachment(Base):
     file_data = Column(LargeBinary)  # Store actual file content in PostgreSQL
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
+    deal_id = Column(Integer, ForeignKey("deals.id"), nullable=True)
     uploaded_by = Column(String(255))
     organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -249,6 +250,7 @@ class Attachment(Base):
     # Relationships
     company_rel = relationship("Company", back_populates="attachments")
     project_rel = relationship("Project", back_populates="attachments")
+    deal_rel = relationship("Deal", back_populates="attachments")
 
 class Activity(Base):
     __tablename__ = "activities"
@@ -584,6 +586,7 @@ class Deal(Base):
     stage = relationship("PipelineStage", back_populates="deals")
     contact = relationship("Contact")
     company = relationship("Company")
+    attachments = relationship("Attachment", back_populates="deal_rel", cascade="all, delete-orphan")
     activities = relationship("Activity", foreign_keys="Activity.entity_id", 
                             primaryjoin="and_(cast(Deal.id, String) == Activity.entity_id, Activity.type == 'deal')",
                             overlaps="activities")

@@ -18,7 +18,7 @@ import {
 } from '@dnd-kit/sortable'
 import { PipelineStage, Deal } from '@/lib/api'
 import KanbanColumn from './KanbanColumn'
-import DealCard from './DealCard'
+import DealCardWithAttachments from './DealCardWithAttachments'
 
 interface KanbanBoardProps {
   stages: PipelineStage[]
@@ -108,7 +108,7 @@ export default function KanbanBoard({ stages, deals, onDealMove, onAddDeal, onEd
         <DragOverlay>
           {activeDeal ? (
             <div className="rotate-2 opacity-90">
-              <DealCard deal={activeDeal} isDragging />
+              <DealCardWithAttachments deal={activeDeal} isDragging />
             </div>
           ) : null}
         </DragOverlay>

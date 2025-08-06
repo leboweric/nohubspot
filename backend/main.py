@@ -3029,6 +3029,87 @@ async def upload_project_attachment(
         created_at=db_attachment.created_at
     )
 
+# Deal Attachment endpoints
+@app.post("/api/deals/{deal_id}/attachments", response_model=AttachmentResponse)
+async def upload_deal_attachment(
+    deal_id: int,
+    file: UploadFile = FastAPIFile(...),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Upload an attachment to a deal - stores file directly in PostgreSQL"""
+    # Verify deal exists and belongs to user's organization
+    deal = get_deal(db, deal_id, current_user.organization_id)
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal not found")
+    
+    # Read file contents
+    try:
+        contents = await file.read()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read file: {str(e)}")
+    
+    # Create the attachment record with file data stored in database
+    db_attachment = Attachment(
+        name=file.filename,
+        file_size=len(contents),
+        file_type=file.content_type,
+        file_data=contents,  # Store the actual file bytes in PostgreSQL
+        deal_id=deal_id,
+        organization_id=current_user.organization_id,
+        uploaded_by=f"{current_user.first_name} {current_user.last_name}"
+    )
+    
+    db.add(db_attachment)
+    db.commit()
+    db.refresh(db_attachment)
+    
+    # Log activity
+    activity = Activity(
+        organization_id=current_user.organization_id,
+        title=f"File attached to deal",
+        description=f"File '{file.filename}' was attached to deal '{deal.title}'",
+        type="attachment",
+        entity_id=str(deal_id),
+        created_by=f"{current_user.first_name} {current_user.last_name}"
+    )
+    db.add(activity)
+    db.commit()
+    
+    # Return attachment without file_data to avoid sending large binary in response
+    return AttachmentResponse(
+        id=db_attachment.id,
+        name=db_attachment.name,
+        description=db_attachment.description,
+        file_size=db_attachment.file_size,
+        file_type=db_attachment.file_type,
+        file_url=db_attachment.file_url,
+        company_id=db_attachment.company_id,
+        project_id=db_attachment.project_id,
+        deal_id=db_attachment.deal_id,
+        uploaded_by=db_attachment.uploaded_by,
+        created_at=db_attachment.created_at
+    )
+
+@app.get("/api/deals/{deal_id}/attachments", response_model=List[AttachmentResponse])
+async def get_deal_attachments(
+    deal_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all attachments for a deal"""
+    # Verify deal exists and belongs to user's organization
+    deal = get_deal(db, deal_id, current_user.organization_id)
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal not found")
+    
+    attachments = db.query(Attachment).filter(
+        Attachment.deal_id == deal_id,
+        Attachment.organization_id == current_user.organization_id
+    ).order_by(Attachment.created_at.desc()).all()
+    
+    return attachments
+
 @app.get("/api/projects/{project_id}/attachments", response_model=List[AttachmentResponse])
 async def get_project_attachments(
     project_id: int,
@@ -3093,10 +3174,13 @@ async def delete_attachment(
     if not attachment:
         raise HTTPException(status_code=404, detail="Attachment not found")
     
-    # Get project info for activity log
+    # Get project or deal info for activity log
     project = None
+    deal = None
     if attachment.project_id:
         project = db.query(Project).filter(Project.id == attachment.project_id).first()
+    elif attachment.deal_id:
+        deal = db.query(Deal).filter(Deal.id == attachment.deal_id).first()
     
     # Delete the attachment record (file data will be deleted with it)
     db.delete(attachment)
@@ -3110,6 +3194,17 @@ async def delete_attachment(
             description=f"File '{attachment.name}' was removed from project '{project.title}'",
             type="attachment",
             entity_id=str(project.id),
+            created_by=f"{current_user.first_name} {current_user.last_name}"
+        )
+        db.add(activity)
+        db.commit()
+    elif deal:
+        activity = Activity(
+            organization_id=current_user.organization_id,
+            title=f"File removed from deal",
+            description=f"File '{attachment.name}' was removed from deal '{deal.title}'",
+            type="attachment",
+            entity_id=str(deal.id),
             created_by=f"{current_user.first_name} {current_user.last_name}"
         )
         db.add(activity)
