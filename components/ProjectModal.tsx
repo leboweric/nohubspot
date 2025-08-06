@@ -97,7 +97,7 @@ export default function ProjectModal({
           company_id: formData.company_id,
           limit: 100
         })
-        setCompanyContacts(contacts)
+        setCompanyContacts(Array.isArray(contacts) ? contacts : [])
         
         // If current contact is not in the new company's contacts, clear it
         if (formData.contact_id && !contacts.find(c => c.id === formData.contact_id)) {
@@ -125,21 +125,24 @@ export default function ProjectModal({
       let companiesData: Company[] = []
       
       try {
-        projectTypesData = await projectAPI.getProjectTypes()
+        const types = await projectAPI.getProjectTypes()
+        projectTypesData = Array.isArray(types) ? types : []
         console.log('Project types loaded:', projectTypesData?.length || 0)
       } catch (err) {
         console.error('Failed to load project types:', err)
       }
       
       try {
-        usersData = await usersAPI.getAll()
+        const users = await usersAPI.getAll()
+        usersData = Array.isArray(users) ? users : []
         console.log('Users loaded:', usersData?.length || 0)
       } catch (err) {
         console.error('Failed to load users:', err)
       }
       
       try {
-        companiesData = await companyAPI.getAll({ limit: 1000 })
+        const companiesResponse = await companyAPI.getAll({ limit: 1000 })
+        companiesData = companiesResponse?.items || []
         console.log('Companies loaded:', companiesData?.length || 0)
       } catch (err) {
         console.error('Failed to load companies:', err)

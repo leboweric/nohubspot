@@ -77,12 +77,13 @@ export default function DealModal({
 
   const loadFormData = async () => {
     try {
-      const [companiesData, contactsData] = await Promise.all([
+      const [companiesResponse, contactsData] = await Promise.all([
         companyAPI.getAll({ limit: 1000 }), // Increased to get all companies
         contactAPI.getAll({ limit: 1000 })   // Increased to get more contacts
       ])
-      setCompanies(companiesData)
-      setContacts(contactsData)
+      // Extract items array from paginated response
+      setCompanies(companiesResponse?.items || [])
+      setContacts(Array.isArray(contactsData) ? contactsData : [])
     } catch (err) {
       console.error('Failed to load form data:', err)
     }
@@ -271,7 +272,7 @@ export default function DealModal({
                 Currency
               </label>
               <ModernSelect
-                value={formData.currency}
+                value={formData.currency || "USD"}
                 onChange={(value) => setFormData(prev => ({ ...prev, currency: value as string }))}
                 options={[
                   { value: "USD", label: "USD" },
@@ -303,7 +304,7 @@ export default function DealModal({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Probability
-                <span className={`ml-2 font-semibold ${getProbabilityColor(formData.probability)}`}>
+                <span className={`ml-2 font-semibold ${getProbabilityColor(formData.probability || 50)}`}>
                   {formData.probability}%
                 </span>
               </label>
