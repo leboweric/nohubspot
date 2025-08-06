@@ -154,9 +154,10 @@ export default function ProjectTypesSettings() {
     newTypes[index - 1] = type
     
     // Update display orders
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nohubspot-production.up.railway.app'
     for (let i = 0; i < newTypes.length; i++) {
       try {
-        await fetch(`/api/project-types/${newTypes[i].id}`, {
+        await fetch(`${baseUrl}/api/project-types/${newTypes[i].id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -180,9 +181,10 @@ export default function ProjectTypesSettings() {
     newTypes[index + 1] = type
     
     // Update display orders
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nohubspot-production.up.railway.app'
     for (let i = 0; i < newTypes.length; i++) {
       try {
-        await fetch(`/api/project-types/${newTypes[i].id}`, {
+        await fetch(`${baseUrl}/api/project-types/${newTypes[i].id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -200,7 +202,8 @@ export default function ProjectTypesSettings() {
 
   const initializeDefaults = async () => {
     try {
-      const response = await fetch('/api/project-types/initialize', {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nohubspot-production.up.railway.app'
+      const response = await fetch(`${baseUrl}/api/project-types/initialize`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
