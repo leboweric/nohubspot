@@ -198,6 +198,10 @@ class AttachmentResponse(AttachmentBase):
     
     class Config:
         from_attributes = True
+        # Exclude file_data from response to avoid sending large binary data
+        fields = {
+            "file_data": {"exclude": True}
+        }
 
 # Activity schemas
 class ActivityBase(BaseModel):

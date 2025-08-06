@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Project } from '@/lib/api'
-import { Paperclip, Upload, X, Download, File, FileText } from 'lucide-react'
+import { Paperclip, Upload, X, Download, File, FileText, Loader2 } from 'lucide-react'
 import { getAuthState } from '@/lib/auth'
 import ProjectUpdates from './ProjectUpdates'
 
@@ -32,6 +32,8 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [loadingAttachments, setLoadingAttachments] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadSuccess, setUploadSuccess] = useState(false)
   const [attachmentCount, setAttachmentCount] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { token } = getAuthState()
@@ -133,8 +135,24 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
     if (!file) return
 
     setUploading(true)
+    setUploadProgress(0)
+    setUploadSuccess(false)
     
     try {
+      // Show file size warning for large files
+      const maxSize = 10 * 1024 * 1024 // 10MB
+      if (file.size > maxSize) {
+        if (!confirm(`This file is ${formatFileSize(file.size)}. Large files may take time to upload. Continue?`)) {
+          setUploading(false)
+          return
+        }
+      }
+      
+      // Simulate progress for better UX (since fetch doesn't support upload progress)
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 10, 90))
+      }, 200)
+      
       // Upload actual file
       const formData = new FormData()
       formData.append('file', file)
@@ -148,13 +166,25 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
         body: formData
       })
 
+      clearInterval(progressInterval)
+      
       if (response.ok) {
+        setUploadProgress(100)
+        setUploadSuccess(true)
         await loadAttachments()
         if (onUpdate) onUpdate()
+        
+        // Show success for 2 seconds
+        setTimeout(() => {
+          setUploadSuccess(false)
+          setUploadProgress(0)
+        }, 2000)
       } else {
+        alert('Upload failed. Please try again.')
         console.error('Upload failed')
       }
     } catch (error) {
+      alert('Upload failed. Please check your connection and try again.')
       console.error('Failed to upload file:', error)
     } finally {
       setUploading(false)
@@ -343,7 +373,11 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
             className="flex items-center justify-between w-full text-xs text-gray-600 hover:text-blue-600 transition-colors"
           >
             <div className="flex items-center">
-              <Paperclip className="w-3 h-3 mr-1" />
+              {loadingAttachments && !showAttachments ? (
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+              ) : (
+                <Paperclip className="w-3 h-3 mr-1" />
+              )}
               <span>Attachments {attachmentCount > 0 && `(${attachmentCount})`}</span>
             </div>
             <svg
@@ -365,21 +399,34 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
             <div className="text-xs text-gray-500 text-center py-2">Loading attachments...</div>
           ) : (
             <>
-              {/* Upload Button */}
-              <button
-                onClick={handleFileSelect}
-                disabled={uploading}
-                className="w-full mb-2 px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors flex items-center justify-center text-xs text-gray-600 hover:text-blue-600"
-              >
-                {uploading ? (
-                  <span>Uploading...</span>
-                ) : (
-                  <>
-                    <Upload className="w-3 h-3 mr-1" />
-                    <span>Upload File</span>
-                  </>
-                )}
-              </button>
+              {/* Upload Button and Progress */}
+              {uploading ? (
+                <div className="w-full mb-2 px-3 py-2 border-2 border-gray-300 rounded-lg bg-gray-50">
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-gray-600">
+                      {uploadSuccess ? '✅ Upload complete!' : 'Uploading...'}
+                    </span>
+                    <span className="text-gray-500">{uploadProgress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                    <div 
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        uploadSuccess ? 'bg-green-500' : 'bg-blue-500'
+                      }`}
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={handleFileSelect}
+                  disabled={uploading}
+                  className="w-full mb-2 px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors flex items-center justify-center text-xs text-gray-600 hover:text-blue-600"
+                >
+                  <Upload className="w-3 h-3 mr-1" />
+                  <span>Upload File</span>
+                </button>
+              )}
               
               <input
                 ref={fileInputRef}
