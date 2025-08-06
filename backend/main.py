@@ -35,6 +35,7 @@ def rate_limit_check(client_ip: str, endpoint: str, max_requests: int = 30, wind
     return True
 
 from database import get_db, SessionLocal, engine
+import models
 from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, GoogleOrganizationConfig, GoogleUserConnection, PipelineStage, Deal, EmailTracking, EmailEvent, EmailSharingPermission, ProjectStage, Project, ProjectType, ProjectUpdate, DealUpdate
 from schemas import (
     CompanyCreate, CompanyResponse, CompanyUpdate, CompanyPaginatedResponse,
@@ -3380,7 +3381,7 @@ async def create_deal_update(
         
         # Create the update - don't use **update.dict() as it may include None values
         update_data = update.dict(exclude_none=True)
-        db_update = DealUpdate(
+        db_update = models.DealUpdate(
             deal_id=deal_id,
             organization_id=current_user.organization_id,
             created_by=current_user.id,
