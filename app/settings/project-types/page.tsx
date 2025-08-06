@@ -52,7 +52,8 @@ export default function ProjectTypesSettings() {
   const loadProjectTypes = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/project-types?include_inactive=true', {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nohubspot-production.up.railway.app'
+      const response = await fetch(`${baseUrl}/api/project-types?include_inactive=true`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -72,7 +73,8 @@ export default function ProjectTypesSettings() {
 
   const handleAdd = async () => {
     try {
-      const response = await fetch('/api/project-types', {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nohubspot-production.up.railway.app'
+      const response = await fetch(`${baseUrl}/api/project-types`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -103,7 +105,8 @@ export default function ProjectTypesSettings() {
     if (!editingType) return
     
     try {
-      const response = await fetch(`/api/project-types/${editingType.id}`, {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nohubspot-production.up.railway.app'
+      const response = await fetch(`${baseUrl}/api/project-types/${editingType.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -129,7 +132,8 @@ export default function ProjectTypesSettings() {
     if (!confirm('Are you sure you want to delete this project type?')) return
     
     try {
-      const response = await fetch(`/api/project-types/${id}`, {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nohubspot-production.up.railway.app'
+      const response = await fetch(`${baseUrl}/api/project-types/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
