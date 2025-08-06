@@ -2980,12 +2980,12 @@ async def upload_project_attachment(
         raise HTTPException(status_code=404, detail="Project not found")
     
     # Create the attachment
-    db_attachment = Attachment(
-        **attachment.dict(exclude={'project_id'}),
-        project_id=project_id,
-        organization_id=current_user.organization_id,
-        uploaded_by=f"{current_user.first_name} {current_user.last_name}"
-    )
+    attachment_data = attachment.dict()
+    attachment_data['project_id'] = project_id
+    attachment_data['organization_id'] = current_user.organization_id
+    attachment_data['uploaded_by'] = f"{current_user.first_name} {current_user.last_name}"
+    
+    db_attachment = Attachment(**attachment_data)
     
     db.add(db_attachment)
     db.commit()

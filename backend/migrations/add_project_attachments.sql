@@ -14,6 +14,3 @@ FROM companies c
 WHERE a.company_id = c.id
 AND a.organization_id IS NULL;
 
--- Make organization_id NOT NULL after populating existing records
--- Note: This should be run after the UPDATE above completes
--- ALTER TABLE attachments ALTER COLUMN organization_id SET NOT NULL;
