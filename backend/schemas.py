@@ -890,6 +890,37 @@ class ProjectUpdateResponse(ProjectUpdateBase, TimestampMixin):
         from_attributes = True
 
 
+# Deal Update schemas
+class DealUpdateBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    update_type: str = Field(default="status", max_length=50)  # status, progress, risk, decision
+    deal_health: Optional[str] = Field(None, max_length=20)  # green, yellow, red
+    probability_change: Optional[int] = Field(None, ge=-100, le=100)  # Change in probability
+    value_change: Optional[float] = None  # Change in deal value
+
+class DealUpdateCreate(DealUpdateBase):
+    pass
+
+class DealUpdateUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = None
+    update_type: Optional[str] = Field(None, max_length=50)
+    deal_health: Optional[str] = Field(None, max_length=20)
+    probability_change: Optional[int] = Field(None, ge=-100, le=100)
+    value_change: Optional[float] = None
+
+class DealUpdateResponse(DealUpdateBase, TimestampMixin):
+    id: int
+    deal_id: int
+    organization_id: int
+    created_by: int
+    created_by_name: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+
 # Email Tracking schemas
 class EmailTrackingBase(BaseModel):
     message_id: str = Field(..., max_length=255)

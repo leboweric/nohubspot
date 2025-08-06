@@ -35,7 +35,7 @@ def rate_limit_check(client_ip: str, endpoint: str, max_requests: int = 30, wind
     return True
 
 from database import get_db, SessionLocal, engine
-from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, GoogleOrganizationConfig, GoogleUserConnection, PipelineStage, Deal, EmailTracking, EmailEvent, EmailSharingPermission, ProjectStage, Project, ProjectType, ProjectUpdate
+from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, GoogleOrganizationConfig, GoogleUserConnection, PipelineStage, Deal, EmailTracking, EmailEvent, EmailSharingPermission, ProjectStage, Project, ProjectType, ProjectUpdate, DealUpdate
 from schemas import (
     CompanyCreate, CompanyResponse, CompanyUpdate, CompanyPaginatedResponse,
     ContactCreate, ContactResponse, ContactUpdate,
@@ -48,6 +48,7 @@ from schemas import (
     UserInviteCreate, UserInviteResponse, UserInviteAccept, Token,
     UserAdd, UserAddResponse,
     ProjectUpdateResponse, ProjectUpdateCreate, ProjectUpdateUpdate,
+    DealUpdateResponse, DealUpdateCreate, DealUpdateUpdate,
     EmailTemplateCreate, EmailTemplateResponse, EmailTemplateUpdate,
     CalendarEventCreate, CalendarEventResponse, CalendarEventUpdate,
     EventAttendeeCreate, EventAttendeeResponse,
@@ -3347,6 +3348,139 @@ async def delete_project_update(
         ProjectUpdate.id == update_id,
         ProjectUpdate.project_id == project_id,
         ProjectUpdate.organization_id == current_user.organization_id
+    ).first()
+    
+    if not db_update:
+        raise HTTPException(status_code=404, detail="Update not found")
+    
+    # Delete the update
+    db.delete(db_update)
+    db.commit()
+    
+    return {"detail": "Update deleted successfully"}
+
+
+# Deal Updates endpoints
+@app.post("/api/deals/{deal_id}/updates", response_model=DealUpdateResponse)
+async def create_deal_update(
+    deal_id: int,
+    update: DealUpdateCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new update for a deal"""
+    # Verify deal exists and belongs to user's organization
+    deal = get_deal(db, deal_id, current_user.organization_id)
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal not found")
+    
+    # Get user's full name for the update
+    user_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip()
+    
+    # Create the update
+    db_update = DealUpdate(
+        **update.dict(),
+        deal_id=deal_id,
+        organization_id=current_user.organization_id,
+        created_by=current_user.id,
+        created_by_name=user_name or current_user.email
+    )
+    
+    db.add(db_update)
+    db.commit()
+    db.refresh(db_update)
+    
+    # Create activity log
+    activity = Activity(
+        organization_id=current_user.organization_id,
+        title=f"Added update to deal '{deal.title}'",
+        description=update.title,
+        type="deal_update",
+        entity_id=str(deal_id),
+        created_by=user_name or current_user.email
+    )
+    db.add(activity)
+    db.commit()
+    
+    return db_update
+
+@app.get("/api/deals/{deal_id}/updates", response_model=List[DealUpdateResponse])
+async def get_deal_updates(
+    deal_id: int,
+    update_type: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all updates for a deal"""
+    # Verify deal exists and belongs to user's organization
+    deal = get_deal(db, deal_id, current_user.organization_id)
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal not found")
+    
+    query = db.query(DealUpdate).filter(
+        DealUpdate.deal_id == deal_id,
+        DealUpdate.organization_id == current_user.organization_id
+    )
+    
+    if update_type:
+        query = query.filter(DealUpdate.update_type == update_type)
+    
+    updates = query.order_by(DealUpdate.created_at.desc()).all()
+    
+    return updates
+
+@app.put("/api/deals/{deal_id}/updates/{update_id}", response_model=DealUpdateResponse)
+async def update_deal_update(
+    deal_id: int,
+    update_id: int,
+    update: DealUpdateUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update a deal update"""
+    # Verify deal exists and belongs to user's organization
+    deal = get_deal(db, deal_id, current_user.organization_id)
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal not found")
+    
+    # Get the update
+    db_update = db.query(DealUpdate).filter(
+        DealUpdate.id == update_id,
+        DealUpdate.deal_id == deal_id,
+        DealUpdate.organization_id == current_user.organization_id
+    ).first()
+    
+    if not db_update:
+        raise HTTPException(status_code=404, detail="Update not found")
+    
+    # Update fields
+    update_data = update.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_update, field, value)
+    
+    db.commit()
+    db.refresh(db_update)
+    
+    return db_update
+
+@app.delete("/api/deals/{deal_id}/updates/{update_id}")
+async def delete_deal_update(
+    deal_id: int,
+    update_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a deal update"""
+    # Verify deal exists and belongs to user's organization
+    deal = get_deal(db, deal_id, current_user.organization_id)
+    if not deal:
+        raise HTTPException(status_code=404, detail="Deal not found")
+    
+    # Get the update
+    db_update = db.query(DealUpdate).filter(
+        DealUpdate.id == update_id,
+        DealUpdate.deal_id == deal_id,
+        DealUpdate.organization_id == current_user.organization_id
     ).first()
     
     if not db_update:

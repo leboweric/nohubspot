@@ -4,8 +4,9 @@ import React, { useState, useRef } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Deal } from '@/lib/api'
-import { Paperclip, Upload, X, Loader2, File } from 'lucide-react'
+import { Paperclip, Upload, X, Loader2, File, MessageSquare } from 'lucide-react'
 import { getAuthState } from '@/lib/auth'
+import DealUpdates from './DealUpdates'
 
 interface Attachment {
   id: number
@@ -27,6 +28,7 @@ interface DealCardProps {
 
 export default function DealCardWithAttachments({ deal, isDragging = false, onEdit, onUpdate }: DealCardProps) {
   const [showAttachments, setShowAttachments] = useState(false)
+  const [showUpdates, setShowUpdates] = useState(false)
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [loadingAttachments, setLoadingAttachments] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -322,8 +324,8 @@ export default function DealCardWithAttachments({ deal, isDragging = false, onEd
           )}
         </div>
 
-        {/* Attachment Button */}
-        <div className="mt-3 pt-2 border-t border-gray-100">
+        {/* Attachment and Updates Buttons */}
+        <div className="mt-3 pt-2 border-t border-gray-100 space-y-1">
           <button
             onClick={handleAttachmentClick}
             className="flex items-center justify-between w-full text-xs text-gray-600 hover:text-blue-600 transition-colors"
@@ -338,6 +340,24 @@ export default function DealCardWithAttachments({ deal, isDragging = false, onEd
             </div>
             <svg
               className={`w-3 h-3 transform transition-transform ${showAttachments ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          
+          <button
+            onClick={() => setShowUpdates(!showUpdates)}
+            className="flex items-center justify-between w-full text-xs text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <div className="flex items-center">
+              <MessageSquare className="w-3 h-3 mr-1" />
+              <span>Updates</span>
+            </div>
+            <svg
+              className={`w-3 h-3 transform transition-transform ${showUpdates ? 'rotate-180' : ''}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -434,6 +454,14 @@ export default function DealCardWithAttachments({ deal, isDragging = false, onEd
             </>
           )}
         </div>
+      )}
+      
+      {/* Updates Panel */}
+      {showUpdates && (
+        <DealUpdates 
+          dealId={deal.id} 
+          onClose={() => setShowUpdates(false)}
+        />
       )}
     </div>
   )

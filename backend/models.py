@@ -587,6 +587,7 @@ class Deal(Base):
     contact = relationship("Contact")
     company = relationship("Company")
     attachments = relationship("Attachment", back_populates="deal_rel", cascade="all, delete-orphan")
+    updates = relationship("DealUpdate", back_populates="deal", cascade="all, delete-orphan", order_by="desc(DealUpdate.created_at)")
     activities = relationship("Activity", foreign_keys="Activity.entity_id", 
                             primaryjoin="and_(cast(Deal.id, String) == Activity.entity_id, Activity.type == 'deal')",
                             overlaps="activities")
@@ -665,6 +666,35 @@ class Project(Base):
     activities = relationship("Activity", foreign_keys="Activity.entity_id", 
                             primaryjoin="and_(cast(Project.id, String) == Activity.entity_id, Activity.type == 'project')",
                             overlaps="activities")
+
+
+class DealUpdate(Base):
+    __tablename__ = "deal_updates"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    deal_id = Column(Integer, ForeignKey("deals.id", ondelete="CASCADE"), nullable=False)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
+    
+    # Update content
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    update_type = Column(String(50), nullable=False, default="status")  # status, progress, risk, decision
+    
+    # Status indicators
+    deal_health = Column(String(20), nullable=True)  # green, yellow, red
+    probability_change = Column(Integer, nullable=True)  # Change in probability percentage
+    value_change = Column(Float, nullable=True)  # Change in deal value
+    
+    # Metadata
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_by_name = Column(String(255), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    
+    # Relationships
+    deal = relationship("Deal", back_populates="updates")
+    creator = relationship("User")
+    organization = relationship("Organization")
 
 
 class ProjectType(Base):
