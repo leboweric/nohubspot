@@ -695,7 +695,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Project Types Management Section */}
-        {isAdmin(user) && (
+        {(isOwner || user?.role === 'admin') && (
           <div className="bg-card border rounded-lg p-6">
             <div className="flex justify-between items-start mb-4">
               <div>
