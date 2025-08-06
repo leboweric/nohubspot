@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import AuthGuard from '@/components/AuthGuard'
+import MainLayout from '@/components/MainLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Pencil, Trash2, Plus, ChevronUp, ChevronDown, AlertCircle } from 'lucide-react'
 import { projectAPI } from '@/lib/api'
+import { getAuthState, isAdmin } from '@/lib/auth'
 
 interface ProjectType {
   id: number
@@ -22,6 +25,9 @@ interface ProjectType {
 }
 
 export default function ProjectTypesSettings() {
+  const { user } = getAuthState()
+  const isUserAdmin = user?.role === 'owner' || user?.role === 'admin'
+  
   const [projectTypes, setProjectTypes] = useState<ProjectType[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -216,16 +222,39 @@ export default function ProjectTypesSettings() {
     }
   }
 
+  if (!isUserAdmin) {
+    return (
+      <AuthGuard>
+        <MainLayout>
+          <div className="container mx-auto p-6 max-w-4xl">
+            <Alert className="border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                You must be an admin to access this page.
+              </AlertDescription>
+            </Alert>
+          </div>
+        </MainLayout>
+      </AuthGuard>
+    )
+  }
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-gray-500">Loading project types...</div>
-      </div>
+      <AuthGuard>
+        <MainLayout>
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-gray-500">Loading project types...</div>
+          </div>
+        </MainLayout>
+      </AuthGuard>
     )
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
+    <AuthGuard>
+      <MainLayout>
+        <div className="container mx-auto p-6 max-w-4xl">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Manage Project Types</CardTitle>
@@ -428,6 +457,8 @@ export default function ProjectTypesSettings() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+        </div>
+      </MainLayout>
+    </AuthGuard>
   )
 }
