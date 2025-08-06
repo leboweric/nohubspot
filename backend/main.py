@@ -3406,7 +3406,6 @@ async def create_deal_update(
         
         return db_update
     except Exception as e:
-        logger.error(f"Error creating deal update: {str(e)}")
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to create update: {str(e)}")
 
