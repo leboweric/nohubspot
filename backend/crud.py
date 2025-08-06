@@ -1382,10 +1382,14 @@ def create_project_type(
         ProjectType.organization_id == organization_id
     ).scalar() or 0
     
+    # Convert to dict and handle display_order separately
+    project_type_data = project_type.dict()
+    if 'display_order' not in project_type_data or project_type_data['display_order'] <= 0:
+        project_type_data['display_order'] = max_order + 1
+    
     db_project_type = ProjectType(
-        **project_type.dict(),
-        organization_id=organization_id,
-        display_order=project_type.display_order if project_type.display_order > 0 else max_order + 1
+        **project_type_data,
+        organization_id=organization_id
     )
     
     db.add(db_project_type)
