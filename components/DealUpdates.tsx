@@ -168,11 +168,15 @@ export default function DealUpdates({ dealId, onClose }: DealUpdatesProps) {
   }
 
   return (
-    <div className="mt-3 pt-3 border-t border-gray-200">
+    <div className="mt-3 pt-3 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-sm font-semibold text-gray-900">Deal Updates</h4>
         <button
-          onClick={() => setShowAddForm(true)}
+          onClick={(e) => {
+            e.stopPropagation()
+            console.log('Add Update clicked, current showAddForm:', showAddForm)
+            setShowAddForm(!showAddForm)
+          }}
           className="text-xs text-blue-600 hover:text-blue-700"
         >
           + Add Update
