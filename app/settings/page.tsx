@@ -694,6 +694,29 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* Project Types Management Section */}
+        {isAdmin(user) && (
+          <div className="bg-card border rounded-lg p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h2 className="text-lg font-semibold">Project Types</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Customize the project types available for your organization
+                </p>
+              </div>
+              <a
+                href="/settings/project-types"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+              >
+                Manage Project Types
+              </a>
+            </div>
+            <p className="text-sm text-gray-600">
+              Define custom project types that match your organization's workflow. Each project can be assigned one of these types for better categorization and reporting.
+            </p>
+          </div>
+        )}
+
         {/* Data Management Section */}
         {isOwner && (
           <div className="bg-card border rounded-lg p-6">

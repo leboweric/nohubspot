@@ -757,27 +757,16 @@ class ProjectStageResponse(ProjectStageBase, TimestampMixin):
 
 
 # Project Type enum for validation
+# Default project types - kept for backward compatibility
+# Each organization should customize their own project types
 PROJECT_TYPES = [
-    "Annual Giving",
-    "Board Development", 
-    "Capital Campaign",
-    "Individual or Team Coaching",
-    "Communications Strategy",
-    "Consultation Set-Up",
-    "Executive Search",
-    "Feasibility Study",
-    "Fundraising Training",
-    "Fundraising/Resource Development",
-    "Grant Writing",
-    "Interim Development Director",
-    "Interim Executive Director",
-    "Marketing Strategy/Support",
-    "Merger/Partnership",
-    "Mission/Vision/Values",
-    "Organizational Assessment",
-    "Program Evaluation",
-    "Strategic Planning",
-    "Team Training",
+    "Consulting",
+    "Implementation",
+    "Training",
+    "Support",
+    "Development",
+    "Research",
+    "Strategy",
     "Other"
 ]
 

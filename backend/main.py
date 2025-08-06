@@ -2874,37 +2874,19 @@ async def initialize_default_project_types(
     if existing_types:
         return {"message": "Project types already exist", "count": len(existing_types)}
     
-    # Check if this is Strategic Consulting & Coaching
-    organization = get_organization_by_id(db, current_user.organization_id)
-    if organization and organization.name == "Strategic Consulting & Coaching, LLC":
-        # Use SCC-specific project types
-        scc_types = [
-            "Annual Giving",
-            "Board Development",
-            "Capital Campaign",
-            "Church Administration",
-            "Church Search",
-            "Communication Strategies",
-            "Conflict Resolution/Mediation",
-            "Feasibility Study",
-            "Gift Acceptance Policies",
-            "Human Resources",
-            "Leadership Development/Training",
-            "Major Gifts",
-            "Other",
-            "Pastoral Counseling",
-            "Planned Giving",
-            "Search - Other",
-            "Social Media",
-            "Staff Search",
-            "Stewardship Campaign",
-            "Strategic Planning",
-            "Vision Framing"
-        ]
-        types_to_create = scc_types
-    else:
-        # Use default project types for other organizations
-        types_to_create = PROJECT_TYPES
+    # Use a generic default list that works for most organizations
+    # Organizations can customize these after initialization
+    default_types = [
+        "Consulting",
+        "Implementation",
+        "Training",
+        "Support",
+        "Development",
+        "Research",
+        "Strategy",
+        "Other"
+    ]
+    types_to_create = default_types
     
     # Create project types
     created_types = []
