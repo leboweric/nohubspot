@@ -2967,10 +2967,19 @@ async def delete_project_endpoint(
 
 
 # Project Attachment endpoints
+from fastapi import UploadFile, File as FastAPIFile
+import os
+import uuid
+from pathlib import Path
+
+# Create uploads directory if it doesn't exist
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
+
 @app.post("/api/projects/{project_id}/attachments", response_model=AttachmentResponse)
 async def upload_project_attachment(
     project_id: int,
-    attachment: AttachmentCreate,
+    file: UploadFile = FastAPIFile(...),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
@@ -2980,13 +2989,29 @@ async def upload_project_attachment(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
-    # Create the attachment
-    attachment_data = attachment.dict()
-    attachment_data['project_id'] = project_id
-    attachment_data['organization_id'] = current_user.organization_id
-    attachment_data['uploaded_by'] = f"{current_user.first_name} {current_user.last_name}"
+    # Generate unique filename
+    file_extension = os.path.splitext(file.filename)[1]
+    unique_filename = f"{uuid.uuid4()}{file_extension}"
+    file_path = UPLOAD_DIR / unique_filename
     
-    db_attachment = Attachment(**attachment_data)
+    # Save file to disk
+    try:
+        contents = await file.read()
+        with open(file_path, "wb") as f:
+            f.write(contents)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+    
+    # Create the attachment record
+    db_attachment = Attachment(
+        name=file.filename,
+        file_size=len(contents),
+        file_type=file.content_type,
+        file_url=f"/api/attachments/download/{unique_filename}",
+        project_id=project_id,
+        organization_id=current_user.organization_id,
+        uploaded_by=f"{current_user.first_name} {current_user.last_name}"
+    )
     
     db.add(db_attachment)
     db.commit()
@@ -3025,6 +3050,34 @@ async def get_project_attachments(
     
     return attachments
 
+@app.get("/api/attachments/download/{filename}")
+async def download_attachment(
+    filename: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Download an attachment file"""
+    from fastapi.responses import FileResponse
+    
+    # Security check - verify the user has access to this file
+    attachment = db.query(Attachment).filter(
+        Attachment.file_url.contains(filename),
+        Attachment.organization_id == current_user.organization_id
+    ).first()
+    
+    if not attachment:
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    file_path = UPLOAD_DIR / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found on disk")
+    
+    return FileResponse(
+        path=file_path,
+        filename=attachment.name,
+        media_type=attachment.file_type or 'application/octet-stream'
+    )
+
 @app.delete("/api/attachments/{attachment_id}")
 async def delete_attachment(
     attachment_id: int,
@@ -3045,7 +3098,17 @@ async def delete_attachment(
     if attachment.project_id:
         project = db.query(Project).filter(Project.id == attachment.project_id).first()
     
-    # Delete the attachment
+    # Delete file from disk if it exists
+    if attachment.file_url and "/download/" in attachment.file_url:
+        filename = attachment.file_url.split("/download/")[-1]
+        file_path = UPLOAD_DIR / filename
+        if file_path.exists():
+            try:
+                os.remove(file_path)
+            except Exception as e:
+                print(f"Failed to delete file from disk: {e}")
+    
+    # Delete the attachment record
     db.delete(attachment)
     db.commit()
     
