@@ -3369,40 +3369,46 @@ async def create_deal_update(
     db: Session = Depends(get_db)
 ):
     """Create a new update for a deal"""
-    # Verify deal exists and belongs to user's organization
-    deal = get_deal(db, deal_id, current_user.organization_id)
-    if not deal:
-        raise HTTPException(status_code=404, detail="Deal not found")
-    
-    # Get user's full name for the update
-    user_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip()
-    
-    # Create the update
-    db_update = DealUpdate(
-        **update.dict(),
-        deal_id=deal_id,
-        organization_id=current_user.organization_id,
-        created_by=current_user.id,
-        created_by_name=user_name or current_user.email
-    )
-    
-    db.add(db_update)
-    db.commit()
-    db.refresh(db_update)
-    
-    # Create activity log
-    activity = Activity(
-        organization_id=current_user.organization_id,
-        title=f"Added update to deal '{deal.title}'",
-        description=update.title,
-        type="deal_update",
-        entity_id=str(deal_id),
-        created_by=user_name or current_user.email
-    )
-    db.add(activity)
-    db.commit()
-    
-    return db_update
+    try:
+        # Verify deal exists and belongs to user's organization
+        deal = get_deal(db, deal_id, current_user.organization_id)
+        if not deal:
+            raise HTTPException(status_code=404, detail="Deal not found")
+        
+        # Get user's full name for the update
+        user_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip()
+        
+        # Create the update - don't use **update.dict() as it may include None values
+        update_data = update.dict(exclude_none=True)
+        db_update = DealUpdate(
+            deal_id=deal_id,
+            organization_id=current_user.organization_id,
+            created_by=current_user.id,
+            created_by_name=user_name or current_user.email,
+            **update_data
+        )
+        
+        db.add(db_update)
+        db.commit()
+        db.refresh(db_update)
+        
+        # Create activity log
+        activity = Activity(
+            organization_id=current_user.organization_id,
+            title=f"Added update to deal '{deal.title}'",
+            description=update.title,
+            type="deal_update",
+            entity_id=str(deal_id),
+            created_by=user_name or current_user.email
+        )
+        db.add(activity)
+        db.commit()
+        
+        return db_update
+    except Exception as e:
+        logger.error(f"Error creating deal update: {str(e)}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create update: {str(e)}")
 
 @app.get("/api/deals/{deal_id}/updates", response_model=List[DealUpdateResponse])
 async def get_deal_updates(

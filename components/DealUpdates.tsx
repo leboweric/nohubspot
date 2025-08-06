@@ -98,9 +98,14 @@ export default function DealUpdates({ dealId, onClose }: DealUpdatesProps) {
           probability_change: 0,
           value_change: 0
         })
+      } else {
+        const errorText = await response.text()
+        console.error('Failed to create update:', response.status, errorText)
+        alert(`Failed to create update: ${errorText}`)
       }
     } catch (error) {
       console.error('Failed to create update:', error)
+      alert('Failed to create update. Please try again.')
     } finally {
       setSubmitting(false)
     }
