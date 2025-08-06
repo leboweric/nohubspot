@@ -853,6 +853,42 @@ class ProjectTypeResponse(ProjectTypeBase, TimestampMixin):
         from_attributes = True
 
 
+# Project Update schemas
+class ProjectUpdateBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    update_type: str = Field(default="status", max_length=50)  # status, milestone, risk, decision
+    is_milestone: bool = Field(default=False)
+    milestone_date: Optional[datetime] = None
+    milestone_completed: Optional[bool] = Field(default=False)
+    project_health: Optional[str] = Field(None, max_length=20)  # green, yellow, red
+    progress_percentage: Optional[int] = Field(None, ge=0, le=100)
+
+class ProjectUpdateCreate(ProjectUpdateBase):
+    pass
+
+class ProjectUpdateUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = None
+    update_type: Optional[str] = Field(None, max_length=50)
+    is_milestone: Optional[bool] = None
+    milestone_date: Optional[datetime] = None
+    milestone_completed: Optional[bool] = None
+    project_health: Optional[str] = Field(None, max_length=20)
+    progress_percentage: Optional[int] = Field(None, ge=0, le=100)
+
+class ProjectUpdateResponse(ProjectUpdateBase, TimestampMixin):
+    id: int
+    project_id: int
+    organization_id: int
+    created_by: int
+    created_by_name: Optional[str] = None
+    milestone_completed_date: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+
+
 # Email Tracking schemas
 class EmailTrackingBase(BaseModel):
     message_id: str = Field(..., max_length=255)

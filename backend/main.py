@@ -35,7 +35,7 @@ def rate_limit_check(client_ip: str, endpoint: str, max_requests: int = 30, wind
     return True
 
 from database import get_db, SessionLocal, engine
-from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, GoogleOrganizationConfig, GoogleUserConnection, PipelineStage, Deal, EmailTracking, EmailEvent, EmailSharingPermission, ProjectStage, Project, ProjectType
+from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, GoogleOrganizationConfig, GoogleUserConnection, PipelineStage, Deal, EmailTracking, EmailEvent, EmailSharingPermission, ProjectStage, Project, ProjectType, ProjectUpdate
 from schemas import (
     CompanyCreate, CompanyResponse, CompanyUpdate, CompanyPaginatedResponse,
     ContactCreate, ContactResponse, ContactUpdate,
@@ -47,6 +47,7 @@ from schemas import (
     OrganizationCreate, OrganizationResponse, UserRegister, UserLogin, UserResponse, UserCreate,
     UserInviteCreate, UserInviteResponse, UserInviteAccept, Token,
     UserAdd, UserAddResponse,
+    ProjectUpdateResponse, ProjectUpdateCreate, ProjectUpdateUpdate,
     EmailTemplateCreate, EmailTemplateResponse, EmailTemplateUpdate,
     CalendarEventCreate, CalendarEventResponse, CalendarEventUpdate,
     EventAttendeeCreate, EventAttendeeResponse,
@@ -3062,6 +3063,152 @@ async def delete_attachment(
         db.commit()
     
     return {"message": "Attachment deleted successfully"}
+
+
+# Project Updates endpoints
+@app.post("/api/projects/{project_id}/updates", response_model=ProjectUpdateResponse)
+async def create_project_update(
+    project_id: int,
+    update: ProjectUpdateCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new project update or milestone"""
+    # Verify project exists and belongs to user's organization
+    project = get_project(db, project_id, current_user.organization_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Create the update
+    db_update = ProjectUpdate(
+        **update.dict(),
+        project_id=project_id,
+        organization_id=current_user.organization_id,
+        created_by=current_user.id,
+        created_by_name=f"{current_user.first_name} {current_user.last_name}"
+    )
+    
+    # If marking a milestone as completed, set the completion date
+    if update.is_milestone and update.milestone_completed:
+        db_update.milestone_completed_date = datetime.utcnow()
+    
+    db.add(db_update)
+    db.commit()
+    db.refresh(db_update)
+    
+    # Log activity
+    activity_type = "milestone" if update.is_milestone else "update"
+    activity = Activity(
+        organization_id=current_user.organization_id,
+        title=f"Project {activity_type} added",
+        description=f"{update.title} - {project.title}",
+        type="project_update",
+        entity_id=str(project_id),
+        created_by=f"{current_user.first_name} {current_user.last_name}"
+    )
+    db.add(activity)
+    db.commit()
+    
+    return db_update
+
+@app.get("/api/projects/{project_id}/updates", response_model=List[ProjectUpdateResponse])
+async def get_project_updates(
+    project_id: int,
+    update_type: Optional[str] = None,
+    milestones_only: bool = False,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all updates for a project"""
+    # Verify project exists and belongs to user's organization
+    project = get_project(db, project_id, current_user.organization_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    query = db.query(ProjectUpdate).filter(
+        ProjectUpdate.project_id == project_id,
+        ProjectUpdate.organization_id == current_user.organization_id
+    )
+    
+    if milestones_only:
+        query = query.filter(ProjectUpdate.is_milestone == True)
+    elif update_type:
+        query = query.filter(ProjectUpdate.update_type == update_type)
+    
+    updates = query.order_by(ProjectUpdate.created_at.desc()).all()
+    
+    return updates
+
+@app.put("/api/projects/{project_id}/updates/{update_id}", response_model=ProjectUpdateResponse)
+async def update_project_update(
+    project_id: int,
+    update_id: int,
+    update: ProjectUpdateUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update a project update or milestone"""
+    # Verify project exists and belongs to user's organization
+    project = get_project(db, project_id, current_user.organization_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Get the update
+    db_update = db.query(ProjectUpdate).filter(
+        ProjectUpdate.id == update_id,
+        ProjectUpdate.project_id == project_id,
+        ProjectUpdate.organization_id == current_user.organization_id
+    ).first()
+    
+    if not db_update:
+        raise HTTPException(status_code=404, detail="Update not found")
+    
+    # Update fields
+    update_data = update.dict(exclude_unset=True)
+    
+    # Handle milestone completion
+    if 'milestone_completed' in update_data:
+        if update_data['milestone_completed'] and not db_update.milestone_completed:
+            db_update.milestone_completed_date = datetime.utcnow()
+        elif not update_data['milestone_completed']:
+            db_update.milestone_completed_date = None
+    
+    for field, value in update_data.items():
+        setattr(db_update, field, value)
+    
+    db.commit()
+    db.refresh(db_update)
+    
+    return db_update
+
+@app.delete("/api/projects/{project_id}/updates/{update_id}")
+async def delete_project_update(
+    project_id: int,
+    update_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a project update"""
+    # Verify project exists and belongs to user's organization
+    project = get_project(db, project_id, current_user.organization_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Get the update
+    db_update = db.query(ProjectUpdate).filter(
+        ProjectUpdate.id == update_id,
+        ProjectUpdate.project_id == project_id,
+        ProjectUpdate.organization_id == current_user.organization_id
+    ).first()
+    
+    if not db_update:
+        raise HTTPException(status_code=404, detail="Update not found")
+    
+    # Delete the update
+    db.delete(db_update)
+    db.commit()
+    
+    return {"detail": "Update deleted successfully"}
 
 
 # Email Tracking endpoints

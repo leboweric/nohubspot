@@ -657,6 +657,7 @@ class Project(Base):
     contact = relationship("Contact")
     company = relationship("Company")
     attachments = relationship("Attachment", back_populates="project_rel", cascade="all, delete-orphan")
+    updates = relationship("ProjectUpdate", back_populates="project", cascade="all, delete-orphan", order_by="desc(ProjectUpdate.created_at)")
     activities = relationship("Activity", foreign_keys="Activity.entity_id", 
                             primaryjoin="and_(cast(Project.id, String) == Activity.entity_id, Activity.type == 'project')",
                             overlaps="activities")
@@ -747,6 +748,39 @@ class EmailEvent(Base):
     
     # Relationships
     tracking = relationship("EmailTracking", back_populates="events")
+
+class ProjectUpdate(Base):
+    __tablename__ = "project_updates"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
+    
+    # Update content
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    update_type = Column(String(50), nullable=False, default="status")  # status, milestone, risk, decision
+    
+    # Milestone-specific fields
+    is_milestone = Column(Boolean, default=False)
+    milestone_date = Column(DateTime(timezone=True), nullable=True)
+    milestone_completed = Column(Boolean, default=False)
+    milestone_completed_date = Column(DateTime(timezone=True), nullable=True)
+    
+    # Status indicators
+    project_health = Column(String(20), nullable=True)  # green, yellow, red
+    progress_percentage = Column(Integer, nullable=True)  # 0-100
+    
+    # Metadata
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_by_name = Column(String(255), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    
+    # Relationships
+    project = relationship("Project", back_populates="updates")
+    creator = relationship("User")
+    organization = relationship("Organization")
 
 class EmailSharingPermission(Base):
     __tablename__ = "email_sharing_permissions"
