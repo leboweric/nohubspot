@@ -174,7 +174,6 @@ export default function DealUpdates({ dealId, onClose }: DealUpdatesProps) {
         <button
           onClick={(e) => {
             e.stopPropagation()
-            console.log('Add Update clicked, current showAddForm:', showAddForm)
             setShowAddForm(!showAddForm)
           }}
           className="text-xs text-blue-600 hover:text-blue-700"

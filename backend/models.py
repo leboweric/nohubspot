@@ -587,7 +587,7 @@ class Deal(Base):
     contact = relationship("Contact")
     company = relationship("Company")
     attachments = relationship("Attachment", back_populates="deal_rel", cascade="all, delete-orphan")
-    updates = relationship("DealUpdate", back_populates="deal", cascade="all, delete-orphan", order_by="desc(DealUpdate.created_at)")
+    updates = relationship("DealUpdate", back_populates="deal", cascade="all, delete-orphan")
     activities = relationship("Activity", foreign_keys="Activity.entity_id", 
                             primaryjoin="and_(cast(Deal.id, String) == Activity.entity_id, Activity.type == 'deal')",
                             overlaps="activities")
