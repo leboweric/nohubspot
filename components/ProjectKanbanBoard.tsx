@@ -114,7 +114,11 @@ export default function ProjectKanbanBoard({
         <DragOverlay>
           {activeProject ? (
             <div className="rotate-2 opacity-90">
-              <ProjectCardWithAttachments project={activeProject} isDragging />
+              <ProjectCardWithAttachments 
+                project={activeProject} 
+                isDragging 
+                onUpdate={() => window.location.reload()}
+              />
             </div>
           ) : null}
         </DragOverlay>

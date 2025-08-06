@@ -78,7 +78,12 @@ export default function ProjectKanbanColumn({
           </div>
         ) : (
           projects.map((project) => (
-            <ProjectCardWithAttachments key={project.id} project={project} onEdit={onEditProject} />
+            <ProjectCardWithAttachments 
+              key={project.id} 
+              project={project} 
+              onEdit={onEditProject} 
+              onUpdate={() => window.location.reload()}
+            />
           ))
         )}
 
