@@ -169,7 +169,7 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
     
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nohubspot-production.up.railway.app'
-      const downloadUrl = `${baseUrl}${attachment.file_url}`
+      const downloadUrl = `${baseUrl}/api/attachments/${attachment.id}/download`
       
       // Fetch with authentication
       const response = await fetch(downloadUrl, {

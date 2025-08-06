@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, JSON, Float, Enum, cast, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, JSON, Float, Enum, cast, UniqueConstraint, LargeBinary
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -239,6 +239,7 @@ class Attachment(Base):
     file_size = Column(Integer)
     file_type = Column(String(100))
     file_url = Column(String(500))
+    file_data = Column(LargeBinary)  # Store actual file content in PostgreSQL
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
     uploaded_by = Column(String(255))

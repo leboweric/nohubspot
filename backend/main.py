@@ -2968,13 +2968,6 @@ async def delete_project_endpoint(
 
 # Project Attachment endpoints
 from fastapi import UploadFile, File as FastAPIFile
-import os
-import uuid
-from pathlib import Path
-
-# Create uploads directory if it doesn't exist
-UPLOAD_DIR = Path("uploads")
-UPLOAD_DIR.mkdir(exist_ok=True)
 
 @app.post("/api/projects/{project_id}/attachments", response_model=AttachmentResponse)
 async def upload_project_attachment(
@@ -2983,31 +2976,24 @@ async def upload_project_attachment(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """Upload an attachment to a project"""
+    """Upload an attachment to a project - stores file directly in PostgreSQL"""
     # Verify project exists and belongs to user's organization
     project = get_project(db, project_id, current_user.organization_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
-    # Generate unique filename
-    file_extension = os.path.splitext(file.filename)[1]
-    unique_filename = f"{uuid.uuid4()}{file_extension}"
-    file_path = UPLOAD_DIR / unique_filename
-    
-    # Save file to disk
+    # Read file contents
     try:
         contents = await file.read()
-        with open(file_path, "wb") as f:
-            f.write(contents)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to read file: {str(e)}")
     
-    # Create the attachment record
+    # Create the attachment record with file data stored in database
     db_attachment = Attachment(
         name=file.filename,
         file_size=len(contents),
         file_type=file.content_type,
-        file_url=f"/api/attachments/download/{unique_filename}",
+        file_data=contents,  # Store the actual file bytes in PostgreSQL
         project_id=project_id,
         organization_id=current_user.organization_id,
         uploaded_by=f"{current_user.first_name} {current_user.last_name}"
@@ -3050,32 +3036,34 @@ async def get_project_attachments(
     
     return attachments
 
-@app.get("/api/attachments/download/{filename}")
+@app.get("/api/attachments/{attachment_id}/download")
 async def download_attachment(
-    filename: str,
+    attachment_id: int,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """Download an attachment file"""
-    from fastapi.responses import FileResponse
+    """Download an attachment file from PostgreSQL"""
+    from fastapi.responses import Response
     
-    # Security check - verify the user has access to this file
+    # Get attachment and verify user has access
     attachment = db.query(Attachment).filter(
-        Attachment.file_url.contains(filename),
+        Attachment.id == attachment_id,
         Attachment.organization_id == current_user.organization_id
     ).first()
     
     if not attachment:
         raise HTTPException(status_code=404, detail="File not found")
     
-    file_path = UPLOAD_DIR / filename
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="File not found on disk")
+    if not attachment.file_data:
+        raise HTTPException(status_code=404, detail="File content not found")
     
-    return FileResponse(
-        path=file_path,
-        filename=attachment.name,
-        media_type=attachment.file_type or 'application/octet-stream'
+    # Return file data from database
+    return Response(
+        content=attachment.file_data,
+        media_type=attachment.file_type or 'application/octet-stream',
+        headers={
+            "Content-Disposition": f"attachment; filename=\"{attachment.name}\""
+        }
     )
 
 @app.delete("/api/attachments/{attachment_id}")
@@ -3098,17 +3086,7 @@ async def delete_attachment(
     if attachment.project_id:
         project = db.query(Project).filter(Project.id == attachment.project_id).first()
     
-    # Delete file from disk if it exists
-    if attachment.file_url and "/download/" in attachment.file_url:
-        filename = attachment.file_url.split("/download/")[-1]
-        file_path = UPLOAD_DIR / filename
-        if file_path.exists():
-            try:
-                os.remove(file_path)
-            except Exception as e:
-                print(f"Failed to delete file from disk: {e}")
-    
-    # Delete the attachment record
+    # Delete the attachment record (file data will be deleted with it)
     db.delete(attachment)
     db.commit()
     
