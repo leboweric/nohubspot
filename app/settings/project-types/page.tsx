@@ -25,7 +25,7 @@ interface ProjectType {
 }
 
 export default function ProjectTypesSettings() {
-  const { user } = getAuthState()
+  const { user, token } = getAuthState()
   const isUserAdmin = user?.role === 'owner' || user?.role === 'admin'
   
   const [projectTypes, setProjectTypes] = useState<ProjectType[]>([])
@@ -55,7 +55,7 @@ export default function ProjectTypesSettings() {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nohubspot-production.up.railway.app'
       const response = await fetch(`${baseUrl}/api/project-types?include_inactive=true`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       })
       
@@ -78,7 +78,7 @@ export default function ProjectTypesSettings() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           ...formData,
@@ -110,7 +110,7 @@ export default function ProjectTypesSettings() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(formData)
       })
@@ -136,7 +136,7 @@ export default function ProjectTypesSettings() {
       const response = await fetch(`${baseUrl}/api/project-types/${id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       })
       
@@ -165,7 +165,7 @@ export default function ProjectTypesSettings() {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({ display_order: i })
         })
@@ -192,7 +192,7 @@ export default function ProjectTypesSettings() {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({ display_order: i })
         })
@@ -210,7 +210,7 @@ export default function ProjectTypesSettings() {
       const response = await fetch(`${baseUrl}/api/project-types/initialize`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       })
       
