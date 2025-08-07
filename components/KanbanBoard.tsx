@@ -6,10 +6,11 @@ import {
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
+  DragOverEvent,
   PointerSensor,
   useSensor,
   useSensors,
-  closestCorners,
+  closestCenter,
   UniqueIdentifier,
 } from '@dnd-kit/core'
 import {
@@ -30,6 +31,7 @@ interface KanbanBoardProps {
 
 export default function KanbanBoard({ stages, deals, onDealMove, onAddDeal, onEditDeal }: KanbanBoardProps) {
   const [activeDeal, setActiveDeal] = React.useState<Deal | null>(null)
+  const [overId, setOverId] = React.useState<string | number | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -50,19 +52,37 @@ export default function KanbanBoard({ stages, deals, onDealMove, onAddDeal, onEd
     setActiveDeal(deal || null)
   }
 
+  const handleDragOver = (event: DragOverEvent) => {
+    const { over } = event
+    setOverId(over ? over.id : null)
+  }
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
     setActiveDeal(null)
+    setOverId(null)
 
     if (!over) return
 
     const dealId = active.id as number
-    const overId = over.id as string
+    const overId = over.id
+
+    // Determine the target stage ID
+    let targetStageId: number | undefined
 
     // Check if we're dropping over a stage column
-    const targetStageId = parseInt(overId.replace('stage-', ''))
+    if (typeof overId === 'string' && overId.startsWith('stage-')) {
+      targetStageId = parseInt(overId.replace('stage-', ''))
+    } 
+    // Check if we're dropping over another deal (get its stage)
+    else if (typeof overId === 'number') {
+      const overDeal = deals.find(d => d.id === overId)
+      if (overDeal) {
+        targetStageId = overDeal.stage_id
+      }
+    }
     
-    if (isNaN(targetStageId)) return
+    if (!targetStageId || isNaN(targetStageId)) return
 
     const deal = deals.find(d => d.id === dealId)
     if (!deal || deal.stage_id === targetStageId) return
@@ -79,8 +99,9 @@ export default function KanbanBoard({ stages, deals, onDealMove, onAddDeal, onEd
     <div className="h-full">
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={closestCenter}
         onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
         <div className="flex gap-6 h-full overflow-x-auto pb-6">

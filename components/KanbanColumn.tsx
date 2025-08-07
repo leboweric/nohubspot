@@ -56,18 +56,18 @@ export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal }: Ka
       {/* Droppable Area */}
       <div
         ref={setNodeRef}
-        className={`flex-1 p-3 space-y-3 min-h-96 transition-colors ${
+        className={`flex-1 p-3 space-y-3 min-h-[400px] transition-colors ${
           isOver ? 'bg-blue-50 border-2 border-dashed border-blue-300' : ''
         }`}
       >
-        {deals.length === 0 ? (
+        {deals.map((deal) => (
+          <DealCardWithAttachments key={deal.id} deal={deal} onEdit={onEditDeal} />
+        ))}
+        
+        {deals.length === 0 && (
           <div className="flex items-center justify-center h-32 text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-lg">
             No deals in this stage
           </div>
-        ) : (
-          deals.map((deal) => (
-            <DealCardWithAttachments key={deal.id} deal={deal} onEdit={onEditDeal} />
-          ))
         )}
 
         {/* Add Deal Button */}
