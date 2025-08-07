@@ -99,9 +99,8 @@ export default function DealUpdates({ dealId, onClose }: DealUpdatesProps) {
           value_change: 0
         })
       } else {
-        const errorText = await response.text()
-        console.error('Failed to create update:', response.status, errorText)
-        alert(`Failed to create update: ${errorText}`)
+        console.error('Failed to create update')
+        alert('Failed to create update. Please try again.')
       }
     } catch (error) {
       console.error('Failed to create update:', error)
@@ -305,7 +304,7 @@ export default function DealUpdates({ dealId, onClose }: DealUpdatesProps) {
                         {update.probability_change > 0 ? '+' : ''}{update.probability_change}%
                       </span>
                     )}
-                    {update.value_change !== undefined && update.value_change !== 0 && (
+                    {update.value_change !== undefined && update.value_change !== null && update.value_change !== 0 && (
                       <span className={`flex items-center ${update.value_change > 0 ? 'text-green-600' : 'text-red-600'}`}>
                         <DollarSign className="w-3 h-3" />
                         {update.value_change > 0 ? '+' : ''}{update.value_change.toLocaleString()}

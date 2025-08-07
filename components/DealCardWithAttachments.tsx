@@ -252,7 +252,7 @@ export default function DealCardWithAttachments({ deal, isDragging = false, onEd
   // Count attachments on mount
   React.useEffect(() => {
     loadAttachments()
-  }, [])
+  }, [deal.id]) // Only re-run if deal.id changes
 
   return (
     <div
