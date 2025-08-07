@@ -3423,15 +3423,15 @@ async def get_deal_updates(
     if not deal:
         raise HTTPException(status_code=404, detail="Deal not found")
     
-    query = db.query(DealUpdate).filter(
-        DealUpdate.deal_id == deal_id,
-        DealUpdate.organization_id == current_user.organization_id
+    query = db.query(models.DealUpdate).filter(
+        models.DealUpdate.deal_id == deal_id,
+        models.DealUpdate.organization_id == current_user.organization_id
     )
     
     if update_type:
-        query = query.filter(DealUpdate.update_type == update_type)
+        query = query.filter(models.DealUpdate.update_type == update_type)
     
-    updates = query.order_by(DealUpdate.created_at.desc()).all()
+    updates = query.order_by(models.DealUpdate.created_at.desc()).all()
     
     return updates
 
@@ -3450,10 +3450,10 @@ async def update_deal_update(
         raise HTTPException(status_code=404, detail="Deal not found")
     
     # Get the update
-    db_update = db.query(DealUpdate).filter(
-        DealUpdate.id == update_id,
-        DealUpdate.deal_id == deal_id,
-        DealUpdate.organization_id == current_user.organization_id
+    db_update = db.query(models.DealUpdate).filter(
+        models.DealUpdate.id == update_id,
+        models.DealUpdate.deal_id == deal_id,
+        models.DealUpdate.organization_id == current_user.organization_id
     ).first()
     
     if not db_update:
@@ -3483,10 +3483,10 @@ async def delete_deal_update(
         raise HTTPException(status_code=404, detail="Deal not found")
     
     # Get the update
-    db_update = db.query(DealUpdate).filter(
-        DealUpdate.id == update_id,
-        DealUpdate.deal_id == deal_id,
-        DealUpdate.organization_id == current_user.organization_id
+    db_update = db.query(models.DealUpdate).filter(
+        models.DealUpdate.id == update_id,
+        models.DealUpdate.deal_id == deal_id,
+        models.DealUpdate.organization_id == current_user.organization_id
     ).first()
     
     if not db_update:
