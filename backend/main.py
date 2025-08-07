@@ -3463,6 +3463,40 @@ async def get_categories(
     return categories
 
 
+@app.get("/api/document-categories/test")
+async def test_categories_table(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Test if document_categories table exists and is accessible"""
+    try:
+        # Test 1: Check if table exists
+        result = db.execute(text("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'document_categories')"))
+        table_exists = result.scalar()
+        
+        # Test 2: Count existing categories
+        count = db.query(models.DocumentCategory).count()
+        
+        # Test 3: Try to query categories for this org
+        org_categories = db.query(models.DocumentCategory).filter(
+            models.DocumentCategory.organization_id == current_user.organization_id
+        ).all()
+        
+        return {
+            "table_exists": table_exists,
+            "total_categories": count,
+            "org_categories_count": len(org_categories),
+            "organization_id": current_user.organization_id,
+            "categories": [{"id": c.id, "name": c.name, "slug": c.slug} for c in org_categories]
+        }
+    except Exception as e:
+        return {
+            "error": str(e),
+            "table_exists": False,
+            "message": "Failed to access document_categories table"
+        }
+
+
 @app.post("/api/document-categories/ensure")
 async def ensure_categories(
     current_user: User = Depends(get_current_active_user),
@@ -3474,6 +3508,18 @@ async def ensure_categories(
     print(f"Ensuring categories for organization {current_user.organization_id}")
     
     try:
+        # First check if table exists
+        result = db.execute(text("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'document_categories')"))
+        table_exists = result.scalar()
+        
+        if not table_exists:
+            # Table doesn't exist, need to run migration
+            return {
+                "message": "Document categories table does not exist. Please run database migrations.",
+                "categories": [],
+                "error": "Table 'document_categories' not found"
+            }
+        
         categories = ensure_organization_has_categories(db, current_user.organization_id)
         print(f"Organization {current_user.organization_id} now has {len(categories)} categories")
         return {
