@@ -35,6 +35,8 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadSuccess, setUploadSuccess] = useState(false)
   const [attachmentCount, setAttachmentCount] = useState(0)
+  const [updateCount, setUpdateCount] = useState(0)
+  const [milestoneCount, setMilestoneCount] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { token } = getAuthState()
 
@@ -114,6 +116,27 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
       console.error('Failed to load attachments:', error)
     } finally {
       setLoadingAttachments(false)
+    }
+  }
+
+  const loadUpdateCounts = async () => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nohubspot-production.up.railway.app'
+      const response = await fetch(`${baseUrl}/api/projects/${project.id}/updates`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        const updates = data.filter((u: any) => !u.is_milestone)
+        const milestones = data.filter((u: any) => u.is_milestone)
+        setUpdateCount(updates.length)
+        setMilestoneCount(milestones.length)
+      }
+    } catch (error) {
+      console.error('Failed to load update counts:', error)
     }
   }
 
@@ -264,10 +287,11 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
     ${isSortableDragging ? 'z-50' : ''}
   `.trim()
 
-  // Count attachments on mount
+  // Count attachments, updates, and milestones on mount
   React.useEffect(() => {
     loadAttachments()
-  }, [])
+    loadUpdateCounts()
+  }, [project.id])
 
   return (
     <div
@@ -378,7 +402,9 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
           >
             <div className="flex items-center">
               <MessageSquare className="w-3 h-3 mr-1" />
-              <span>Updates & Milestones</span>
+              <span>
+                Updates {updateCount > 0 && `(${updateCount})`} & Milestones {milestoneCount > 0 && `(${milestoneCount})`}
+              </span>
             </div>
             <svg
               className={`w-3 h-3 transform transition-transform ${showUpdates ? 'rotate-180' : ''}`}
@@ -486,6 +512,10 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
           <ProjectUpdates 
             projectId={project.id} 
             onUpdateProject={onUpdate}
+            onUpdateCounts={(updates: number, milestones: number) => {
+              setUpdateCount(updates)
+              setMilestoneCount(milestones)
+            }}
           />
         </div>
       )}

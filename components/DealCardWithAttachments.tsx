@@ -35,6 +35,7 @@ export default function DealCardWithAttachments({ deal, isDragging = false, onEd
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadSuccess, setUploadSuccess] = useState(false)
   const [attachmentCount, setAttachmentCount] = useState(0)
+  const [updateCount, setUpdateCount] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { token } = getAuthState()
 
@@ -99,6 +100,24 @@ export default function DealCardWithAttachments({ deal, isDragging = false, onEd
       console.error('Failed to load attachments:', error)
     } finally {
       setLoadingAttachments(false)
+    }
+  }
+
+  const loadUpdateCount = async () => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nohubspot-production.up.railway.app'
+      const response = await fetch(`${baseUrl}/api/deals/${deal.id}/updates`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setUpdateCount(data.length)
+      }
+    } catch (error) {
+      console.error('Failed to load update count:', error)
     }
   }
 
@@ -249,9 +268,10 @@ export default function DealCardWithAttachments({ deal, isDragging = false, onEd
     ${isSortableDragging ? 'z-50' : ''}
   `.trim()
 
-  // Count attachments on mount
+  // Count attachments and updates on mount
   React.useEffect(() => {
     loadAttachments()
+    loadUpdateCount()
   }, [deal.id]) // Only re-run if deal.id changes
 
   return (
@@ -354,7 +374,7 @@ export default function DealCardWithAttachments({ deal, isDragging = false, onEd
           >
             <div className="flex items-center">
               <MessageSquare className="w-3 h-3 mr-1" />
-              <span>Updates</span>
+              <span>Updates {updateCount > 0 && `(${updateCount})`}</span>
             </div>
             <svg
               className={`w-3 h-3 transform transition-transform ${showUpdates ? 'rotate-180' : ''}`}
@@ -461,6 +481,7 @@ export default function DealCardWithAttachments({ deal, isDragging = false, onEd
         <DealUpdates 
           dealId={deal.id} 
           onClose={() => setShowUpdates(false)}
+          onUpdateCount={(count: number) => setUpdateCount(count)}
         />
       )}
     </div>

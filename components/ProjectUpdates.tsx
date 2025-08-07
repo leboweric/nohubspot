@@ -23,9 +23,10 @@ interface ProjectUpdate {
 interface ProjectUpdatesProps {
   projectId: number
   onUpdateProject?: () => void
+  onUpdateCounts?: (updates: number, milestones: number) => void
 }
 
-export default function ProjectUpdates({ projectId, onUpdateProject }: ProjectUpdatesProps) {
+export default function ProjectUpdates({ projectId, onUpdateProject, onUpdateCounts }: ProjectUpdatesProps) {
   const [updates, setUpdates] = useState<ProjectUpdate[]>([])
   const [milestones, setMilestones] = useState<ProjectUpdate[]>([])
   const [loading, setLoading] = useState(false)
@@ -68,6 +69,9 @@ export default function ProjectUpdates({ projectId, onUpdateProject }: ProjectUp
         const projectMilestones = data.filter((u: ProjectUpdate) => u.is_milestone)
         setUpdates(allUpdates)
         setMilestones(projectMilestones)
+        if (onUpdateCounts) {
+          onUpdateCounts(allUpdates.length, projectMilestones.length)
+        }
       }
     } catch (error) {
       console.error('Failed to load updates:', error)

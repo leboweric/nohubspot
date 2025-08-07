@@ -20,9 +20,10 @@ interface DealUpdate {
 interface DealUpdatesProps {
   dealId: number
   onClose?: () => void
+  onUpdateCount?: (count: number) => void
 }
 
-export default function DealUpdates({ dealId, onClose }: DealUpdatesProps) {
+export default function DealUpdates({ dealId, onClose, onUpdateCount }: DealUpdatesProps) {
   const [updates, setUpdates] = useState<DealUpdate[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -54,6 +55,9 @@ export default function DealUpdates({ dealId, onClose }: DealUpdatesProps) {
       if (response.ok) {
         const data = await response.json()
         setUpdates(data)
+        if (onUpdateCount) {
+          onUpdateCount(data.length)
+        }
       }
     } catch (error) {
       console.error('Failed to load updates:', error)
