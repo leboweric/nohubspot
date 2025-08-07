@@ -5,9 +5,14 @@ import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import TaskList from "@/components/tasks/TaskList"
 import TaskCreate from "@/components/tasks/TaskCreate"
-import { TaskStats } from "@/components/tasks/types"
+import KanbanBoard from "@/components/tasks/KanbanBoard"
+import TaskStats from "@/components/tasks/TaskStats"
 import { taskAPI, Task, TaskCreate as TaskCreateType, handleAPIError } from "@/lib/api"
 import ModernSelect from "@/components/ui/ModernSelect"
+import { 
+  LayoutGrid, List, Calendar, Plus, Filter, Search,
+  CheckSquare, Users, Clock, BarChart3, Download
+} from "lucide-react"
 
 
 export default function TasksPage() {
@@ -19,6 +24,9 @@ export default function TasksPage() {
   const [filterPriority, setFilterPriority] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState("")
   const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [viewMode, setViewMode] = useState<'board' | 'list' | 'calendar'>('board')
+  const [showFilters, setShowFilters] = useState(false)
+  const [selectedTasks, setSelectedTasks] = useState<number[]>([])
 
   // Load tasks from API
   const loadTasks = async () => {
@@ -159,74 +167,146 @@ export default function TasksPage() {
   // Since we're using API filtering, no need for client-side filtering
   const filteredTasks = tasks
 
-  // Calculate stats from current filtered tasks
-  const stats: TaskStats = {
-    total: tasks.length,
-    pending: tasks.filter(t => t.status === 'pending').length,
-    inProgress: tasks.filter(t => t.status === 'in_progress').length,
-    completed: tasks.filter(t => t.status === 'completed').length,
-    overdue: tasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== 'completed').length,
-    dueToday: tasks.filter(t => {
-      if (!t.due_date || t.status === 'completed') return false
-      const today = new Date().toDateString()
-      return new Date(t.due_date).toDateString() === today
-    }).length,
-    dueThisWeek: tasks.filter(t => {
-      if (!t.due_date || t.status === 'completed') return false
-      const weekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-      return new Date(t.due_date) <= weekFromNow && new Date(t.due_date) >= new Date()
-    }).length
+  const handleBulkAction = (action: string) => {
+    if (selectedTasks.length === 0) return
+    
+    switch (action) {
+      case 'complete':
+        selectedTasks.forEach(taskId => {
+          handleTaskUpdate(taskId, { status: 'completed' })
+        })
+        break
+      case 'delete':
+        if (confirm(`Delete ${selectedTasks.length} selected tasks?`)) {
+          selectedTasks.forEach(taskId => {
+            handleTaskDelete(taskId)
+          })
+        }
+        break
+    }
+    setSelectedTasks([])
+  }
+
+  const handleExportTasks = () => {
+    try {
+      const headers = ['Title', 'Description', 'Status', 'Priority', 'Due Date', 'Assigned To', 'Contact', 'Company', 'Tags']
+      const rows = filteredTasks.map(task => [
+        task.title,
+        task.description || '',
+        task.status,
+        task.priority,
+        task.due_date || '',
+        task.assigned_to || '',
+        task.contact_name || '',
+        task.company_name || '',
+        task.tags?.join(', ') || ''
+      ])
+      
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => 
+          row.map(cell => {
+            const escaped = String(cell).replace(/"/g, '""')
+            return /[,"\n]/.test(String(cell)) ? `"${escaped}"` : escaped
+          }).join(',')
+        )
+      ].join('\n')
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      
+      link.setAttribute('href', url)
+      link.setAttribute('download', `tasks_export_${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = 'hidden'
+      
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+      
+      alert(`Successfully exported ${filteredTasks.length} tasks to CSV!`)
+    } catch (error) {
+      console.error('Failed to export tasks:', error)
+      alert('Failed to export tasks. Please try again.')
+    }
   }
 
   return (
     <AuthGuard>
       <MainLayout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-2xl font-semibold">Tasks</h1>
-          <p className="text-muted-foreground mt-1">Manage your sales activities and follow-ups</p>
-        </div>
-        <button
-          onClick={() => setShowCreateTask(true)}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-        >
-          Create Task
-        </button>
-      </div>
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div>
+              <h1 className="text-2xl font-semibold">Tasks</h1>
+              <p className="text-muted-foreground mt-1">Manage your sales activities and follow-ups</p>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              {/* View Toggle */}
+              <div className="flex items-center bg-gray-100 rounded-md p-1">
+                <button
+                  onClick={() => setViewMode('board')}
+                  className={`p-2 rounded transition-colors ${
+                    viewMode === 'board' 
+                      ? 'bg-white shadow-sm text-primary' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  title="Board View"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 rounded transition-colors ${
+                    viewMode === 'list' 
+                      ? 'bg-white shadow-sm text-primary' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  title="List View"
+                >
+                  <List className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('calendar')}
+                  className={`p-2 rounded transition-colors ${
+                    viewMode === 'calendar' 
+                      ? 'bg-white shadow-sm text-primary' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  title="Calendar View"
+                  disabled
+                >
+                  <Calendar className="w-4 h-4" />
+                </button>
+              </div>
+              
+              {/* Export */}
+              <button
+                onClick={handleExportTasks}
+                disabled={loading || filteredTasks.length === 0}
+                className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors text-sm disabled:opacity-50"
+              >
+                <Download className="w-4 h-4" />
+                Export
+              </button>
+              
+              {/* Create Task */}
+              <button
+                onClick={() => setShowCreateTask(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Create Task
+              </button>
+            </div>
+          </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
-        <div className="bg-card border rounded-lg p-4 text-center">
-          <div className="text-2xl font-semibold">{stats.total}</div>
-          <div className="text-sm text-muted-foreground">Total</div>
-        </div>
-        <div className="bg-card border rounded-lg p-4 text-center">
-          <div className="text-2xl font-semibold text-gray-600">{stats.pending}</div>
-          <div className="text-sm text-muted-foreground">Pending</div>
-        </div>
-        <div className="bg-card border rounded-lg p-4 text-center">
-          <div className="text-2xl font-semibold text-blue-600">{stats.inProgress}</div>
-          <div className="text-sm text-muted-foreground">In Progress</div>
-        </div>
-        <div className="bg-card border rounded-lg p-4 text-center">
-          <div className="text-2xl font-semibold text-green-600">{stats.completed}</div>
-          <div className="text-sm text-muted-foreground">Completed</div>
-        </div>
-        <div className="bg-card border rounded-lg p-4 text-center">
-          <div className="text-2xl font-semibold text-red-600">{stats.overdue}</div>
-          <div className="text-sm text-muted-foreground">Overdue</div>
-        </div>
-        <div className="bg-card border rounded-lg p-4 text-center">
-          <div className="text-2xl font-semibold text-orange-600">{stats.dueToday}</div>
-          <div className="text-sm text-muted-foreground">Due Today</div>
-        </div>
-        <div className="bg-card border rounded-lg p-4 text-center">
-          <div className="text-2xl font-semibold text-purple-600">{stats.dueThisWeek}</div>
-          <div className="text-sm text-muted-foreground">Due This Week</div>
-        </div>
-      </div>
+          {/* Enhanced Stats */}
+          <div className="mb-8">
+            <TaskStats tasks={tasks} />
+          </div>
 
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
@@ -240,79 +320,152 @@ export default function TasksPage() {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="bg-card border rounded-lg p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <input
-            type="text"
-            placeholder="Search tasks..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            disabled={loading}
-            className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-          />
-          
-          <ModernSelect
-            value={filterStatus}
-            onChange={(value) => setFilterStatus(value as string)}
-            disabled={loading}
-            options={[
-              { value: "all", label: "All Status" },
-              { value: "pending", label: "Pending" },
-              { value: "in_progress", label: "In Progress" },
-              { value: "completed", label: "Completed" },
-              { value: "cancelled", label: "Cancelled" }
-            ]}
-            placeholder="Filter by status"
-          />
+          {/* Filters and Bulk Actions */}
+          <div className="bg-card border rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Search className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium">Filters & Search</span>
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  <Filter className={`w-4 h-4 transition-colors ${
+                    showFilters ? 'text-primary' : 'text-gray-500'
+                  }`} />
+                </button>
+              </div>
+              
+              {/* Bulk Actions */}
+              {selectedTasks.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">{selectedTasks.length} selected</span>
+                  <button
+                    onClick={() => handleBulkAction('complete')}
+                    className="flex items-center gap-1 px-2 py-1 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200"
+                  >
+                    <CheckSquare className="w-3 h-3" />
+                    Complete
+                  </button>
+                  <button
+                    onClick={() => handleBulkAction('delete')}
+                    className="flex items-center gap-1 px-2 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
+                  >
+                    Delete
+                  </button>
+                  <button
+                    onClick={() => setSelectedTasks([])}
+                    className="px-2 py-1 text-sm text-gray-600 hover:text-gray-800"
+                  >
+                    Clear
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            <div className={`grid grid-cols-1 md:grid-cols-4 gap-4 ${showFilters ? '' : 'hidden'}`}>
+              <input
+                type="text"
+                placeholder="Search tasks..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                disabled={loading}
+                className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+              />
+              
+              <ModernSelect
+                value={filterStatus}
+                onChange={(value) => setFilterStatus(value as string)}
+                disabled={loading}
+                options={[
+                  { value: "all", label: "All Status" },
+                  { value: "pending", label: "Pending" },
+                  { value: "in_progress", label: "In Progress" },
+                  { value: "completed", label: "Completed" },
+                  { value: "cancelled", label: "Cancelled" }
+                ]}
+                placeholder="Filter by status"
+              />
 
-          <ModernSelect
-            value={filterPriority}
-            onChange={(value) => setFilterPriority(value as string)}
-            disabled={loading}
-            options={[
-              { value: "all", label: "All Priority" },
-              { value: "urgent", label: "Urgent" },
-              { value: "high", label: "High" },
-              { value: "medium", label: "Medium" },
-              { value: "low", label: "Low" }
-            ]}
-            placeholder="Filter by priority"
-          />
+              <ModernSelect
+                value={filterPriority}
+                onChange={(value) => setFilterPriority(value as string)}
+                disabled={loading}
+                options={[
+                  { value: "all", label: "All Priority" },
+                  { value: "urgent", label: "Urgent" },
+                  { value: "high", label: "High" },
+                  { value: "medium", label: "Medium" },
+                  { value: "low", label: "Low" }
+                ]}
+                placeholder="Filter by priority"
+              />
 
-          <div className="text-sm text-muted-foreground flex items-center">
-            Showing {filteredTasks.length} of {tasks.length} tasks
+              <div className="text-sm text-muted-foreground flex items-center">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                {filteredTasks.length} of {tasks.length} tasks
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Task List */}
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading tasks...</p>
-          </div>
-        </div>
-      ) : (
-        <TaskList
-          tasks={filteredTasks}
-          onTaskUpdate={handleTaskUpdate}
-          onTaskDelete={handleTaskDelete}
-          onTaskEdit={handleTaskEdit}
-        />
-      )}
+          {/* Task Views */}
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading tasks...</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Board View */}
+              {viewMode === 'board' && (
+                <KanbanBoard
+                  tasks={filteredTasks}
+                  onTaskUpdate={handleTaskUpdate}
+                  onTaskDelete={handleTaskDelete}
+                  onTaskEdit={handleTaskEdit}
+                  onCreateTask={() => setShowCreateTask(true)}
+                />
+              )}
+              
+              {/* List View */}
+              {viewMode === 'list' && (
+                <TaskList
+                  tasks={filteredTasks}
+                  onTaskUpdate={handleTaskUpdate}
+                  onTaskDelete={handleTaskDelete}
+                  onTaskEdit={handleTaskEdit}
+                />
+              )}
+              
+              {/* Calendar View - Placeholder */}
+              {viewMode === 'calendar' && (
+                <div className="bg-card border rounded-lg p-12 text-center">
+                  <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Calendar View</h3>
+                  <p className="text-muted-foreground">Calendar view coming soon! View tasks organized by due dates.</p>
+                  <button
+                    onClick={() => setViewMode('board')}
+                    className="mt-4 text-primary hover:underline"
+                  >
+                    Switch to Board View
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
-      {/* Create/Edit Task Modal */}
-      <TaskCreate
-        isOpen={showCreateTask}
-        onClose={() => {
-          setShowCreateTask(false)
-          setEditingTask(null)
-        }}
-        onSave={handleCreateTask}
-        existingTask={editingTask}
-      />
+          {/* Create/Edit Task Modal */}
+          <TaskCreate
+            isOpen={showCreateTask}
+            onClose={() => {
+              setShowCreateTask(false)
+              setEditingTask(null)
+            }}
+            onSave={handleCreateTask}
+            existingTask={editingTask}
+          />
         </div>
       </MainLayout>
     </AuthGuard>
