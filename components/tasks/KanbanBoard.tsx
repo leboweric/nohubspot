@@ -144,7 +144,7 @@ export default function KanbanBoard({
           <div
             key={column.id}
             className={`flex-shrink-0 w-80 ${column.color} rounded-lg border-2 transition-all duration-200 ${
-              isDragOver && canDrop ? 'border-primary border-dashed scale-102' : ''
+              isDragOver && canDrop ? 'border-primary border-dashed scale-105' : ''
             } ${
               isDragOver && !canDrop ? 'border-red-300' : ''
             }`}
