@@ -1600,11 +1600,123 @@ def get_document_categories(db: Session, organization_id: int) -> List[DocumentC
     ).order_by(DocumentCategory.sort_order, DocumentCategory.name).all()
 
 
+def ensure_organization_has_categories(db: Session, organization_id: int) -> List[DocumentCategory]:
+    """Ensure an organization has the default document categories"""
+    
+    # Check if organization has categories
+    existing_count = db.query(DocumentCategory).filter(
+        DocumentCategory.organization_id == organization_id
+    ).count()
+    
+    if existing_count > 0:
+        return get_document_categories(db, organization_id)
+    
+    # Create default categories
+    default_categories = [
+        {
+            "name": "Proposals & Quotes",
+            "description": "Sales proposals, quotes, and RFPs",
+            "slug": "proposals-quotes",
+            "color": "#3B82F6",
+            "icon": "FileText",
+            "sort_order": 1,
+            "keywords": ["proposal", "quote", "rfp", "rfq", "estimate", "bid"],
+            "file_extensions": [".pdf", ".docx", ".doc"]
+        },
+        {
+            "name": "Contracts & Agreements",
+            "description": "Legal contracts, SOWs, NDAs, and agreements",
+            "slug": "contracts",
+            "color": "#10B981",
+            "icon": "FileSignature",
+            "sort_order": 2,
+            "keywords": ["contract", "agreement", "sow", "nda", "msa", "legal"],
+            "file_extensions": [".pdf", ".docx"]
+        },
+        {
+            "name": "Financial Documents",
+            "description": "Invoices, statements, purchase orders",
+            "slug": "financial",
+            "color": "#F59E0B",
+            "icon": "DollarSign",
+            "sort_order": 3,
+            "keywords": ["invoice", "statement", "purchase", "order", "payment", "receipt"],
+            "file_extensions": [".pdf", ".xlsx", ".csv"]
+        },
+        {
+            "name": "Communications",
+            "description": "Important emails, meeting notes, correspondence",
+            "slug": "communications",
+            "color": "#8B5CF6",
+            "icon": "MessageSquare",
+            "sort_order": 4,
+            "keywords": ["email", "memo", "notes", "minutes", "correspondence"],
+            "file_extensions": [".pdf", ".docx", ".txt", ".msg"]
+        },
+        {
+            "name": "Technical Specs",
+            "description": "Requirements, specifications, diagrams",
+            "slug": "technical",
+            "color": "#EF4444",
+            "icon": "Settings",
+            "sort_order": 5,
+            "keywords": ["spec", "requirement", "technical", "diagram", "architecture"],
+            "file_extensions": [".pdf", ".docx", ".vsd", ".png", ".jpg"]
+        },
+        {
+            "name": "Presentations",
+            "description": "Sales decks, demos, training materials",
+            "slug": "presentations",
+            "color": "#06B6D4",
+            "icon": "Presentation",
+            "sort_order": 6,
+            "keywords": ["presentation", "deck", "slides", "demo", "training"],
+            "file_extensions": [".pptx", ".ppt", ".pdf", ".key"]
+        }
+    ]
+    
+    categories = []
+    for cat_data in default_categories:
+        category = DocumentCategory(
+            organization_id=organization_id,
+            name=cat_data["name"],
+            description=cat_data["description"],
+            slug=cat_data["slug"],
+            color=cat_data["color"],
+            icon=cat_data["icon"],
+            sort_order=cat_data["sort_order"],
+            keywords=cat_data["keywords"],
+            file_extensions=cat_data["file_extensions"],
+            is_system=True,
+            is_active=True
+        )
+        db.add(category)
+        categories.append(category)
+    
+    db.commit()
+    
+    # Refresh to get IDs
+    for category in categories:
+        db.refresh(category)
+    
+    return categories
+
+
 def create_default_folders_for_company(db: Session, company_id: int, organization_id: int, user_id: int) -> List[DocumentFolder]:
     """Create default smart folders for a new company based on categories"""
-    categories = get_document_categories(db, organization_id)
-    folders = []
     
+    # Ensure organization has categories first
+    categories = ensure_organization_has_categories(db, organization_id)
+    
+    # Check if company already has folders
+    existing_folders = db.query(DocumentFolder).filter(
+        DocumentFolder.company_id == company_id
+    ).count()
+    
+    if existing_folders > 0:
+        return []  # Company already has folders
+    
+    folders = []
     for category in categories:
         folder_data = {
             "company_id": company_id,
@@ -1621,7 +1733,8 @@ def create_default_folders_for_company(db: Session, company_id: int, organizatio
             }
         }
         folder = create_document_folder(db, folder_data, organization_id, user_id)
-        folders.append(folder)
+        if folder:
+            folders.append(folder)
     
     return folders
 

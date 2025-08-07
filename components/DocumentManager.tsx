@@ -454,6 +454,24 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
   const initializeDefaultFolders = async () => {
     try {
       console.log('Initializing default folders for company:', companyId)
+      
+      // First ensure categories exist
+      const ensureResponse = await fetch(`${baseUrl}/api/document-categories/ensure`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (!ensureResponse.ok) {
+        console.error('Failed to ensure categories exist')
+        return false
+      }
+      
+      const ensureResult = await ensureResponse.json()
+      console.log('Categories ensured:', ensureResult)
+      
+      // Now initialize folders
       const response = await fetch(`${baseUrl}/api/companies/${companyId}/folders/initialize`, {
         method: 'POST',
         headers: {
@@ -477,6 +495,12 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
       } else {
         const error = await response.text()
         console.error('Failed to initialize folders:', response.status, error)
+        
+        // If folders already exist, that's ok
+        if (error.includes('already exist')) {
+          console.log('Folders already exist for this company')
+          return true
+        }
         return false
       }
     } catch (error) {

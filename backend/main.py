@@ -3463,6 +3463,21 @@ async def get_categories(
     return categories
 
 
+@app.post("/api/document-categories/ensure")
+async def ensure_categories(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Ensure organization has default document categories"""
+    from crud import ensure_organization_has_categories
+    
+    categories = ensure_organization_has_categories(db, current_user.organization_id)
+    return {
+        "message": f"Organization has {len(categories)} document categories",
+        "categories": [{"name": c.name, "slug": c.slug} for c in categories]
+    }
+
+
 @app.post("/api/companies/{company_id}/folders/initialize")
 async def initialize_company_folders(
     company_id: int,
