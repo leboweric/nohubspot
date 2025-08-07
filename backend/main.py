@@ -3230,7 +3230,7 @@ async def create_project_update(
         raise HTTPException(status_code=404, detail="Project not found")
     
     # Create the update
-    db_update = ProjectUpdate(
+    db_update = models.ProjectUpdate(
         **update.dict(),
         project_id=project_id,
         organization_id=current_user.organization_id,
@@ -3275,17 +3275,17 @@ async def get_project_updates(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
-    query = db.query(ProjectUpdate).filter(
-        ProjectUpdate.project_id == project_id,
-        ProjectUpdate.organization_id == current_user.organization_id
+    query = db.query(models.ProjectUpdate).filter(
+        models.ProjectUpdate.project_id == project_id,
+        models.ProjectUpdate.organization_id == current_user.organization_id
     )
     
     if milestones_only:
-        query = query.filter(ProjectUpdate.is_milestone == True)
+        query = query.filter(models.ProjectUpdate.is_milestone == True)
     elif update_type:
-        query = query.filter(ProjectUpdate.update_type == update_type)
+        query = query.filter(models.ProjectUpdate.update_type == update_type)
     
-    updates = query.order_by(ProjectUpdate.created_at.desc()).all()
+    updates = query.order_by(models.ProjectUpdate.created_at.desc()).all()
     
     return updates
 
@@ -3304,10 +3304,10 @@ async def update_project_update(
         raise HTTPException(status_code=404, detail="Project not found")
     
     # Get the update
-    db_update = db.query(ProjectUpdate).filter(
-        ProjectUpdate.id == update_id,
-        ProjectUpdate.project_id == project_id,
-        ProjectUpdate.organization_id == current_user.organization_id
+    db_update = db.query(models.ProjectUpdate).filter(
+        models.ProjectUpdate.id == update_id,
+        models.ProjectUpdate.project_id == project_id,
+        models.ProjectUpdate.organization_id == current_user.organization_id
     ).first()
     
     if not db_update:
@@ -3345,10 +3345,10 @@ async def delete_project_update(
         raise HTTPException(status_code=404, detail="Project not found")
     
     # Get the update
-    db_update = db.query(ProjectUpdate).filter(
-        ProjectUpdate.id == update_id,
-        ProjectUpdate.project_id == project_id,
-        ProjectUpdate.organization_id == current_user.organization_id
+    db_update = db.query(models.ProjectUpdate).filter(
+        models.ProjectUpdate.id == update_id,
+        models.ProjectUpdate.project_id == project_id,
+        models.ProjectUpdate.organization_id == current_user.organization_id
     ).first()
     
     if not db_update:
