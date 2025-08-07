@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Project } from '@/lib/api'
-import { Paperclip, Upload, X, Download, File, FileText, Loader2 } from 'lucide-react'
+import { Paperclip, Upload, X, Download, File, MessageSquare, Loader2 } from 'lucide-react'
 import { getAuthState } from '@/lib/auth'
 import ProjectUpdates from './ProjectUpdates'
 
@@ -338,31 +338,8 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
           )}
         </div>
 
-        {/* Action Buttons */}
+        {/* Attachment and Updates Buttons */}
         <div className="mt-3 pt-2 border-t border-gray-100 space-y-1">
-          {/* Updates Button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setShowUpdates(!showUpdates)
-              if (showAttachments) setShowAttachments(false)
-            }}
-            className="flex items-center justify-between w-full text-xs text-gray-600 hover:text-blue-600 transition-colors"
-          >
-            <div className="flex items-center">
-              <FileText className="w-3 h-3 mr-1" />
-              <span>Updates & Milestones</span>
-            </div>
-            <svg
-              className={`w-3 h-3 transform transition-transform ${showUpdates ? 'rotate-180' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
           {/* Attachment Button */}
           <button
             onClick={(e) => {
@@ -382,6 +359,29 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
             </div>
             <svg
               className={`w-3 h-3 transform transition-transform ${showAttachments ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          
+          {/* Updates & Milestones Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowUpdates(!showUpdates)
+              if (showAttachments) setShowAttachments(false)
+            }}
+            className="flex items-center justify-between w-full text-xs text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <div className="flex items-center">
+              <MessageSquare className="w-3 h-3 mr-1" />
+              <span>Updates & Milestones</span>
+            </div>
+            <svg
+              className={`w-3 h-3 transform transition-transform ${showUpdates ? 'rotate-180' : ''}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
