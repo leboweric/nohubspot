@@ -2,17 +2,20 @@
 
 import React from 'react'
 import { useDroppable } from '@dnd-kit/core'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { PipelineStage, Deal } from '@/lib/api'
-import DealCardWithAttachments from './DealCardWithAttachments'
+import DealCard from './pipeline/DealCard'
 
 interface KanbanColumnProps {
   stage: PipelineStage
   deals: Deal[]
   onAddDeal?: (stageId?: number) => void
   onEditDeal?: (deal: Deal) => void
+  onDeleteDeal?: (dealId: number) => void
 }
 
-export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal }: KanbanColumnProps) {
+export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal, onDeleteDeal }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `stage-${stage.id}`,
   })
@@ -26,6 +29,46 @@ export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal }: Ka
 
   const totalValue = deals.reduce((sum, deal) => sum + deal.value, 0)
   const weightedValue = deals.reduce((sum, deal) => sum + (deal.value * deal.probability / 100), 0)
+  
+  // Draggable Deal Card Wrapper
+  function DraggableDealCard({ deal, onEdit, onDelete }: { 
+    deal: Deal; 
+    onEdit?: (deal: Deal) => void; 
+    onDelete?: (dealId: number) => void 
+  }) {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({
+      id: deal.id,
+    })
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+    }
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing"
+      >
+        <DealCard
+          deal={deal}
+          onEdit={onEdit || (() => {})}
+          onDelete={onDelete || (() => {})}
+          isDragging={isDragging}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col w-80 bg-gray-50 rounded-lg">
@@ -61,7 +104,12 @@ export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal }: Ka
         }`}
       >
         {deals.map((deal) => (
-          <DealCardWithAttachments key={deal.id} deal={deal} onEdit={onEditDeal} />
+          <DraggableDealCard 
+            key={deal.id} 
+            deal={deal} 
+            onEdit={onEditDeal} 
+            onDelete={onDeleteDeal} 
+          />
         ))}
         
         {deals.length === 0 && (

@@ -19,7 +19,7 @@ import {
 } from '@dnd-kit/sortable'
 import { PipelineStage, Deal } from '@/lib/api'
 import KanbanColumn from './KanbanColumn'
-import DealCardWithAttachments from './DealCardWithAttachments'
+import DealCard from './pipeline/DealCard'
 
 interface KanbanBoardProps {
   stages: PipelineStage[]
@@ -27,9 +27,10 @@ interface KanbanBoardProps {
   onDealMove: (dealId: number, newStageId: number) => Promise<void>
   onAddDeal?: (stageId?: number) => void
   onEditDeal?: (deal: Deal) => void
+  onDeleteDeal?: (dealId: number) => void
 }
 
-export default function KanbanBoard({ stages, deals, onDealMove, onAddDeal, onEditDeal }: KanbanBoardProps) {
+export default function KanbanBoard({ stages, deals, onDealMove, onAddDeal, onEditDeal, onDeleteDeal }: KanbanBoardProps) {
   const [activeDeal, setActiveDeal] = React.useState<Deal | null>(null)
   const [overId, setOverId] = React.useState<string | number | null>(null)
 
@@ -120,6 +121,7 @@ export default function KanbanBoard({ stages, deals, onDealMove, onAddDeal, onEd
                   deals={stageDeals}
                   onAddDeal={onAddDeal}
                   onEditDeal={onEditDeal}
+                  onDeleteDeal={onDeleteDeal}
                 />
               </SortableContext>
             )
@@ -129,7 +131,12 @@ export default function KanbanBoard({ stages, deals, onDealMove, onAddDeal, onEd
         <DragOverlay>
           {activeDeal ? (
             <div className="rotate-2 opacity-90">
-              <DealCardWithAttachments deal={activeDeal} isDragging />
+              <DealCard 
+                deal={activeDeal} 
+                onEdit={() => {}} 
+                onDelete={() => {}} 
+                isDragging 
+              />
             </div>
           ) : null}
         </DragOverlay>

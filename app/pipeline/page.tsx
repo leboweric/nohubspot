@@ -5,7 +5,12 @@ import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import KanbanBoard from "@/components/KanbanBoard"
 import DealModal from "@/components/DealModal"
+import PipelineStats from "@/components/pipeline/PipelineStats"
 import { pipelineAPI, dealAPI, handleAPIError, PipelineStage, Deal, DealCreate } from "@/lib/api"
+import { 
+  LayoutGrid, List, Plus, Download, Filter, Search,
+  TrendingUp, DollarSign, Target, Trophy
+} from "lucide-react"
 
 export default function PipelinePage() {
   const [stages, setStages] = useState<PipelineStage[]>([])
@@ -298,34 +303,46 @@ export default function PipelinePage() {
                 <button
                   onClick={handleExportDeals}
                   disabled={loading || deals.length === 0}
-                  className="px-4 py-2 border border-green-200 rounded-md hover:bg-green-50 hover:border-green-300 transition-all text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-4 py-2 border border-green-200 rounded-md hover:bg-green-50 hover:border-green-300 transition-all text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  📥 Export to CSV
+                  <Download className="w-4 h-4" />
+                  Export to CSV
                 </button>
                 
                 {/* View Toggle */}
                 <div className="flex bg-gray-100 rounded-lg p-1">
                   <button
                     onClick={() => setViewMode('kanban')}
-                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                       viewMode === 'kanban'
                         ? 'bg-white text-gray-900 shadow-sm'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
-                    📋 Board
+                    <LayoutGrid className="w-4 h-4" />
+                    Board
                   </button>
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                       viewMode === 'list'
                         ? 'bg-white text-gray-900 shadow-sm'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
-                    📄 List
+                    <List className="w-4 h-4" />
+                    List
                   </button>
                 </div>
+                
+                {/* Create Deal Button */}
+                <button
+                  onClick={() => handleCreateDeal()}
+                  className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Create Deal
+                </button>
               </div>
             </div>
           </div>
@@ -356,41 +373,8 @@ export default function PipelinePage() {
           {/* Pipeline Overview */}
           {stages.length > 0 && (
             <div className="space-y-6">
-              {/* Pipeline Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-card border rounded-lg p-4">
-                  <div className="text-2xl font-bold text-primary">
-                    {deals.filter(d => d.is_active).length}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Active Deals</div>
-                </div>
-                <div className="bg-card border rounded-lg p-4">
-                  <div className="text-2xl font-bold text-green-600">
-                    {formatCurrency(
-                      deals
-                        .filter(d => d.is_active)
-                        .reduce((sum, deal) => sum + deal.value, 0)
-                    )}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Total Pipeline Value</div>
-                </div>
-                <div className="bg-card border rounded-lg p-4">
-                  <div className="text-2xl font-bold text-orange-600">
-                    {formatCurrency(
-                      deals
-                        .filter(d => d.is_active)
-                        .reduce((sum, deal) => sum + (deal.value * deal.probability / 100), 0)
-                    )}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Weighted Value</div>
-                </div>
-                <div className="bg-card border rounded-lg p-4">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {deals.filter(d => d.is_active && d.stage_name?.includes('Won')).length}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Won This Month</div>
-                </div>
-              </div>
+              {/* Enhanced Pipeline Stats */}
+              <PipelineStats deals={deals} stages={stages} />
 
               {/* Stage Filters - Only show in list view */}
               {viewMode === 'list' && (
@@ -435,6 +419,7 @@ export default function PipelinePage() {
                     onDealMove={handleDealMove}
                     onAddDeal={handleCreateDeal}
                     onEditDeal={handleEditDeal}
+                    onDeleteDeal={handleDeleteDeal}
                   />
                 </div>
               ) : (
