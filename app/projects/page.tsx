@@ -5,7 +5,13 @@ import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import ProjectKanbanBoard from "@/components/ProjectKanbanBoard"
 import ProjectModal from "@/components/ProjectModal"
+import ProjectStats from "@/components/projects/ProjectStats"
+import ProjectCard from "@/components/projects/ProjectCard"
 import { projectAPI, projectStageAPI, handleAPIError, ProjectStage, Project, ProjectCreate } from "@/lib/api"
+import { 
+  LayoutGrid, List, Plus, Download, Filter, Search,
+  TrendingUp, DollarSign, Target, Trophy
+} from "lucide-react"
 
 export default function ProjectsPage() {
   const [stages, setStages] = useState<ProjectStage[]>([])
@@ -40,27 +46,7 @@ export default function ProjectsPage() {
       
       // Load all projects
       const projectsData = await projectAPI.getProjects({ limit: 100 })
-      console.log('Loaded projects:', projectsData)
-      console.log('Loaded stages:', stagesData)
-      
-      // Debug: Check stage_id mapping
-      const stageIds = new Set(stagesData.map((s: any) => s.id))
-      const projectsWithInvalidStages = projectsData.filter((p: any) => !stageIds.has(p.stage_id))
-      if (projectsWithInvalidStages.length > 0) {
-        console.warn('Projects with invalid stage_ids:', projectsWithInvalidStages)
-        console.warn('Available stage IDs:', Array.from(stageIds))
-      }
-      
-      // Temporary fix: If projects have invalid stage_ids, assign them to the first stage
-      const fixedProjects = projectsData.map((project: any) => {
-        if (!stageIds.has(project.stage_id) && stagesData.length > 0) {
-          console.log(`Fixing project "${project.title}" stage_id from ${project.stage_id} to ${stagesData[0].id}`)
-          return { ...project, stage_id: stagesData[0].id }
-        }
-        return project
-      })
-      
-      setProjects(fixedProjects)
+      setProjects(projectsData)
       
     } catch (err) {
       setError(handleAPIError(err))
@@ -91,83 +77,6 @@ export default function ProjectsPage() {
     return projects.filter(project => project.stage_id === stageId && project.is_active)
   }
 
-  const debugProjects = async () => {
-    try {
-      const response = await fetch('/api/projects/debug', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to run debug')
-      }
-      
-      const debug = await response.json()
-      console.log('Debug data:', debug)
-      
-      alert(`Debug Results:
-Sample Projects:
-${debug.sample_projects.map((p: any) => `- "${p.title}" stage_id=${p.stage_id} stage_name=${p.stage_name || 'NULL'}`).join('\n')}
-
-Available Stages:
-${debug.available_stages.map((s: any) => `- ${s.name} (ID: ${s.id})`).join('\n')}
-      `)
-    } catch (err) {
-      setError(handleAPIError(err))
-    }
-  }
-
-  const diagnoseProjects = async () => {
-    try {
-      const response = await fetch('/api/projects/stages/diagnostic', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to run diagnostic')
-      }
-      
-      const diagnostic = await response.json()
-      
-      // Show diagnostic info in alert for now
-      const message = `
-Diagnostic Results:
-- Organization ID: ${diagnostic.organization_id}
-- Total Projects: ${diagnostic.total_projects}
-- Valid Projects: ${diagnostic.valid_projects_count}
-- Invalid Projects: ${diagnostic.invalid_projects_count}
-
-Available Stages:
-${diagnostic.stages.map((s: any) => `- ${s.name} (ID: ${s.id})`).join('\n')}
-
-${diagnostic.invalid_projects_count > 0 ? `
-Invalid Projects (first 10):
-${diagnostic.invalid_projects.map((p: any) => `- "${p.title}" has stage_id: ${p.stage_id}`).join('\n')}
-
-These projects have stage IDs that don't match any of your organization's stages.
-` : ''}
-      `
-      
-      alert(message)
-      
-      // If there are invalid projects, offer to fix them
-      if (diagnostic.invalid_projects_count > 0) {
-        if (confirm('Would you like to reassign these projects to the Planning stage?')) {
-          // For now, show instructions
-          alert('Please run the SQL migration: fix_project_stage_assignments.sql in your database to fix this issue.')
-        }
-      }
-    } catch (err) {
-      setError(handleAPIError(err))
-    }
-  }
 
   const formatCurrency = (value: number, currency = 'USD') => {
     return new Intl.NumberFormat('en-US', {
@@ -412,34 +321,46 @@ These projects have stage IDs that don't match any of your organization's stages
                 <button
                   onClick={handleExportProjects}
                   disabled={loading || projects.length === 0}
-                  className="px-4 py-2 border border-green-200 rounded-md hover:bg-green-50 hover:border-green-300 transition-all text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-4 py-2 border border-green-200 rounded-md hover:bg-green-50 hover:border-green-300 transition-all text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  📥 Export to CSV
+                  <Download className="w-4 h-4" />
+                  Export to CSV
                 </button>
                 
                 {/* View Toggle */}
                 <div className="flex bg-gray-100 rounded-lg p-1">
                   <button
                     onClick={() => setViewMode('kanban')}
-                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                       viewMode === 'kanban'
                         ? 'bg-white text-gray-900 shadow-sm'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
-                    📋 Board
+                    <LayoutGrid className="w-4 h-4" />
+                    Board
                   </button>
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                       viewMode === 'list'
                         ? 'bg-white text-gray-900 shadow-sm'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
-                    📄 List
+                    <List className="w-4 h-4" />
+                    List
                   </button>
                 </div>
+                
+                {/* Create Project Button */}
+                <button
+                  onClick={() => handleCreateProject()}
+                  className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Create Project
+                </button>
               </div>
             </div>
           </div>
@@ -467,88 +388,13 @@ These projects have stage IDs that don't match any of your organization's stages
             </div>
           )}
 
-          {/* Diagnostic Button - Show when projects exist but aren't visible */}
-          {stages.length > 0 && projects.length > 0 && (
-            (() => {
-              const visibleProjects = projects.filter(p => 
-                p.is_active && stages.some(stage => stage.id === p.stage_id)
-              ).length
-              const activeProjects = projects.filter(p => p.is_active).length
-              
-              if (activeProjects > visibleProjects) {
-                return (
-                  <div className="rounded-md bg-yellow-50 p-4 mb-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-sm text-yellow-700 font-medium">
-                          Projects Not Showing in Kanban
-                        </div>
-                        <div className="text-xs text-yellow-600 mt-1">
-                          {activeProjects} active projects found, but only {visibleProjects} are visible.
-                          Click diagnose to see why.
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={debugProjects}
-                          className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
-                        >
-                          Debug
-                        </button>
-                        <button
-                          onClick={diagnoseProjects}
-                          className="px-3 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700"
-                        >
-                          Diagnose Issue
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )
-              }
-              return null
-            })()
-          )}
 
 
           {/* Project Overview */}
           {stages.length > 0 && (
             <div className="space-y-6">
-              {/* Project Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-card border rounded-lg p-4">
-                  <div className="text-2xl font-bold text-primary">
-                    {projects.filter(p => p.is_active).length}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Active Projects</div>
-                </div>
-                <div className="bg-card border rounded-lg p-4">
-                  <div className="text-2xl font-bold text-green-600">
-                    {formatCurrency(
-                      projects
-                        .filter(p => p.is_active)
-                        .reduce((sum, project) => sum + calculateProjectValue(project), 0)
-                    )}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Total Project Value</div>
-                </div>
-                <div className="bg-card border rounded-lg p-4">
-                  <div className="text-2xl font-bold text-orange-600">
-                    {projects
-                      .filter(p => p.is_active)
-                      .reduce((sum, project) => sum + (project.projected_hours || 0), 0)
-                      .toFixed(0)
-                    }h
-                  </div>
-                  <div className="text-sm text-muted-foreground">Projected Hours</div>
-                </div>
-                <div className="bg-card border rounded-lg p-4">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {projects.filter(p => p.is_active && p.stage_name === 'Closed').length}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Completed This Month</div>
-                </div>
-              </div>
+              {/* Enhanced Project Stats */}
+              <ProjectStats projects={projects} stages={stages} />
 
               {/* Stage Filters - Only show in list view */}
               {viewMode === 'list' && (
@@ -635,58 +481,12 @@ These projects have stage IDs that don't match any of your organization's stages
                             ) : (
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {stageProjects.map(project => (
-                                  <div 
-                                    key={project.id} 
-                                    className="border rounded-lg p-4 hover:shadow-sm transition-shadow cursor-pointer group relative"
-                                    onClick={() => handleEditProject(project)}
-                                  >
-                                    {/* Edit Icon - appears on hover */}
-                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                      </svg>
-                                    </div>
-
-                                    <div className="flex items-start justify-between">
-                                      <div className="flex-1">
-                                        <h4 className="font-semibold text-sm">{project.title}</h4>
-                                        <div className="text-lg font-bold text-primary mt-1">
-                                          {project.hourly_rate && project.projected_hours 
-                                            ? formatCurrency(calculateProjectValue(project))
-                                            : 'TBD'
-                                          }
-                                        </div>
-                                        <div className="text-sm text-muted-foreground mt-1">
-                                          {project.project_type && (
-                                            <span className="bg-gray-100 px-2 py-1 rounded text-xs">
-                                              {project.project_type}
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-                                      {project.company_name && (
-                                        <div>Company: {project.company_name}</div>
-                                      )}
-                                      {project.contact_name && (
-                                        <div>Contact: {project.contact_name}</div>
-                                      )}
-                                      {project.assigned_team_member_names?.length > 0 && (
-                                        <div>Team: {project.assigned_team_member_names.join(', ')}</div>
-                                      )}
-                                      {project.start_date && (
-                                        <div>Started: {formatDate(project.start_date)}</div>
-                                      )}
-                                      {project.projected_end_date && (
-                                        <div>Due: {formatDate(project.projected_end_date)}</div>
-                                      )}
-                                      {project.hourly_rate && (
-                                        <div>Rate: {formatCurrency(project.hourly_rate)}/hr</div>
-                                      )}
-                                    </div>
-                                  </div>
+                                  <ProjectCard 
+                                    key={project.id}
+                                    project={project}
+                                    onEdit={handleEditProject}
+                                    onDelete={handleDeleteProject}
+                                  />
                                 ))}
                               </div>
                             )}
