@@ -463,13 +463,20 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
         }
       })
       
-      if (!ensureResponse.ok) {
-        console.error('Failed to ensure categories exist')
+      const ensureResult = await ensureResponse.json()
+      console.log('Categories ensure response:', ensureResult)
+      
+      if (ensureResult.error) {
+        console.error('Error ensuring categories:', ensureResult.error)
+        alert(`Failed to setup document categories: ${ensureResult.error}`)
         return false
       }
       
-      const ensureResult = await ensureResponse.json()
-      console.log('Categories ensured:', ensureResult)
+      if (!ensureResult.categories || ensureResult.categories.length === 0) {
+        console.error('No categories were created or found')
+        alert('Failed to setup document categories. Please contact support.')
+        return false
+      }
       
       // Now initialize folders
       const response = await fetch(`${baseUrl}/api/companies/${companyId}/folders/initialize`, {
@@ -479,32 +486,41 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
         }
       })
       
-      if (response.ok) {
-        const result = await response.json()
-        console.log('Initialized folders:', result)
-        
-        // Check if folders were actually created
-        if (result.folders && result.folders.length > 0) {
-          console.log('Successfully created', result.folders.length, 'folders')
-          return true
-        } else {
-          console.warn('No folders were created. Check if document_categories exist in database.')
-          alert('Unable to create folders. Document categories may not be configured. Please contact support.')
-          return false
-        }
-      } else {
-        const error = await response.text()
-        console.error('Failed to initialize folders:', response.status, error)
+      const result = await response.json()
+      console.log('Initialize folders response:', result)
+      
+      if (result.error) {
+        console.error('Error creating folders:', result.error)
         
         // If folders already exist, that's ok
-        if (error.includes('already exist')) {
+        if (result.error.includes('already exist')) {
           console.log('Folders already exist for this company')
           return true
         }
+        
+        alert(`Failed to create folders: ${result.error}`)
+        return false
+      }
+      
+      // Check if folders were actually created
+      if (result.folders && result.folders.length > 0) {
+        console.log('Successfully created', result.folders.length, 'folders')
+        return true
+      } else {
+        console.warn('No folders were created but no error was returned')
+        console.log('Full response:', result)
+        
+        // If no folders were created but also no error, it might mean they already exist
+        if (result.message && result.message.includes('0 default folders')) {
+          // Try to reload to check if folders exist
+          return false
+        }
+        
         return false
       }
     } catch (error) {
       console.error('Failed to initialize folders:', error)
+      alert(`Failed to initialize folders: ${error}`)
       return false
     }
   }

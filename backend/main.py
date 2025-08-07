@@ -3471,11 +3471,24 @@ async def ensure_categories(
     """Ensure organization has default document categories"""
     from crud import ensure_organization_has_categories
     
-    categories = ensure_organization_has_categories(db, current_user.organization_id)
-    return {
-        "message": f"Organization has {len(categories)} document categories",
-        "categories": [{"name": c.name, "slug": c.slug} for c in categories]
-    }
+    print(f"Ensuring categories for organization {current_user.organization_id}")
+    
+    try:
+        categories = ensure_organization_has_categories(db, current_user.organization_id)
+        print(f"Organization {current_user.organization_id} now has {len(categories)} categories")
+        return {
+            "message": f"Organization has {len(categories)} document categories",
+            "categories": [{"name": c.name, "slug": c.slug} for c in categories]
+        }
+    except Exception as e:
+        print(f"Error ensuring categories: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "message": "Failed to ensure categories",
+            "categories": [],
+            "error": str(e)
+        }
 
 
 @app.post("/api/companies/{company_id}/folders/initialize")
@@ -3485,6 +3498,8 @@ async def initialize_company_folders(
     db: Session = Depends(get_db)
 ):
     """Create default smart folders for a company"""
+    print(f"Initializing folders for company {company_id}, org {current_user.organization_id}")
+    
     # Verify company exists and user has access
     company = get_company(db, company_id, current_user.organization_id)
     if not company:
@@ -3493,10 +3508,18 @@ async def initialize_company_folders(
     # Check if folders already exist
     existing_folders = get_document_folders(db, company_id, current_user.organization_id)
     if existing_folders:
+        print(f"Company {company_id} already has {len(existing_folders)} folders")
         raise HTTPException(status_code=400, detail="Folders already exist for this company")
     
-    folders = create_default_folders_for_company(db, company_id, current_user.organization_id, current_user.id)
-    return {"message": f"Created {len(folders)} default folders", "folders": folders}
+    try:
+        folders = create_default_folders_for_company(db, company_id, current_user.organization_id, current_user.id)
+        print(f"Created {len(folders)} folders for company {company_id}")
+        return {"message": f"Created {len(folders)} default folders", "folders": folders}
+    except Exception as e:
+        print(f"Error creating folders: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"message": "Failed to create folders", "folders": [], "error": str(e)}
 
 
 # Project Updates endpoints

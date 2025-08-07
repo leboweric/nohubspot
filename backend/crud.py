@@ -1603,13 +1603,19 @@ def get_document_categories(db: Session, organization_id: int) -> List[DocumentC
 def ensure_organization_has_categories(db: Session, organization_id: int) -> List[DocumentCategory]:
     """Ensure an organization has the default document categories"""
     
-    # Check if organization has categories
-    existing_count = db.query(DocumentCategory).filter(
-        DocumentCategory.organization_id == organization_id
-    ).count()
-    
-    if existing_count > 0:
-        return get_document_categories(db, organization_id)
+    try:
+        # Check if organization has categories
+        existing_count = db.query(DocumentCategory).filter(
+            DocumentCategory.organization_id == organization_id
+        ).count()
+        
+        print(f"Organization {organization_id} has {existing_count} existing categories")
+        
+        if existing_count > 0:
+            return get_document_categories(db, organization_id)
+    except Exception as e:
+        print(f"Error checking existing categories: {e}")
+        # Continue to create categories if check fails
     
     # Create default categories
     default_categories = [
@@ -1693,25 +1699,37 @@ def ensure_organization_has_categories(db: Session, organization_id: int) -> Lis
         db.add(category)
         categories.append(category)
     
-    db.commit()
-    
-    # Refresh to get IDs
-    for category in categories:
-        db.refresh(category)
-    
-    return categories
+    try:
+        db.commit()
+        print(f"Successfully created {len(categories)} categories for organization {organization_id}")
+        
+        # Refresh to get IDs
+        for category in categories:
+            db.refresh(category)
+        
+        return categories
+    except Exception as e:
+        print(f"Error creating categories: {e}")
+        db.rollback()
+        # Try to return existing categories if creation failed
+        return get_document_categories(db, organization_id)
 
 
 def create_default_folders_for_company(db: Session, company_id: int, organization_id: int, user_id: int) -> List[DocumentFolder]:
     """Create default smart folders for a new company based on categories"""
     
+    print(f"Creating default folders for company {company_id}, org {organization_id}, user {user_id}")
+    
     # Ensure organization has categories first
     categories = ensure_organization_has_categories(db, organization_id)
+    print(f"Found/created {len(categories)} categories")
     
     # Check if company already has folders
     existing_folders = db.query(DocumentFolder).filter(
         DocumentFolder.company_id == company_id
     ).count()
+    
+    print(f"Company {company_id} has {existing_folders} existing folders")
     
     if existing_folders > 0:
         return []  # Company already has folders
