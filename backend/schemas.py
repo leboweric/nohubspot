@@ -196,6 +196,10 @@ class AttachmentCreate(AttachmentBase):
 class AttachmentResponse(AttachmentBase):
     id: int
     created_at: datetime
+    folder_id: Optional[int] = None
+    version: Optional[int] = 1
+    tags: Optional[List[str]] = None
+    expiry_date: Optional[datetime] = None
     
     class Config:
         from_attributes = True
@@ -1006,6 +1010,83 @@ class EmailPrivacySettingsUpdate(BaseModel):
 class ContactPrivacyUpdate(BaseModel):
     shared_with_team: Optional[bool] = None
     owner_id: Optional[int] = None
+
+
+# Document Management Schemas
+class DocumentFolderBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    parent_folder_id: Optional[int] = None
+    folder_type: str = "custom"
+    category: Optional[str] = None
+    color: Optional[str] = None
+    icon: Optional[str] = None
+    sort_order: int = 0
+    auto_rules: Optional[dict] = None
+
+
+class DocumentFolderCreate(DocumentFolderBase):
+    company_id: int
+
+
+class DocumentFolderUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    parent_folder_id: Optional[int] = None
+    color: Optional[str] = None
+    icon: Optional[str] = None
+    sort_order: Optional[int] = None
+    auto_rules: Optional[dict] = None
+
+
+class DocumentFolderResponse(DocumentFolderBase):
+    id: int
+    organization_id: int
+    company_id: int
+    created_by: int
+    created_at: datetime
+    updated_at: datetime
+    attachment_count: Optional[int] = 0
+    subfolders: Optional[List['DocumentFolderResponse']] = []
+    
+    class Config:
+        from_attributes = True
+
+
+class DocumentCategoryResponse(BaseModel):
+    id: int
+    organization_id: int
+    name: str
+    description: Optional[str]
+    slug: str
+    color: str
+    icon: str
+    sort_order: int
+    keywords: Optional[List[str]]
+    file_extensions: Optional[List[str]]
+    is_active: bool
+    is_system: bool
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class MoveAttachmentRequest(BaseModel):
+    attachment_id: int
+    folder_id: Optional[int] = None
+
+
+class AttachmentUpdate(BaseModel):
+    description: Optional[str] = None
+    folder_id: Optional[int] = None
+    tags: Optional[List[str]] = None
+    expiry_date: Optional[datetime] = None
+
+
+# Update forward references
+DocumentFolderResponse.model_rebuild()
 
 # Email Thread Sharing
 class EmailThreadSharingUpdate(BaseModel):

@@ -67,7 +67,9 @@ from schemas import (
     ProjectTypeCreate, ProjectTypeResponse, ProjectTypeUpdate,
     EmailTrackingCreate, EmailTrackingResponse, EmailEventCreate, EmailEventResponse, SendGridEvent,
     ContactPrivacyUpdate, EmailThreadSharingUpdate, EmailSharingPermissionCreate, EmailSharingPermissionResponse,
-    EmailPrivacySettings, EmailPrivacySettingsUpdate
+    EmailPrivacySettings, EmailPrivacySettingsUpdate,
+    DocumentFolderCreate, DocumentFolderUpdate, DocumentFolderResponse,
+    DocumentCategoryResponse, MoveAttachmentRequest, AttachmentUpdate
 )
 from crud import (
     create_company, get_companies, get_company, update_company, delete_company,
@@ -90,7 +92,10 @@ from crud import (
     create_project_stage, get_project_stages, get_project_stage, update_project_stage, delete_project_stage,
     create_project, get_projects, get_project, update_project, delete_project,
     get_project_types, get_project_type, create_project_type, update_project_type, delete_project_type,
-    recalculate_all_contact_counts, sync_contact_company_names
+    recalculate_all_contact_counts, sync_contact_company_names,
+    create_document_folder, get_document_folders, get_document_folder, update_document_folder, delete_document_folder,
+    move_attachment_to_folder, get_folder_attachments, get_document_categories, create_default_folders_for_company,
+    auto_categorize_attachment
 )
 from auth_crud import (
     create_organization, get_organization_by_slug, get_organization_by_id,
@@ -3213,6 +3218,270 @@ async def delete_attachment(
         db.commit()
     
     return {"message": "Attachment deleted successfully"}
+
+
+# Company Attachment endpoints with folder support
+@app.post("/api/companies/{company_id}/attachments", response_model=AttachmentResponse)
+async def upload_company_attachment(
+    company_id: int,
+    file: UploadFile = FastAPIFile(...),
+    folder_id: Optional[int] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Upload an attachment to a company - stores file directly in PostgreSQL with auto-categorization"""
+    # Verify company exists and belongs to user's organization
+    company = get_company(db, company_id, current_user.organization_id)
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Read file contents
+    try:
+        contents = await file.read()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read file: {str(e)}")
+    
+    # Create the attachment record with file data stored in database
+    db_attachment = Attachment(
+        name=file.filename,
+        file_size=len(contents),
+        file_type=file.content_type,
+        file_data=contents,
+        company_id=company_id,
+        folder_id=folder_id,  # Can be None for root level
+        organization_id=current_user.organization_id,
+        uploaded_by=f"{current_user.first_name} {current_user.last_name}"
+    )
+    
+    db.add(db_attachment)
+    db.commit()
+    db.refresh(db_attachment)
+    
+    # Auto-categorize if no folder specified
+    if not folder_id:
+        folder = auto_categorize_attachment(db, db_attachment, current_user.organization_id)
+        if folder:
+            db.refresh(db_attachment)  # Refresh to get updated folder_id
+    
+    # Log activity
+    activity = Activity(
+        organization_id=current_user.organization_id,
+        title=f"File uploaded to company",
+        description=f"File '{file.filename}' was uploaded to company '{company.name}'",
+        type="attachment",
+        entity_id=str(company_id),
+        created_by=f"{current_user.first_name} {current_user.last_name}"
+    )
+    db.add(activity)
+    db.commit()
+    
+    return AttachmentResponse(
+        id=db_attachment.id,
+        name=db_attachment.name,
+        description=db_attachment.description,
+        file_size=db_attachment.file_size,
+        file_type=db_attachment.file_type,
+        file_url=db_attachment.file_url,
+        company_id=db_attachment.company_id,
+        folder_id=db_attachment.folder_id,
+        uploaded_by=db_attachment.uploaded_by,
+        created_at=db_attachment.created_at
+    )
+
+
+@app.get("/api/companies/{company_id}/attachments", response_model=List[AttachmentResponse])
+async def get_company_attachments(
+    company_id: int,
+    folder_id: Optional[int] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get attachments for a company, optionally filtered by folder"""
+    # Verify company exists and belongs to user's organization
+    company = get_company(db, company_id, current_user.organization_id)
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    if folder_id is not None:
+        # Get attachments in specific folder
+        attachments = get_folder_attachments(db, folder_id, company_id, current_user.organization_id)
+    else:
+        # Get all company attachments
+        attachments = db.query(Attachment).filter(
+            Attachment.company_id == company_id,
+            Attachment.organization_id == current_user.organization_id
+        ).order_by(Attachment.created_at.desc()).all()
+    
+    return attachments
+
+
+# Document Management endpoints
+@app.get("/api/companies/{company_id}/folders", response_model=List[DocumentFolderResponse])
+async def get_company_folders(
+    company_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all document folders for a company"""
+    # Verify company exists and user has access
+    company = get_company(db, company_id, current_user.organization_id)
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    folders = get_document_folders(db, company_id, current_user.organization_id)
+    
+    # Build folder tree structure
+    folder_dict = {folder.id: folder for folder in folders}
+    root_folders = []
+    
+    for folder in folders:
+        if folder.parent_folder_id:
+            parent = folder_dict.get(folder.parent_folder_id)
+            if parent:
+                if not hasattr(parent, 'subfolders'):
+                    parent.subfolders = []
+                parent.subfolders.append(folder)
+        else:
+            root_folders.append(folder)
+        
+        # Add attachment count
+        folder.attachment_count = db.query(Attachment).filter(
+            Attachment.folder_id == folder.id,
+            Attachment.organization_id == current_user.organization_id
+        ).count()
+    
+    return root_folders
+
+
+@app.post("/api/companies/{company_id}/folders", response_model=DocumentFolderResponse)
+async def create_company_folder(
+    company_id: int,
+    folder_data: DocumentFolderCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new document folder for a company"""
+    # Verify company exists and user has access
+    company = get_company(db, company_id, current_user.organization_id)
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Ensure company_id matches
+    folder_dict = folder_data.dict()
+    folder_dict["company_id"] = company_id
+    
+    folder = create_document_folder(db, folder_dict, current_user.organization_id, current_user.id)
+    return folder
+
+
+@app.put("/api/folders/{folder_id}", response_model=DocumentFolderResponse)
+async def update_company_folder(
+    folder_id: int,
+    folder_data: DocumentFolderUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update a document folder"""
+    folder = update_document_folder(db, folder_id, folder_data.dict(exclude_unset=True), current_user.organization_id)
+    if not folder:
+        raise HTTPException(status_code=404, detail="Folder not found")
+    return folder
+
+
+@app.delete("/api/folders/{folder_id}")
+async def delete_company_folder(
+    folder_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a document folder"""
+    if not delete_document_folder(db, folder_id, current_user.organization_id):
+        raise HTTPException(status_code=404, detail="Folder not found")
+    return {"message": "Folder deleted successfully"}
+
+
+@app.get("/api/folders/{folder_id}/attachments", response_model=List[AttachmentResponse])
+async def get_folder_contents(
+    folder_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all attachments in a folder"""
+    folder = get_document_folder(db, folder_id, current_user.organization_id)
+    if not folder:
+        raise HTTPException(status_code=404, detail="Folder not found")
+    
+    attachments = get_folder_attachments(db, folder_id, folder.company_id, current_user.organization_id)
+    return attachments
+
+
+@app.post("/api/attachments/{attachment_id}/move")
+async def move_attachment(
+    attachment_id: int,
+    request: MoveAttachmentRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Move an attachment to a different folder"""
+    attachment = move_attachment_to_folder(db, attachment_id, request.folder_id, current_user.organization_id)
+    if not attachment:
+        raise HTTPException(status_code=404, detail="Attachment not found")
+    return {"message": "Attachment moved successfully"}
+
+
+@app.put("/api/attachments/{attachment_id}", response_model=AttachmentResponse)
+async def update_attachment(
+    attachment_id: int,
+    update_data: AttachmentUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update attachment metadata"""
+    attachment = db.query(Attachment).filter(
+        Attachment.id == attachment_id,
+        Attachment.organization_id == current_user.organization_id
+    ).first()
+    
+    if not attachment:
+        raise HTTPException(status_code=404, detail="Attachment not found")
+    
+    for key, value in update_data.dict(exclude_unset=True).items():
+        setattr(attachment, key, value)
+    
+    db.commit()
+    db.refresh(attachment)
+    return attachment
+
+
+@app.get("/api/document-categories", response_model=List[DocumentCategoryResponse])
+async def get_categories(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all document categories for the organization"""
+    categories = get_document_categories(db, current_user.organization_id)
+    return categories
+
+
+@app.post("/api/companies/{company_id}/folders/initialize")
+async def initialize_company_folders(
+    company_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create default smart folders for a company"""
+    # Verify company exists and user has access
+    company = get_company(db, company_id, current_user.organization_id)
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Check if folders already exist
+    existing_folders = get_document_folders(db, company_id, current_user.organization_id)
+    if existing_folders:
+        raise HTTPException(status_code=400, detail="Folders already exist for this company")
+    
+    folders = create_default_folders_for_company(db, company_id, current_user.organization_id, current_user.id)
+    return {"message": f"Created {len(folders)} default folders", "folders": folders}
 
 
 # Project Updates endpoints

@@ -10,7 +10,8 @@ from models import (
     O365OrganizationConfig, O365UserConnection, 
     GoogleOrganizationConfig, GoogleUserConnection,
     User, PipelineStage, Deal,
-    ProjectStage, Project, ProjectType
+    ProjectStage, Project, ProjectType,
+    DocumentFolder, DocumentCategory
 )
 from schemas import (
     CompanyCreate, CompanyUpdate, ContactCreate, ContactUpdate,
@@ -1496,3 +1497,165 @@ def sync_contact_company_names(db: Session, organization_id: int) -> dict:
         "contacts_updated": contacts_updated,
         "orphans_cleared": orphans_cleared
     }
+
+
+# Document Folder Management
+def create_document_folder(db: Session, folder_data: dict, organization_id: int, user_id: int) -> DocumentFolder:
+    """Create a new document folder"""
+    folder = DocumentFolder(
+        **folder_data,
+        organization_id=organization_id,
+        created_by=user_id
+    )
+    db.add(folder)
+    db.commit()
+    db.refresh(folder)
+    return folder
+
+
+def get_document_folders(db: Session, company_id: int, organization_id: int) -> List[DocumentFolder]:
+    """Get all document folders for a company"""
+    return db.query(DocumentFolder).filter(
+        DocumentFolder.company_id == company_id,
+        DocumentFolder.organization_id == organization_id
+    ).order_by(DocumentFolder.sort_order, DocumentFolder.name).all()
+
+
+def get_document_folder(db: Session, folder_id: int, organization_id: int) -> Optional[DocumentFolder]:
+    """Get a specific document folder"""
+    return db.query(DocumentFolder).filter(
+        DocumentFolder.id == folder_id,
+        DocumentFolder.organization_id == organization_id
+    ).first()
+
+
+def update_document_folder(db: Session, folder_id: int, folder_data: dict, organization_id: int) -> Optional[DocumentFolder]:
+    """Update a document folder"""
+    folder = get_document_folder(db, folder_id, organization_id)
+    if folder:
+        for key, value in folder_data.items():
+            setattr(folder, key, value)
+        folder.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(folder)
+    return folder
+
+
+def delete_document_folder(db: Session, folder_id: int, organization_id: int) -> bool:
+    """Delete a document folder and optionally move its contents"""
+    folder = get_document_folder(db, folder_id, organization_id)
+    if folder:
+        # Move attachments to parent folder or root
+        db.query(Attachment).filter(
+            Attachment.folder_id == folder_id
+        ).update({"folder_id": folder.parent_folder_id})
+        
+        # Move subfolders to parent folder
+        db.query(DocumentFolder).filter(
+            DocumentFolder.parent_folder_id == folder_id
+        ).update({"parent_folder_id": folder.parent_folder_id})
+        
+        db.delete(folder)
+        db.commit()
+        return True
+    return False
+
+
+def move_attachment_to_folder(db: Session, attachment_id: int, folder_id: Optional[int], organization_id: int) -> Optional[Attachment]:
+    """Move an attachment to a different folder"""
+    attachment = db.query(Attachment).filter(
+        Attachment.id == attachment_id,
+        Attachment.organization_id == organization_id
+    ).first()
+    
+    if attachment:
+        attachment.folder_id = folder_id
+        db.commit()
+        db.refresh(attachment)
+    return attachment
+
+
+def get_folder_attachments(db: Session, folder_id: Optional[int], company_id: int, organization_id: int) -> List[Attachment]:
+    """Get all attachments in a specific folder"""
+    query = db.query(Attachment).filter(
+        Attachment.company_id == company_id,
+        Attachment.organization_id == organization_id
+    )
+    
+    if folder_id is None:
+        # Get root level attachments (no folder)
+        query = query.filter(Attachment.folder_id.is_(None))
+    else:
+        query = query.filter(Attachment.folder_id == folder_id)
+    
+    return query.order_by(Attachment.created_at.desc()).all()
+
+
+# Document Categories
+def get_document_categories(db: Session, organization_id: int) -> List[DocumentCategory]:
+    """Get all document categories for an organization"""
+    return db.query(DocumentCategory).filter(
+        DocumentCategory.organization_id == organization_id,
+        DocumentCategory.is_active == True
+    ).order_by(DocumentCategory.sort_order, DocumentCategory.name).all()
+
+
+def create_default_folders_for_company(db: Session, company_id: int, organization_id: int, user_id: int) -> List[DocumentFolder]:
+    """Create default smart folders for a new company based on categories"""
+    categories = get_document_categories(db, organization_id)
+    folders = []
+    
+    for category in categories:
+        folder_data = {
+            "company_id": company_id,
+            "name": category.name,
+            "description": category.description,
+            "folder_type": "smart",
+            "category": category.slug,
+            "color": category.color,
+            "icon": category.icon,
+            "sort_order": category.sort_order,
+            "auto_rules": {
+                "keywords": category.keywords,
+                "extensions": category.file_extensions
+            }
+        }
+        folder = create_document_folder(db, folder_data, organization_id, user_id)
+        folders.append(folder)
+    
+    return folders
+
+
+def auto_categorize_attachment(db: Session, attachment: Attachment, organization_id: int) -> Optional[DocumentFolder]:
+    """Automatically categorize an attachment based on smart folder rules"""
+    if not attachment.company_id:
+        return None
+    
+    # Get all smart folders for the company
+    smart_folders = db.query(DocumentFolder).filter(
+        DocumentFolder.company_id == attachment.company_id,
+        DocumentFolder.organization_id == organization_id,
+        DocumentFolder.folder_type == "smart"
+    ).all()
+    
+    attachment_name_lower = attachment.name.lower()
+    
+    for folder in smart_folders:
+        if folder.auto_rules:
+            # Check keywords
+            keywords = folder.auto_rules.get("keywords", [])
+            for keyword in keywords:
+                if keyword.lower() in attachment_name_lower:
+                    attachment.folder_id = folder.id
+                    db.commit()
+                    return folder
+            
+            # Check file extensions
+            extensions = folder.auto_rules.get("extensions", [])
+            for ext in extensions:
+                if attachment_name_lower.endswith(ext.lower()):
+                    attachment.folder_id = folder.id
+                    db.commit()
+                    return folder
+    
+    return None

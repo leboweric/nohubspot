@@ -124,6 +124,7 @@ class Company(Base):
     primary_account_owner = relationship("User", foreign_keys=[primary_account_owner_id])
     contacts = relationship("Contact", back_populates="company_rel", cascade="all, delete-orphan")
     attachments = relationship("Attachment", back_populates="company_rel", cascade="all, delete-orphan")
+    document_folders = relationship("DocumentFolder", back_populates="company", cascade="all, delete-orphan")
     activities = relationship("Activity", foreign_keys="Activity.entity_id", 
                             primaryjoin="and_(cast(Company.id, String) == Activity.entity_id, Activity.type == 'company')",
                             overlaps="activities")
@@ -243,14 +244,21 @@ class Attachment(Base):
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
     deal_id = Column(Integer, ForeignKey("deals.id"), nullable=True)
+    folder_id = Column(Integer, ForeignKey("document_folders.id", ondelete="SET NULL"), nullable=True)
     uploaded_by = Column(String(255))
     organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Document metadata
+    version = Column(Integer, default=1)
+    tags = Column(JSON, nullable=True)  # ["urgent", "pending-signature"]
+    expiry_date = Column(DateTime(timezone=True), nullable=True)
     
     # Relationships
     company_rel = relationship("Company", back_populates="attachments")
     project_rel = relationship("Project", back_populates="attachments")
     deal_rel = relationship("Deal", back_populates="attachments")
+    folder = relationship("DocumentFolder", back_populates="attachments")
 
 class Activity(Base):
     __tablename__ = "activities"
@@ -834,3 +842,72 @@ class EmailSharingPermission(Base):
     email_thread = relationship("EmailThread", back_populates="sharing_permissions")
     user = relationship("User", foreign_keys=[user_id])
     granter = relationship("User", foreign_keys=[granted_by])
+
+
+class DocumentFolder(Base):
+    __tablename__ = "document_folders"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
+    
+    # Folder details
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    parent_folder_id = Column(Integer, ForeignKey("document_folders.id", ondelete="CASCADE"), nullable=True)
+    
+    # Folder type
+    folder_type = Column(String(50), nullable=False, default="custom")  # smart, custom
+    category = Column(String(50), nullable=True)  # proposals, contracts, financial, communications, technical, presentations
+    
+    # Settings
+    color = Column(String(7), nullable=True)  # Hex color for UI
+    icon = Column(String(50), nullable=True)  # Icon name
+    sort_order = Column(Integer, default=0)
+    
+    # Auto-organization rules (JSON)
+    auto_rules = Column(JSON, nullable=True)  # {"keywords": ["proposal", "quote"], "extensions": [".pdf", ".docx"]}
+    
+    # Metadata
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    organization = relationship("Organization")
+    company = relationship("Company", back_populates="document_folders")
+    parent = relationship("DocumentFolder", remote_side=[id], backref="subfolders")
+    created_by_user = relationship("User")
+    attachments = relationship("Attachment", back_populates="folder")
+
+
+class DocumentCategory(Base):
+    __tablename__ = "document_categories"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
+    
+    # Category details
+    name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    slug = Column(String(100), nullable=False)  # proposals-quotes, contracts, etc.
+    
+    # Display settings
+    color = Column(String(7), nullable=False)  # Hex color
+    icon = Column(String(50), nullable=False)  # Icon name
+    sort_order = Column(Integer, default=0)
+    
+    # Auto-categorization rules
+    keywords = Column(JSON, nullable=True)  # ["proposal", "quote", "rfp"]
+    file_extensions = Column(JSON, nullable=True)  # [".pdf", ".docx"]
+    
+    # Settings
+    is_active = Column(Boolean, default=True)
+    is_system = Column(Boolean, default=False)  # System categories can't be deleted
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    organization = relationship("Organization")
