@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { CalendarEvent } from "@/lib/api"
+import { ChevronLeft, ChevronRight, Clock, MapPin, Users, Phone, CheckCircle, AlertTriangle, Calendar as CalendarIcon } from "lucide-react"
 
 interface CalendarViewProps {
   events: CalendarEvent[]
@@ -91,17 +92,27 @@ export default function CalendarView({ events, currentDate, onDateClick, onEvent
   const getEventTypeColor = (eventType: string) => {
     switch (eventType) {
       case 'meeting':
-        return 'bg-blue-500'
+        return 'bg-blue-500 border-blue-600'
       case 'call':
-        return 'bg-green-500'
+        return 'bg-green-500 border-green-600'
       case 'task':
-        return 'bg-orange-500'
+        return 'bg-orange-500 border-orange-600'
       case 'reminder':
-        return 'bg-purple-500'
+        return 'bg-purple-500 border-purple-600'
       case 'out_of_office':
-        return 'bg-red-500'
+        return 'bg-red-500 border-red-600'
       default:
-        return 'bg-gray-500'
+        return 'bg-gray-500 border-gray-600'
+    }
+  }
+
+  const getEventTypeIcon = (eventType: string) => {
+    switch (eventType) {
+      case 'meeting': return Users
+      case 'call': return Phone
+      case 'task': return CheckCircle
+      case 'reminder': return AlertTriangle
+      default: return CalendarIcon
     }
   }
 
@@ -115,25 +126,26 @@ export default function CalendarView({ events, currentDate, onDateClick, onEvent
           </h2>
           <button
             onClick={goToToday}
-            className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
           >
+            <Clock className="w-3 h-3" />
             Today
           </button>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={goToPreviousMonth}
-            className="p-2 hover:bg-gray-100 border border-gray-300 rounded-md transition-colors"
+            className="flex items-center justify-center p-2 hover:bg-gray-100 border border-gray-300 rounded-md transition-colors"
             title="Previous month"
           >
-            ←
+            <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={goToNextMonth}
-            className="p-2 hover:bg-gray-100 border border-gray-300 rounded-md transition-colors"
+            className="flex items-center justify-center p-2 hover:bg-gray-100 border border-gray-300 rounded-md transition-colors"
             title="Next month"
           >
-            →
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -142,7 +154,7 @@ export default function CalendarView({ events, currentDate, onDateClick, onEvent
       <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
         {/* Week day headers */}
         {weekDays.map(day => (
-          <div key={day} className="bg-muted p-3 text-center text-sm font-medium text-muted-foreground">
+          <div key={day} className="bg-gray-100 p-3 text-center text-sm font-semibold text-gray-700 border-r border-gray-200 last:border-r-0">
             {day}
           </div>
         ))}
@@ -150,7 +162,7 @@ export default function CalendarView({ events, currentDate, onDateClick, onEvent
         {/* Calendar days */}
         {calendarDays.map((date, index) => {
           if (!date) {
-            return <div key={index} className="bg-card p-3 h-24"></div>
+            return <div key={index} className="bg-gray-50 p-3 h-28 border border-gray-200"></div>
           }
 
           const isToday = date.toDateString() === today.toDateString()
@@ -159,41 +171,50 @@ export default function CalendarView({ events, currentDate, onDateClick, onEvent
           return (
             <div
               key={date.toISOString()}
-              className={`bg-card p-2 h-24 border border-transparent hover:border-primary/20 cursor-pointer transition-colors relative ${
-                isToday ? 'ring-2 ring-primary ring-inset' : ''
+              className={`bg-white p-3 h-28 border border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 cursor-pointer transition-all duration-200 relative group ${
+                isToday ? 'ring-2 ring-blue-500 ring-inset bg-blue-50' : ''
               }`}
               onClick={() => onDateClick(date)}
             >
-              <div className={`text-sm font-medium mb-1 ${
-                isToday ? 'text-primary' : 'text-foreground'
+              <div className={`text-sm font-semibold mb-2 ${
+                isToday ? 'text-blue-600' : 'text-gray-900'
               }`}>
                 {date.getDate()}
               </div>
               
               {/* Events for this day */}
               <div className="space-y-1">
-                {dayEvents.slice(0, 2).map(event => (
-                  <div
-                    key={event.id}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onEventClick(event)
-                    }}
-                    className={`text-xs px-2 py-1 rounded text-white hover:opacity-80 transition-opacity cursor-pointer ${getEventTypeColor(event.event_type)}`}
-                    title={`${event.title} - ${formatTime(event.start_time)} to ${formatTime(event.end_time)}`}
-                  >
-                    {event.is_all_day ? (
-                      <div className="font-medium">{event.title}</div>
-                    ) : (
-                      <div>
-                        <div className="font-medium text-xs opacity-90">{formatTime(event.start_time)}</div>
-                        <div className="truncate">{event.title}</div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                {dayEvents.slice(0, 2).map(event => {
+                  const EventIcon = getEventTypeIcon(event.event_type)
+                  return (
+                    <div
+                      key={event.id}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onEventClick(event)
+                      }}
+                      className={`text-xs px-2 py-1 rounded-md text-white hover:shadow-sm transition-all cursor-pointer border ${getEventTypeColor(event.event_type)} group-hover:scale-105`}
+                      title={`${event.title} - ${formatTime(event.start_time)}${event.end_time ? ` to ${formatTime(event.end_time)}` : ''}${event.location ? ` at ${event.location}` : ''}`}
+                    >
+                      {event.is_all_day ? (
+                        <div className="flex items-center gap-1">
+                          <EventIcon className="w-3 h-3" />
+                          <span className="font-medium truncate">{event.title}</span>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="flex items-center gap-1 mb-0.5">
+                            <EventIcon className="w-3 h-3" />
+                            <span className="font-medium text-xs opacity-90">{formatTime(event.start_time)}</span>
+                          </div>
+                          <div className="truncate font-medium">{event.title}</div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
                 {dayEvents.length > 2 && (
-                  <div className="text-xs text-muted-foreground px-2">
+                  <div className="text-xs text-gray-500 px-2 py-1 bg-gray-100 rounded-md">
                     +{dayEvents.length - 2} more
                   </div>
                 )}
@@ -204,26 +225,36 @@ export default function CalendarView({ events, currentDate, onDateClick, onEvent
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-6 mt-6 text-sm">
+      <div className="flex flex-wrap items-center gap-6 mt-6 p-4 bg-gray-50 rounded-lg border">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-blue-500 rounded"></div>
-          <span>Meeting</span>
+          <div className="flex items-center justify-center w-5 h-5 bg-blue-500 rounded">
+            <Users className="w-3 h-3 text-white" />
+          </div>
+          <span className="text-sm font-medium">Meeting</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-green-500 rounded"></div>
-          <span>Call</span>
+          <div className="flex items-center justify-center w-5 h-5 bg-green-500 rounded">
+            <Phone className="w-3 h-3 text-white" />
+          </div>
+          <span className="text-sm font-medium">Call</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-orange-500 rounded"></div>
-          <span>Task</span>
+          <div className="flex items-center justify-center w-5 h-5 bg-orange-500 rounded">
+            <CheckCircle className="w-3 h-3 text-white" />
+          </div>
+          <span className="text-sm font-medium">Task</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-purple-500 rounded"></div>
-          <span>Reminder</span>
+          <div className="flex items-center justify-center w-5 h-5 bg-purple-500 rounded">
+            <AlertTriangle className="w-3 h-3 text-white" />
+          </div>
+          <span className="text-sm font-medium">Reminder</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-red-500 rounded"></div>
-          <span>Out of Office</span>
+          <div className="flex items-center justify-center w-5 h-5 bg-red-500 rounded">
+            <CalendarIcon className="w-3 h-3 text-white" />
+          </div>
+          <span className="text-sm font-medium">Out of Office</span>
         </div>
       </div>
     </div>

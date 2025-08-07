@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { CalendarEvent, CalendarEventCreate, contactAPI, companyAPI, calendarAPI, Contact, Company, handleAPIError } from "@/lib/api"
+import { X, Calendar, Clock, MapPin, Users, Phone, CheckCircle, AlertTriangle, Mail, Trash2 } from "lucide-react"
 
 interface EventFormModalProps {
   isOpen: boolean
@@ -103,12 +104,12 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
         const endTime = new Date(startTime)
         endTime.setMinutes(endTime.getMinutes() + 30)
         
-        console.log('Form initialization:')
-        console.log('Selected date:', selectedDate)
-        console.log('Start time:', startTime)
-        console.log('End time:', endTime)
-        console.log('Start time ISO:', startTime.toISOString().slice(0, 16))
-        console.log('End time ISO:', endTime.toISOString().slice(0, 16))
+        // Debug: console.log('Form initialization:')
+        // Debug: console.log('Selected date:', selectedDate)
+        // Debug: console.log('Start time:', startTime)
+        // Debug: console.log('End time:', endTime)
+        // Debug: console.log('Start time ISO:', startTime.toISOString().slice(0, 16))
+        // Debug: console.log('End time ISO:', endTime.toISOString().slice(0, 16))
         
         setFormData({
           title: "",
@@ -166,7 +167,7 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
 
       await onSave(eventData)
     } catch (err) {
-      console.error('Failed to save event:', err)
+      // Debug: console.error('Failed to save event:', err)
       alert(`Failed to save event: ${handleAPIError(err)}`)
     } finally {
       setLoading(false)
@@ -182,10 +183,10 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
       const endTime = new Date(startTime)
       endTime.setMinutes(endTime.getMinutes() + 30) // Default 30 minute duration
       
-      console.log('Start time changed:', value)
-      console.log('Parsed start time:', startTime)
-      console.log('Calculated end time:', endTime)
-      console.log('End time ISO string:', endTime.toISOString().slice(0, 16))
+      // Debug: console.log('Start time changed:', value)
+      // Debug: console.log('Parsed start time:', startTime)
+      // Debug: console.log('Calculated end time:', endTime)
+      // Debug: console.log('End time ISO string:', endTime.toISOString().slice(0, 16))
       
       setFormData(prev => ({
         ...prev,
@@ -228,11 +229,11 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
     const confirmed = window.confirm('Are you sure you want to delete this event?')
     if (confirmed) {
       try {
-        console.log('Delete button clicked - calling onDelete')
+        // Debug: console.log('Delete button clicked - calling onDelete')
         await onDelete()
-        console.log('Delete completed successfully')
+        // Debug: console.log('Delete completed successfully')
       } catch (error) {
-        console.error('Delete failed:', error)
+        // Debug: console.error('Delete failed:', error)
       }
     }
   }
@@ -245,7 +246,7 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
       const result = await calendarAPI.sendInvite(event.id)
       alert(`✅ ${result.message}\n\nInvites sent to:\n${result.attendees_notified.join('\n')}`)
     } catch (err) {
-      console.error('Failed to send calendar invites:', err)
+      // Debug: console.error('Failed to send calendar invites:', err)
       alert(`❌ Failed to send calendar invites: ${handleAPIError(err)}`)
     } finally {
       setSendingInvites(false)
@@ -261,9 +262,9 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
           </h2>
           <button
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            className="text-gray-500 hover:text-gray-700 transition-colors p-1 rounded hover:bg-gray-100"
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -526,8 +527,9 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
                 <button
                   type="button"
                   onClick={handleDelete}
-                  className="px-4 py-2 text-red-600 border border-red-200 rounded-md hover:bg-red-50 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-200 rounded-md hover:bg-red-50 transition-colors"
                 >
+                  <Trash2 className="w-4 h-4" />
                   Delete Event
                 </button>
               )}
@@ -536,9 +538,10 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
                   type="button"
                   onClick={handleSendInvites}
                   disabled={sendingInvites}
-                  className="px-4 py-2 text-blue-600 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-200 rounded-md hover:bg-blue-50 transition-colors disabled:opacity-50"
                 >
-                  {sendingInvites ? 'Sending...' : '📧 Send Invites'}
+                  <Mail className="w-4 h-4" />
+                  {sendingInvites ? 'Sending...' : 'Send Invites'}
                 </button>
               )}
             </div>

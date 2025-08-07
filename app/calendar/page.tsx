@@ -5,7 +5,9 @@ import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import CalendarView from "@/components/calendar/CalendarView"
 import EventFormModal from "@/components/calendar/EventFormModal"
+import CalendarStats from "@/components/calendar/CalendarStats"
 import { calendarAPI, CalendarEvent, CalendarEventCreate, handleAPIError } from "@/lib/api"
+import { Calendar, Plus } from "lucide-react"
 
 export default function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
@@ -52,7 +54,7 @@ export default function CalendarPage() {
       setEvents(data)
     } catch (err) {
       setError(handleAPIError(err))
-      console.error('Failed to load calendar events:', err)
+      // Debug: console.error('Failed to load calendar events:', err)
     } finally {
       setLoading(false)
     }
@@ -101,30 +103,30 @@ export default function CalendarPage() {
       setSelectedEvent(null)
       setSelectedDate(null)
     } catch (err) {
-      console.error('Failed to save event:', err)
+      // Debug: console.error('Failed to save event:', err)
       alert(`Failed to save event: ${handleAPIError(err)}`)
     }
   }
 
   const handleEventDelete = async (eventId: number) => {
-    console.log('handleEventDelete called with eventId:', eventId)
+    // Debug: console.log('handleEventDelete called with eventId:', eventId)
     
     try {
-      console.log('Starting delete process...')
+      // Debug: console.log('Starting delete process...')
       await calendarAPI.delete(eventId)
-      console.log('API delete successful, refreshing events...')
+      // Debug: console.log('API delete successful, refreshing events...')
       
       // Refresh events for the currently viewed month
       const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
       const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
       await loadEvents(startOfMonth, endOfMonth)
       
-      console.log('Events refreshed, closing modal...')
+      // Debug: console.log('Events refreshed, closing modal...')
       setShowEventModal(false)
       setSelectedEvent(null)
-      console.log('Delete process completed')
+      // Debug: console.log('Delete process completed')
     } catch (err) {
-      console.error('Failed to delete event:', err)
+      // Debug: console.error('Failed to delete event:', err)
       alert(`Failed to delete event: ${handleAPIError(err)}`)
     }
   }
@@ -144,17 +146,27 @@ export default function CalendarPage() {
     <AuthGuard>
       <MainLayout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-2xl font-semibold">Calendar</h1>
-              <p className="text-muted-foreground mt-1">Manage your meetings and events</p>
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h1 className="text-2xl font-semibold flex items-center gap-3">
+                  <Calendar className="w-6 h-6" />
+                  Calendar
+                </h1>
+                <p className="text-muted-foreground mt-1">Manage your meetings, events, and schedule</p>
+              </div>
+              <button
+                onClick={handleCreateEvent}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                New Event
+              </button>
             </div>
-            <button
-              onClick={handleCreateEvent}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors shadow-sm"
-            >
-              📅 New Event
-            </button>
+            
+            {/* Calendar Statistics */}
+            <CalendarStats events={events} currentDate={currentDate} />
           </div>
 
           {error && (
@@ -169,7 +181,7 @@ export default function CalendarPage() {
             </div>
           )}
 
-          <div className="bg-card border rounded-lg shadow-sm overflow-hidden">
+          <div className="bg-white border rounded-lg shadow-sm overflow-hidden mt-8">
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="text-center">
