@@ -465,16 +465,30 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
       
       const ensureResult = await ensureResponse.json()
       console.log('Categories ensure response:', ensureResult)
+      console.log('Response details:', {
+        hasError: !!ensureResult.error,
+        error: ensureResult.error,
+        hasCategories: !!ensureResult.categories,
+        categoriesLength: ensureResult.categories?.length,
+        message: ensureResult.message
+      })
       
       if (ensureResult.error) {
         console.error('Error ensuring categories:', ensureResult.error)
-        alert(`Failed to setup document categories: ${ensureResult.error}`)
+        
+        // Check if it's a table not found error
+        if (ensureResult.error.includes('not found') || ensureResult.error.includes('does not exist')) {
+          alert('Document management tables are not set up. Please run the database migration:\n\nIn pgAdmin, run the SQL from backend/migrations/add_document_management.sql')
+        } else {
+          alert(`Failed to setup document categories: ${ensureResult.error}`)
+        }
         return false
       }
       
       if (!ensureResult.categories || ensureResult.categories.length === 0) {
         console.error('No categories were created or found')
-        alert('Failed to setup document categories. Please contact support.')
+        console.log('Full response was:', JSON.stringify(ensureResult))
+        alert(`No document categories found. Server message: ${ensureResult.message || 'Unknown error'}`)
         return false
       }
       
