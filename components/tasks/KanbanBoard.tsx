@@ -133,32 +133,35 @@ export default function KanbanBoard({
   }
   
   return (
-    <div className=\"flex gap-6 overflow-x-auto pb-4\">
+    <div className="flex gap-6 overflow-x-auto pb-4">
       {columns.map((column) => {
         const columnTasks = getTasksForColumn(column.status)
         const isDragOver = dragOverColumn === column.id
         const canDrop = draggedTask && column.status !== 'overdue'
         const Icon = column.icon
         
+        const columnClasses = [
+          'flex-shrink-0 w-80 rounded-lg border-2 transition-all duration-200',
+          column.color,
+          isDragOver && canDrop ? 'border-primary border-dashed scale-105' : '',
+          isDragOver && !canDrop ? 'border-red-300' : ''
+        ].filter(Boolean).join(' ')
+        
         return (
           <div
             key={column.id}
-            className={`flex-shrink-0 w-80 ${column.color} rounded-lg border-2 transition-all duration-200 ${
-              isDragOver && canDrop ? 'border-primary border-dashed scale-105' : ''
-            } ${
-              isDragOver && !canDrop ? 'border-red-300' : ''
-            }`}
+            className={columnClasses}
             onDragOver={(e) => handleDragOver(e, column.id)}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, column.status)}
           >
             {/* Column Header */}
-            <div className=\"p-4 border-b border-current border-opacity-20\">
-              <div className=\"flex items-center justify-between mb-2\">
-                <div className=\"flex items-center gap-2\">
-                  <Icon className=\"w-5 h-5\" />
-                  <h3 className=\"font-semibold text-gray-800\">{column.title}</h3>
-                  <span className=\"px-2 py-1 text-xs bg-white bg-opacity-70 rounded-full font-medium\">
+            <div className="p-4 border-b border-current border-opacity-20">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Icon className="w-5 h-5" />
+                  <h3 className="font-semibold text-gray-800">{column.title}</h3>
+                  <span className="px-2 py-1 text-xs bg-white bg-opacity-70 rounded-full font-medium">
                     {columnTasks.length}
                   </span>
                 </div>
@@ -166,18 +169,18 @@ export default function KanbanBoard({
                 {column.status === 'pending' && onCreateTask && (
                   <button
                     onClick={onCreateTask}
-                    className=\"p-1 hover:bg-white hover:bg-opacity-50 rounded transition-colors\"
-                    title=\"Add task\"
+                    className="p-1 hover:bg-white hover:bg-opacity-50 rounded transition-colors"
+                    title="Add task"
                   >
-                    <Plus className=\"w-4 h-4\" />
+                    <Plus className="w-4 h-4" />
                   </button>
                 )}
               </div>
-              <p className=\"text-xs text-gray-600\">{column.description}</p>
+              <p className="text-xs text-gray-600">{column.description}</p>
             </div>
             
             {/* Tasks */}
-            <div className=\"p-4 space-y-3 min-h-32 max-h-96 overflow-y-auto\">
+            <div className="p-4 space-y-3 min-h-32 max-h-96 overflow-y-auto">
               {columnTasks.map((task) => (
                 <div
                   key={task.id}
@@ -198,9 +201,9 @@ export default function KanbanBoard({
               
               {/* Empty state */}
               {columnTasks.length === 0 && (
-                <div className=\"text-center py-8 text-gray-500\">
-                  <div className=\"text-2xl mb-2\">📋</div>
-                  <p className=\"text-sm\">
+                <div className="text-center py-8 text-gray-500">
+                  <div className="text-2xl mb-2">📋</div>
+                  <p className="text-sm">
                     {column.status === 'pending' ? 'No tasks to do' :
                      column.status === 'in_progress' ? 'No tasks in progress' :
                      column.status === 'completed' ? 'No completed tasks' :
@@ -209,7 +212,7 @@ export default function KanbanBoard({
                   {column.status === 'pending' && onCreateTask && (
                     <button
                       onClick={onCreateTask}
-                      className=\"mt-2 text-primary hover:underline text-sm\"
+                      className="mt-2 text-primary hover:underline text-sm"
                     >
                       Create your first task
                     </button>
@@ -220,16 +223,16 @@ export default function KanbanBoard({
             
             {/* Drop zone indicator */}
             {isDragOver && canDrop && (
-              <div className=\"mx-4 mb-4 p-3 border-2 border-primary border-dashed rounded-lg bg-primary bg-opacity-10\">
-                <p className=\"text-center text-primary text-sm font-medium\">
+              <div className="mx-4 mb-4 p-3 border-2 border-primary border-dashed rounded-lg bg-primary bg-opacity-10">
+                <p className="text-center text-primary text-sm font-medium">
                   Drop task here
                 </p>
               </div>
             )}
             
             {isDragOver && !canDrop && column.status === 'overdue' && (
-              <div className=\"mx-4 mb-4 p-3 border-2 border-red-300 border-dashed rounded-lg bg-red-50\">
-                <p className=\"text-center text-red-600 text-sm font-medium\">
+              <div className="mx-4 mb-4 p-3 border-2 border-red-300 border-dashed rounded-lg bg-red-50">
+                <p className="text-center text-red-600 text-sm font-medium">
                   Cannot move to overdue
                 </p>
               </div>
