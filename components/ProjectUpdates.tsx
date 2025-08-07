@@ -87,14 +87,24 @@ export default function ProjectUpdates({ projectId, onUpdateProject }: ProjectUp
         : `${baseUrl}/api/projects/${projectId}/updates`
       
       // Clean up the data before sending - remove empty strings
-      const payload = {
+      const payload: any = {
         title: formData.title,
         description: formData.description || undefined,
         update_type: formData.update_type,
         is_milestone: formData.is_milestone,
-        milestone_date: formData.milestone_date || undefined,
         project_health: formData.project_health || undefined,
         progress_percentage: formData.progress_percentage || undefined
+      }
+      
+      // Handle milestone date - convert to ISO string if present
+      if (formData.milestone_date) {
+        // Add time component to the date string for valid datetime
+        payload.milestone_date = `${formData.milestone_date}T00:00:00Z`
+      }
+      
+      // Only include milestone_completed for milestones
+      if (formData.is_milestone) {
+        payload.milestone_completed = false
       }
       
       const response = await fetch(url, {
@@ -113,7 +123,15 @@ export default function ProjectUpdates({ projectId, onUpdateProject }: ProjectUp
       } else {
         const errorData = await response.json()
         console.error('Failed to save update:', errorData)
-        alert(`Failed to save update: ${errorData.detail || 'Unknown error'}`)
+        // Handle validation errors
+        if (errorData.detail && Array.isArray(errorData.detail)) {
+          const errorMessages = errorData.detail.map((err: any) => 
+            `${err.loc ? err.loc.join(' > ') : ''}: ${err.msg}`
+          ).join('\n')
+          alert(`Validation errors:\n${errorMessages}`)
+        } else {
+          alert(`Failed to save update: ${JSON.stringify(errorData.detail) || 'Unknown error'}`)
+        }
       }
     } catch (error) {
       console.error('Failed to save update:', error)
