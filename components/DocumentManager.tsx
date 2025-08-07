@@ -354,6 +354,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
   const [newFolderName, setNewFolderName] = useState('')
   const [draggedFile, setDraggedFile] = useState<Attachment | null>(null)
   const [initialized, setInitialized] = useState(false)
+  const [isDraggingOver, setIsDraggingOver] = useState(false)
   
   const { token } = getAuthState()
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nohubspot-production.up.railway.app'
@@ -544,10 +545,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
     }
   }
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
+  const handleFileUploadDirect = async (file: File) => {
     setUploading(true)
     const formData = new FormData()
     formData.append('file', file)
@@ -567,13 +565,20 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
 
       if (response.ok) {
         await loadAttachments(selectedFolder?.id || null)
-        await loadFolders() // Refresh folder counts
+        await loadFolders(true) // Refresh folder counts, skip init
       }
     } catch (error) {
       console.error('Failed to upload file:', error)
+      alert('Failed to upload file. Please try again.')
     } finally {
       setUploading(false)
     }
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    await handleFileUploadDirect(file)
   }
 
   const handleCreateFolder = async () => {
@@ -799,17 +804,46 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
             </div>
           </div>
 
-          {/* Files Grid */}
-          <div className="flex-1 p-4 overflow-y-auto">
+          {/* Files Grid - Also serves as drop zone */}
+          <div 
+            className={`flex-1 p-4 overflow-y-auto transition-colors ${
+              isDraggingOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''
+            }`}
+            onDragOver={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsDraggingOver(true)
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              // Only set to false if leaving the main container
+              if (e.currentTarget === e.target) {
+                setIsDraggingOver(false)
+              }
+            }}
+            onDrop={async (e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsDraggingOver(false)
+              
+              // Handle file drop from computer
+              if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0]
+                await handleFileUploadDirect(file)
+              }
+            }}
+          >
             {loadingFiles ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-gray-500">Loading files...</div>
               </div>
             ) : filteredAttachments.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                <Folder className="w-16 h-16 mb-4 text-gray-300" />
-                <p className="text-lg font-medium">No documents found</p>
-                <p className="text-sm mt-1">Upload files or adjust your search</p>
+              <div className="flex flex-col items-center justify-center h-full text-gray-500 pointer-events-none">
+                <Upload className="w-16 h-16 mb-4 text-gray-300" />
+                <p className="text-lg font-medium">Drop files here to upload</p>
+                <p className="text-sm mt-1">or use the Upload button above</p>
+                <p className="text-xs mt-2 text-gray-400">Files will be automatically categorized into folders</p>
               </div>
             ) : (
               <SortableContext
