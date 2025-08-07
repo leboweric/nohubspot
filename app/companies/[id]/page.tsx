@@ -1,10 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { useRef, useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import EventFormModal from "@/components/calendar/EventFormModal"
+import DocumentManager from "@/components/DocumentManager"
 import { companyAPI, Company, handleAPIError, CalendarEventCreate, calendarAPI, contactAPI, Contact } from "@/lib/api"
 
 export default function CompanyDetailPage({ params }: { params: { id: string } }) {
@@ -46,8 +47,6 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
 
     loadContacts()
   }, [company])
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [isDragging, setIsDragging] = useState(false)
   const [showScheduleEvent, setShowScheduleEvent] = useState(false)
 
   if (loading) {
@@ -83,42 +82,6 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
         </MainLayout>
       </AuthGuard>
     )
-  }
-
-  const handleFileUpload = () => {
-    fileInputRef.current?.click()
-  }
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      // TODO: Upload file to backend
-      console.log("File selected:", file.name)
-      alert(`File "${file.name}" selected for upload. (Backend integration needed)`)
-    }
-  }
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-    
-    const files = e.dataTransfer.files
-    if (files.length > 0) {
-      const file = files[0]
-      // TODO: Upload file to backend
-      console.log("File dropped:", file.name)
-      alert(`File "${file.name}" dropped for upload. (Backend integration needed)`)
-    }
   }
 
   const handleScheduleMeeting = () => {
@@ -306,6 +269,11 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
               </p>
             )}
           </div>
+
+          <div className="bg-card border rounded-lg p-6">
+            <h2 className="text-lg font-semibold mb-4">Documents & Files</h2>
+            <DocumentManager companyId={company.id} />
+          </div>
         </div>
 
         <div className="space-y-6">
@@ -335,37 +303,6 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
               <button onClick={handleScheduleMeeting} className="w-full text-left px-4 py-2 border rounded-md hover:bg-accent transition-colors">
                 Schedule Meeting
               </button>
-              <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={handleFileUpload}
-                className={`w-full px-4 py-6 border-2 border-dashed rounded-lg cursor-pointer transition-all ${
-                  isDragging 
-                    ? 'border-primary bg-primary/5 scale-105' 
-                    : 'border-muted-foreground/30 hover:border-primary hover:bg-accent/50'
-                }`}
-              >
-                <div className="text-center">
-                  <div className="text-2xl mb-2">📁</div>
-                  <div className="text-sm font-medium mb-1">
-                    {isDragging ? 'Drop file here' : 'Upload File'}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Click to browse or drag and drop
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    PDF, DOC, TXT, JPG, PNG
-                  </div>
-                </div>
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                onChange={handleFileChange}
-                className="hidden"
-                accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
-              />
             </div>
           </div>
         </div>
