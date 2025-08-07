@@ -347,11 +347,13 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
   const [categories, setCategories] = useState<DocumentCategory[]>([])
   const [selectedFolder, setSelectedFolder] = useState<DocumentFolder | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [loadingFolders, setLoadingFolders] = useState(true)
+  const [loadingFiles, setLoadingFiles] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
   const [draggedFile, setDraggedFile] = useState<Attachment | null>(null)
+  const [initialized, setInitialized] = useState(false)
   
   const { token } = getAuthState()
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nohubspot-production.up.railway.app'
@@ -364,21 +366,24 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
     })
   )
 
-  // Load folders and categories
+  // Load folders and categories on mount
   useEffect(() => {
-    loadFolders()
-    loadCategories()
+    if (!initialized) {
+      loadFolders()
+      loadCategories()
+      setInitialized(true)
+    }
   }, [companyId])
 
   // Load attachments when folder changes
   useEffect(() => {
-    if (!loading) {
+    if (initialized && !loadingFolders) {
       loadAttachments(selectedFolder?.id || null)
     }
-  }, [selectedFolder, loading])
+  }, [selectedFolder, initialized])
 
   const loadFolders = async (skipInit = false) => {
-    setLoading(true)
+    setLoadingFolders(true)
     try {
       const response = await fetch(`${baseUrl}/api/companies/${companyId}/folders`, {
         headers: {
@@ -406,7 +411,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
     } catch (error) {
       console.error('Failed to load folders:', error)
     } finally {
-      setLoading(false)
+      setLoadingFolders(false)
     }
   }
 
@@ -428,7 +433,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
   }
 
   const loadAttachments = async (folderId: number | null) => {
-    setLoading(true)
+    setLoadingFiles(true)
     try {
       const url = folderId 
         ? `${baseUrl}/api/folders/${folderId}/attachments`
@@ -447,7 +452,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
     } catch (error) {
       console.error('Failed to load attachments:', error)
     } finally {
-      setLoading(false)
+      setLoadingFiles(false)
     }
   }
 
@@ -796,7 +801,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
 
           {/* Files Grid */}
           <div className="flex-1 p-4 overflow-y-auto">
-            {loading ? (
+            {loadingFiles ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-gray-500">Loading files...</div>
               </div>
