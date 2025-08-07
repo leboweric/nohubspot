@@ -4,8 +4,10 @@ import { useState, useEffect } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import BulkUpload, { BulkUploadData, FieldMapping } from "@/components/upload/BulkUpload"
+import ContactCard from "@/components/ContactCard"
 import { contactAPI, Contact, ContactCreate, handleAPIError, companyAPI, Company } from "@/lib/api"
 import ModernSelect from "@/components/ui/ModernSelect"
+import { LayoutGrid, List, Plus, Upload, Download, Users } from "lucide-react"
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -16,6 +18,7 @@ export default function ContactsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [companyFilter, setCompanyFilter] = useState<string>("all")
   const [companies, setCompanies] = useState<Company[]>([])
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
 
   // Load contacts from API
   const loadContacts = async () => {
@@ -268,21 +271,53 @@ export default function ContactsPage() {
           <p className="text-muted-foreground mt-1">Manage your professional network</p>
         </div>
         <div className="flex gap-3">
+          {/* View Toggle */}
+          <div className="flex items-center bg-gray-100 rounded-md p-1">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded transition-colors ${
+                viewMode === 'grid' 
+                  ? 'bg-white shadow-sm text-primary' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+              title="Grid View"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded transition-colors ${
+                viewMode === 'list' 
+                  ? 'bg-white shadow-sm text-primary' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+              title="List View"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+          
           <button
             onClick={() => setShowBulkUpload(true)}
-            className="px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-all text-blue-700"
+            className="flex items-center gap-2 px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-all text-blue-700"
           >
-            📂 Bulk Upload
+            <Upload className="w-4 h-4" />
+            Bulk Upload
           </button>
           <button
             onClick={handleExportContacts}
             disabled={loading || filteredContacts.length === 0}
-            className="px-4 py-2 border border-green-200 rounded-md hover:bg-green-50 hover:border-green-300 transition-all text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 border border-green-200 rounded-md hover:bg-green-50 hover:border-green-300 transition-all text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            📥 Export to CSV
+            <Download className="w-4 h-4" />
+            Export to CSV
           </button>
-          <a href="/contacts/new" className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors shadow-sm">
-            ➕ Add Contact
+          <a 
+            href="/contacts/new" 
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Add Contact
           </a>
         </div>
       </div>
@@ -346,15 +381,38 @@ export default function ContactsPage() {
         </div>
       )}
 
-      <div className="bg-card border rounded-lg overflow-hidden shadow-sm">
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading contacts...</p>
-            </div>
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading contacts...</p>
           </div>
-        ) : (
+        </div>
+      ) : viewMode === 'grid' ? (
+        /* Grid View */
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredContacts.map((contact) => (
+              <ContactCard 
+                key={contact.id} 
+                contact={contact} 
+                onDelete={handleDelete}
+              />
+            ))}
+          </div>
+          
+          {filteredContacts.length === 0 && !loading && (
+            <div className="text-center py-12">
+              <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">
+                {searchTerm ? `No contacts found matching "${searchTerm}"` : "No contacts yet. Add your first contact to get started."}
+              </p>
+            </div>
+          )}
+        </>
+      ) : (
+        /* List View */
+        <div className="bg-card border rounded-lg overflow-hidden shadow-sm">
           <>
             <table className="w-full">
               <thead>
@@ -418,14 +476,15 @@ export default function ContactsPage() {
             
             {filteredContacts.length === 0 && !loading && (
               <div className="text-center py-12">
+                <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">
                   {searchTerm ? `No contacts found matching "${searchTerm}"` : "No contacts yet. Add your first contact to get started."}
                 </p>
               </div>
             )}
           </>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Bulk Upload Modal */}
       <BulkUpload
