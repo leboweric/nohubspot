@@ -377,7 +377,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
     }
   }, [selectedFolder, loading])
 
-  const loadFolders = async () => {
+  const loadFolders = async (skipInit = false) => {
     setLoading(true)
     try {
       const response = await fetch(`${baseUrl}/api/companies/${companyId}/folders`, {
@@ -391,10 +391,14 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
         console.log('Loaded folders:', data)
         setFolders(data)
         
-        // Initialize default folders if none exist
-        if (data.length === 0) {
+        // Initialize default folders if none exist (only once)
+        if (data.length === 0 && !skipInit) {
           console.log('No folders found, initializing defaults...')
-          await initializeDefaultFolders()
+          const initialized = await initializeDefaultFolders()
+          // Only reload if initialization was successful
+          if (initialized) {
+            await loadFolders(true) // Skip init on reload to prevent loop
+          }
         }
       } else {
         console.error('Failed to load folders, status:', response.status)
@@ -460,14 +464,24 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
       if (response.ok) {
         const result = await response.json()
         console.log('Initialized folders:', result)
-        // Reload folders to show the newly created ones
-        await loadFolders()
+        
+        // Check if folders were actually created
+        if (result.folders && result.folders.length > 0) {
+          console.log('Successfully created', result.folders.length, 'folders')
+          return true
+        } else {
+          console.warn('No folders were created. Check if document_categories exist in database.')
+          alert('Unable to create folders. Document categories may not be configured. Please contact support.')
+          return false
+        }
       } else {
         const error = await response.text()
         console.error('Failed to initialize folders:', response.status, error)
+        return false
       }
     } catch (error) {
       console.error('Failed to initialize folders:', error)
+      return false
     }
   }
 
