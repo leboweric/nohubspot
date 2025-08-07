@@ -224,11 +224,14 @@ export default function ProjectUpdates({ projectId, onUpdateProject }: ProjectUp
   }
 
   return (
-    <div className="mt-3">
+    <div className="mt-3" onClick={(e) => e.stopPropagation()}>
       {/* Tab Navigation */}
       <div className="flex border-b border-gray-200 mb-3">
         <button
-          onClick={() => setActiveTab('updates')}
+          onClick={(e) => {
+            e.stopPropagation()
+            setActiveTab('updates')
+          }}
           className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
             activeTab === 'updates'
               ? 'border-blue-500 text-blue-600'
@@ -238,7 +241,10 @@ export default function ProjectUpdates({ projectId, onUpdateProject }: ProjectUp
           Updates ({updates.length})
         </button>
         <button
-          onClick={() => setActiveTab('milestones')}
+          onClick={(e) => {
+            e.stopPropagation()
+            setActiveTab('milestones')
+          }}
           className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
             activeTab === 'milestones'
               ? 'border-blue-500 text-blue-600'
@@ -252,7 +258,8 @@ export default function ProjectUpdates({ projectId, onUpdateProject }: ProjectUp
       {/* Add Update Button */}
       {!showAddForm && (
         <button
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation()
             setFormData({ ...formData, is_milestone: activeTab === 'milestones' })
             setShowAddForm(true)
           }}
@@ -337,7 +344,10 @@ export default function ProjectUpdates({ projectId, onUpdateProject }: ProjectUp
             <div className="flex justify-end space-x-2">
               <button
                 type="button"
-                onClick={resetForm}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  resetForm()
+                }}
                 className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
               >
                 Cancel
