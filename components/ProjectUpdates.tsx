@@ -86,22 +86,38 @@ export default function ProjectUpdates({ projectId, onUpdateProject }: ProjectUp
         ? `${baseUrl}/api/projects/${projectId}/updates/${editingUpdate.id}`
         : `${baseUrl}/api/projects/${projectId}/updates`
       
+      // Clean up the data before sending - remove empty strings
+      const payload = {
+        title: formData.title,
+        description: formData.description || undefined,
+        update_type: formData.update_type,
+        is_milestone: formData.is_milestone,
+        milestone_date: formData.milestone_date || undefined,
+        project_health: formData.project_health || undefined,
+        progress_percentage: formData.progress_percentage || undefined
+      }
+      
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       })
 
       if (response.ok) {
         await loadUpdates()
         resetForm()
         if (onUpdateProject) onUpdateProject()
+      } else {
+        const errorData = await response.json()
+        console.error('Failed to save update:', errorData)
+        alert(`Failed to save update: ${errorData.detail || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Failed to save update:', error)
+      alert('Failed to save update. Please try again.')
     }
   }
 
