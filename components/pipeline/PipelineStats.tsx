@@ -22,10 +22,13 @@ export default function PipelineStats({ deals, stages }: PipelineStatsProps) {
   // Filter active deals
   const activeDeals = deals.filter(d => d.is_active)
   
+  // Calculate basic metrics first
+  const totalValue = activeDeals.reduce((sum, deal) => sum + deal.value, 0)
+  
   // Calculate various metrics
   const stats = {
     totalDeals: activeDeals.length,
-    totalValue: activeDeals.reduce((sum, deal) => sum + deal.value, 0),
+    totalValue,
     weightedValue: activeDeals.reduce((sum, deal) => sum + (deal.value * deal.probability / 100), 0),
     
     // Won deals this month
@@ -60,7 +63,7 @@ export default function PipelineStats({ deals, stages }: PipelineStatsProps) {
     }).length,
     
     // Average deal size
-    averageDealSize: activeDeals.length > 0 ? stats.totalValue / activeDeals.length : 0
+    averageDealSize: activeDeals.length > 0 ? totalValue / activeDeals.length : 0
   }
   
   // Calculate conversion rates
