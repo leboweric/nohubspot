@@ -372,10 +372,13 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
 
   // Load attachments when folder changes
   useEffect(() => {
-    loadAttachments(selectedFolder?.id || null)
-  }, [selectedFolder])
+    if (!loading) {
+      loadAttachments(selectedFolder?.id || null)
+    }
+  }, [selectedFolder, loading])
 
   const loadFolders = async () => {
+    setLoading(true)
     try {
       const response = await fetch(`${baseUrl}/api/companies/${companyId}/folders`, {
         headers: {
@@ -385,15 +388,21 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
       
       if (response.ok) {
         const data = await response.json()
+        console.log('Loaded folders:', data)
         setFolders(data)
         
         // Initialize default folders if none exist
         if (data.length === 0) {
+          console.log('No folders found, initializing defaults...')
           await initializeDefaultFolders()
         }
+      } else {
+        console.error('Failed to load folders, status:', response.status)
       }
     } catch (error) {
       console.error('Failed to load folders:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -440,6 +449,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
 
   const initializeDefaultFolders = async () => {
     try {
+      console.log('Initializing default folders for company:', companyId)
       const response = await fetch(`${baseUrl}/api/companies/${companyId}/folders/initialize`, {
         method: 'POST',
         headers: {
@@ -448,7 +458,13 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
       })
       
       if (response.ok) {
+        const result = await response.json()
+        console.log('Initialized folders:', result)
+        // Reload folders to show the newly created ones
         await loadFolders()
+      } else {
+        const error = await response.text()
+        console.error('Failed to initialize folders:', response.status, error)
       }
     } catch (error) {
       console.error('Failed to initialize folders:', error)
@@ -632,7 +648,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
       <div className="flex h-[600px] bg-white rounded-lg border">
         {/* Sidebar - Folder Tree */}
         <div className="w-64 border-r bg-gray-50 p-4 overflow-y-auto">
-          <div className="mb-4">
+          <div className="mb-4 space-y-2">
             <button
               onClick={() => setShowNewFolderDialog(true)}
               className="w-full flex items-center justify-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
@@ -640,6 +656,15 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
               <FolderPlus className="w-4 h-4 mr-2" />
               New Folder
             </button>
+            
+            {folders.length === 0 && (
+              <button
+                onClick={initializeDefaultFolders}
+                className="w-full flex items-center justify-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
+              >
+                Initialize Smart Folders
+              </button>
+            )}
           </div>
 
           <div className="space-y-1">
