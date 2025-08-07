@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import BulkUpload, { BulkUploadData, FieldMapping } from "@/components/upload/BulkUpload"
+import CompanyCard from "@/components/CompanyCard"
 import { companyAPI, Company, CompanyCreate, handleAPIError, usersAPI, User } from "@/lib/api"
 import ModernSelect from "@/components/ui/ModernSelect"
+import { LayoutGrid, List, Plus, Upload, Download, Building2 } from "lucide-react"
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([])
@@ -22,6 +24,7 @@ export default function CompaniesPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCompanies, setTotalCompanies] = useState(0)
   const [recordsPerPage, setRecordsPerPage] = useState(100)
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
 
   // Load companies from API
   const loadCompanies = useCallback(async () => {
@@ -406,279 +409,332 @@ export default function CompaniesPage() {
     <AuthGuard>
       <MainLayout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-2xl font-semibold">Companies</h1>
-          <p className="text-muted-foreground mt-1">Manage your business relationships</p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => setShowBulkUpload(true)}
-            className="px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-all text-blue-700"
-          >
-            📂 Bulk Upload
-          </button>
-          <button
-            onClick={handleExportCompanies}
-            disabled={loading || filteredCompanies.length === 0}
-            className="px-4 py-2 border border-green-200 rounded-md hover:bg-green-50 hover:border-green-300 transition-all text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            📥 Export to CSV
-          </button>
-          <a href="/companies/new" className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors shadow-sm">
-            ➕ Add Company
-          </a>
-        </div>
-      </div>
-
-      <div className="mb-6 space-y-4">
-        <input
-          type="text"
-          placeholder="Search companies..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-            }
-          }}
-          disabled={loading}
-          className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-        />
-        
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
-            </label>
-            <ModernSelect
-              value={statusFilter}
-              onChange={(value) => setStatusFilter(value as string)}
-              options={[
-                { value: "all", label: "All Statuses" },
-                { value: "Active", label: "Active" },
-                { value: "Inactive", label: "Inactive" }
-              ]}
-              placeholder="Select status"
-            />
-          </div>
-          
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Account Owner
-            </label>
-            <ModernSelect
-              value={accountOwnerFilter}
-              onChange={(value) => setAccountOwnerFilter(value as string)}
-              options={[
-                { value: "all", label: "All Owners" },
-                ...(Array.isArray(users) ? users : []).map(user => ({
-                  value: user.id.toString(),
-                  label: `${user.first_name} ${user.last_name}`
-                }))
-              ]}
-              placeholder="Select owner"
-            />
-          </div>
-          
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Zip Codes
-            </label>
-            <input
-              type="text"
-              placeholder="e.g., 12345, 67890, 555"
-              value={zipCodeFilter}
-              onChange={(e) => setZipCodeFilter(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-sm"
-              title="Enter one or more zip codes separated by commas or spaces. Partial zip codes are supported."
-            />
-          </div>
-        </div>
-      </div>
-
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-red-800 text-sm">{error}</p>
-          <button 
-            onClick={loadCompanies}
-            className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
-          >
-            Try again
-          </button>
-        </div>
-      )}
-
-      <div className="bg-card border rounded-lg overflow-hidden shadow-sm">
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading companies...</p>
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-2xl font-semibold">Companies</h1>
+              <p className="text-muted-foreground mt-1">Manage your business relationships</p>
+            </div>
+            <div className="flex gap-3">
+              {/* View Toggle */}
+              <div className="flex items-center bg-gray-100 rounded-md p-1">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded transition-colors ${
+                    viewMode === 'grid' 
+                      ? 'bg-white shadow-sm text-primary' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  title="Grid View"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 rounded transition-colors ${
+                    viewMode === 'list' 
+                      ? 'bg-white shadow-sm text-primary' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  title="List View"
+                >
+                  <List className="w-4 h-4" />
+                </button>
+              </div>
+              
+              <button
+                onClick={() => setShowBulkUpload(true)}
+                className="flex items-center gap-2 px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-all text-blue-700"
+              >
+                <Upload className="w-4 h-4" />
+                Bulk Upload
+              </button>
+              <button
+                onClick={handleExportCompanies}
+                disabled={loading || filteredCompanies.length === 0}
+                className="flex items-center gap-2 px-4 py-2 border border-green-200 rounded-md hover:bg-green-50 hover:border-green-300 transition-all text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Download className="w-4 h-4" />
+                Export to CSV
+              </button>
+              <a 
+                href="/companies/new" 
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add Company
+              </a>
             </div>
           </div>
-        ) : (
-          <>
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th 
-                    className="text-left px-6 py-3 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground"
-                    onClick={() => {
-                      if (sortBy === 'name') {
-                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
-                      } else {
-                        setSortBy('name')
-                        setSortOrder('asc')
-                      }
-                      setCurrentPage(1)
-                    }}
-                  >
-                    Company {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
-                  </th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Account Owner</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Phone</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">City, State</th>
-                  <th 
-                    className="text-left px-6 py-3 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground"
-                    onClick={() => {
-                      if (sortBy === 'postal_code') {
-                        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
-                      } else {
-                        setSortBy('postal_code')
-                        setSortOrder('asc')
-                      }
-                      setCurrentPage(1)
-                    }}
-                  >
-                    Zip Code {sortBy === 'postal_code' && (sortOrder === 'asc' ? '↑' : '↓')}
-                  </th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Industry</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Status</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {(Array.isArray(filteredCompanies) ? filteredCompanies : []).map((company) => (
-                  <tr key={company.id} className="hover:bg-accent/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="font-medium">{company.name}</div>
-                        <div className="text-sm text-muted-foreground">{company.website || 'No website'}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm">{company.primary_account_owner_name || '-'}</td>
-                    <td className="px-6 py-4 text-sm">{company.phone || '-'}</td>
-                    <td className="px-6 py-4 text-sm">
-                      {company.city || company.state ? (
-                        <span>
-                          {company.city}
-                          {company.city && company.state && ', '}
-                          {company.state}
-                        </span>
-                      ) : '-'}
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium">{company.postal_code || '-'}</td>
-                    <td className="px-6 py-4 text-sm">{company.industry || '-'}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
-                        company.status === "Active" 
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400" 
-                          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-                      }`}>
-                        {company.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      <div className="flex gap-3">
-                        <a href={`/companies/${company.id}`} className="text-primary hover:underline">
-                          View
-                        </a>
-                        <a href={`/companies/${company.id}/edit`} className="text-blue-600 hover:underline">
-                          Edit
-                        </a>
-                        <button
-                          onClick={() => handleDelete(company.id, company.name)}
-                          className="text-red-600 hover:underline"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+          <div className="mb-6 space-y-4">
+            <input
+              type="text"
+              placeholder="Search companies..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                }
+              }}
+              disabled={loading}
+              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+            />
             
-            {filteredCompanies.length === 0 && !loading && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">
-                  {searchTerm ? `No companies found matching "${searchTerm}"` : "No companies yet. Add your first company to get started."}
-                </p>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Status
+                </label>
+                <ModernSelect
+                  value={statusFilter}
+                  onChange={(value) => setStatusFilter(value as string)}
+                  options={[
+                    { value: "all", label: "All Statuses" },
+                    { value: "Active", label: "Active" },
+                    { value: "Inactive", label: "Inactive" }
+                  ]}
+                  placeholder="Select status"
+                />
               </div>
-            )}
-            
-            {/* Pagination Controls */}
-            {totalCompanies > 0 && (
-              <div className="flex items-center justify-between px-6 py-4 border-t">
-                <div className="text-sm text-muted-foreground">
-                  Showing {((currentPage - 1) * recordsPerPage) + 1} to {Math.min(currentPage * recordsPerPage, totalCompanies)} of {totalCompanies} companies
+              
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Account Owner
+                </label>
+                <ModernSelect
+                  value={accountOwnerFilter}
+                  onChange={(value) => setAccountOwnerFilter(value as string)}
+                  options={[
+                    { value: "all", label: "All Owners" },
+                    ...(Array.isArray(users) ? users : []).map(user => ({
+                      value: user.id.toString(),
+                      label: `${user.first_name} ${user.last_name}`
+                    }))
+                  ]}
+                  placeholder="Select owner"
+                />
+              </div>
+              
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Zip Codes
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., 12345, 67890, 555"
+                  value={zipCodeFilter}
+                  onChange={(e) => setZipCodeFilter(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+                  title="Enter one or more zip codes separated by commas or spaces. Partial zip codes are supported."
+                />
+              </div>
+            </div>
+          </div>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-800 text-sm">{error}</p>
+              <button 
+                onClick={loadCompanies}
+                className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+              >
+                Try again
+              </button>
+            </div>
+          )}
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading companies...</p>
+              </div>
+            </div>
+          ) : viewMode === 'grid' ? (
+            // Grid View
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {filteredCompanies.map((company) => (
+                  <CompanyCard 
+                    key={company.id} 
+                    company={company} 
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
+              
+              {filteredCompanies.length === 0 && !loading && (
+                <div className="text-center py-12">
+                  <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    {searchTerm ? `No companies found matching "${searchTerm}"` : "No companies yet. Add your first company to get started."}
+                  </p>
                 </div>
-                
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm text-muted-foreground">Show:</label>
-                    <select
-                      value={recordsPerPage}
-                      onChange={(e) => {
-                        setRecordsPerPage(Number(e.target.value))
+              )}
+            </>
+          ) : (
+            // List View (existing table)
+            <div className="bg-card border rounded-lg overflow-hidden shadow-sm">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th 
+                      className="text-left px-6 py-3 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground"
+                      onClick={() => {
+                        if (sortBy === 'name') {
+                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+                        } else {
+                          setSortBy('name')
+                          setSortOrder('asc')
+                        }
                         setCurrentPage(1)
                       }}
-                      className="px-2 py-1 border rounded-md text-sm"
                     >
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                      <option value={250}>250</option>
-                    </select>
-                  </div>
+                      Company {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                    </th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Account Owner</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Phone</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">City, State</th>
+                    <th 
+                      className="text-left px-6 py-3 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground"
+                      onClick={() => {
+                        if (sortBy === 'postal_code') {
+                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+                        } else {
+                          setSortBy('postal_code')
+                          setSortOrder('asc')
+                        }
+                        setCurrentPage(1)
+                      }}
+                    >
+                      Zip Code {sortBy === 'postal_code' && (sortOrder === 'asc' ? '↑' : '↓')}
+                    </th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Industry</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Status</th>
+                    <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {(Array.isArray(filteredCompanies) ? filteredCompanies : []).map((company) => (
+                    <tr key={company.id} className="hover:bg-accent/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="font-medium">{company.name}</div>
+                          <div className="text-sm text-muted-foreground">{company.website || 'No website'}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm">{company.primary_account_owner_name || '-'}</td>
+                      <td className="px-6 py-4 text-sm">{company.phone || '-'}</td>
+                      <td className="px-6 py-4 text-sm">
+                        {company.city || company.state ? (
+                          <span>
+                            {company.city}
+                            {company.city && company.state && ', '}
+                            {company.state}
+                          </span>
+                        ) : '-'}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium">{company.postal_code || '-'}</td>
+                      <td className="px-6 py-4 text-sm">{company.industry || '-'}</td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                          company.status === "Active" 
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400" 
+                            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                        }`}>
+                          {company.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        <div className="flex gap-3">
+                          <a href={`/companies/${company.id}`} className="text-primary hover:underline">
+                            View
+                          </a>
+                          <a href={`/companies/${company.id}/edit`} className="text-blue-600 hover:underline">
+                            Edit
+                          </a>
+                          <button
+                            onClick={() => handleDelete(company.id, company.name)}
+                            className="text-red-600 hover:underline"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {filteredCompanies.length === 0 && !loading && (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">
+                    {searchTerm ? `No companies found matching "${searchTerm}"` : "No companies yet. Add your first company to get started."}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Pagination Controls */}
+          {totalCompanies > 0 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t bg-card rounded-b-lg mt-4">
+              <div className="text-sm text-muted-foreground">
+                Showing {((currentPage - 1) * recordsPerPage) + 1} to {Math.min(currentPage * recordsPerPage, totalCompanies)} of {totalCompanies} companies
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-muted-foreground">Show:</label>
+                  <select
+                    value={recordsPerPage}
+                    onChange={(e) => {
+                      setRecordsPerPage(Number(e.target.value))
+                      setCurrentPage(1)
+                    }}
+                    className="px-2 py-1 border rounded-md text-sm"
+                  >
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                    <option value={250}>250</option>
+                  </select>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
+                  >
+                    Previous
+                  </button>
                   
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
-                      className="px-3 py-1 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
-                    >
-                      Previous
-                    </button>
-                    
-                    <span className="text-sm text-muted-foreground">
-                      Page {currentPage} of {Math.ceil(totalCompanies / recordsPerPage)}
-                    </span>
-                    
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.min(Math.ceil(totalCompanies / recordsPerPage), prev + 1))}
-                      disabled={currentPage >= Math.ceil(totalCompanies / recordsPerPage)}
-                      className="px-3 py-1 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
-                    >
-                      Next
-                    </button>
-                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    Page {currentPage} of {Math.ceil(totalCompanies / recordsPerPage)}
+                  </span>
+                  
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(Math.ceil(totalCompanies / recordsPerPage), prev + 1))}
+                    disabled={currentPage >= Math.ceil(totalCompanies / recordsPerPage)}
+                    className="px-3 py-1 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
+                  >
+                    Next
+                  </button>
                 </div>
               </div>
-            )}
-          </>
-        )}
-      </div>
+            </div>
+          )}
 
-      {/* Bulk Upload Modal */}
-      <BulkUpload
-        isOpen={showBulkUpload}
-        onClose={() => setShowBulkUpload(false)}
-        onUpload={handleBulkUpload}
-        type="companies"
-        requiredFields={['name']}
-        availableFields={companyFields}
-      />
+          {/* Bulk Upload Modal */}
+          <BulkUpload
+            isOpen={showBulkUpload}
+            onClose={() => setShowBulkUpload(false)}
+            onUpload={handleBulkUpload}
+            type="companies"
+            requiredFields={['name']}
+            availableFields={companyFields}
+          />
         </div>
       </MainLayout>
     </AuthGuard>
