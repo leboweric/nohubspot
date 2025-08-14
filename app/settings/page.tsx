@@ -253,6 +253,29 @@ export default function SettingsPage() {
     }
   }
 
+  const handleDeleteUser = async (userId: number) => {
+    if (!confirm('Are you sure you want to remove this user? This action cannot be undone.')) return
+    
+    setLoading(true)
+    setError("")
+    setSuccess("")
+    
+    try {
+      await usersAPI.delete(userId)
+      setSuccess('User removed successfully')
+      // Reload users list
+      await loadUsers()
+    } catch (err) {
+      setError(handleAPIError(err))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEditUser = async (user: any) => {
+    // For now, just show a message. Full edit functionality can be added later
+    alert('Edit functionality coming soon')
+  }
 
   const handleSaveO365Config = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -493,6 +516,8 @@ export default function SettingsPage() {
                   key={teamUser.id}
                   user={teamUser}
                   currentUserId={user?.id}
+                  onEdit={handleEditUser}
+                  onDelete={handleDeleteUser}
                 />
               ))}
             </div>

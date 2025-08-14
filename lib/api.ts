@@ -221,6 +221,19 @@ export const usersAPI = {
   // Get a specific user
   get: (id: number): Promise<User> =>
     apiRequest(`/api/users/${id}`),
+    
+  // Delete a user
+  delete: (id: number): Promise<void> =>
+    apiRequest(`/api/users/${id}`, {
+      method: 'DELETE'
+    }),
+    
+  // Update a user
+  update: (id: number, data: Partial<User>): Promise<User> =>
+    apiRequest(`/api/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    })
 }
 
 // Contact API functions
