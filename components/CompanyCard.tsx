@@ -37,8 +37,8 @@ export default function CompanyCard({ company, onDelete }: CompanyCardProps) {
   
   return (
     <div className="bg-card border rounded-lg p-5 hover:shadow-lg transition-all duration-200 relative group">
-      {/* Status Badge */}
-      <div className="absolute top-3 right-3 flex items-center gap-2">
+      {/* Star Button */}
+      <div className="absolute top-3 right-3">
         <button
           onClick={(e) => {
             e.preventDefault()
@@ -48,14 +48,6 @@ export default function CompanyCard({ company, onDelete }: CompanyCardProps) {
         >
           <Star className={`w-4 h-4 ${isStarred ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'}`} />
         </button>
-        
-        <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
-          company.status === "Active" 
-            ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400" 
-            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
-        }`}>
-          {company.status}
-        </span>
       </div>
       
       {/* Company Avatar & Name */}
@@ -95,12 +87,6 @@ export default function CompanyCard({ company, onDelete }: CompanyCardProps) {
             <span>{company.attachment_count} files</span>
           </div>
         )}
-        
-        {/* Placeholder for deals - would need to add this to API */}
-        <div className="flex items-center gap-2 text-sm">
-          <TrendingUp className="w-4 h-4 text-orange-600" />
-          <span>0 deals</span>
-        </div>
       </div>
       
       {/* Contact Info */}
