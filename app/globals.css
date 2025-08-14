@@ -41,6 +41,17 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    
+    /* Theme colors - will be overridden by JS */
+    --theme-primary: #3B82F6;
+    --theme-secondary: #1E40AF;
+    --theme-accent: #60A5FA;
+    --theme-primary-hover: rgba(59, 130, 246, 0.15);
+    --theme-primary-selected: rgba(59, 130, 246, 0.20);
+    --theme-primary-background: rgba(59, 130, 246, 0.10);
+    --theme-primary-border: rgba(59, 130, 246, 0.40);
+    --theme-secondary-hover: rgba(30, 64, 175, 0.15);
+    --theme-accent-background: rgba(96, 165, 250, 0.10);
   }
   
   .dark {

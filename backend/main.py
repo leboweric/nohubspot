@@ -45,7 +45,7 @@ from schemas import (
     EmailMessageCreate, EmailMessageResponse, AttachmentCreate, AttachmentResponse,
     EmailSignatureCreate, EmailSignatureResponse, EmailSignatureUpdate,
     ActivityResponse, DashboardStats, BulkUploadResult,
-    OrganizationCreate, OrganizationResponse, UserRegister, UserLogin, UserResponse, UserCreate,
+    OrganizationCreate, OrganizationResponse, OrganizationThemeUpdate, UserRegister, UserLogin, UserResponse, UserCreate,
     UserInviteCreate, UserInviteResponse, UserInviteAccept, Token,
     UserAdd, UserAddResponse,
     ProjectUpdateResponse, ProjectUpdateCreate, ProjectUpdateUpdate,
@@ -1433,6 +1433,55 @@ async def disconnect_user_google_connection(
         raise HTTPException(status_code=404, detail="Google Workspace connection not found")
     
     return {"message": "Google Workspace connection disconnected successfully"}
+
+# Organization Theme endpoints
+@app.get("/api/organization/theme", response_model=OrganizationResponse)
+async def get_organization_theme(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get organization theme colors"""
+    org = db.query(Organization).filter(Organization.id == current_user.organization_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    return org
+
+@app.put("/api/organization/theme", response_model=OrganizationResponse)
+async def update_organization_theme(
+    theme_update: OrganizationThemeUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update organization theme colors (Owner/Admin only)"""
+    if current_user.role not in ["owner", "admin"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Only organization owners and admins can update theme colors"
+        )
+    
+    org = db.query(Organization).filter(Organization.id == current_user.organization_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    
+    # Update theme colors
+    org.theme_primary_color = theme_update.theme_primary_color
+    org.theme_secondary_color = theme_update.theme_secondary_color
+    org.theme_accent_color = theme_update.theme_accent_color
+    
+    db.commit()
+    db.refresh(org)
+    
+    # Create activity log
+    create_activity(
+        db,
+        title="Theme Colors Updated",
+        description=f"Organization theme colors updated",
+        type="settings",
+        entity_id=str(org.id),
+        organization_id=current_user.organization_id
+    )
+    
+    return org
 
 @app.post("/api/ai/chat")
 async def ai_chat(

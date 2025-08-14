@@ -265,10 +265,18 @@ class OrganizationResponse(OrganizationBase):
     slug: str
     plan: str
     is_active: bool
+    theme_primary_color: str = '#3B82F6'
+    theme_secondary_color: str = '#1E40AF'
+    theme_accent_color: str = '#60A5FA'
     created_at: datetime
     
     class Config:
         from_attributes = True
+
+class OrganizationThemeUpdate(BaseModel):
+    theme_primary_color: str = Field(..., regex='^#[0-9A-Fa-f]{6}$')
+    theme_secondary_color: str = Field(..., regex='^#[0-9A-Fa-f]{6}$')
+    theme_accent_color: str = Field(..., regex='^#[0-9A-Fa-f]{6}$')
 
 # User schemas
 class UserBase(BaseModel):

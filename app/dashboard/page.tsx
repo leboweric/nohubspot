@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
+import { useThemeColors } from "@/hooks/useThemeColors"
 import EmailCompose, { EmailMessage } from "@/components/email/EmailCompose"
 import TasksCard from "@/components/dashboard/TasksCard"
 import ActionItemsBar from "@/components/dashboard/ActionItemsBar"
@@ -43,6 +44,9 @@ export default function DashboardPage() {
   
   // Get auth state - will be null during SSR
   const { organization, user } = getAuthState()
+  
+  // Get theme colors
+  const { themeColors, colorPatterns } = useThemeColors()
   
   // Cache for entity names to avoid repeated lookups
   const [entityCache, setEntityCache] = useState<Record<string, string>>({})
@@ -535,7 +539,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Projected Hours</p>
-              <p className="text-2xl font-bold mt-1 text-blue-600">
+              <p className="text-2xl font-bold mt-1" style={{ color: themeColors.primary }}>
                 {metricsLoading ? (
                   <span className="animate-pulse bg-gray-200 h-8 w-16 block rounded"></span>
                 ) : (
@@ -543,7 +547,7 @@ export default function DashboardPage() {
                 )}
               </p>
             </div>
-            <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: themeColors.primary }}>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
@@ -554,16 +558,16 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
           <h2 className="text-lg font-semibold mb-6 flex items-center">
-            <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+            <span className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: themeColors.primary }}></span>
             Quick Actions
           </h2>
           <div className="space-y-3">
-            <a href="/companies/new" className="block w-full text-left px-4 py-3 border border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all group">
+            <a href="/companies/new" className="block w-full text-left px-4 py-3 border rounded-lg transition-all group" style={{ borderColor: colorPatterns.border(themeColors.primary) }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colorPatterns.background(themeColors.primary); e.currentTarget.style.borderColor = themeColors.primary; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = colorPatterns.border(themeColors.primary); }}>
               <div className="flex items-center">
-                <svg className="w-5 h-5 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: themeColors.primary }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
-                <span className="group-hover:text-blue-700">Add New Company</span>
+                <span className="group-hover:opacity-80">Add New Company</span>
               </div>
             </a>
             <a href="/contacts/new" className="block w-full text-left px-4 py-3 border border-green-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-all group">

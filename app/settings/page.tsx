@@ -12,6 +12,7 @@ import GoogleConnection from "@/components/settings/GoogleConnection"
 import SettingsNavigation, { SettingsTab } from "@/components/settings/SettingsNavigation"
 import UserManagementCard from "@/components/settings/UserManagementCard"
 import IntegrationCard from "@/components/settings/IntegrationCard"
+import ColorThemePicker from "@/components/settings/ColorThemePicker"
 import { useEmailSignature } from "@/components/signature/SignatureManager"
 import { getAuthState, isAdmin } from "@/lib/auth"
 import { o365API, o365IntegrationAPI, O365OrganizationConfig, O365UserConnection, googleAPI, googleIntegrationAPI, handleAPIError, usersAPI } from "@/lib/api"
@@ -653,6 +654,46 @@ export default function SettingsPage() {
               Define custom project types that match your organization's workflow for better categorization and reporting.
             </p>
           </div>
+        )}
+
+        {/* Brand Colors */}
+        {(user?.role === 'owner' || user?.role === 'admin') && (
+          <ColorThemePicker
+            currentTheme={{
+              primary: organization?.theme_primary_color || '#3B82F6',
+              secondary: organization?.theme_secondary_color || '#1E40AF',
+              accent: organization?.theme_accent_color || '#60A5FA'
+            }}
+            onSave={async (colors) => {
+              try {
+                const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
+                const response = await fetch(`${baseUrl}/api/organization/theme`, {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                  },
+                  body: JSON.stringify({
+                    theme_primary_color: colors.primary,
+                    theme_secondary_color: colors.secondary,
+                    theme_accent_color: colors.accent
+                  })
+                })
+                
+                if (response.ok) {
+                  const data = await response.json()
+                  setOrganization(data)
+                  // Reload page to apply new theme
+                  window.location.reload()
+                } else {
+                  throw new Error('Failed to update theme')
+                }
+              } catch (error) {
+                console.error('Failed to update theme:', error)
+                throw error
+              }
+            }}
+          />
         )}
       </div>
     )
