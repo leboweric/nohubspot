@@ -5,47 +5,47 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 0 0% 20%;
+    --foreground: 0 0% 15%; /* Changed from 20% - no pure black */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 20%;
+    --card-foreground: 0 0% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 20%;
-    --primary: 0 0% 9%;
+    --popover-foreground: 0 0% 15%;
+    --primary: 221 83% 53%; /* Modern blue instead of near-black */
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
+    --secondary-foreground: 0 0% 15%;
     --muted: 0 0% 96.1%;
     --muted-foreground: 0 0% 45.1%;
     --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
+    --accent-foreground: 0 0% 15%;
+    --destructive: 0 70% 50%; /* Muted red instead of bright */
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 20%;
-    --radius: 0.375rem;
+    --border: 0 0% 91%; /* Slightly lighter border */
+    --input: 0 0% 91%;
+    --ring: 221 83% 53%; /* Match primary for consistent focus */
+    --radius: 0.625rem; /* 10px - The golden radius */
   }
   
   .dark {
     --background: 0 0% 9%;
-    --foreground: 0 0% 95%;
+    --foreground: 0 0% 95%; /* No pure white */
     --card: 0 0% 13%;
     --card-foreground: 0 0% 95%;
     --popover: 0 0% 13%;
     --popover-foreground: 0 0% 95%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
+    --primary: 221 83% 60%; /* Consistent blue in dark mode */
+    --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 20%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary-foreground: 0 0% 95%;
     --muted: 0 0% 20%;
     --muted-foreground: 0 0% 60%;
     --accent: 0 0% 20%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 50.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 0 0% 95%;
+    --accent-foreground: 0 0% 95%;
+    --destructive: 0 60% 45%; /* Muted red in dark mode */
+    --destructive-foreground: 0 0% 95%;
+    --border: 0 0% 18%; /* Subtle borders */
+    --input: 0 0% 18%;
+    --ring: 221 83% 60%; /* Match primary for consistent focus */
   }
 }
 
@@ -69,10 +69,67 @@
   h4 { @apply text-lg; }
   
   a {
-    @apply transition-colors;
+    @apply transition-colors duration-200;
   }
   
   button {
-    @apply transition-all;
+    @apply transition-all duration-200;
+  }
+  
+  /* Focus ring system */
+  *:focus-visible {
+    @apply outline-none;
+  }
+  
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  button:focus-visible {
+    @apply ring-2 ring-ring/50 ring-offset-2 ring-offset-background;
+  }
+}
+
+@layer utilities {
+  /* Hover lift effect */
+  .hover-lift {
+    @apply transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md;
+  }
+  
+  /* Card section spacing */
+  .card-section {
+    @apply p-6 space-y-4;
+  }
+  
+  /* Form field spacing */
+  .form-field {
+    @apply mb-4;
+  }
+  
+  /* Page section */
+  .page-section {
+    @apply p-6 mb-8;
+  }
+  
+  /* Subtle divider */
+  .divider {
+    @apply border-t border-border/50;
+  }
+  
+  /* Muted text */
+  .text-muted {
+    @apply text-muted-foreground text-sm;
+  }
+  
+  /* Icon sizes */
+  .icon-sm {
+    @apply h-4 w-4;
+  }
+  
+  .icon-md {
+    @apply h-5 w-5;
+  }
+  
+  .icon-lg {
+    @apply h-6 w-6;
   }
 }

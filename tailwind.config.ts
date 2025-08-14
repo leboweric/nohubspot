@@ -12,6 +12,18 @@ const config: Config = {
   ],
   theme: {
   	extend: {
+  		boxShadow: {
+  			'xs': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+  			'sm': '0 1px 3px 0 rgb(0 0 0 / 0.1)',
+  			'md': '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+  			'lg': '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+  		},
+  		transitionDuration: {
+  			DEFAULT: '200ms',
+  		},
+  		transitionTimingFunction: {
+  			DEFAULT: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  		},
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
@@ -65,9 +77,11 @@ const config: Config = {
   			}
   		},
   		borderRadius: {
-  			lg: 'var(--radius)',
-  			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			DEFAULT: '0.625rem', // 10px - The golden radius
+  			sm: 'calc(0.625rem - 4px)', // 6px - Badges, small elements
+  			md: 'calc(0.625rem - 2px)', // 8px - Inputs, buttons
+  			lg: '0.625rem', // 10px - Cards, containers
+  			xl: 'calc(0.625rem + 4px)', // 14px - Large modals
   		},
   		keyframes: {
   			'accordion-down': {
@@ -85,11 +99,16 @@ const config: Config = {
   				to: {
   					height: '0'
   				}
-  			}
+  			},
+  			'gentle-pulse': {
+  				'0%, 100%': { opacity: '1' },
+  				'50%': { opacity: '0.85' },
+  			},
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'gentle-pulse': 'gentle-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
   		}
   	}
   },
