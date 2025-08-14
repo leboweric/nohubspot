@@ -1,0 +1,4 @@
+-- Add logo URL column to organizations table
+ALTER TABLE organizations
+ADD COLUMN IF NOT EXISTS logo_url TEXT,
+ADD COLUMN IF NOT EXISTS logo_uploaded_at TIMESTAMP;

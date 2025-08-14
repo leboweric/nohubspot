@@ -45,7 +45,7 @@ from schemas import (
     EmailMessageCreate, EmailMessageResponse, AttachmentCreate, AttachmentResponse,
     EmailSignatureCreate, EmailSignatureResponse, EmailSignatureUpdate,
     ActivityResponse, DashboardStats, BulkUploadResult,
-    OrganizationCreate, OrganizationResponse, OrganizationThemeUpdate, UserRegister, UserLogin, UserResponse, UserCreate,
+    OrganizationCreate, OrganizationResponse, OrganizationThemeUpdate, OrganizationLogoUpdate, UserRegister, UserLogin, UserResponse, UserCreate,
     UserInviteCreate, UserInviteResponse, UserInviteAccept, Token,
     UserAdd, UserAddResponse,
     ProjectUpdateResponse, ProjectUpdateCreate, ProjectUpdateUpdate,
@@ -1482,6 +1482,95 @@ async def update_organization_theme(
     )
     
     return org
+
+# Organization Logo endpoints
+@app.put("/api/organization/logo", response_model=OrganizationResponse)
+async def update_organization_logo(
+    logo_update: OrganizationLogoUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update organization logo URL (Owner/Admin only)"""
+    if current_user.role not in ["owner", "admin"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Only organization owners and admins can update the logo"
+        )
+    
+    org = db.query(Organization).filter(Organization.id == current_user.organization_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    
+    # Update logo URL
+    org.logo_url = logo_update.logo_url
+    org.logo_uploaded_at = datetime.utcnow() if logo_update.logo_url else None
+    
+    db.commit()
+    db.refresh(org)
+    
+    # Create activity log
+    create_activity(
+        db,
+        title="Organization Logo Updated",
+        description=f"Organization logo {'uploaded' if logo_update.logo_url else 'removed'}",
+        type="settings",
+        entity_id=str(org.id),
+        organization_id=current_user.organization_id
+    )
+    
+    return org
+
+@app.post("/api/organization/logo/upload")
+async def upload_organization_logo(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Upload organization logo file (Owner/Admin only)"""
+    if current_user.role not in ["owner", "admin"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Only organization owners and admins can upload logos"
+        )
+    
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type. Allowed types: {', '.join(allowed_types)}"
+        )
+    
+    # Validate file size (max 5MB)
+    max_size = 5 * 1024 * 1024  # 5MB
+    contents = await file.read()
+    if len(contents) > max_size:
+        raise HTTPException(status_code=400, detail="File too large. Maximum size is 5MB")
+    
+    # Reset file position
+    await file.seek(0)
+    
+    # Here you would typically:
+    # 1. Upload to a cloud storage service (S3, Cloudinary, etc.)
+    # 2. Get the public URL
+    # For now, we'll return a data URL (base64 encoded)
+    
+    import base64
+    encoded = base64.b64encode(contents).decode('utf-8')
+    data_url = f"data:{file.content_type};base64,{encoded}"
+    
+    # Update organization with the logo URL
+    org = db.query(Organization).filter(Organization.id == current_user.organization_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    
+    org.logo_url = data_url
+    org.logo_uploaded_at = datetime.utcnow()
+    
+    db.commit()
+    db.refresh(org)
+    
+    return {"message": "Logo uploaded successfully", "logo_url": data_url}
 
 @app.post("/api/ai/chat")
 async def ai_chat(

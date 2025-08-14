@@ -13,6 +13,7 @@ import SettingsNavigation, { SettingsTab } from "@/components/settings/SettingsN
 import UserManagementCard from "@/components/settings/UserManagementCard"
 import IntegrationCard from "@/components/settings/IntegrationCard"
 import ColorThemePicker from "@/components/settings/ColorThemePicker"
+import LogoUploader from "@/components/settings/LogoUploader"
 import { useEmailSignature } from "@/components/signature/SignatureManager"
 import { getAuthState, isAdmin } from "@/lib/auth"
 import { o365API, o365IntegrationAPI, O365OrganizationConfig, O365UserConnection, googleAPI, googleIntegrationAPI, handleAPIError, usersAPI } from "@/lib/api"
@@ -654,6 +655,40 @@ export default function SettingsPage() {
               Define custom project types that match your organization's workflow for better categorization and reporting.
             </p>
           </div>
+        )}
+
+        {/* Organization Logo */}
+        {(user?.role === 'owner' || user?.role === 'admin') && (
+          <LogoUploader
+            currentLogoUrl={organization?.logo_url}
+            onSave={async (logoUrl) => {
+              try {
+                const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
+                const response = await fetch(`${baseUrl}/api/organization/logo`, {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                  },
+                  body: JSON.stringify({
+                    logo_url: logoUrl
+                  })
+                })
+                
+                if (response.ok) {
+                  const data = await response.json()
+                  setOrganization(data)
+                  // Reload page to update logo in navigation
+                  window.location.reload()
+                } else {
+                  throw new Error('Failed to update logo')
+                }
+              } catch (error) {
+                console.error('Failed to update logo:', error)
+                throw error
+              }
+            }}
+          />
         )}
 
         {/* Brand Colors */}

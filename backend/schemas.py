@@ -268,15 +268,20 @@ class OrganizationResponse(OrganizationBase):
     theme_primary_color: str = '#3B82F6'
     theme_secondary_color: str = '#1E40AF'
     theme_accent_color: str = '#60A5FA'
+    logo_url: Optional[str] = None
+    logo_uploaded_at: Optional[datetime] = None
     created_at: datetime
     
     class Config:
         from_attributes = True
 
 class OrganizationThemeUpdate(BaseModel):
-    theme_primary_color: str = Field(..., regex='^#[0-9A-Fa-f]{6}$')
-    theme_secondary_color: str = Field(..., regex='^#[0-9A-Fa-f]{6}$')
-    theme_accent_color: str = Field(..., regex='^#[0-9A-Fa-f]{6}$')
+    theme_primary_color: str = Field(..., pattern='^#[0-9A-Fa-f]{6}$')
+    theme_secondary_color: str = Field(..., pattern='^#[0-9A-Fa-f]{6}$')
+    theme_accent_color: str = Field(..., pattern='^#[0-9A-Fa-f]{6}$')
+
+class OrganizationLogoUpdate(BaseModel):
+    logo_url: Optional[str] = Field(None, max_length=2000)
 
 # User schemas
 class UserBase(BaseModel):

@@ -16,12 +16,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const router = useRouter()
   const { user, organization, isAuthenticated } = getAuthState()
   const [o365Connected, setO365Connected] = useState(false)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
 
   const handleLogout = () => {
     logout()
   }
 
-  // Check O365 connection status
+  // Check O365 connection status and fetch organization logo
   useEffect(() => {
     const checkO365Status = async () => {
       try {
@@ -33,8 +34,27 @@ export default function MainLayout({ children }: MainLayoutProps) {
       }
     }
 
+    const fetchOrgLogo = async () => {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
+        const response = await fetch(`${baseUrl}/api/organization/theme`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          }
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          setLogoUrl(data.logo_url || null)
+        }
+      } catch (err) {
+        console.error('Failed to fetch organization logo:', err)
+      }
+    }
+
     if (isAuthenticated) {
       checkO365Status()
+      fetchOrgLogo()
     }
   }, [isAuthenticated])
 
@@ -56,8 +76,22 @@ export default function MainLayout({ children }: MainLayoutProps) {
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
-              <Link href="/dashboard" className="text-3xl font-bold text-blue-600 hover:text-blue-700 transition-colors">
-                <span className="tracking-tight">NHS</span>
+              <Link href="/dashboard" className="flex items-center h-10">
+                {logoUrl ? (
+                  <img 
+                    src={logoUrl} 
+                    alt={organization?.name || 'Organization Logo'} 
+                    className="max-h-full max-w-[150px] object-contain"
+                    onError={(e) => {
+                      // If logo fails to load, fall back to text
+                      setLogoUrl(null)
+                    }}
+                  />
+                ) : (
+                  <span className="text-3xl font-bold text-blue-600 hover:text-blue-700 transition-colors tracking-tight">
+                    NHS
+                  </span>
+                )}
               </Link>
               
               {isAuthenticated && (

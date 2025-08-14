@@ -1,0 +1,299 @@
+'use client';
+
+import { useState, useRef } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
+import { useToast } from '../ui/use-toast';
+import { Upload, X, Image, Link } from 'lucide-react';
+
+interface LogoUploaderProps {
+  currentLogoUrl?: string | null;
+  onLogoChange?: (logoUrl: string | null) => void;
+  onSave?: (logoUrl: string | null) => Promise<void>;
+  saving?: boolean;
+}
+
+export default function LogoUploader({
+  currentLogoUrl,
+  onLogoChange,
+  onSave,
+  saving = false
+}: LogoUploaderProps) {
+  const [logoUrl, setLogoUrl] = useState<string | null>(currentLogoUrl || null);
+  const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>('file');
+  const [urlInput, setUrlInput] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please upload a JPG, PNG, GIF, SVG, or WebP image.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast({
+        title: 'File too large',
+        description: 'Please upload an image smaller than 5MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      // Create FormData and upload file
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app';
+      const response = await fetch(`${baseUrl}/api/organization/logo/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setLogoUrl(data.logo_url);
+        if (onLogoChange) {
+          onLogoChange(data.logo_url);
+        }
+        toast({
+          title: 'Logo uploaded',
+          description: 'Your logo has been uploaded successfully.',
+        });
+      } else {
+        throw new Error('Failed to upload logo');
+      }
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast({
+        title: 'Upload failed',
+        description: 'Failed to upload logo. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleUrlSubmit = () => {
+    if (!urlInput.trim()) {
+      toast({
+        title: 'Invalid URL',
+        description: 'Please enter a valid image URL.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Basic URL validation
+    try {
+      new URL(urlInput);
+      setLogoUrl(urlInput);
+      if (onLogoChange) {
+        onLogoChange(urlInput);
+      }
+      setUrlInput('');
+      toast({
+        title: 'Logo URL set',
+        description: 'Your logo URL has been set successfully.',
+      });
+    } catch {
+      toast({
+        title: 'Invalid URL',
+        description: 'Please enter a valid URL.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoUrl(null);
+    if (onLogoChange) {
+      onLogoChange(null);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleSave = async () => {
+    if (!onSave) return;
+
+    try {
+      await onSave(logoUrl);
+      toast({
+        title: 'Logo Updated',
+        description: logoUrl ? 'Your organization logo has been saved.' : 'Your organization logo has been removed.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save logo. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Image className="h-5 w-5" />
+          Organization Logo
+        </CardTitle>
+        <CardDescription>
+          Upload your organization's logo to display in the navigation bar. Recommended size: 200x60 pixels.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Current Logo Preview */}
+        <div className="space-y-3">
+          <Label>Current Logo</Label>
+          <div className="p-4 border rounded-lg bg-gray-50">
+            {logoUrl ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-center h-16">
+                  <img 
+                    src={logoUrl} 
+                    alt="Organization Logo" 
+                    className="max-h-full max-w-[200px] object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      toast({
+                        title: 'Error',
+                        description: 'Failed to load logo image.',
+                        variant: 'destructive',
+                      });
+                    }}
+                  />
+                </div>
+                <div className="flex justify-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRemoveLogo}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Remove Logo
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Image className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <p className="text-sm">No logo uploaded</p>
+                <p className="text-xs text-gray-400 mt-1">Default "NHS" text will be displayed</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Upload Method Tabs */}
+        <div className="space-y-3">
+          <Label>Upload New Logo</Label>
+          <div className="flex gap-2 mb-4">
+            <Button
+              type="button"
+              variant={uploadMethod === 'file' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setUploadMethod('file')}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Upload File
+            </Button>
+            <Button
+              type="button"
+              variant={uploadMethod === 'url' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setUploadMethod('url')}
+            >
+              <Link className="h-4 w-4 mr-2" />
+              Use URL
+            </Button>
+          </div>
+
+          {/* File Upload */}
+          {uploadMethod === 'file' && (
+            <div className="space-y-3">
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/svg+xml,image/webp"
+                onChange={handleFileUpload}
+                disabled={isUploading}
+                className="cursor-pointer"
+              />
+              <p className="text-xs text-muted-foreground">
+                Accepted formats: JPG, PNG, GIF, SVG, WebP (max 5MB)
+              </p>
+            </div>
+          )}
+
+          {/* URL Input */}
+          {uploadMethod === 'url' && (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <Input
+                  type="url"
+                  placeholder="https://example.com/logo.png"
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleUrlSubmit();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  onClick={handleUrlSubmit}
+                  disabled={!urlInput.trim()}
+                >
+                  Set URL
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Enter the URL of your logo image
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Save Button */}
+        {onSave && (
+          <div className="flex justify-end pt-4 border-t">
+            <Button 
+              onClick={handleSave} 
+              disabled={saving || isUploading}
+              className="min-w-[100px]"
+            >
+              {saving ? 'Saving...' : 'Save Logo'}
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
