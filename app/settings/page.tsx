@@ -16,7 +16,7 @@ import { useEmailSignature } from "@/components/signature/SignatureManager"
 import { getAuthState, isAdmin } from "@/lib/auth"
 import { o365API, o365IntegrationAPI, O365OrganizationConfig, O365UserConnection, googleAPI, googleIntegrationAPI, handleAPIError, usersAPI } from "@/lib/api"
 import { 
-  User, Mail, Building2, Shield, Calendar, Settings, 
+  User, Users, Mail, Building2, Shield, Calendar, Settings, 
   Zap, Database, HelpCircle, Plus, Download, Search,
   Phone, Trash2, FileText, Palette, Globe
 } from "lucide-react"
