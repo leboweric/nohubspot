@@ -56,6 +56,7 @@ export default function SettingsPage() {
   const [success, setSuccess] = useState("")
   const [users, setUsers] = useState<any[]>([])
   const [usersLoading, setUsersLoading] = useState(true)
+  const [logoSaving, setLogoSaving] = useState(false)
   
   // Auth and signature
   const { signature, saveSignature } = useEmailSignature()
@@ -661,7 +662,9 @@ export default function SettingsPage() {
         {(user?.role === 'owner' || user?.role === 'admin') && (
           <LogoUploader
             currentLogoUrl={organization?.logo_url}
+            saving={logoSaving}
             onSave={async (logoUrl) => {
+              setLogoSaving(true)
               try {
                 const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
                 const response = await fetch(`${baseUrl}/api/organization/logo`, {
@@ -679,13 +682,17 @@ export default function SettingsPage() {
                   const data = await response.json()
                   setOrganization(data)
                   // Reload page to update logo in navigation
-                  window.location.reload()
+                  setTimeout(() => {
+                    window.location.reload()
+                  }, 500)
                 } else {
                   throw new Error('Failed to update logo')
                 }
               } catch (error) {
                 console.error('Failed to update logo:', error)
                 throw error
+              } finally {
+                setLogoSaving(false)
               }
             }}
           />

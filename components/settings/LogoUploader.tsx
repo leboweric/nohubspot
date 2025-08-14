@@ -24,13 +24,16 @@ export default function LogoUploader({
   const [logoUrl, setLogoUrl] = useState<string | null>(currentLogoUrl || null);
   const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>('file');
   const [urlInput, setUrlInput] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    console.log('File selected:', file.name, file.type, file.size);
 
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml', 'image/webp'];
@@ -40,6 +43,7 @@ export default function LogoUploader({
         description: 'Please upload a JPG, PNG, GIF, SVG, or WebP image.',
         variant: 'destructive',
       });
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
@@ -51,48 +55,18 @@ export default function LogoUploader({
         description: 'Please upload an image smaller than 5MB.',
         variant: 'destructive',
       });
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
-    setIsUploading(true);
-
-    try {
-      // Create FormData and upload file
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app';
-      const response = await fetch(`${baseUrl}/api/organization/logo/upload`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        },
-        body: formData
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setLogoUrl(data.logo_url);
-        if (onLogoChange) {
-          onLogoChange(data.logo_url);
-        }
-        toast({
-          title: 'Logo uploaded',
-          description: 'Your logo has been uploaded successfully.',
-        });
-      } else {
-        throw new Error('Failed to upload logo');
-      }
-    } catch (error) {
-      console.error('Error uploading logo:', error);
-      toast({
-        title: 'Upload failed',
-        description: 'Failed to upload logo. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsUploading(false);
-    }
+    setSelectedFile(file);
+    
+    // Create a preview URL
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleUrlSubmit = () => {
@@ -128,6 +102,8 @@ export default function LogoUploader({
 
   const handleRemoveLogo = () => {
     setLogoUrl(null);
+    setSelectedFile(null);
+    setUrlInput('');
     if (onLogoChange) {
       onLogoChange(null);
     }
@@ -137,20 +113,64 @@ export default function LogoUploader({
   };
 
   const handleSave = async () => {
-    if (!onSave) return;
+    console.log('Save button clicked');
+    if (!onSave) {
+      console.log('No onSave handler provided');
+      return;
+    }
+
+    setIsUploading(true);
 
     try {
-      await onSave(logoUrl);
+      let finalLogoUrl = logoUrl;
+
+      // If a file is selected, upload it first
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app';
+        const token = localStorage.getItem('access_token');
+        
+        console.log('Uploading file to:', `${baseUrl}/api/organization/logo/upload`);
+
+        const response = await fetch(`${baseUrl}/api/organization/logo/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          finalLogoUrl = data.logo_url;
+          console.log('Upload successful');
+        } else {
+          const errorText = await response.text();
+          throw new Error(`Failed to upload: ${errorText}`);
+        }
+      }
+
+      // Save the logo URL to the organization
+      await onSave(finalLogoUrl);
+      
+      // Clear selected file after successful save
+      setSelectedFile(null);
+      
       toast({
         title: 'Logo Updated',
-        description: logoUrl ? 'Your organization logo has been saved.' : 'Your organization logo has been removed.',
+        description: finalLogoUrl ? 'Your organization logo has been saved.' : 'Your organization logo has been removed.',
       });
     } catch (error) {
+      console.error('Save error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to save logo. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to save logo. Please try again.',
         variant: 'destructive',
       });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -241,13 +261,18 @@ export default function LogoUploader({
                 ref={fileInputRef}
                 type="file"
                 accept="image/jpeg,image/png,image/gif,image/svg+xml,image/webp"
-                onChange={handleFileUpload}
+                onChange={handleFileSelect}
                 disabled={isUploading}
                 className="cursor-pointer"
               />
               <p className="text-xs text-muted-foreground">
                 Accepted formats: JPG, PNG, GIF, SVG, WebP (max 5MB)
               </p>
+              {selectedFile && (
+                <p className="text-xs text-green-600">
+                  Selected: {selectedFile.name}
+                </p>
+              )}
             </div>
           )}
 
@@ -289,7 +314,7 @@ export default function LogoUploader({
               disabled={saving || isUploading}
               className="min-w-[100px]"
             >
-              {saving ? 'Saving...' : 'Save Logo'}
+              {saving || isUploading ? 'Saving...' : 'Save Logo'}
             </Button>
           </div>
         )}
