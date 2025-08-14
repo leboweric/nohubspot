@@ -321,7 +321,7 @@ export default function ProjectsPage() {
                 <button
                   onClick={handleExportProjects}
                   disabled={loading || projects.length === 0}
-                  className="flex items-center gap-2 px-4 py-2 border border-green-200 rounded-md hover:bg-green-50 hover:border-green-300 transition-all text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-4 py-2 border border-green-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-all text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Download className="w-4 h-4" />
                   Export to CSV
@@ -331,7 +331,7 @@ export default function ProjectsPage() {
                 <div className="flex bg-gray-100 rounded-lg p-1">
                   <button
                     onClick={() => setViewMode('kanban')}
-                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                       viewMode === 'kanban'
                         ? 'bg-white text-gray-900 shadow-sm'
                         : 'text-gray-600 hover:text-gray-900'
@@ -342,7 +342,7 @@ export default function ProjectsPage() {
                   </button>
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                       viewMode === 'list'
                         ? 'bg-white text-gray-900 shadow-sm'
                         : 'text-gray-600 hover:text-gray-900'
@@ -356,7 +356,7 @@ export default function ProjectsPage() {
                 {/* Create Project Button */}
                 <button
                   onClick={() => handleCreateProject()}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   Create Project
@@ -367,7 +367,7 @@ export default function ProjectsPage() {
 
           {/* Error/Success Messages */}
           {error && (
-            <div className="rounded-md bg-red-50 p-4 mb-6">
+            <div className="rounded-lg bg-red-50 p-4 mb-6">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-red-700">{error}</div>
                 {error.includes("create default stages") && (
@@ -383,7 +383,7 @@ export default function ProjectsPage() {
           )}
           
           {success && (
-            <div className="rounded-md bg-green-50 p-4 mb-6">
+            <div className="rounded-lg bg-green-50 p-4 mb-6">
               <div className="text-sm text-green-700">{success}</div>
             </div>
           )}

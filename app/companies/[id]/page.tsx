@@ -211,14 +211,14 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
               <div className="flex gap-2">
                 <Link 
                   href={`/companies/${params.id}/edit`} 
-                  className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-accent transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-accent transition-colors"
                 >
                   <Edit className="w-4 h-4" />
                   Edit
                 </Link>
                 <button 
                   onClick={handleScheduleMeeting}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                 >
                   <Calendar className="w-4 h-4" />
                   Schedule Meeting
@@ -429,21 +429,21 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                     <div className="space-y-2">
                       <Link 
                         href={`/contacts/new?companyId=${company.id}&company=${encodeURIComponent(company.name)}`}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-sm border rounded-md hover:bg-accent transition-colors"
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm border rounded-lg hover:bg-accent transition-colors"
                       >
                         <Plus className="w-4 h-4" />
                         Add Contact
                       </Link>
                       <Link 
                         href={`/pipeline/new?companyId=${company.id}`}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-sm border rounded-md hover:bg-accent transition-colors"
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm border rounded-lg hover:bg-accent transition-colors"
                       >
                         <Plus className="w-4 h-4" />
                         Create Deal
                       </Link>
                       <button 
                         onClick={() => setActiveTab("documents")}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left border rounded-md hover:bg-accent transition-colors"
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left border rounded-lg hover:bg-accent transition-colors"
                       >
                         <FileText className="w-4 h-4" />
                         Upload Document
@@ -479,7 +479,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                   <h2 className="text-xl font-semibold">Contacts</h2>
                   <Link 
                     href={`/contacts/new?companyId=${company.id}&company=${encodeURIComponent(company.name)}`}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                     Add Contact
@@ -549,7 +549,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                   <h2 className="text-xl font-semibold">Deals</h2>
                   <Link 
                     href={`/pipeline/new?companyId=${company.id}`}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                     Create Deal
@@ -630,7 +630,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                   {!editingNotes && (
                     <button 
                       onClick={() => setEditingNotes(true)}
-                      className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-accent transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-accent transition-colors"
                     >
                       <Edit className="w-4 h-4" />
                       Edit
@@ -643,13 +643,13 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                     <textarea
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      className="w-full h-64 p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full h-64 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="Add notes about this company..."
                     />
                     <div className="flex gap-2 mt-4">
                       <button 
                         onClick={handleSaveNotes}
-                        className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
                       >
                         Save
                       </button>
@@ -658,7 +658,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                           setEditingNotes(false)
                           setNotes(company.description || "")
                         }}
-                        className="px-4 py-2 border rounded-md hover:bg-accent"
+                        className="px-4 py-2 border rounded-lg hover:bg-accent"
                       >
                         Cancel
                       </button>

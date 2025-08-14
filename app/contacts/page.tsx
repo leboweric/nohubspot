@@ -272,7 +272,7 @@ export default function ContactsPage() {
         </div>
         <div className="flex gap-3">
           {/* View Toggle */}
-          <div className="flex items-center bg-gray-100 rounded-md p-1">
+          <div className="flex items-center bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setViewMode('grid')}
               className={`p-2 rounded transition-colors ${
@@ -299,7 +299,7 @@ export default function ContactsPage() {
           
           <button
             onClick={() => setShowBulkUpload(true)}
-            className="flex items-center gap-2 px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-all text-blue-700"
+            className="flex items-center gap-2 px-4 py-2 border border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all text-blue-700"
           >
             <Upload className="w-4 h-4" />
             Bulk Upload
@@ -307,14 +307,14 @@ export default function ContactsPage() {
           <button
             onClick={handleExportContacts}
             disabled={loading || filteredContacts.length === 0}
-            className="flex items-center gap-2 px-4 py-2 border border-green-200 rounded-md hover:bg-green-50 hover:border-green-300 transition-all text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 border border-green-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-all text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Download className="w-4 h-4" />
             Export to CSV
           </button>
           <a 
             href="/contacts/new" 
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
             Add Contact
@@ -329,7 +329,7 @@ export default function ContactsPage() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           disabled={loading}
-          className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+          className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
         />
         
         <div className="flex gap-4">
@@ -370,7 +370,7 @@ export default function ContactsPage() {
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-800 text-sm">{error}</p>
           <button 
             onClick={loadContacts}

@@ -416,7 +416,7 @@ export default function CompaniesPage() {
             </div>
             <div className="flex gap-3">
               {/* View Toggle */}
-              <div className="flex items-center bg-gray-100 rounded-md p-1">
+              <div className="flex items-center bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-2 rounded transition-colors ${
@@ -443,7 +443,7 @@ export default function CompaniesPage() {
               
               <button
                 onClick={() => setShowBulkUpload(true)}
-                className="flex items-center gap-2 px-4 py-2 border border-blue-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-all text-blue-700"
+                className="flex items-center gap-2 px-4 py-2 border border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all text-blue-700"
               >
                 <Upload className="w-4 h-4" />
                 Bulk Upload
@@ -451,14 +451,14 @@ export default function CompaniesPage() {
               <button
                 onClick={handleExportCompanies}
                 disabled={loading || filteredCompanies.length === 0}
-                className="flex items-center gap-2 px-4 py-2 border border-green-200 rounded-md hover:bg-green-50 hover:border-green-300 transition-all text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 border border-green-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-all text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Download className="w-4 h-4" />
                 Export to CSV
               </button>
               <a 
                 href="/companies/new" 
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors shadow-sm"
               >
                 <Plus className="w-4 h-4" />
                 Add Company
@@ -478,7 +478,7 @@ export default function CompaniesPage() {
                 }
               }}
               disabled={loading}
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
             />
             
             <div className="flex gap-4">
@@ -525,7 +525,7 @@ export default function CompaniesPage() {
                   placeholder="e.g., 12345, 67890, 555"
                   value={zipCodeFilter}
                   onChange={(e) => setZipCodeFilter(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                   title="Enter one or more zip codes separated by commas or spaces. Partial zip codes are supported."
                 />
               </div>
@@ -533,7 +533,7 @@ export default function CompaniesPage() {
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-800 text-sm">{error}</p>
               <button 
                 onClick={loadCompanies}
@@ -693,7 +693,7 @@ export default function CompaniesPage() {
                       setRecordsPerPage(Number(e.target.value))
                       setCurrentPage(1)
                     }}
-                    className="px-2 py-1 border rounded-md text-sm"
+                    className="px-2 py-1 border rounded-lg text-sm"
                   >
                     <option value={50}>50</option>
                     <option value={100}>100</option>
@@ -705,7 +705,7 @@ export default function CompaniesPage() {
                   <button
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="px-3 py-1 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
+                    className="px-3 py-1 border rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
                   >
                     Previous
                   </button>
@@ -717,7 +717,7 @@ export default function CompaniesPage() {
                   <button
                     onClick={() => setCurrentPage(prev => Math.min(Math.ceil(totalCompanies / recordsPerPage), prev + 1))}
                     disabled={currentPage >= Math.ceil(totalCompanies / recordsPerPage)}
-                    className="px-3 py-1 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
+                    className="px-3 py-1 border rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent"
                   >
                     Next
                   </button>

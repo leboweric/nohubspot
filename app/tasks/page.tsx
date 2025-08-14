@@ -245,7 +245,7 @@ export default function TasksPage() {
             
             <div className="flex items-center gap-3">
               {/* View Toggle */}
-              <div className="flex items-center bg-gray-100 rounded-md p-1">
+              <div className="flex items-center bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode('board')}
                   className={`p-2 rounded transition-colors ${
@@ -286,7 +286,7 @@ export default function TasksPage() {
               <button
                 onClick={handleExportTasks}
                 disabled={loading || filteredTasks.length === 0}
-                className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors text-sm disabled:opacity-50"
+                className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm disabled:opacity-50"
               >
                 <Download className="w-4 h-4" />
                 Export
@@ -295,7 +295,7 @@ export default function TasksPage() {
               {/* Create Task */}
               <button
                 onClick={() => setShowCreateTask(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 Create Task
@@ -309,7 +309,7 @@ export default function TasksPage() {
           </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-800 text-sm">{error}</p>
           <button 
             onClick={loadTasks}
@@ -370,7 +370,7 @@ export default function TasksPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 disabled={loading}
-                className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
               />
               
               <ModernSelect

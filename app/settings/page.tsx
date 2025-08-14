@@ -382,7 +382,7 @@ export default function SettingsPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Full Name</label>
-              <div className="px-3 py-2 bg-gray-50 rounded-md text-sm">
+              <div className="px-3 py-2 bg-gray-50 rounded-lg text-sm">
                 {user?.first_name && user?.last_name 
                   ? `${user.first_name} ${user.last_name}`
                   : 'Not set'
@@ -391,13 +391,13 @@ export default function SettingsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Email Address</label>
-              <div className="px-3 py-2 bg-gray-50 rounded-md text-sm">
+              <div className="px-3 py-2 bg-gray-50 rounded-lg text-sm">
                 {user?.email}
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Role</label>
-              <div className="px-3 py-2 bg-gray-50 rounded-md text-sm capitalize">
+              <div className="px-3 py-2 bg-gray-50 rounded-lg text-sm capitalize">
                 {user?.role}
               </div>
             </div>
@@ -416,7 +416,7 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={() => setShowSignatureBuilder(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
             >
               <Settings className="w-4 h-4" />
               {signature ? 'Edit Signature' : 'Create Signature'}
@@ -424,7 +424,7 @@ export default function SettingsPage() {
           </div>
 
           {signature && signature.enabled ? (
-            <div className="bg-gray-50 p-4 rounded-md">
+            <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="text-sm font-medium mb-2">Preview:</h3>
               <div className="text-sm whitespace-pre-wrap">
                 {(() => {
@@ -471,7 +471,7 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={() => setShowInviteForm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
             >
               <Plus className="w-4 h-4" />
               Add User
@@ -586,19 +586,19 @@ export default function SettingsPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Organization Name</label>
-              <div className="px-3 py-2 bg-gray-50 rounded-md text-sm">
+              <div className="px-3 py-2 bg-gray-50 rounded-lg text-sm">
                 {organization?.name || 'Loading...'}
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Organization ID</label>
-              <div className="px-3 py-2 bg-gray-50 rounded-md text-sm font-mono">
+              <div className="px-3 py-2 bg-gray-50 rounded-lg text-sm font-mono">
                 {organization?.slug || 'Loading...'}
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Plan</label>
-              <div className="px-3 py-2 bg-gray-50 rounded-md text-sm">
+              <div className="px-3 py-2 bg-gray-50 rounded-lg text-sm">
                 {organization?.plan || 'Free'} Plan
               </div>
             </div>
@@ -618,7 +618,7 @@ export default function SettingsPage() {
               </div>
               <a
                 href="/settings/project-types"
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
               >
                 <Settings className="w-4 h-4" />
                 Manage Types
@@ -685,7 +685,7 @@ export default function SettingsPage() {
                   setIsLoadingPhone(false)
                 }
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors disabled:bg-gray-400"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:bg-gray-400"
               disabled={isLoadingPhone}
             >
               <Search className="w-4 h-4" />
@@ -715,7 +715,7 @@ export default function SettingsPage() {
                   setIsLoadingPhone(false)
                 }
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
               disabled={isLoadingPhone}
             >
               <Phone className="w-4 h-4" />
@@ -759,7 +759,7 @@ export default function SettingsPage() {
                   setIsLoadingDuplicates(false)
                 }
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
               disabled={isLoadingDuplicates}
             >
               <Building2 className="w-4 h-4" />
@@ -789,7 +789,7 @@ export default function SettingsPage() {
                   setIsLoadingDuplicates(false)
                 }
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
               disabled={isLoadingDuplicates}
             >
               <User className="w-4 h-4" />
@@ -816,7 +816,7 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={() => setShowSupportModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
             >
               <Mail className="w-4 h-4" />
               Contact Support
@@ -875,13 +875,13 @@ export default function SettingsPage() {
 
           {/* Success/Error Messages */}
           {error && (
-            <div className="rounded-md bg-red-50 p-4 mb-6">
+            <div className="rounded-lg bg-red-50 p-4 mb-6">
               <div className="text-sm text-red-700">{error}</div>
             </div>
           )}
           
           {success && (
-            <div className="rounded-md bg-green-50 p-4 mb-6">
+            <div className="rounded-lg bg-green-50 p-4 mb-6">
               <div className="text-sm text-green-700">{success}</div>
             </div>
           )}
@@ -925,7 +925,7 @@ export default function SettingsPage() {
                         type="text"
                         value={inviteFirstName}
                         onChange={(e) => setInviteFirstName(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="John"
                         required
                       />
@@ -939,7 +939,7 @@ export default function SettingsPage() {
                         type="text"
                         value={inviteLastName}
                         onChange={(e) => setInviteLastName(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Doe"
                         required
                       />
@@ -955,7 +955,7 @@ export default function SettingsPage() {
                       type="email"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="user@example.com"
                       required
                     />
@@ -969,7 +969,7 @@ export default function SettingsPage() {
                       id="inviteRole"
                       value={inviteRole}
                       onChange={(e) => setInviteRole(e.target.value as "user" | "admin")}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="user">User - Can view and edit data</option>
                       <option value="admin">Admin - Can manage users and settings</option>
@@ -981,14 +981,14 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => setShowInviteForm(false)}
-                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                   >
                     {loading ? 'Adding...' : 'Add User'}
                   </button>
@@ -1043,7 +1043,7 @@ export default function SettingsPage() {
                       type="text"
                       value={o365FormData.client_id}
                       onChange={(e) => setO365FormData({...o365FormData, client_id: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                       required
                     />
@@ -1058,7 +1058,7 @@ export default function SettingsPage() {
                       type="password"
                       value={o365FormData.client_secret}
                       onChange={(e) => setO365FormData({...o365FormData, client_secret: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Enter client secret"
                       required={!o365Config}
                     />
@@ -1078,7 +1078,7 @@ export default function SettingsPage() {
                       type="text"
                       value={o365FormData.tenant_id}
                       onChange={(e) => setO365FormData({...o365FormData, tenant_id: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                       required
                     />
@@ -1135,7 +1135,7 @@ export default function SettingsPage() {
                           type="button"
                           onClick={handleDeleteO365Config}
                           disabled={o365Loading}
-                          className="px-4 py-2 text-red-600 border border-red-300 rounded-md hover:bg-red-50 disabled:opacity-50"
+                          className="px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 disabled:opacity-50"
                         >
                           Delete Configuration
                         </button>
@@ -1145,14 +1145,14 @@ export default function SettingsPage() {
                       <button
                         type="button"
                         onClick={() => setShowO365Config(false)}
-                        className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                        className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={o365Loading}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                       >
                         {o365Loading ? 'Saving...' : (o365Config ? 'Update Configuration' : 'Save Configuration')}
                       </button>
@@ -1282,7 +1282,7 @@ export default function SettingsPage() {
                       navigator.clipboard.writeText(tempPassword)
                       alert('Password copied to clipboard!')
                     }}
-                    className="ml-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                    className="ml-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                     title="Copy to clipboard"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1302,7 +1302,7 @@ export default function SettingsPage() {
                     setShowPasswordModal(false)
                     setTempPassword("")
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
                   Close
                 </button>

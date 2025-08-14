@@ -158,7 +158,7 @@ export default function CalendarPage() {
               </div>
               <button
                 onClick={handleCreateEvent}
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors shadow-sm"
               >
                 <Plus className="w-4 h-4" />
                 New Event
@@ -170,7 +170,7 @@ export default function CalendarPage() {
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-800 text-sm">{error}</p>
               <button 
                 onClick={() => loadEvents()}

@@ -24,6 +24,23 @@
     --input: 0 0% 91%;
     --ring: 221 83% 53%; /* Match primary for consistent focus */
     --radius: 0.625rem; /* 10px - The golden radius */
+    
+    /* Sidebar colors */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 15%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 15%;
+    --sidebar-border: 0 0% 91%;
+    --sidebar-ring: 221 83% 53%;
+    
+    /* Chart colors */
+    --chart-1: 221 83% 53%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
   }
   
   .dark {
@@ -46,6 +63,23 @@
     --border: 0 0% 18%; /* Subtle borders */
     --input: 0 0% 18%;
     --ring: 221 83% 60%; /* Match primary for consistent focus */
+    
+    /* Sidebar colors dark */
+    --sidebar-background: 0 0% 13%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 221 83% 60%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 0 0% 20%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 221 83% 60%;
+    
+    /* Chart colors dark */
+    --chart-1: 221 83% 60%;
+    --chart-2: 160 60% 50%;
+    --chart-3: 30 80% 60%;
+    --chart-4: 280 65% 65%;
+    --chart-5: 340 75% 60%;
   }
 }
 
