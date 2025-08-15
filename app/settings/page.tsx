@@ -680,7 +680,8 @@ export default function SettingsPage() {
                 
                 if (response.ok) {
                   const data = await response.json()
-                  setOrganization(data)
+                  // Update organization in localStorage
+                  localStorage.setItem('organization', JSON.stringify(data))
                   // Reload page to update logo in navigation
                   setTimeout(() => {
                     window.location.reload()
@@ -732,8 +733,9 @@ export default function SettingsPage() {
                 if (response.ok) {
                   const data = await response.json()
                   console.log('Theme saved successfully:', data.theme_primary_color, data.theme_secondary_color, data.theme_accent_color);
-                  setOrganization(data)
-                  // Save to localStorage for immediate use
+                  // Update organization in localStorage
+                  localStorage.setItem('organization', JSON.stringify(data))
+                  // Save theme to localStorage for immediate use
                   localStorage.setItem('orgTheme', JSON.stringify({
                     primary: data.theme_primary_color,
                     secondary: data.theme_secondary_color,
