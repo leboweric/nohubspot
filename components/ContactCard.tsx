@@ -62,7 +62,12 @@ export default function ContactCard({ contact, onDelete }: ContactCardProps) {
       {/* Contact Avatar & Name */}
       <Link href={`/contacts/${contact.id}`} className="block mb-4">
         <div className="flex items-start gap-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-semibold text-sm">
+          <div 
+            className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-semibold text-sm"
+            style={{ 
+              background: `linear-gradient(135deg, var(--theme-accent), var(--theme-primary))` 
+            }}
+          >
             {getInitials(contact.first_name, contact.last_name)}
           </div>
           <div className="flex-1 min-w-0">
@@ -73,7 +78,10 @@ export default function ContactCard({ contact, onDelete }: ContactCardProps) {
               <p className="text-sm text-muted-foreground truncate">{contact.title}</p>
             )}
             {contact.company_name && (
-              <p className="text-sm text-blue-600 hover:text-blue-800 transition-colors truncate">
+              <p 
+                className="text-sm transition-colors truncate hover:opacity-80"
+                style={{ color: 'var(--theme-primary)' }}
+              >
                 {contact.company_name}
               </p>
             )}
