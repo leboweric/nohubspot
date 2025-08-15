@@ -6,6 +6,7 @@ import MainLayout from "@/components/MainLayout"
 import ProjectKanbanBoard from "@/components/ProjectKanbanBoard"
 import ProjectModal from "@/components/ProjectModal"
 import ProjectCard from "@/components/projects/ProjectCard"
+import ProjectStats from "@/components/projects/ProjectStats"
 import { projectAPI, projectStageAPI, handleAPIError, ProjectStage, Project, ProjectCreate } from "@/lib/api"
 import { 
   LayoutGrid, List, Plus, Download, Filter, Search,
@@ -392,6 +393,9 @@ export default function ProjectsPage() {
           {/* Project Overview */}
           {stages.length > 0 && (
             <div className="space-y-6">
+              {/* Enhanced Project Stats - Only the top row */}
+              <ProjectStats projects={projects} stages={stages} showOnlyTopRow={true} />
+
               {/* Stage Filters - Only show in list view */}
               {viewMode === 'list' && (
                 <div className="flex flex-wrap gap-2">

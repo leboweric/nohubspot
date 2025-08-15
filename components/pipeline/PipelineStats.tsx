@@ -9,9 +9,10 @@ import {
 interface PipelineStatsProps {
   deals: Deal[]
   stages: PipelineStage[]
+  showOnlyTopRow?: boolean
 }
 
-export default function PipelineStats({ deals, stages }: PipelineStatsProps) {
+export default function PipelineStats({ deals, stages, showOnlyTopRow = false }: PipelineStatsProps) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   
@@ -203,7 +204,7 @@ export default function PipelineStats({ deals, stages }: PipelineStatsProps) {
       </div>
       
       {/* Alert Stats */}
-      {alertStats.length > 0 && (
+      {!showOnlyTopRow && alertStats.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {alertStats.map((stat, index) => {
             const Icon = stat.icon
@@ -230,7 +231,8 @@ export default function PipelineStats({ deals, stages }: PipelineStatsProps) {
       )}
       
       {/* Pipeline Health Metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {!showOnlyTopRow && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Conversion Funnel */}
         <div className="bg-white border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-4">
@@ -330,6 +332,7 @@ export default function PipelineStats({ deals, stages }: PipelineStatsProps) {
           })()}
         </div>
       </div>
+      )}
     </div>
   )
 }

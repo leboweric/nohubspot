@@ -9,9 +9,10 @@ import {
 interface ProjectStatsProps {
   projects: Project[]
   stages: ProjectStage[]
+  showOnlyTopRow?: boolean
 }
 
-export default function ProjectStats({ projects, stages }: ProjectStatsProps) {
+export default function ProjectStats({ projects, stages, showOnlyTopRow = false }: ProjectStatsProps) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   
@@ -211,7 +212,7 @@ export default function ProjectStats({ projects, stages }: ProjectStatsProps) {
       </div>
       
       {/* Alert Stats */}
-      {alertStats.length > 0 && (
+      {!showOnlyTopRow && alertStats.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {alertStats.map((stat, index) => {
             const Icon = stat.icon
@@ -238,7 +239,8 @@ export default function ProjectStats({ projects, stages }: ProjectStatsProps) {
       )}
       
       {/* Project Analytics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {!showOnlyTopRow && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Stage Progression */}
         <div className="bg-white border border-gray-200 rounded-lg p-5">
           <div className="flex items-start justify-between mb-4">
@@ -344,6 +346,7 @@ export default function ProjectStats({ projects, stages }: ProjectStatsProps) {
           })()}
         </div>
       </div>
+      )}
     </div>
   )
 }

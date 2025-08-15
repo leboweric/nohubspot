@@ -6,6 +6,7 @@ import MainLayout from "@/components/MainLayout"
 import KanbanBoard from "@/components/KanbanBoard"
 import DealModal from "@/components/DealModal"
 import { pipelineAPI, dealAPI, handleAPIError, PipelineStage, Deal, DealCreate } from "@/lib/api"
+import PipelineStats from "@/components/pipeline/PipelineStats"
 import { 
   LayoutGrid, List, Plus, Download, Filter, Search,
   TrendingUp, DollarSign, Target, Trophy
@@ -372,6 +373,9 @@ export default function PipelinePage() {
           {/* Pipeline Overview */}
           {stages.length > 0 && (
             <div className="space-y-6">
+              {/* Enhanced Pipeline Stats - Only the top row */}
+              <PipelineStats deals={deals} stages={stages} showOnlyTopRow={true} />
+
               {/* Stage Filters - Only show in list view */}
               {viewMode === 'list' && (
                 <div className="flex flex-wrap gap-2">
