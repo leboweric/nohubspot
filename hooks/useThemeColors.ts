@@ -43,6 +43,7 @@ export function useThemeColors() {
         const cachedTheme = localStorage.getItem('orgTheme');
         if (cachedTheme) {
           const parsed = JSON.parse(cachedTheme);
+          console.log('useThemeColors: Found cached theme:', parsed);
           setThemeColors(parsed);
           applyThemeToDOM(parsed);
         }
@@ -50,16 +51,21 @@ export function useThemeColors() {
         // Then fetch from API for latest theme
         const token = localStorage.getItem('access_token');
         if (!token) {
+          console.log('useThemeColors: No access token, using default theme');
           setIsLoading(false);
           return;
         }
 
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app';
+        console.log('useThemeColors: Fetching theme from:', `${baseUrl}/api/organization/theme`);
+        
         const response = await fetch(`${baseUrl}/api/organization/theme`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
+
+        console.log('useThemeColors: API response status:', response.status);
 
         if (response.ok) {
           const data = await response.json();
@@ -69,14 +75,17 @@ export function useThemeColors() {
             accent: data.theme_accent_color || defaultTheme.accent
           };
           
+          console.log('useThemeColors: Fetched theme from API:', theme);
           setThemeColors(theme);
           applyThemeToDOM(theme);
           
           // Cache in localStorage
           localStorage.setItem('orgTheme', JSON.stringify(theme));
+        } else {
+          console.error('useThemeColors: Failed to fetch theme, status:', response.status);
         }
       } catch (error) {
-        console.error('Failed to fetch theme:', error);
+        console.error('useThemeColors: Failed to fetch theme:', error);
       } finally {
         setIsLoading(false);
       }
@@ -87,6 +96,7 @@ export function useThemeColors() {
 
   // Apply theme colors to DOM as CSS custom properties
   const applyThemeToDOM = (colors: ThemeColors) => {
+    console.log('applyThemeToDOM: Applying colors to DOM:', colors);
     const root = document.documentElement;
     
     // Set CSS custom properties
@@ -102,6 +112,9 @@ export function useThemeColors() {
     
     root.style.setProperty('--theme-secondary-hover', colorPatterns.hover(colors.secondary));
     root.style.setProperty('--theme-accent-background', colorPatterns.background(colors.accent));
+    
+    console.log('applyThemeToDOM: CSS variables set, checking application...');
+    console.log('  --theme-primary:', getComputedStyle(root).getPropertyValue('--theme-primary'));
   };
 
   return {

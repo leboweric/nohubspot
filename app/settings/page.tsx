@@ -707,13 +707,18 @@ export default function SettingsPage() {
               accent: organization?.theme_accent_color || '#60A5FA'
             }}
             onSave={async (colors) => {
+              console.log('Settings page saving theme:', colors);
               try {
                 const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
+                const token = localStorage.getItem('access_token');
+                console.log('Sending theme update to:', `${baseUrl}/api/organization/theme`);
+                console.log('Token exists:', !!token);
+                
                 const response = await fetch(`${baseUrl}/api/organization/theme`, {
                   method: 'PUT',
                   headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    'Authorization': `Bearer ${token}`
                   },
                   body: JSON.stringify({
                     theme_primary_color: colors.primary,
@@ -722,13 +727,26 @@ export default function SettingsPage() {
                   })
                 })
                 
+                console.log('Theme update response status:', response.status);
+                
                 if (response.ok) {
                   const data = await response.json()
+                  console.log('Theme saved successfully:', data.theme_primary_color, data.theme_secondary_color, data.theme_accent_color);
                   setOrganization(data)
+                  // Save to localStorage for immediate use
+                  localStorage.setItem('orgTheme', JSON.stringify({
+                    primary: data.theme_primary_color,
+                    secondary: data.theme_secondary_color,
+                    accent: data.theme_accent_color
+                  }));
                   // Reload page to apply new theme
-                  window.location.reload()
+                  setTimeout(() => {
+                    window.location.reload()
+                  }, 500);
                 } else {
-                  throw new Error('Failed to update theme')
+                  const errorText = await response.text();
+                  console.error('Theme update failed:', response.status, errorText);
+                  throw new Error(`Failed to update theme: ${response.status}`)
                 }
               } catch (error) {
                 console.error('Failed to update theme:', error)

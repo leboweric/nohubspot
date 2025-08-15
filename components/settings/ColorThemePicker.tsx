@@ -109,6 +109,7 @@ export default function ColorThemePicker({
   };
 
   const handleSave = async () => {
+    console.log('Saving theme:', selectedTheme);
     if (!onSave) return;
 
     try {
@@ -118,6 +119,7 @@ export default function ColorThemePicker({
         description: 'Your brand colors have been saved successfully.',
       });
     } catch (error) {
+      console.error('Failed to save theme:', error);
       toast({
         title: 'Error',
         description: 'Failed to save theme colors. Please try again.',
