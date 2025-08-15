@@ -96,18 +96,40 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
   const HealthIcon = healthStatus.icon
   
   return (
-    <div className={`bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg hover:border-gray-300 transition-all duration-200 ${
+    <div className={`bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-all duration-200 ${
       isDragging ? 'opacity-50 rotate-2 scale-105' : ''
-    }`}>
+    }`}
+      style={{
+        borderColor: isDragging ? 'var(--theme-primary)' : undefined,
+        '--hover-border': 'var(--theme-primary-border)',
+      } as React.CSSProperties}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = 'var(--theme-primary-border)';
+      }}
+      onMouseLeave={(e) => {
+        if (!isDragging) {
+          e.currentTarget.style.borderColor = '';
+        }
+      }}
+    >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          {/* Priority indicator - subtle gray */}
-          <div className="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0"></div>
+          {/* Priority indicator - using theme color */}
+          <div 
+            className="w-2 h-2 rounded-full flex-shrink-0"
+            style={{ backgroundColor: 'var(--theme-primary)' }}
+          ></div>
         </div>
         
-        {/* Health status badge - subtle gray */}
-        <div className="px-2 py-1 rounded-full text-xs font-medium text-gray-600 bg-gray-100 flex items-center gap-1">
+        {/* Health status badge - using theme color */}
+        <div 
+          className="px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1"
+          style={{ 
+            backgroundColor: 'var(--theme-primary-background)',
+            color: 'var(--theme-primary)'
+          }}
+        >
           <HealthIcon className="w-3 h-3" />
           {healthStatus.label}
         </div>
@@ -173,7 +195,10 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
         </h3>
         
         <div className="flex items-baseline gap-2">
-          <span className="text-xl font-semibold text-gray-700">
+          <span 
+            className="text-xl font-semibold"
+            style={{ color: 'var(--theme-primary)' }}
+          >
             {formatCurrency(deal.value, deal.currency)}
           </span>
           <span className="text-xs text-gray-500">
@@ -189,7 +214,8 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
             <User className="w-3 h-3" />
             <Link
               href={`/contacts/${deal.primary_contact_id}`}
-              className="hover:text-gray-900 transition-colors truncate"
+              className="transition-colors truncate hover:opacity-80"
+              style={{ color: 'var(--theme-primary)' }}
               onClick={(e) => e.stopPropagation()}
             >
               {deal.contact_name}
@@ -202,7 +228,8 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
             <Building2 className="w-3 h-3" />
             <Link
               href={`/companies/${deal.company_id}`}
-              className="hover:text-gray-900 transition-colors truncate"
+              className="transition-colors truncate hover:opacity-80"
+              style={{ color: 'var(--theme-primary)' }}
               onClick={(e) => e.stopPropagation()}
             >
               {deal.company_name}
@@ -221,9 +248,15 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
       {/* Footer */}
       <div className="flex items-center justify-between pt-3 border-t">
         <div className="flex items-center gap-3 text-xs">
-          {/* Close date - subtle gray */}
+          {/* Close date - using theme */}
           {closeDateStatus && (
-            <span className="px-2 py-1 rounded-full text-xs text-gray-600 bg-gray-100">
+            <span 
+              className="px-2 py-1 rounded-full text-xs"
+              style={{ 
+                backgroundColor: 'var(--theme-accent-background)',
+                color: 'var(--theme-accent)'
+              }}
+            >
               {closeDateStatus.text}
             </span>
           )}
