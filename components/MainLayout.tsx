@@ -46,6 +46,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         
         if (response.ok) {
           const data = await response.json()
+          console.log('MainLayout: Fetched logo data:', { logo_url: data.logo_url, logo_size: data.logo_size })
           setLogoUrl(data.logo_url || null)
           setLogoSize(data.logo_size || 100)
         }
@@ -78,13 +79,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
-              <Link href="/dashboard" className="flex items-center h-10">
+              <Link href="/dashboard" className="flex items-center" style={{ height: `${40 * (logoSize / 100)}px` }}>
                 {logoUrl ? (
                   <img 
                     src={logoUrl} 
                     alt={organization?.name || 'Organization Logo'} 
-                    className="max-h-full object-contain"
-                    style={{ maxWidth: `${logoSize * 1.5}px` }}
+                    className="h-full object-contain"
+                    style={{ maxWidth: `${150 * (logoSize / 100)}px` }}
                     onError={(e) => {
                       // If logo fails to load, fall back to text
                       setLogoUrl(null)
