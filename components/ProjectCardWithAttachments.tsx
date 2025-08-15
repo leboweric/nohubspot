@@ -87,7 +87,7 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
     
     const colorMap: { [key: string]: string } = {
       'Strategic Planning': 'text-purple-600 bg-purple-50 border-purple-200',
-      'Board Development': 'text-blue-600 bg-blue-50 border-blue-200',
+      'Board Development': 'text-gray-600 bg-gray-50 border-gray-200',
       'Capital Campaign': 'text-green-600 bg-green-50 border-green-200',
       'Grant Writing': 'text-orange-600 bg-orange-50 border-orange-200',
       'Fundraising Training': 'text-red-600 bg-red-50 border-red-200',
@@ -319,7 +319,10 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
             {project.title}
           </h4>
           <div className="flex items-center justify-between mt-1">
-            <div className="text-lg font-bold text-blue-600">
+            <div 
+              className="text-lg font-bold"
+              style={{ color: 'var(--theme-primary)' }}
+            >
               {calculateProjectValue() > 0 
                 ? formatCurrency(calculateProjectValue())
                 : 'TBD'
@@ -371,7 +374,13 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
               handleAttachmentClick(e)
               if (showUpdates) setShowUpdates(false)
             }}
-            className="flex items-center justify-between w-full text-xs text-gray-600 hover:text-blue-600 transition-colors"
+            className="flex items-center justify-between w-full text-xs text-gray-600 transition-colors"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--theme-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '';
+            }}
           >
             <div className="flex items-center">
               {loadingAttachments && !showAttachments ? (
@@ -398,7 +407,13 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
               setShowUpdates(!showUpdates)
               if (showAttachments) setShowAttachments(false)
             }}
-            className="flex items-center justify-between w-full text-xs text-gray-600 hover:text-blue-600 transition-colors"
+            className="flex items-center justify-between w-full text-xs text-gray-600 transition-colors"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--theme-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '';
+            }}
           >
             <div className="flex items-center">
               <MessageSquare className="w-3 h-3 mr-1" />
@@ -436,9 +451,10 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-1.5">
                     <div 
-                      className={`h-1.5 rounded-full transition-all duration-300 ${
-                        uploadSuccess ? 'bg-green-500' : 'bg-blue-500'
-                      }`}
+                      className="h-1.5 rounded-full transition-all duration-300"
+                      style={{ 
+                        backgroundColor: uploadSuccess ? '#10b981' : 'var(--theme-primary)'
+                      }}
                       style={{ width: `${uploadProgress}%` }}
                     />
                   </div>
@@ -447,7 +463,17 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
                 <button
                   onClick={handleFileSelect}
                   disabled={uploading}
-                  className="w-full mb-2 px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors flex items-center justify-center text-xs text-gray-600 hover:text-blue-600"
+                  className="w-full mb-2 px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg transition-colors flex items-center justify-center text-xs text-gray-600"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--theme-primary)';
+                    e.currentTarget.style.backgroundColor = 'var(--theme-primary-background)';
+                    e.currentTarget.style.color = 'var(--theme-primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '';
+                    e.currentTarget.style.backgroundColor = '';
+                    e.currentTarget.style.color = '';
+                  }}
                 >
                   <Upload className="w-3 h-3 mr-1" />
                   <span>Upload File</span>
@@ -472,7 +498,13 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
                     >
                       <button
                         onClick={(e) => handleDownloadAttachment(attachment, e)}
-                        className="flex items-center flex-1 min-w-0 text-left hover:text-blue-600"
+                        className="flex items-center flex-1 min-w-0 text-left transition-colors"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = 'var(--theme-primary)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = '';
+                        }}
                         title="Download attachment"
                       >
                         <File className="w-3 h-3 mr-2 text-gray-400 flex-shrink-0" />
