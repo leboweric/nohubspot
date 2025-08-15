@@ -97,32 +97,28 @@ export default function CalendarStats({ events, currentDate }: CalendarStatsProp
       value: stats.todayEvents,
       subtitle: stats.todayEvents === 1 ? "event scheduled" : "events scheduled",
       icon: Calendar,
-      color: 'bg-blue-500',
-      bgColor: 'bg-blue-50'
+      useTheme: 'primary'
     },
     {
       title: "This Month",
       value: stats.totalThisMonth,
       subtitle: `${stats.completionRate}% completion rate`,
       icon: TrendingUp,
-      color: 'bg-green-500',
-      bgColor: 'bg-green-50'
+      useTheme: 'success'
     },
     {
       title: "Upcoming",
       value: stats.upcomingCount,
       subtitle: stats.upcomingCount === 1 ? "event scheduled" : "events scheduled",
       icon: Clock,
-      color: 'bg-orange-500',
-      bgColor: 'bg-orange-50'
+      useTheme: 'warning'
     },
     {
       title: "Completed",
       value: stats.completedThisMonth,
       subtitle: `of ${stats.totalThisMonth} this month`,
       icon: CheckCircle,
-      color: 'bg-purple-500',
-      bgColor: 'bg-purple-50'
+      useTheme: 'accent'
     }
   ]
 
@@ -132,19 +128,42 @@ export default function CalendarStats({ events, currentDate }: CalendarStatsProp
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {mainStats.map((stat, index) => {
           const Icon = stat.icon
+          
+          // Professional, subtle design
+          const getIconColor = (theme: string) => {
+            switch (theme) {
+              case 'primary':
+                return 'var(--theme-primary)'
+              case 'success':
+                return '#10b981'
+              case 'warning':
+                return '#f59e0b'
+              case 'accent':
+                return 'var(--theme-accent)'
+              default:
+                return 'var(--theme-primary)'
+            }
+          }
+          
+          const iconColor = getIconColor(stat.useTheme)
+          
           return (
-            <div key={index} className={`${stat.bgColor} border rounded-lg p-4 transition-all hover:shadow-md`}>
-              <div className="flex items-center justify-between mb-3">
-                <div className={`p-2 rounded-lg ${stat.color}`}>
-                  <Icon className="w-5 h-5 text-white" />
+            <div 
+              key={index} 
+              className="bg-white border border-gray-200 rounded-lg p-5 transition-all hover:shadow-lg hover:border-gray-300"
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
+                  <p className="text-2xl font-bold text-gray-900 mb-2">{stat.value}</p>
+                  <p className="text-sm text-gray-500">{stat.subtitle}</p>
                 </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold">{stat.value}</div>
+                <div className="mt-1">
+                  <Icon 
+                    className="w-5 h-5 opacity-40" 
+                    style={{ color: iconColor }}
+                  />
                 </div>
-              </div>
-              <div>
-                <p className="font-medium text-gray-800 mb-1">{stat.title}</p>
-                <p className="text-sm text-gray-600">{stat.subtitle}</p>
               </div>
             </div>
           )
@@ -162,10 +181,10 @@ export default function CalendarStats({ events, currentDate }: CalendarStatsProp
           
           <div className="space-y-3">
             {[
-              { type: 'Meetings', count: stats.meetings, icon: Users, color: 'bg-blue-500' },
-              { type: 'Calls', count: stats.calls, icon: Phone, color: 'bg-green-500' },
-              { type: 'Tasks', count: stats.tasks, icon: CheckCircle, color: 'bg-orange-500' },
-              { type: 'Reminders', count: stats.reminders, icon: AlertTriangle, color: 'bg-purple-500' }
+              { type: 'Meetings', count: stats.meetings, icon: Users, color: 'var(--theme-primary)' },
+              { type: 'Calls', count: stats.calls, icon: Phone, color: '#10b981' },
+              { type: 'Tasks', count: stats.tasks, icon: CheckCircle, color: '#f59e0b' },
+              { type: 'Reminders', count: stats.reminders, icon: AlertTriangle, color: 'var(--theme-accent)' }
             ].map((item, index) => {
               const Icon = item.icon
               const percentage = stats.totalThisMonth > 0 
@@ -175,16 +194,20 @@ export default function CalendarStats({ events, currentDate }: CalendarStatsProp
               return (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`p-1 rounded ${item.color}`}>
-                      <Icon className="w-3 h-3 text-white" />
-                    </div>
-                    <span className="text-sm font-medium">{item.type}</span>
+                    <Icon 
+                      className="w-4 h-4" 
+                      style={{ color: item.color, opacity: 0.6 }}
+                    />
+                    <span className="text-sm font-medium text-gray-700">{item.type}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-24 bg-gray-200 rounded-full h-2">
                       <div
-                        className={`h-2 rounded-full ${item.color}`}
-                        style={{ width: `${percentage}%` }}
+                        className="h-2 rounded-full"
+                        style={{ 
+                          width: `${percentage}%`,
+                          backgroundColor: item.color
+                        }}
                       />
                     </div>
                     <span className="text-sm font-medium text-gray-600 w-8">{item.count}</span>

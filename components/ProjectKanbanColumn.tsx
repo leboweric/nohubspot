@@ -40,40 +40,40 @@ export default function ProjectKanbanColumn({
   const totalHours = projects.reduce((sum, project) => sum + (project.projected_hours || 0), 0)
 
   return (
-    <div className="flex flex-col w-80 bg-gray-50 rounded-lg">
+    <div className="flex flex-col w-80 bg-white border border-gray-200 rounded-lg">
       {/* Column Header */}
       <div 
-        className="p-4 border-b bg-white rounded-t-lg"
+        className="px-4 py-3 border-b border-gray-200 bg-white rounded-t-lg"
         style={{ borderLeftColor: stage.color, borderLeftWidth: '4px' }}
       >
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold text-gray-900">{stage.name}</h3>
-          <span className="text-sm text-gray-500">
+          <span className="text-sm font-medium text-gray-600">
             {projects.length}
           </span>
         </div>
         
-        <div className="space-y-1">
-          <div className="flex justify-between text-xs text-gray-600">
-            <span>Total Value:</span>
-            <span className="font-medium">{formatCurrency(totalValue)}</span>
-          </div>
-          <div className="flex justify-between text-xs text-gray-600">
-            <span>Total Hours:</span>
-            <span className="font-medium">{totalHours.toFixed(0)}h</span>
-          </div>
+        <div className="flex items-center gap-3 text-xs">
+          <span className="text-gray-600">
+            <span className="font-medium text-gray-700">Total Value:</span>
+            <span className="ml-1 font-semibold">{formatCurrency(totalValue)}</span>
+          </span>
+          <span className="text-gray-600">
+            <span className="font-medium text-gray-700">Total Hours:</span>
+            <span className="ml-1 font-semibold">{totalHours.toFixed(0)}h</span>
+          </span>
         </div>
       </div>
 
       {/* Droppable Area */}
       <div
         ref={setNodeRef}
-        className={`flex-1 p-3 space-y-3 min-h-96 transition-colors ${
+        className={`flex-1 p-3 space-y-3 min-h-96 transition-colors bg-gray-50 ${
           isOver ? 'bg-blue-50 border-2 border-dashed border-blue-300' : ''
         }`}
       >
         {projects.length === 0 ? (
-          <div className="flex items-center justify-center h-32 text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-lg">
+          <div className="flex items-center justify-center h-32 text-gray-500 text-sm border-2 border-dashed border-gray-300 rounded-lg bg-white">
             No projects in this stage
           </div>
         ) : (

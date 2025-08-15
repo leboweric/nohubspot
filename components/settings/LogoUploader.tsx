@@ -170,7 +170,9 @@ export default function LogoUploader({
         if (response.ok) {
           const data = await response.json();
           finalLogoUrl = data.logo_url;
-          console.log('Upload successful, logo URL received');
+          console.log('Upload successful, logo URL received:', finalLogoUrl);
+          // Update the component state with the actual URL, not the data URL
+          setLogoUrl(finalLogoUrl);
         } else {
           const errorText = await response.text();
           console.error('Upload failed:', response.status, errorText);
@@ -193,6 +195,17 @@ export default function LogoUploader({
         }
       }
 
+      // Never send data URLs to the backend
+      if (finalLogoUrl && finalLogoUrl.startsWith('data:')) {
+        console.error('Attempted to save data URL, aborting');
+        toast({
+          title: 'Error',
+          description: 'Invalid logo URL format. Please try uploading again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
       console.log('Calling onSave with URL:', finalLogoUrl?.substring(0, 100), 'Size:', logoSize);
       
       // Save the logo URL and size to the organization
