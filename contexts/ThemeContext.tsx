@@ -70,7 +70,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       const response = await fetch('/api/organization/theme', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
         },
       });
 
@@ -111,7 +111,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
         },
         body: JSON.stringify({
           theme_primary_color: colors.primary,

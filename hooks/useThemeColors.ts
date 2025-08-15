@@ -49,7 +49,7 @@ export function useThemeColors() {
         }
 
         // Then fetch from API for latest theme
-        const token = localStorage.getItem('access_token');
+        const token = localStorage.getItem('auth_token');
         if (!token) {
           console.log('useThemeColors: No access token, using default theme');
           setIsLoading(false);

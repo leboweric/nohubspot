@@ -141,7 +141,7 @@ export default function LogoUploader({
         formData.append('file', selectedFile);
 
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app';
-        const token = localStorage.getItem('access_token');
+        const token = localStorage.getItem('auth_token');
         
         console.log('Uploading file to:', `${baseUrl}/api/organization/logo/upload`);
         console.log('Token exists:', !!token);

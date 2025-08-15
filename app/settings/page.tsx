@@ -671,7 +671,7 @@ export default function SettingsPage() {
                   method: 'PUT',
                   headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
                   },
                   body: JSON.stringify({
                     logo_url: logoUrl
@@ -710,7 +710,7 @@ export default function SettingsPage() {
               console.log('Settings page saving theme:', colors);
               try {
                 const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
-                const token = localStorage.getItem('access_token');
+                const token = localStorage.getItem('auth_token');
                 console.log('Sending theme update to:', `${baseUrl}/api/organization/theme`);
                 console.log('Token exists:', !!token);
                 

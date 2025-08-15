@@ -39,7 +39,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
         const response = await fetch(`${baseUrl}/api/organization/theme`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
           }
         })
         
