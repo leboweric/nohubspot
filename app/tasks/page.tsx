@@ -5,12 +5,11 @@ import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import TaskList from "@/components/tasks/TaskList"
 import TaskCreate from "@/components/tasks/TaskCreate"
-import KanbanBoard from "@/components/tasks/KanbanBoard"
 import TaskStats from "@/components/tasks/TaskStats"
 import { taskAPI, Task, TaskCreate as TaskCreateType, handleAPIError } from "@/lib/api"
 import ModernSelect from "@/components/ui/ModernSelect"
 import { 
-  LayoutGrid, List, Calendar, Plus, Filter, Search,
+  List, Calendar, Plus, Filter, Search,
   CheckSquare, Users, Clock, BarChart3, Download
 } from "lucide-react"
 
@@ -24,7 +23,7 @@ export default function TasksPage() {
   const [filterPriority, setFilterPriority] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState("")
   const [editingTask, setEditingTask] = useState<Task | null>(null)
-  const [viewMode, setViewMode] = useState<'board' | 'list' | 'calendar'>('board')
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list')
   const [showFilters, setShowFilters] = useState(false)
   const [selectedTasks, setSelectedTasks] = useState<number[]>([])
 
@@ -244,19 +243,8 @@ export default function TasksPage() {
             </div>
             
             <div className="flex items-center gap-3">
-              {/* View Toggle */}
+              {/* View Toggle - Only List and Calendar */}
               <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode('board')}
-                  className={`p-2 rounded transition-colors ${
-                    viewMode === 'board' 
-                      ? 'bg-white shadow-sm text-primary' 
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                  title="Board View"
-                >
-                  <LayoutGrid className="w-4 h-4" />
-                </button>
                 <button
                   onClick={() => setViewMode('list')}
                   className={`p-2 rounded transition-colors ${
@@ -418,17 +406,6 @@ export default function TasksPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Board View */}
-              {viewMode === 'board' && (
-                <KanbanBoard
-                  tasks={filteredTasks}
-                  onTaskUpdate={handleTaskUpdate}
-                  onTaskDelete={handleTaskDelete}
-                  onTaskEdit={handleTaskEdit}
-                  onCreateTask={() => setShowCreateTask(true)}
-                />
-              )}
-              
               {/* List View */}
               {viewMode === 'list' && (
                 <TaskList
@@ -446,10 +423,10 @@ export default function TasksPage() {
                   <h3 className="text-lg font-semibold mb-2">Calendar View</h3>
                   <p className="text-muted-foreground">Calendar view coming soon! View tasks organized by due dates.</p>
                   <button
-                    onClick={() => setViewMode('board')}
+                    onClick={() => setViewMode('list')}
                     className="mt-4 text-primary hover:underline"
                   >
-                    Switch to Board View
+                    Switch to List View
                   </button>
                 </div>
               )}
