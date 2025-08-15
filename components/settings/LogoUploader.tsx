@@ -113,9 +113,20 @@ export default function LogoUploader({
   };
 
   const handleSave = async () => {
-    console.log('Save button clicked');
+    console.log('Save button clicked, selectedFile:', selectedFile?.name, 'logoUrl type:', logoUrl?.substring(0, 50));
+    
     if (!onSave) {
       console.log('No onSave handler provided');
+      return;
+    }
+
+    // Don't proceed if nothing to save
+    if (!selectedFile && !logoUrl && !currentLogoUrl) {
+      toast({
+        title: 'No logo selected',
+        description: 'Please select a logo file or enter a URL.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -133,6 +144,8 @@ export default function LogoUploader({
         const token = localStorage.getItem('access_token');
         
         console.log('Uploading file to:', `${baseUrl}/api/organization/logo/upload`);
+        console.log('Token exists:', !!token);
+        console.log('File size:', selectedFile.size, 'Type:', selectedFile.type);
 
         const response = await fetch(`${baseUrl}/api/organization/logo/upload`, {
           method: 'POST',
@@ -142,16 +155,31 @@ export default function LogoUploader({
           body: formData
         });
 
+        console.log('Upload response status:', response.status);
+
         if (response.ok) {
           const data = await response.json();
           finalLogoUrl = data.logo_url;
-          console.log('Upload successful');
+          console.log('Upload successful, logo URL received');
         } else {
           const errorText = await response.text();
-          throw new Error(`Failed to upload: ${errorText}`);
+          console.error('Upload failed:', response.status, errorText);
+          throw new Error(`Upload failed: ${response.status} - ${errorText}`);
         }
+      } else if (logoUrl && logoUrl.startsWith('data:')) {
+        // If we have a data URL but no file selected, it means we're using the current preview
+        // In this case, we should not save a data URL, we need the actual upload
+        console.log('Warning: Attempting to save a data URL preview, this should not happen');
+        toast({
+          title: 'Error',
+          description: 'Please select the file again and try saving.',
+          variant: 'destructive',
+        });
+        return;
       }
 
+      console.log('Calling onSave with URL:', finalLogoUrl?.substring(0, 100));
+      
       // Save the logo URL to the organization
       await onSave(finalLogoUrl);
       
@@ -169,6 +197,7 @@ export default function LogoUploader({
         description: error instanceof Error ? error.message : 'Failed to save logo. Please try again.',
         variant: 'destructive',
       });
+      throw error; // Re-throw to trigger the finally block in the parent
     } finally {
       setIsUploading(false);
     }
@@ -232,7 +261,7 @@ export default function LogoUploader({
 
         {/* Upload Method Tabs */}
         <div className="space-y-3">
-          <Label>Upload New Logo</Label>
+          <Label>Select Logo Source</Label>
           <div className="flex gap-2 mb-4">
             <Button
               type="button"
@@ -241,7 +270,7 @@ export default function LogoUploader({
               onClick={() => setUploadMethod('file')}
             >
               <Upload className="h-4 w-4 mr-2" />
-              Upload File
+              From Computer
             </Button>
             <Button
               type="button"
@@ -250,7 +279,7 @@ export default function LogoUploader({
               onClick={() => setUploadMethod('url')}
             >
               <Link className="h-4 w-4 mr-2" />
-              Use URL
+              From URL
             </Button>
           </div>
 
@@ -314,7 +343,7 @@ export default function LogoUploader({
               disabled={saving || isUploading}
               className="min-w-[100px]"
             >
-              {saving || isUploading ? 'Saving...' : 'Save Logo'}
+              {saving || isUploading ? 'Uploading & Saving...' : selectedFile ? 'Upload & Save Logo' : 'Save Logo'}
             </Button>
           </div>
         )}
