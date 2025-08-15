@@ -83,18 +83,8 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
   }
 
   const getProjectTypeColor = (type?: string) => {
-    if (!type) return 'text-gray-600 bg-gray-50 border-gray-200'
-    
-    const colorMap: { [key: string]: string } = {
-      'Strategic Planning': 'text-purple-600 bg-purple-50 border-purple-200',
-      'Board Development': 'text-gray-600 bg-gray-50 border-gray-200',
-      'Capital Campaign': 'text-green-600 bg-green-50 border-green-200',
-      'Grant Writing': 'text-orange-600 bg-orange-50 border-orange-200',
-      'Fundraising Training': 'text-red-600 bg-red-50 border-red-200',
-      'Executive Search': 'text-indigo-600 bg-indigo-50 border-indigo-200',
-    }
-    
-    return colorMap[type] || 'text-gray-600 bg-gray-50 border-gray-200'
+    // All project types now use subtle gray styling for consistency
+    return 'text-gray-600 bg-gray-50 border-gray-200'
   }
 
   const loadAttachments = async () => {
@@ -453,7 +443,7 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
                     <div 
                       className="h-1.5 rounded-full transition-all duration-300"
                       style={{ 
-                        backgroundColor: uploadSuccess ? '#10b981' : 'var(--theme-primary)'
+                        backgroundColor: uploadSuccess ? 'var(--theme-accent)' : 'var(--theme-primary)'
                       }}
                       style={{ width: `${uploadProgress}%` }}
                     />
@@ -520,10 +510,10 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
                       </button>
                       <button
                         onClick={(e) => handleDeleteAttachment(attachment.id, e)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-100 rounded ml-2"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-100 rounded ml-2"
                         title="Delete attachment"
                       >
-                        <X className="w-3 h-3 text-red-600" />
+                        <X className="w-3 h-3 text-gray-600" />
                       </button>
                     </div>
                   ))}
