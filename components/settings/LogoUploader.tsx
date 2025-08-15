@@ -29,6 +29,7 @@ export default function LogoUploader({
   const [urlInput, setUrlInput] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [hasExistingLogo] = useState<boolean>(!!currentLogoUrl && !currentLogoUrl.startsWith('data:'));
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -170,15 +171,20 @@ export default function LogoUploader({
           throw new Error(`Upload failed: ${response.status} - ${errorText}`);
         }
       } else if (logoUrl && logoUrl.startsWith('data:')) {
-        // If we have a data URL but no file selected, it means we're using the current preview
-        // In this case, we should not save a data URL, we need the actual upload
-        console.log('Warning: Attempting to save a data URL preview, this should not happen');
-        toast({
-          title: 'Error',
-          description: 'Please select the file again and try saving.',
-          variant: 'destructive',
-        });
-        return;
+        // If we have a data URL, we're just updating the size of an existing logo
+        // Use the current logo URL from props instead of the data URL
+        if (currentLogoUrl && !currentLogoUrl.startsWith('data:')) {
+          console.log('Using existing logo URL, just updating size');
+          finalLogoUrl = currentLogoUrl;
+        } else {
+          console.log('Warning: No valid logo URL to save');
+          toast({
+            title: 'Error',
+            description: 'Please upload a new logo file.',
+            variant: 'destructive',
+          });
+          return;
+        }
       }
 
       console.log('Calling onSave with URL:', finalLogoUrl?.substring(0, 100), 'Size:', logoSize);
@@ -384,7 +390,7 @@ export default function LogoUploader({
               disabled={saving || isUploading}
               className="min-w-[100px]"
             >
-              {saving || isUploading ? 'Uploading & Saving...' : selectedFile ? 'Upload & Save Logo' : 'Save Logo'}
+              {saving || isUploading ? 'Saving...' : selectedFile ? 'Upload & Save Logo' : hasExistingLogo ? 'Save Size' : 'Save Logo'}
             </Button>
           </div>
         )}
