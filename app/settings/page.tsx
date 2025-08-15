@@ -664,6 +664,16 @@ export default function SettingsPage() {
             currentLogoUrl={organization?.logo_url}
             currentLogoSize={organization?.logo_size || 100}
             saving={logoSaving}
+            onLogoChange={(logoUrl, logoSize) => {
+              console.log('Logo change preview - size:', logoSize);
+              // Update local state for preview
+              if (organization) {
+                const updatedOrg = { ...organization, logo_url: logoUrl || organization.logo_url, logo_size: logoSize };
+                setOrganization(updatedOrg);
+                // Also update localStorage for immediate effect
+                localStorage.setItem('organization', JSON.stringify(updatedOrg));
+              }
+            }}
             onSave={async (logoUrl, logoSize) => {
               console.log('Settings page onSave called with logoUrl:', logoUrl?.substring(0, 50), 'logoSize:', logoSize)
               setLogoSaving(true)

@@ -179,9 +179,12 @@ export default function LogoUploader({
           throw new Error(`Upload failed: ${response.status} - ${errorText}`);
         }
       } else if (logoUrl && logoUrl.startsWith('data:')) {
-        // If we have a data URL, we're just updating the size of an existing logo
-        // Use the current logo URL from props instead of the data URL
-        if (currentLogoUrl && !currentLogoUrl.startsWith('data:')) {
+        // If we have a data URL and the current logo is also a data URL, 
+        // we're just updating the size - allow this
+        if (currentLogoUrl && currentLogoUrl.startsWith('data:')) {
+          console.log('Using existing data URL logo, just updating size');
+          finalLogoUrl = currentLogoUrl;
+        } else if (currentLogoUrl && !currentLogoUrl.startsWith('data:')) {
           console.log('Using existing logo URL, just updating size');
           finalLogoUrl = currentLogoUrl;
         } else {
@@ -195,9 +198,10 @@ export default function LogoUploader({
         }
       }
 
-      // Never send data URLs to the backend
-      if (finalLogoUrl && finalLogoUrl.startsWith('data:')) {
-        console.error('Attempted to save data URL, aborting');
+      // Allow data URLs if that's what's already stored
+      // (for backwards compatibility with existing logos)
+      if (finalLogoUrl && finalLogoUrl.startsWith('data:') && !currentLogoUrl?.startsWith('data:')) {
+        console.error('Attempted to save new data URL, aborting');
         toast({
           title: 'Error',
           description: 'Invalid logo URL format. Please try uploading again.',
@@ -308,6 +312,7 @@ export default function LogoUploader({
                 value={logoSize}
                 onChange={(e) => {
                   const newSize = parseInt(e.target.value);
+                  console.log('Slider changed to:', newSize);
                   setLogoSize(newSize);
                   if (onLogoChange) {
                     onLogoChange(logoUrl, newSize);

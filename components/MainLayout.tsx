@@ -82,6 +82,34 @@ export default function MainLayout({ children }: MainLayoutProps) {
       fetchOrgLogo()
     }
   }, [isAuthenticated])
+  
+  // Add listener for localStorage changes (for real-time logo size updates)
+  useEffect(() => {
+    if (!isAuthenticated) return
+    
+    const checkForLogoChanges = () => {
+      const cachedOrg = localStorage.getItem('organization')
+      if (cachedOrg) {
+        try {
+          const orgData = JSON.parse(cachedOrg)
+          if (orgData.logo_size !== logoSize) {
+            console.log('MainLayout: Logo size changed from', logoSize, 'to', orgData.logo_size)
+            setLogoSize(orgData.logo_size || 100)
+          }
+          if (orgData.logo_url !== logoUrl) {
+            setLogoUrl(orgData.logo_url || null)
+          }
+        } catch (err) {
+          console.error('Failed to parse cached organization:', err)
+        }
+      }
+    }
+    
+    // Check every 200ms for changes (since storage events don't fire in same tab)
+    const interval = setInterval(checkForLogoChanges, 200)
+    
+    return () => clearInterval(interval)
+  }, [isAuthenticated, logoSize, logoUrl])
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard" },
