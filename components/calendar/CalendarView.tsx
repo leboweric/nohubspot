@@ -90,20 +90,8 @@ export default function CalendarView({ events, currentDate, onDateClick, onEvent
   }
 
   const getEventTypeColor = (eventType: string) => {
-    switch (eventType) {
-      case 'meeting':
-        return 'bg-blue-500 border-blue-600'
-      case 'call':
-        return 'bg-green-500 border-green-600'
-      case 'task':
-        return 'bg-orange-500 border-orange-600'
-      case 'reminder':
-        return 'bg-purple-500 border-purple-600'
-      case 'out_of_office':
-        return 'bg-red-500 border-red-600'
-      default:
-        return 'bg-gray-500 border-gray-600'
-    }
+    // All event types use subtle gray for professional appearance
+    return 'bg-gray-100 border-gray-300'
   }
 
   const getEventTypeIcon = (eventType: string) => {
@@ -171,13 +159,13 @@ export default function CalendarView({ events, currentDate, onDateClick, onEvent
           return (
             <div
               key={date.toISOString()}
-              className={`bg-white p-3 h-28 border border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 cursor-pointer transition-all duration-200 relative group ${
-                isToday ? 'ring-2 ring-blue-500 ring-inset bg-blue-50' : ''
+              className={`bg-white p-3 h-28 border border-gray-200 hover:border-gray-300 hover:bg-gray-50 cursor-pointer transition-all duration-200 relative group ${
+                isToday ? 'ring-2 ring-gray-400 ring-inset bg-gray-50' : ''
               }`}
               onClick={() => onDateClick(date)}
             >
               <div className={`text-sm font-semibold mb-2 ${
-                isToday ? 'text-blue-600' : 'text-gray-900'
+                isToday ? 'text-gray-700 font-semibold' : 'text-gray-900'
               }`}>
                 {date.getDate()}
               </div>
@@ -227,31 +215,31 @@ export default function CalendarView({ events, currentDate, onDateClick, onEvent
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-6 mt-6 p-4 bg-gray-50 rounded-lg border">
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-5 h-5 bg-blue-500 rounded">
+          <div className="flex items-center justify-center w-5 h-5 bg-gray-400 rounded">
             <Users className="w-3 h-3 text-white" />
           </div>
           <span className="text-sm font-medium">Meeting</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-5 h-5 bg-green-500 rounded">
+          <div className="flex items-center justify-center w-5 h-5 bg-gray-400 rounded">
             <Phone className="w-3 h-3 text-white" />
           </div>
           <span className="text-sm font-medium">Call</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-5 h-5 bg-orange-500 rounded">
+          <div className="flex items-center justify-center w-5 h-5 bg-gray-400 rounded">
             <CheckCircle className="w-3 h-3 text-white" />
           </div>
           <span className="text-sm font-medium">Task</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-5 h-5 bg-purple-500 rounded">
+          <div className="flex items-center justify-center w-5 h-5 bg-gray-400 rounded">
             <AlertTriangle className="w-3 h-3 text-white" />
           </div>
           <span className="text-sm font-medium">Reminder</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-5 h-5 bg-red-500 rounded">
+          <div className="flex items-center justify-center w-5 h-5 bg-gray-400 rounded">
             <CalendarIcon className="w-3 h-3 text-white" />
           </div>
           <span className="text-sm font-medium">Out of Office</span>

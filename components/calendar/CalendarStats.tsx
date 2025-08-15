@@ -82,13 +82,8 @@ export default function CalendarStats({ events, currentDate }: CalendarStatsProp
   }
 
   const getEventTypeColor = (eventType: string) => {
-    switch (eventType) {
-      case 'meeting': return 'text-blue-600 bg-blue-100'
-      case 'call': return 'text-green-600 bg-green-100'
-      case 'task': return 'text-orange-600 bg-orange-100'
-      case 'reminder': return 'text-purple-600 bg-purple-100'
-      default: return 'text-gray-600 bg-gray-100'
-    }
+    // All event types use subtle gray for consistency
+    return 'text-gray-600 bg-gray-100'
   }
 
   const mainStats = [
@@ -135,9 +130,9 @@ export default function CalendarStats({ events, currentDate }: CalendarStatsProp
               case 'primary':
                 return 'var(--theme-primary)'
               case 'success':
-                return '#10b981'
+                return 'var(--theme-accent)'
               case 'warning':
-                return '#f59e0b'
+                return 'var(--theme-secondary)'
               case 'accent':
                 return 'var(--theme-accent)'
               default:
@@ -175,15 +170,15 @@ export default function CalendarStats({ events, currentDate }: CalendarStatsProp
         {/* Event Type Breakdown */}
         <div className="bg-white border rounded-lg p-6">
           <div className="flex items-center gap-2 mb-4">
-            <Zap className="w-5 h-5 text-blue-600" />
+            <Zap className="w-5 h-5 text-gray-600" />
             <h3 className="font-semibold">Event Types This Month</h3>
           </div>
           
           <div className="space-y-3">
             {[
               { type: 'Meetings', count: stats.meetings, icon: Users, color: 'var(--theme-primary)' },
-              { type: 'Calls', count: stats.calls, icon: Phone, color: '#10b981' },
-              { type: 'Tasks', count: stats.tasks, icon: CheckCircle, color: '#f59e0b' },
+              { type: 'Calls', count: stats.calls, icon: Phone, color: 'var(--theme-accent)' },
+              { type: 'Tasks', count: stats.tasks, icon: CheckCircle, color: 'var(--theme-secondary)' },
               { type: 'Reminders', count: stats.reminders, icon: AlertTriangle, color: 'var(--theme-accent)' }
             ].map((item, index) => {
               const Icon = item.icon
@@ -221,7 +216,7 @@ export default function CalendarStats({ events, currentDate }: CalendarStatsProp
         {/* Upcoming Events */}
         <div className="bg-white border rounded-lg p-6">
           <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-5 h-5 text-green-600" />
+            <Clock className="w-5 h-5 text-gray-600" />
             <h3 className="font-semibold">Upcoming Events</h3>
           </div>
           

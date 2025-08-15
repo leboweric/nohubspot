@@ -16,21 +16,13 @@ export default function TaskList({ tasks, onTaskUpdate, onTaskDelete, onTaskEdit
   const [expandedTask, setExpandedTask] = useState<number | null>(null)
 
   const getPriorityColor = (priority: Task['priority']) => {
-    switch (priority) {
-      case 'urgent': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-      case 'high': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
-      case 'medium': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-      case 'low': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-    }
+    // All priorities use subtle gray for professional appearance
+    return 'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400'
   }
 
   const getStatusColor = (status: Task['status']) => {
-    switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-      case 'in_progress': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-      case 'pending': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
-      case 'cancelled': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-    }
+    // All statuses use subtle gray for consistency
+    return 'bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400'
   }
 
   const getTypeIcon = (type: Task['type']) => {
