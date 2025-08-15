@@ -71,11 +71,11 @@ export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal, onDe
   }
 
   return (
-    <div className="flex flex-col w-80 bg-gray-50 rounded-lg">
+    <div className="flex flex-col w-80 bg-white border border-gray-200 rounded-lg">
       {/* Column Header */}
       <div 
-        className="p-4 border-b bg-white rounded-t-lg"
-        style={{ borderLeftColor: stage.color, borderLeftWidth: '4px' }}
+        className="p-4 border-b border-gray-200 bg-white rounded-t-lg border-l-2"
+        style={{ borderLeftColor: '#e5e7eb' }}
       >
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold text-gray-900">{stage.name}</h3>
@@ -85,13 +85,13 @@ export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal, onDe
         </div>
         
         <div className="space-y-1">
-          <div className="flex justify-between text-xs text-gray-600">
+          <div className="flex justify-between text-xs text-gray-500">
             <span>Total:</span>
-            <span className="font-medium">{formatCurrency(totalValue)}</span>
+            <span className="font-medium text-gray-700">{formatCurrency(totalValue)}</span>
           </div>
-          <div className="flex justify-between text-xs text-gray-600">
+          <div className="flex justify-between text-xs text-gray-500">
             <span>Weighted:</span>
-            <span className="font-medium">{formatCurrency(weightedValue)}</span>
+            <span className="font-medium text-gray-700">{formatCurrency(weightedValue)}</span>
           </div>
         </div>
       </div>
@@ -99,8 +99,8 @@ export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal, onDe
       {/* Droppable Area */}
       <div
         ref={setNodeRef}
-        className={`flex-1 p-3 space-y-3 min-h-[400px] transition-colors ${
-          isOver ? 'bg-blue-50 border-2 border-dashed border-blue-300' : ''
+        className={`flex-1 p-3 space-y-3 min-h-[400px] transition-colors bg-gray-50 ${
+          isOver ? 'bg-gray-100 border-2 border-dashed border-gray-300' : ''
         }`}
       >
         {deals.map((deal) => (
@@ -113,7 +113,7 @@ export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal, onDe
         ))}
         
         {deals.length === 0 && (
-          <div className="flex items-center justify-center h-32 text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-lg">
+          <div className="flex items-center justify-center h-32 text-gray-500 text-sm border-2 border-dashed border-gray-300 rounded-lg bg-white">
             No deals in this stage
           </div>
         )}
@@ -122,7 +122,7 @@ export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal, onDe
         {onAddDeal && (
           <button
             onClick={() => onAddDeal(stage.id)}
-            className="w-full p-3 text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:text-blue-600 transition-colors"
+            className="w-full p-3 text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 hover:bg-white transition-all"
           >
             + Add Deal
           </button>
