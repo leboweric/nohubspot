@@ -665,25 +665,30 @@ export default function SettingsPage() {
             currentLogoSize={organization?.logo_size || 100}
             saving={logoSaving}
             onSave={async (logoUrl, logoSize) => {
+              console.log('Settings page onSave called with logoUrl:', logoUrl?.substring(0, 50), 'logoSize:', logoSize)
               setLogoSaving(true)
               try {
                 const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
+                const requestBody = {
+                  logo_url: logoUrl,
+                  logo_size: logoSize || 100
+                }
+                console.log('Sending logo update request with body:', requestBody)
                 const response = await fetch(`${baseUrl}/api/organization/logo`, {
                   method: 'PUT',
                   headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
                   },
-                  body: JSON.stringify({
-                    logo_url: logoUrl,
-                    logo_size: logoSize || 100
-                  })
+                  body: JSON.stringify(requestBody)
                 })
                 
                 if (response.ok) {
                   const data = await response.json()
+                  console.log('Logo update response data:', { logo_url: data.logo_url, logo_size: data.logo_size })
                   // Update organization in localStorage
                   localStorage.setItem('organization', JSON.stringify(data))
+                  console.log('Saved to localStorage, reloading page...')
                   // Reload page to update logo in navigation
                   setTimeout(() => {
                     window.location.reload()

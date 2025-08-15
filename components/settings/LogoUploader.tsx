@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
@@ -32,6 +32,12 @@ export default function LogoUploader({
   const [hasExistingLogo] = useState<boolean>(!!currentLogoUrl && !currentLogoUrl.startsWith('data:'));
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  
+  // Update logoSize when prop changes (after save/reload)
+  useEffect(() => {
+    console.log('LogoUploader: currentLogoSize prop changed to:', currentLogoSize);
+    setLogoSize(currentLogoSize);
+  }, [currentLogoSize]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -191,6 +197,7 @@ export default function LogoUploader({
       
       // Save the logo URL and size to the organization
       await onSave(finalLogoUrl, logoSize);
+      console.log('onSave completed successfully');
       
       // Clear selected file after successful save
       setSelectedFile(null);
