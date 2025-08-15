@@ -101,7 +101,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
-              <Link href="/dashboard" className="flex items-center" style={{ height: `${40 * (logoSize / 100)}px` }}>
+              <Link 
+                href="/dashboard" 
+                className="flex items-center" 
+                style={{ height: `${40 * (logoSize / 100)}px` }}
+                title={`Logo size: ${logoSize}%`}
+              >
                 {logoUrl ? (
                   <img 
                     src={logoUrl} 

@@ -110,32 +110,28 @@ export default function ProjectStats({ projects, stages }: ProjectStatsProps) {
       value: stats.totalProjects,
       subtitle: `${stats.onTrackProjects} on track`,
       icon: Target,
-      color: 'bg-blue-500',
-      bgColor: 'bg-blue-50'
+      useTheme: 'primary'
     },
     {
       title: "Project Value",
       value: formatCurrency(stats.totalValue),
       subtitle: `${formatCurrency(stats.averageRate)}/hr avg rate`,
       icon: DollarSign,
-      color: 'bg-green-500',
-      bgColor: 'bg-green-50'
+      useTheme: 'success'
     },
     {
       title: "Total Hours",
       value: formatHours(stats.totalHours),
       subtitle: `${formatHours(stats.actualHours)} logged`,
       icon: Clock,
-      color: 'bg-orange-500',
-      bgColor: 'bg-orange-50'
+      useTheme: 'warning'
     },
     {
       title: "Completed",
       value: stats.completedThisMonth,
       subtitle: `${Math.round((stats.completedThisMonth / Math.max(1, stats.totalProjects)) * 100)}% completion rate`,
       icon: Trophy,
-      color: 'bg-purple-500',
-      bgColor: 'bg-purple-50'
+      useTheme: 'accent'
     }
   ]
   
@@ -172,10 +168,59 @@ export default function ProjectStats({ projects, stages }: ProjectStatsProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {mainStats.map((stat, index) => {
           const Icon = stat.icon
+          
+          // Define theme-aware colors (same logic as PipelineStats)
+          const getThemeStyles = (theme: string) => {
+            switch (theme) {
+              case 'primary':
+                return {
+                  iconBg: 'var(--theme-primary)',
+                  cardBg: 'var(--theme-primary-background)',
+                  borderColor: 'var(--theme-primary-border)'
+                }
+              case 'success':
+                return {
+                  iconBg: '#10b981', // Emerald-500 for success
+                  cardBg: 'rgba(16, 185, 129, 0.1)',
+                  borderColor: 'rgba(16, 185, 129, 0.3)'
+                }
+              case 'warning':
+                return {
+                  iconBg: '#f59e0b', // Amber-500 for warning
+                  cardBg: 'rgba(245, 158, 11, 0.1)',
+                  borderColor: 'rgba(245, 158, 11, 0.3)'
+                }
+              case 'accent':
+                return {
+                  iconBg: 'var(--theme-accent)',
+                  cardBg: 'var(--theme-accent-background)',
+                  borderColor: 'var(--theme-primary-border)'
+                }
+              default:
+                return {
+                  iconBg: 'var(--theme-primary)',
+                  cardBg: 'var(--theme-primary-background)',
+                  borderColor: 'var(--theme-primary-border)'
+                }
+            }
+          }
+          
+          const styles = getThemeStyles(stat.useTheme)
+          
           return (
-            <div key={index} className={`${stat.bgColor} border rounded-lg p-4 transition-all hover:shadow-md`}>
+            <div 
+              key={index} 
+              className="border rounded-lg p-4 transition-all hover:shadow-md"
+              style={{ 
+                backgroundColor: styles.cardBg,
+                borderColor: styles.borderColor
+              }}
+            >
               <div className="flex items-center justify-between mb-3">
-                <div className={`p-2 rounded-lg ${stat.color}`}>
+                <div 
+                  className="p-2 rounded-lg"
+                  style={{ backgroundColor: styles.iconBg }}
+                >
                   <Icon className="w-5 h-5 text-white" />
                 </div>
                 <div className="text-right">
@@ -247,8 +292,11 @@ export default function ProjectStats({ projects, stages }: ProjectStatsProps) {
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${percentage}%` }}
+                      className="h-2 rounded-full transition-all duration-500"
+                      style={{ 
+                        width: `${percentage}%`,
+                        backgroundColor: 'var(--theme-primary)'
+                      }}
                     />
                   </div>
                 </div>
