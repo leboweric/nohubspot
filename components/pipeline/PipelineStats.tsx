@@ -161,67 +161,41 @@ export default function PipelineStats({ deals, stages }: PipelineStatsProps) {
         {mainStats.map((stat, index) => {
           const Icon = stat.icon
           
-          // Define theme-aware colors
-          const getThemeStyles = (theme: string) => {
+          // More professional, subtle design
+          const getIconColor = (theme: string) => {
             switch (theme) {
               case 'primary':
-                return {
-                  iconBg: 'var(--theme-primary)',
-                  cardBg: 'var(--theme-primary-background)',
-                  borderColor: 'var(--theme-primary-border)'
-                }
+                return 'var(--theme-primary)'
               case 'success':
-                return {
-                  iconBg: '#10b981', // Emerald-500 for success
-                  cardBg: 'rgba(16, 185, 129, 0.1)',
-                  borderColor: 'rgba(16, 185, 129, 0.3)'
-                }
+                return '#10b981'
               case 'warning':
-                return {
-                  iconBg: '#f59e0b', // Amber-500 for warning
-                  cardBg: 'rgba(245, 158, 11, 0.1)',
-                  borderColor: 'rgba(245, 158, 11, 0.3)'
-                }
+                return '#f59e0b'
               case 'accent':
-                return {
-                  iconBg: 'var(--theme-accent)',
-                  cardBg: 'var(--theme-accent-background)',
-                  borderColor: 'var(--theme-primary-border)'
-                }
+                return 'var(--theme-accent)'
               default:
-                return {
-                  iconBg: 'var(--theme-primary)',
-                  cardBg: 'var(--theme-primary-background)',
-                  borderColor: 'var(--theme-primary-border)'
-                }
+                return 'var(--theme-primary)'
             }
           }
           
-          const styles = getThemeStyles(stat.useTheme)
+          const iconColor = getIconColor(stat.useTheme)
           
           return (
             <div 
               key={index} 
-              className="border rounded-lg p-4 transition-all hover:shadow-md"
-              style={{ 
-                backgroundColor: styles.cardBg,
-                borderColor: styles.borderColor
-              }}
+              className="bg-white border border-gray-200 rounded-lg p-5 transition-all hover:shadow-lg hover:border-gray-300"
             >
-              <div className="flex items-center justify-between mb-3">
-                <div 
-                  className="p-2 rounded-lg"
-                  style={{ backgroundColor: styles.iconBg }}
-                >
-                  <Icon className="w-5 h-5 text-white" />
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
+                  <p className="text-2xl font-bold text-gray-900 mb-2">{stat.value}</p>
+                  <p className="text-sm text-gray-500">{stat.subtitle}</p>
                 </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold">{stat.value}</div>
+                <div className="mt-1">
+                  <Icon 
+                    className="w-5 h-5 opacity-40" 
+                    style={{ color: iconColor }}
+                  />
                 </div>
-              </div>
-              <div>
-                <p className="font-medium text-gray-800 mb-1">{stat.title}</p>
-                <p className="text-sm text-gray-600">{stat.subtitle}</p>
               </div>
             </div>
           )
@@ -233,19 +207,21 @@ export default function PipelineStats({ deals, stages }: PipelineStatsProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {alertStats.map((stat, index) => {
             const Icon = stat.icon
+            const alertColor = stat.urgent ? '#ef4444' : '#f59e0b'
             return (
-              <div key={index} className={`${stat.bgColor} border-2 ${stat.urgent ? 'border-red-200 animate-pulse' : 'border-yellow-200'} rounded-lg p-4`}>
+              <div key={index} className={`bg-white border-l-4 border rounded-lg p-4 ${stat.urgent ? 'border-l-red-500' : 'border-l-amber-500'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${stat.color}`}>
-                      <Icon className="w-5 h-5 text-white" />
-                    </div>
+                    <Icon 
+                      className="w-5 h-5" 
+                      style={{ color: alertColor, opacity: 0.6 }}
+                    />
                     <div>
                       <p className="font-semibold text-gray-800">{stat.title}</p>
                       <p className="text-sm text-gray-600">{stat.subtitle}</p>
                     </div>
                   </div>
-                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
                 </div>
               </div>
             )
