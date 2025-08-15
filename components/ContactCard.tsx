@@ -45,7 +45,7 @@ export default function ContactCard({ contact, onDelete }: ContactCardProps) {
   }
   
   return (
-    <div className="bg-card border rounded-lg p-5 hover:shadow-lg transition-all duration-200 relative group">
+    <div className="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-lg hover:border-gray-300 transition-all duration-200 relative group">
       {/* Star Button */}
       <div className="absolute top-3 right-3">
         <button

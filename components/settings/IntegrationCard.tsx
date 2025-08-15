@@ -75,7 +75,7 @@ export default function IntegrationCard({
   }
   
   return (
-    <div className="bg-white border rounded-lg hover:shadow-md transition-all duration-200">
+    <div className="bg-white border border-gray-200 rounded-lg hover:shadow-lg hover:border-gray-300 transition-all duration-200">
       {/* Header */}
       <div className="p-6 border-b">
         <div className="flex items-start gap-4">

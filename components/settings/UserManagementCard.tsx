@@ -84,7 +84,7 @@ export default function UserManagementCard({
   const canManage = !isCurrentUser && user.role !== 'owner'
   
   return (
-    <div className="bg-white border rounded-lg p-4 hover:shadow-md transition-all duration-200">
+    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg hover:border-gray-300 transition-all duration-200">
       <div className="flex items-start gap-4">
         {/* Avatar */}
         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-lg shadow-md">

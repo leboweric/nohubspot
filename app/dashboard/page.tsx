@@ -556,11 +556,13 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-          <h2 className="text-lg font-semibold mb-6 flex items-center">
-            <span className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: themeColors.primary }}></span>
-            Quick Actions
-          </h2>
+        <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all">
+          <div className="flex items-start justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">Quick Actions</h2>
+            <svg className="w-5 h-5 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: themeColors.primary }}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
           <div className="space-y-3">
             <a href="/companies/new" className="block w-full text-left px-4 py-3 border rounded-lg transition-all group" style={{ borderColor: colorPatterns.border(themeColors.primary) }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colorPatterns.background(themeColors.primary); e.currentTarget.style.borderColor = themeColors.primary; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = colorPatterns.border(themeColors.primary); }}>
               <div className="flex items-center">
@@ -594,11 +596,13 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-          <h2 className="text-lg font-semibold mb-6 flex items-center">
-            <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
-            Recent Activity
-          </h2>
+        <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all">
+          <div className="flex items-start justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
+            <svg className="w-5 h-5 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: themeColors.accent }}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
           <div className="space-y-4">
             {activitiesLoading ? (
               <div className="space-y-3">
