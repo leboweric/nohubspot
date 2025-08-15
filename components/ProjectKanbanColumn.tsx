@@ -43,12 +43,18 @@ export default function ProjectKanbanColumn({
     <div className="flex flex-col w-80 bg-white border border-gray-200 rounded-lg">
       {/* Column Header */}
       <div 
-        className="px-4 py-3 border-b border-gray-200 bg-white rounded-t-lg border-l-2"
-        style={{ borderLeftColor: '#e5e7eb' }}
+        className="px-4 py-3 border-b border-gray-200 bg-white rounded-t-lg border-l-4"
+        style={{ borderLeftColor: 'var(--theme-primary)' }}
       >
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold text-gray-900">{stage.name}</h3>
-          <span className="text-sm text-gray-500">
+          <span 
+            className="text-sm font-medium px-2 py-0.5 rounded-full"
+            style={{ 
+              backgroundColor: 'var(--theme-primary-background)',
+              color: 'var(--theme-primary)'
+            }}
+          >
             {projects.length}
           </span>
         </div>
@@ -89,7 +95,19 @@ export default function ProjectKanbanColumn({
         {onAddProject && (
           <button
             onClick={() => onAddProject(stage.id)}
-            className="w-full p-3 text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:text-blue-600 transition-colors"
+            className="w-full p-3 text-sm border-2 border-dashed rounded-lg transition-all"
+            style={{
+              borderColor: 'var(--theme-primary-border)',
+              color: 'var(--theme-primary)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--theme-primary-background)';
+              e.currentTarget.style.borderColor = 'var(--theme-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '';
+              e.currentTarget.style.borderColor = 'var(--theme-primary-border)';
+            }}
           >
             + Add Project
           </button>
