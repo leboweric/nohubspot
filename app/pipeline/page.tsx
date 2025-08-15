@@ -5,7 +5,6 @@ import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import KanbanBoard from "@/components/KanbanBoard"
 import DealModal from "@/components/DealModal"
-import PipelineStats from "@/components/pipeline/PipelineStats"
 import { pipelineAPI, dealAPI, handleAPIError, PipelineStage, Deal, DealCreate } from "@/lib/api"
 import { 
   LayoutGrid, List, Plus, Download, Filter, Search,
@@ -373,9 +372,6 @@ export default function PipelinePage() {
           {/* Pipeline Overview */}
           {stages.length > 0 && (
             <div className="space-y-6">
-              {/* Enhanced Pipeline Stats */}
-              <PipelineStats deals={deals} stages={stages} />
-
               {/* Stage Filters - Only show in list view */}
               {viewMode === 'list' && (
                 <div className="flex flex-wrap gap-2">
@@ -412,7 +408,7 @@ export default function PipelinePage() {
               {/* Conditional View Rendering */}
               {viewMode === 'kanban' ? (
                 /* Kanban Board View */
-                <div className="h-[calc(100vh-400px)]">
+                <div className="h-[calc(100vh-300px)]">
                   <KanbanBoard
                     stages={stages}
                     deals={deals}

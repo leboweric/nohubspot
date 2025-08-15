@@ -42,12 +42,12 @@ export default function PerformanceMetrics({ metrics, loading }: PerformanceMetr
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
-          className="text-primary opacity-50"
+          className="text-gray-300"
         />
         <polyline
           points={`${points} ${width},${height} 0,${height}`}
           fill="currentColor"
-          className="text-primary opacity-10"
+          className="text-gray-100 opacity-50"
         />
       </svg>
     )
@@ -77,34 +77,28 @@ export default function PerformanceMetrics({ metrics, loading }: PerformanceMetr
         const ChangeIcon = isPositive ? ArrowUp : ArrowDown
         
         return (
-          <div key={index} className="bg-card border rounded-lg p-6 hover:shadow-md transition-shadow">
+          <div key={index} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg hover:border-gray-300 transition-all">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">
+              <span className="text-sm font-medium text-gray-600">
                 {metric.label}
               </span>
-              <div className={`p-2 rounded-lg ${metric.color}`}>
-                <Icon className="w-4 h-4 text-white" />
-              </div>
+              <Icon className="w-4 h-4 text-gray-400" />
             </div>
             
             <div className="mb-2">
               <p className="text-2xl font-bold">{metric.value}</p>
             </div>
             
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <ChangeIcon className={`w-3 h-3 ${
-                  isPositive ? 'text-green-600' : 'text-red-600'
-                }`} />
-                <span className={`text-xs font-medium ${
-                  isPositive ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {Math.abs(metric.change)}%
-                </span>
-                <span className="text-xs text-muted-foreground ml-1">
-                  {metric.changeLabel}
-                </span>
-              </div>
+            <div className="flex items-center gap-1">
+              <ChangeIcon className={`w-3 h-3 ${
+                isPositive ? 'text-gray-500' : 'text-gray-500'
+              }`} />
+              <span className="text-xs text-gray-500">
+                {Math.abs(metric.change)}%
+              </span>
+              <span className="text-xs text-gray-400 ml-1">
+                {metric.changeLabel}
+              </span>
             </div>
             
             <div className="mt-3">

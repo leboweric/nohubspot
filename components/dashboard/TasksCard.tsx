@@ -137,12 +137,9 @@ export default function TasksCard() {
   }
 
   return (
-    <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg hover:border-gray-300 transition-all">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold flex items-center">
-          <span className="w-2 h-2 bg-orange-500 rounded-full mr-3"></span>
-          Tasks
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900">Tasks</h2>
         <Link 
           href="/tasks" 
           className="text-sm text-primary hover:text-primary/80 transition-colors"
@@ -166,7 +163,7 @@ export default function TasksCard() {
           {/* Overdue Tasks */}
           {overdueTasks.length > 0 && (
             <div>
-              <h3 className="text-xs font-semibold text-red-600 uppercase mb-2">
+              <h3 className="text-xs font-semibold text-gray-600 uppercase mb-2">
                 Overdue ({overdueTasks.length})
               </h3>
               <div className="space-y-2">
@@ -175,7 +172,7 @@ export default function TasksCard() {
                   return (
                     <div 
                       key={task.id} 
-                      className="flex items-start space-x-3 p-3 rounded-lg bg-red-50 hover:bg-red-100 transition-colors"
+                      className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50 border-l-2 border-gray-400 hover:bg-gray-100 transition-colors"
                     >
                       <button
                         onClick={() => markAsComplete(task.id)}
@@ -190,7 +187,7 @@ export default function TasksCard() {
                         <div className="text-xs text-muted-foreground space-y-1">
                           <div className="flex items-center gap-2">
                             <span>⏰</span>
-                            <span className="text-red-600 font-medium">{dueInfo.text}</span>
+                            <span className="text-gray-700 font-medium">{dueInfo.text}</span>
                           </div>
                           {(task.contact_name || task.company_name) && (
                             <div className="flex items-center gap-2">
@@ -224,7 +221,7 @@ export default function TasksCard() {
                   return (
                     <div 
                       key={task.id} 
-                      className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                      className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
                     >
                       <button
                         onClick={() => markAsComplete(task.id)}

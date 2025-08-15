@@ -5,7 +5,6 @@ import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import ProjectKanbanBoard from "@/components/ProjectKanbanBoard"
 import ProjectModal from "@/components/ProjectModal"
-import ProjectStats from "@/components/projects/ProjectStats"
 import ProjectCard from "@/components/projects/ProjectCard"
 import { projectAPI, projectStageAPI, handleAPIError, ProjectStage, Project, ProjectCreate } from "@/lib/api"
 import { 
@@ -393,9 +392,6 @@ export default function ProjectsPage() {
           {/* Project Overview */}
           {stages.length > 0 && (
             <div className="space-y-6">
-              {/* Enhanced Project Stats */}
-              <ProjectStats projects={projects} stages={stages} />
-
               {/* Stage Filters - Only show in list view */}
               {viewMode === 'list' && (
                 <div className="flex flex-wrap gap-2">
@@ -432,7 +428,7 @@ export default function ProjectsPage() {
               {/* Conditional View Rendering */}
               {viewMode === 'kanban' ? (
                 /* Kanban Board View */
-                <div className="h-[calc(100vh-400px)]">
+                <div className="h-[calc(100vh-300px)]">
                   <ProjectKanbanBoard
                     stages={stages}
                     projects={projects}

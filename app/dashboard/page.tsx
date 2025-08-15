@@ -564,32 +564,32 @@ export default function DashboardPage() {
             </svg>
           </div>
           <div className="space-y-3">
-            <a href="/companies/new" className="block w-full text-left px-4 py-3 border rounded-lg transition-all group" style={{ borderColor: colorPatterns.border(themeColors.primary) }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colorPatterns.background(themeColors.primary); e.currentTarget.style.borderColor = themeColors.primary; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = colorPatterns.border(themeColors.primary); }}>
+            <a href="/companies/new" className="block w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all group">
               <div className="flex items-center">
-                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: themeColors.primary }}>
+                <svg className="w-5 h-5 mr-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
-                <span className="group-hover:opacity-80">Add New Company</span>
+                <span className="text-gray-700">Add New Company</span>
               </div>
             </a>
-            <a href="/contacts/new" className="block w-full text-left px-4 py-3 border border-green-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-all group">
+            <a href="/contacts/new" className="block w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all group">
               <div className="flex items-center">
-                <svg className="w-5 h-5 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                <span className="group-hover:text-green-700">Add New Contact</span>
+                <span className="text-gray-700">Add New Contact</span>
               </div>
             </a>
             {o365Connected && (
               <button 
                 onClick={() => setShowEmailCompose(true)}
-                className="block w-full text-left px-4 py-3 border border-purple-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-all group"
+                className="block w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all group"
               >
                 <div className="flex items-center">
-                  <svg className="w-5 h-5 text-purple-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
-                  <span className="group-hover:text-purple-700">Send Email</span>
+                  <span className="text-gray-700">Send Email</span>
                 </div>
               </button>
             )}
@@ -618,8 +618,8 @@ export default function DashboardPage() {
               </div>
             ) : recentActivity.length > 0 ? (
               recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-start space-x-4 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                  <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
+                <div key={activity.id} className="flex items-start space-x-4 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full mt-2"></div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium">{activity.title}</p>
                     {activity.description && (

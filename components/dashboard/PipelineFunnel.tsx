@@ -17,7 +17,7 @@ interface PipelineFunnelProps {
 export default function PipelineFunnel({ stages, loading }: PipelineFunnelProps) {
   if (loading) {
     return (
-      <div className="bg-card border rounded-lg p-6">
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h2 className="text-lg font-semibold mb-6">Pipeline Overview</h2>
         <div className="space-y-3">
           {[1, 2, 3, 4, 5].map(i => (
@@ -42,7 +42,7 @@ export default function PipelineFunnel({ stages, loading }: PipelineFunnelProps)
   }
   
   return (
-    <div className="bg-card border rounded-lg p-6">
+    <div className="bg-white border border-gray-200 rounded-lg p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold">Pipeline Overview</h2>
         <Link href="/pipeline" className="text-sm text-primary hover:underline">
@@ -72,14 +72,14 @@ export default function PipelineFunnel({ stages, loading }: PipelineFunnelProps)
               <div className="relative">
                 <div className="h-10 bg-gray-100 rounded-md overflow-hidden">
                   <div
-                    className={`h-full ${stage.color} transition-all duration-500 ease-out rounded-md group-hover:opacity-90`}
+                    className="h-full bg-gray-300 transition-all duration-500 ease-out rounded-md"
                     style={{
                       width: `${percentage}%`,
                       minWidth: stage.count > 0 ? '60px' : '0'
                     }}
                   >
                     <div className="h-full flex items-center px-3">
-                      <span className="text-xs text-white font-medium whitespace-nowrap">
+                      <span className="text-xs text-gray-600 font-medium whitespace-nowrap">
                         {stage.count > 0 && `${Math.round(percentage)}%`}
                       </span>
                     </div>

@@ -60,10 +60,10 @@ export default function HotLists({ hotDeals, atRiskDeals, recentWins, loading }:
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
       {/* Hot Deals */}
-      <div className="bg-card border rounded-lg p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="w-5 h-5 text-orange-500" />
-          <h3 className="text-lg font-semibold">Hot Deals</h3>
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Hot Deals</h3>
+          <TrendingUp className="w-5 h-5 text-gray-400" />
         </div>
         
         {hotDeals.length > 0 ? (
@@ -72,11 +72,11 @@ export default function HotLists({ hotDeals, atRiskDeals, recentWins, loading }:
               <Link
                 key={deal.id}
                 href="/pipeline"
-                className="block p-3 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
+                className="block p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <div className="flex justify-between items-start mb-1">
                   <p className="font-medium text-sm truncate flex-1 mr-2">{deal.title}</p>
-                  <span className="text-sm font-semibold text-orange-600">
+                  <span className="text-sm font-semibold text-gray-700">
                     {formatValue(deal.value)}
                   </span>
                 </div>
@@ -109,10 +109,10 @@ export default function HotLists({ hotDeals, atRiskDeals, recentWins, loading }:
       </div>
       
       {/* At Risk Deals */}
-      <div className="bg-card border rounded-lg p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <AlertTriangle className="w-5 h-5 text-red-500" />
-          <h3 className="text-lg font-semibold">At Risk</h3>
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">At Risk</h3>
+          <AlertTriangle className="w-5 h-5 text-gray-400" />
         </div>
         
         {atRiskDeals.length > 0 ? (
@@ -121,18 +121,18 @@ export default function HotLists({ hotDeals, atRiskDeals, recentWins, loading }:
               <Link
                 key={deal.id}
                 href="/pipeline"
-                className="block p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                className="block p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <div className="flex justify-between items-start mb-1">
                   <p className="font-medium text-sm truncate flex-1 mr-2">{deal.title}</p>
-                  <span className="text-sm font-semibold text-red-600">
+                  <span className="text-sm font-semibold text-gray-700">
                     {formatValue(deal.value)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>{deal.stage}</span>
                   {deal.days_in_stage && deal.days_in_stage > 30 && (
-                    <span className="text-red-600">
+                    <span className="text-gray-600">
                       {deal.days_in_stage}d in stage
                     </span>
                   )}
@@ -157,10 +157,10 @@ export default function HotLists({ hotDeals, atRiskDeals, recentWins, loading }:
       </div>
       
       {/* Recent Wins */}
-      <div className="bg-card border rounded-lg p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Trophy className="w-5 h-5 text-green-500" />
-          <h3 className="text-lg font-semibold">Recent Wins</h3>
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Recent Wins</h3>
+          <Trophy className="w-5 h-5 text-gray-400" />
         </div>
         
         {recentWins.length > 0 ? (
@@ -168,11 +168,11 @@ export default function HotLists({ hotDeals, atRiskDeals, recentWins, loading }:
             {recentWins.slice(0, 5).map(deal => (
               <div
                 key={deal.id}
-                className="p-3 bg-green-50 rounded-lg"
+                className="p-3 bg-gray-50 rounded-lg"
               >
                 <div className="flex justify-between items-start mb-1">
                   <p className="font-medium text-sm truncate flex-1 mr-2">{deal.title}</p>
-                  <span className="text-sm font-semibold text-green-600">
+                  <span className="text-sm font-semibold text-gray-700">
                     {formatValue(deal.value)}
                   </span>
                 </div>
