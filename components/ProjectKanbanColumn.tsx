@@ -43,24 +43,22 @@ export default function ProjectKanbanColumn({
     <div className="flex flex-col w-80 bg-white border border-gray-200 rounded-lg">
       {/* Column Header */}
       <div 
-        className="px-4 py-3 border-b border-gray-200 bg-white rounded-t-lg"
-        style={{ borderLeftColor: stage.color, borderLeftWidth: '4px' }}
+        className="px-4 py-3 border-b border-gray-200 bg-white rounded-t-lg border-l-2"
+        style={{ borderLeftColor: '#e5e7eb' }}
       >
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold text-gray-900">{stage.name}</h3>
-          <span className="text-sm font-medium text-gray-600">
+          <span className="text-sm text-gray-500">
             {projects.length}
           </span>
         </div>
         
-        <div className="flex items-center gap-3 text-xs">
-          <span className="text-gray-600">
-            <span className="font-medium text-gray-700">Total Value:</span>
-            <span className="ml-1 font-semibold">{formatCurrency(totalValue)}</span>
+        <div className="flex items-center gap-3 text-xs text-gray-500">
+          <span>
+            Total Value: <span className="font-medium text-gray-700">{formatCurrency(totalValue)}</span>
           </span>
-          <span className="text-gray-600">
-            <span className="font-medium text-gray-700">Total Hours:</span>
-            <span className="ml-1 font-semibold">{totalHours.toFixed(0)}h</span>
+          <span>
+            Total Hours: <span className="font-medium text-gray-700">{totalHours.toFixed(0)}h</span>
           </span>
         </div>
       </div>

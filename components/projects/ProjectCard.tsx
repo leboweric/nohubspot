@@ -120,25 +120,18 @@ export default function ProjectCard({ project, onEdit, onDelete, isDragging }: P
   const progressPercentage = getProgressPercentage()
   
   return (
-    <div className={`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-200 ${
+    <div className={`bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg hover:border-gray-300 transition-all duration-200 ${
       isDragging ? 'opacity-50 rotate-2 scale-105' : ''
     }`}>
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          {/* Priority indicator */}
-          <div className={`w-3 h-3 rounded-full ${priorityColor} flex-shrink-0`}></div>
-          
-          {/* Priority icon for high-value projects */}
-          {(projectValue >= 25000 || (daysToDeadline !== null && daysToDeadline <= 7)) && (
-            <PriorityIcon className={`w-4 h-4 ${
-              projectValue >= 50000 && daysToDeadline !== null && daysToDeadline <= 14 ? 'text-red-500' : 'text-orange-500'
-            }`} />
-          )}
+          {/* Priority indicator - subtle gray */}
+          <div className="w-2 h-2 rounded-full bg-gray-400 flex-shrink-0"></div>
         </div>
         
-        {/* Health status badge */}
-        <div className={`px-2 py-1 rounded-full text-xs font-medium ${healthStatus.color} flex items-center gap-1`}>
+        {/* Health status badge - subtle gray */}
+        <div className="px-2 py-1 rounded-full text-xs font-medium text-gray-600 bg-gray-100 flex items-center gap-1">
           <HealthIcon className="w-3 h-3" />
           {healthStatus.label}
         </div>
@@ -204,12 +197,12 @@ export default function ProjectCard({ project, onEdit, onDelete, isDragging }: P
         </h3>
         
         <div className="flex items-baseline gap-2 mb-2">
-          <span className="text-2xl font-bold text-green-600">
+          <span className="text-xl font-semibold text-gray-700">
             {projectValue > 0 ? formatCurrency(projectValue) : 'TBD'}
           </span>
           {project.hourly_rate && (
-            <span className="text-sm text-gray-500">
-              ${project.hourly_rate}/hr • {project.projected_hours || 0}h projected
+            <span className="text-xs text-gray-500">
+              ${project.hourly_rate}/hr • {project.projected_hours || 0}h
             </span>
           )}
         </div>
@@ -223,11 +216,7 @@ export default function ProjectCard({ project, onEdit, onDelete, isDragging }: P
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
-                className={`h-2 rounded-full transition-all duration-500 ${
-                  progressPercentage >= 100 ? 'bg-green-500' : 
-                  progressPercentage >= 75 ? 'bg-blue-500' : 
-                  progressPercentage >= 50 ? 'bg-yellow-500' : 'bg-gray-400'
-                }`}
+                className="h-2 rounded-full transition-all duration-500 bg-gray-400"
                 style={{ width: `${Math.min(progressPercentage, 100)}%` }}
               />
             </div>
@@ -236,7 +225,7 @@ export default function ProjectCard({ project, onEdit, onDelete, isDragging }: P
         
         {/* Project type badge */}
         {project.project_type && (
-          <span className="inline-block bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-medium">
+          <span className="inline-block text-gray-600 text-xs">
             {project.project_type}
           </span>
         )}
@@ -281,9 +270,9 @@ export default function ProjectCard({ project, onEdit, onDelete, isDragging }: P
       {/* Footer */}
       <div className="flex items-center justify-between pt-3 border-t">
         <div className="flex items-center gap-3 text-xs">
-          {/* Deadline status */}
+          {/* Deadline status - subtle */}
           {deadlineStatus && (
-            <span className={`px-2 py-1 rounded-full ${deadlineStatus.color}`}>
+            <span className="px-2 py-1 rounded-full text-gray-600 bg-gray-100">
               {deadlineStatus.text}
             </span>
           )}

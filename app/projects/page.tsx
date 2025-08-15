@@ -452,25 +452,25 @@ export default function ProjectsPage() {
                       return (
                         <div key={stage.id} className="bg-white border border-gray-200 rounded-lg">
                           <div 
-                            className="px-6 py-4 border-b border-gray-200"
-                            style={{ borderLeftColor: stage.color, borderLeftWidth: '4px' }}
+                            className="px-6 py-4 border-b border-gray-200 border-l-2"
+                            style={{ borderLeftColor: '#e5e7eb' }}
                           >
                             <div className="flex items-center justify-between">
                               <div>
                                 <h3 className="text-lg font-semibold text-gray-900">{stage.name}</h3>
                                 <div className="flex items-center gap-3 mt-1">
-                                  <span className="text-sm text-gray-600">
-                                    {stageProjects.length} {stageProjects.length === 1 ? 'project' : 'projects'}
+                                  <span className="text-sm text-gray-500">
+                                    {stageProjects.length}
                                   </span>
                                   <span className="text-gray-300">•</span>
-                                  <span className="text-sm font-medium text-gray-700">
-                                    Total Value: {formatCurrency(
+                                  <span className="text-sm text-gray-500">
+                                    Total Value: <span className="font-medium text-gray-700">{formatCurrency(
                                       stageProjects.reduce((sum, project) => sum + calculateProjectValue(project), 0)
-                                    )}
+                                    )}</span>
                                   </span>
                                   <span className="text-gray-300">•</span>
-                                  <span className="text-sm text-gray-600">
-                                    Total Hours: {stageProjects.reduce((sum, project) => sum + (project.projected_hours || 0), 0).toFixed(0)}h
+                                  <span className="text-sm text-gray-500">
+                                    Total Hours: <span className="font-medium text-gray-700">{stageProjects.reduce((sum, project) => sum + (project.projected_hours || 0), 0).toFixed(0)}h</span>
                                   </span>
                                 </div>
                               </div>
