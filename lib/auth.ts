@@ -22,6 +22,11 @@ export interface Organization {
   plan: string
   is_active: boolean
   created_at: string
+  logo_url?: string | null
+  logo_size?: number
+  theme_primary_color?: string
+  theme_secondary_color?: string
+  theme_accent_color?: string
 }
 
 export interface AuthState {

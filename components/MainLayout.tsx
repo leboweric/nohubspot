@@ -16,8 +16,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const router = useRouter()
   const { user, organization, isAuthenticated } = getAuthState()
   const [o365Connected, setO365Connected] = useState(false)
-  const [logoUrl, setLogoUrl] = useState<string | null>(null)
-  const [logoSize, setLogoSize] = useState<number>(100)
+  // Initialize from localStorage to prevent flash
+  const [logoUrl, setLogoUrl] = useState<string | null>(organization?.logo_url || null)
+  const [logoSize, setLogoSize] = useState<number>(organization?.logo_size || 100)
 
   const handleLogout = () => {
     logout()
@@ -37,6 +38,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
     const fetchOrgLogo = async () => {
       try {
+        // First check localStorage for immediate update
+        const cachedOrg = localStorage.getItem('organization')
+        if (cachedOrg) {
+          const orgData = JSON.parse(cachedOrg)
+          if (orgData.logo_url !== undefined || orgData.logo_size !== undefined) {
+            console.log('MainLayout: Using cached logo data:', { logo_url: orgData.logo_url, logo_size: orgData.logo_size })
+            setLogoUrl(orgData.logo_url || null)
+            setLogoSize(orgData.logo_size || 100)
+          }
+        }
+        
+        // Then fetch latest from API
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
         const response = await fetch(`${baseUrl}/api/organization/theme`, {
           headers: {
@@ -46,9 +59,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
         
         if (response.ok) {
           const data = await response.json()
-          console.log('MainLayout: Fetched logo data:', { logo_url: data.logo_url, logo_size: data.logo_size })
+          console.log('MainLayout: Fetched logo data from API:', { logo_url: data.logo_url, logo_size: data.logo_size })
           setLogoUrl(data.logo_url || null)
           setLogoSize(data.logo_size || 100)
+          
+          // Update localStorage with latest data
+          const currentOrg = localStorage.getItem('organization')
+          if (currentOrg) {
+            const orgData = JSON.parse(currentOrg)
+            orgData.logo_url = data.logo_url
+            orgData.logo_size = data.logo_size
+            localStorage.setItem('organization', JSON.stringify(orgData))
+          }
         }
       } catch (err) {
         console.error('Failed to fetch organization logo:', err)
