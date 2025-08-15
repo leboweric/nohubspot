@@ -64,3 +64,89 @@
 
 ### Dependencies Added
 - @headlessui/react (for ModernSelect component)
+
+## Recent Session Summary (August 15, 2025)
+
+### Major Design System Overhaul
+
+1. **Professional Color Scheme Implementation**
+   - Removed ALL bright/gaudy colors from dashboard and main components
+   - Implemented subtle gray color palette throughout the application
+   - Fixed Pipeline and Projects pages to use professional, muted tones
+   - Successfully created a clean, enterprise-ready appearance
+
+2. **Logo Size Slider Fix**
+   - Fixed the logo size slider that wasn't updating the actual logo display
+   - Implemented localStorage polling to detect real-time changes
+   - Added proper data URL handling for logo uploads
+   - Resolved the disconnect between slider position (150%) and actual display (100%)
+
+3. **Theme Color Management**
+   - Initially applied branded theme colors to Project and Deal cards
+   - Later reverted to subtle grays based on user preference
+   - Learned the importance of distinguishing between "branded" vs "hardcoded" colors
+   - Theme system uses CSS variables: `--theme-primary`, `--theme-secondary`, `--theme-accent`
+
+4. **Comprehensive Color Audit**
+   - Conducted full codebase scan finding 40+ files with hardcoded colors
+   - Systematically removed hardcoded colors from:
+     - ProjectCardWithAttachments (removed blue, purple, green, orange, red, indigo)
+     - Calendar components (CalendarView, CalendarStats)
+     - Task components (TaskList, TaskCard, TaskStats)
+     - Email components (EmailCompose, EmailTrackingStatus)
+   - Replaced bright colors with professional gray tones
+
+5. **UI/UX Improvements**
+   - Removed Kanban view from Tasks page (kept only List view)
+   - Applied consistent subtle styling to all card components
+   - Updated column headers in Kanban boards to use gray borders
+   - Made all progress bars, badges, and indicators use gray colors
+
+### Key Design Decisions
+
+1. **Color Philosophy**
+   - AVOID: Bright reds, blues, greens, oranges, purples
+   - USE: Gray scale (gray-100 through gray-900)
+   - EXCEPTION: Theme colors only when explicitly needed for branding
+   - Result: Professional, clean, enterprise-appropriate interface
+
+2. **Component Patterns**
+   - Priority indicators: All use subtle gray dots instead of colored indicators
+   - Status badges: Gray backgrounds with darker gray text
+   - Progress bars: Gray instead of colored
+   - Hover states: Subtle gray transitions instead of color changes
+
+3. **Important Learnings**
+   - User prefers subtle, professional appearance over colorful UI
+   - "Branded colors" means theme colors, not hardcoded blues
+   - Automatic git push is preferred (no need to ask permission)
+   - Design consistency is critical - if one component uses gray, all should
+
+### Files with Major Updates
+- `/components/ProjectCardWithAttachments.tsx` - Removed all project type colors
+- `/components/projects/ProjectCard.tsx` - Subtle gray styling
+- `/components/pipeline/DealCard.tsx` - Removed bright value colors
+- `/components/KanbanColumn.tsx` - Gray borders and indicators
+- `/components/calendar/CalendarView.tsx` - Gray event types
+- `/components/tasks/TaskList.tsx` - Gray priority/status colors
+- `/components/tasks/TaskCard.tsx` - Removed colored due dates
+
+### Remaining Color Issues (Found in Audit)
+- Settings components still have role-based colors (purple/blue/green)
+- Integration status indicators (green/orange/red for success/warning/error)
+- Page-level action buttons with colored borders
+- Utility modals with validation colors
+- Landing page with gradient colors
+- Document type indicators with various colors
+
+### Git Configuration Note
+- User prefers automatic commits and pushes
+- No need to ask permission before pushing changes
+- Commits should be descriptive and include all changes
+
+### Theme System Architecture
+- Theme colors stored in organization settings
+- Applied via CSS custom properties
+- ThemeContext provides theme management
+- Colors can be dynamically updated through settings
+- Theme variables include opacity variations for hover/selected states
