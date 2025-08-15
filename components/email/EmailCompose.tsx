@@ -257,13 +257,13 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
                 {selectedRecipients.map((recipient) => (
                   <div
                     key={recipient.email}
-                    className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-sm flex items-center gap-1"
+                    className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-sm flex items-center gap-1"
                   >
                     {recipient.firstName} {recipient.lastName} &lt;{recipient.email}&gt;
                     <button
                       type="button"
                       onClick={() => removeRecipient(recipient.email)}
-                      className="text-blue-600 hover:text-blue-800 ml-1"
+                      className="text-gray-600 hover:text-gray-800 ml-1"
                       title="Remove recipient"
                     >
                       ✕
@@ -302,7 +302,7 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
               <button
                 type="button"
                 onClick={() => setShowTemplates(!showTemplates)}
-                className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                className="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1"
               >
                 📄 Use Template
               </button>
@@ -328,12 +328,12 @@ export default function EmailCompose({ isOpen, onClose, recipientEmail, recipien
                       key={template.id}
                       type="button"
                       onClick={() => handleTemplateSelect(template)}
-                      className="w-full text-left p-2 text-sm border border-gray-200 rounded hover:bg-white hover:border-blue-300 transition-colors"
+                      className="w-full text-left p-2 text-sm border border-gray-200 rounded hover:bg-white hover:border-gray-400 transition-colors"
                     >
                       <div className="font-medium">{template.name}</div>
                       <div className="text-gray-600 text-xs truncate">{template.subject}</div>
                       {template.category && (
-                        <span className="inline-block mt-1 px-2 py-0.5 text-xs rounded bg-blue-100 text-blue-800">
+                        <span className="inline-block mt-1 px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-700">
                           {template.category}
                         </span>
                       )}

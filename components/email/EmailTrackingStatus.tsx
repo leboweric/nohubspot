@@ -93,13 +93,13 @@ export default function EmailTrackingStatus({ contactId, className = "" }: Email
           <div className="text-xs text-muted-foreground">Emails Sent</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-green-600">
+          <div className="text-2xl font-bold text-gray-700">
             {trackingRecords.filter(r => r.open_count > 0).length}
           </div>
           <div className="text-xs text-muted-foreground">Opened</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-blue-600">
+          <div className="text-2xl font-bold text-gray-700">
             {trackingRecords.filter(r => r.click_count > 0).length}
           </div>
           <div className="text-xs text-muted-foreground">Clicked</div>
@@ -123,7 +123,7 @@ export default function EmailTrackingStatus({ contactId, className = "" }: Email
                 <div className="text-center">
                   {record.open_count > 0 ? (
                     <div className="flex flex-col items-center">
-                      <span className="text-green-600" title="Email opened">📧</span>
+                      <span className="text-gray-600" title="Email opened">📧</span>
                       <span className="text-xs text-muted-foreground">{record.open_count}x</span>
                     </div>
                   ) : (
@@ -138,7 +138,7 @@ export default function EmailTrackingStatus({ contactId, className = "" }: Email
                 <div className="text-center">
                   {record.click_count > 0 ? (
                     <div className="flex flex-col items-center">
-                      <span className="text-blue-600" title="Link clicked">🔗</span>
+                      <span className="text-gray-600" title="Link clicked">🔗</span>
                       <span className="text-xs text-muted-foreground">{record.click_count}x</span>
                     </div>
                   ) : (
