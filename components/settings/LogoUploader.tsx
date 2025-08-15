@@ -6,22 +6,25 @@ import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { useToast } from '../ui/use-toast';
-import { Upload, X, Image, Link } from 'lucide-react';
+import { Upload, X, Image, Link, Maximize2 } from 'lucide-react';
 
 interface LogoUploaderProps {
   currentLogoUrl?: string | null;
-  onLogoChange?: (logoUrl: string | null) => void;
-  onSave?: (logoUrl: string | null) => Promise<void>;
+  currentLogoSize?: number;
+  onLogoChange?: (logoUrl: string | null, logoSize?: number) => void;
+  onSave?: (logoUrl: string | null, logoSize?: number) => Promise<void>;
   saving?: boolean;
 }
 
 export default function LogoUploader({
   currentLogoUrl,
+  currentLogoSize = 100,
   onLogoChange,
   onSave,
   saving = false
 }: LogoUploaderProps) {
   const [logoUrl, setLogoUrl] = useState<string | null>(currentLogoUrl || null);
+  const [logoSize, setLogoSize] = useState<number>(currentLogoSize);
   const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>('file');
   const [urlInput, setUrlInput] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -178,17 +181,17 @@ export default function LogoUploader({
         return;
       }
 
-      console.log('Calling onSave with URL:', finalLogoUrl?.substring(0, 100));
+      console.log('Calling onSave with URL:', finalLogoUrl?.substring(0, 100), 'Size:', logoSize);
       
-      // Save the logo URL to the organization
-      await onSave(finalLogoUrl);
+      // Save the logo URL and size to the organization
+      await onSave(finalLogoUrl, logoSize);
       
       // Clear selected file after successful save
       setSelectedFile(null);
       
       toast({
         title: 'Logo Updated',
-        description: finalLogoUrl ? 'Your organization logo has been saved.' : 'Your organization logo has been removed.',
+        description: finalLogoUrl ? 'Your organization logo and size have been saved.' : 'Your organization logo has been removed.',
       });
     } catch (error) {
       console.error('Save error:', error);
@@ -225,7 +228,8 @@ export default function LogoUploader({
                   <img 
                     src={logoUrl} 
                     alt="Organization Logo" 
-                    className="max-h-full max-w-[200px] object-contain"
+                    className="max-h-full object-contain"
+                    style={{ maxWidth: `${logoSize * 2}px` }}
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                       toast({
@@ -258,6 +262,43 @@ export default function LogoUploader({
             )}
           </div>
         </div>
+
+        {/* Logo Size Slider */}
+        {logoUrl && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                <Maximize2 className="h-4 w-4" />
+                Logo Size
+              </Label>
+              <span className="text-sm text-muted-foreground">{logoSize}%</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-xs text-muted-foreground">50%</span>
+              <input
+                type="range"
+                min="50"
+                max="150"
+                value={logoSize}
+                onChange={(e) => {
+                  const newSize = parseInt(e.target.value);
+                  setLogoSize(newSize);
+                  if (onLogoChange) {
+                    onLogoChange(logoUrl, newSize);
+                  }
+                }}
+                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                style={{
+                  background: `linear-gradient(to right, rgb(var(--theme-primary)) 0%, rgb(var(--theme-primary)) ${((logoSize - 50) / 100) * 100}%, #e5e7eb ${((logoSize - 50) / 100) * 100}%, #e5e7eb 100%)`
+                }}
+              />
+              <span className="text-xs text-muted-foreground">150%</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Adjust the size of your logo in the navigation bar
+            </p>
+          </div>
+        )}
 
         {/* Upload Method Tabs */}
         <div className="space-y-3">

@@ -17,6 +17,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const { user, organization, isAuthenticated } = getAuthState()
   const [o365Connected, setO365Connected] = useState(false)
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [logoSize, setLogoSize] = useState<number>(100)
 
   const handleLogout = () => {
     logout()
@@ -46,6 +47,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         if (response.ok) {
           const data = await response.json()
           setLogoUrl(data.logo_url || null)
+          setLogoSize(data.logo_size || 100)
         }
       } catch (err) {
         console.error('Failed to fetch organization logo:', err)
@@ -81,7 +83,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   <img 
                     src={logoUrl} 
                     alt={organization?.name || 'Organization Logo'} 
-                    className="max-h-full max-w-[150px] object-contain"
+                    className="max-h-full object-contain"
+                    style={{ maxWidth: `${logoSize * 1.5}px` }}
                     onError={(e) => {
                       // If logo fails to load, fall back to text
                       setLogoUrl(null)

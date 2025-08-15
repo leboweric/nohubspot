@@ -33,6 +33,7 @@ class Organization(Base):
     theme_accent_color = Column(String(7), default='#60A5FA')  # Lighter variant
     logo_url = Column(Text)  # Organization logo URL
     logo_uploaded_at = Column(DateTime(timezone=True))  # When logo was last updated
+    logo_size = Column(Integer, default=100)  # Logo size percentage (50-150)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     

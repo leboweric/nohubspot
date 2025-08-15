@@ -270,6 +270,7 @@ class OrganizationResponse(OrganizationBase):
     theme_accent_color: str = '#60A5FA'
     logo_url: Optional[str] = None
     logo_uploaded_at: Optional[datetime] = None
+    logo_size: int = 100
     created_at: datetime
     
     class Config:
@@ -282,6 +283,7 @@ class OrganizationThemeUpdate(BaseModel):
 
 class OrganizationLogoUpdate(BaseModel):
     logo_url: Optional[str] = Field(None, max_length=2000)
+    logo_size: Optional[int] = Field(100, ge=50, le=150)
 
 # User schemas
 class UserBase(BaseModel):

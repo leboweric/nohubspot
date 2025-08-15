@@ -662,8 +662,9 @@ export default function SettingsPage() {
         {(user?.role === 'owner' || user?.role === 'admin') && (
           <LogoUploader
             currentLogoUrl={organization?.logo_url}
+            currentLogoSize={organization?.logo_size || 100}
             saving={logoSaving}
-            onSave={async (logoUrl) => {
+            onSave={async (logoUrl, logoSize) => {
               setLogoSaving(true)
               try {
                 const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
@@ -674,7 +675,8 @@ export default function SettingsPage() {
                     'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
                   },
                   body: JSON.stringify({
-                    logo_url: logoUrl
+                    logo_url: logoUrl,
+                    logo_size: logoSize || 100
                   })
                 })
                 

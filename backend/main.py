@@ -1501,9 +1501,11 @@ async def update_organization_logo(
     if not org:
         raise HTTPException(status_code=404, detail="Organization not found")
     
-    # Update logo URL
+    # Update logo URL and size
     org.logo_url = logo_update.logo_url
     org.logo_uploaded_at = datetime.utcnow() if logo_update.logo_url else None
+    if logo_update.logo_size is not None:
+        org.logo_size = logo_update.logo_size
     
     db.commit()
     db.refresh(org)
