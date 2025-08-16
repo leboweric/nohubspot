@@ -708,11 +708,24 @@ export default function SettingsPage() {
                 if (response.ok) {
                   const data = await response.json()
                   console.log('Logo update response data:', { logo_url: data.logo_url, logo_size: data.logo_size })
+                  
+                  // Merge with existing organization data to preserve all fields
+                  const existingOrg = localStorage.getItem('organization')
+                  let updatedOrg = data
+                  if (existingOrg) {
+                    try {
+                      const existingOrgData = JSON.parse(existingOrg)
+                      updatedOrg = { ...existingOrgData, ...data }
+                    } catch (err) {
+                      console.error('Failed to parse existing org:', err)
+                    }
+                  }
+                  
                   // Update organization in localStorage
-                  localStorage.setItem('organization', JSON.stringify(data))
-                  console.log('Saved to localStorage')
+                  localStorage.setItem('organization', JSON.stringify(updatedOrg))
+                  console.log('Saved to localStorage:', updatedOrg)
                   // Update local state
-                  setOrganization(data)
+                  setOrganization(updatedOrg)
                   // No page reload needed - MainLayout polls localStorage
                 } else {
                   throw new Error('Failed to update logo')
