@@ -103,7 +103,7 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
         borderColor: isDragging ? 'var(--color-secondary)' : undefined,
       } as React.CSSProperties}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = 'var(--color-primary-light)';
+        e.currentTarget.style.borderColor = 'var(--color-primary)';
       }}
       onMouseLeave={(e) => {
         if (!isDragging) {
@@ -121,12 +121,12 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
           ></div>
         </div>
         
-        {/* Health status badge - using theme color */}
+        {/* Health status badge - using neutral colors */}
         <div 
           className="px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1"
           style={{ 
-            backgroundColor: 'var(--color-primary-light)',
-            color: 'var(--color-primary-dark)'
+            backgroundColor: 'var(--color-neutral-100)',
+            color: 'var(--color-neutral-700)'
           }}
         >
           <HealthIcon className="w-3 h-3" />
