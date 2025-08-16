@@ -6,11 +6,10 @@ import {
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
-  DragOverEvent,
   PointerSensor,
   useSensor,
   useSensors,
-  closestCenter,
+  closestCorners,
   UniqueIdentifier,
 } from '@dnd-kit/core'
 import {
@@ -32,7 +31,6 @@ interface KanbanBoardProps {
 
 export default function KanbanBoard({ stages, deals, onDealMove, onAddDeal, onEditDeal, onDeleteDeal }: KanbanBoardProps) {
   const [activeDeal, setActiveDeal] = React.useState<Deal | null>(null)
-  const [overId, setOverId] = React.useState<string | number | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -53,37 +51,19 @@ export default function KanbanBoard({ stages, deals, onDealMove, onAddDeal, onEd
     setActiveDeal(deal || null)
   }
 
-  const handleDragOver = (event: DragOverEvent) => {
-    const { over } = event
-    setOverId(over ? over.id : null)
-  }
-
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
     setActiveDeal(null)
-    setOverId(null)
 
     if (!over) return
 
     const dealId = active.id as number
-    const overId = over.id
-
-    // Determine the target stage ID
-    let targetStageId: number | undefined
+    const overId = over.id as string
 
     // Check if we're dropping over a stage column
-    if (typeof overId === 'string' && overId.startsWith('stage-')) {
-      targetStageId = parseInt(overId.replace('stage-', ''))
-    } 
-    // Check if we're dropping over another deal (get its stage)
-    else if (typeof overId === 'number') {
-      const overDeal = deals.find(d => d.id === overId)
-      if (overDeal) {
-        targetStageId = overDeal.stage_id
-      }
-    }
+    const targetStageId = parseInt(overId.replace('stage-', ''))
     
-    if (!targetStageId || isNaN(targetStageId)) return
+    if (isNaN(targetStageId)) return
 
     const deal = deals.find(d => d.id === dealId)
     if (!deal || deal.stage_id === targetStageId) return
@@ -100,9 +80,8 @@ export default function KanbanBoard({ stages, deals, onDealMove, onAddDeal, onEd
     <div className="h-full">
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
+        collisionDetection={closestCorners}
         onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
         <div className="flex gap-6 h-full overflow-x-auto pb-6">
@@ -133,8 +112,8 @@ export default function KanbanBoard({ stages, deals, onDealMove, onAddDeal, onEd
             <div className="rotate-2 opacity-90">
               <DealCard 
                 deal={activeDeal} 
-                onEdit={() => {}} 
-                onDelete={() => {}} 
+                onEdit={() => window.location.reload()} 
+                onDelete={() => window.location.reload()} 
                 isDragging 
               />
             </div>
