@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { generateColorPalette, applyColorPalette } from '@/lib/color-harmony';
 
 interface ThemeColors {
   primary: string;
@@ -128,27 +129,38 @@ export function useThemeColors() {
 
   // Apply theme colors to DOM as CSS custom properties
   const applyThemeToDOM = (colors: ThemeColors) => {
-    console.log('applyThemeToDOM: Applying colors to DOM:', colors);
+    console.log('🎨 COLOR HARMONY v4 - Using useThemeColors hook!');
     const root = document.documentElement;
     
-    // Set theme colors for custom use
+    // Generate complete color palette from primary color
+    const palette = generateColorPalette(colors.primary);
+    console.log('🎨 Generated palette:', palette);
+    
+    // Apply the generated palette (includes complementary colors)
+    const paletteVars = applyColorPalette(colors.primary);
+    console.log('🎨 Setting CSS variables:', paletteVars);
+    Object.entries(paletteVars).forEach(([key, value]) => {
+      root.style.setProperty(key, value);
+    });
+    
+    // Set theme colors for custom use (use generated colors)
     root.style.setProperty('--theme-primary', colors.primary);
-    root.style.setProperty('--theme-secondary', colors.secondary);
-    root.style.setProperty('--theme-accent', colors.accent);
+    root.style.setProperty('--theme-secondary', palette.secondary); // Use generated complementary
+    root.style.setProperty('--theme-accent', palette.accent); // Use generated accent
     
     // Set Tailwind CSS variables (HSL format)
     root.style.setProperty('--primary', hexToHSL(colors.primary));
-    root.style.setProperty('--secondary', hexToHSL(colors.secondary));
-    root.style.setProperty('--accent', hexToHSL(colors.accent));
+    root.style.setProperty('--secondary', hexToHSL(palette.secondary));
+    root.style.setProperty('--accent', hexToHSL(palette.accent));
     
-    // Set opacity variations
+    // Set opacity variations (use generated colors)
     root.style.setProperty('--theme-primary-hover', colorPatterns.hover(colors.primary));
     root.style.setProperty('--theme-primary-selected', colorPatterns.selected(colors.primary));
     root.style.setProperty('--theme-primary-background', colorPatterns.background(colors.primary));
     root.style.setProperty('--theme-primary-border', colorPatterns.border(colors.primary));
     
-    root.style.setProperty('--theme-secondary-hover', colorPatterns.hover(colors.secondary));
-    root.style.setProperty('--theme-accent-background', colorPatterns.background(colors.accent));
+    root.style.setProperty('--theme-secondary-hover', colorPatterns.hover(palette.secondary));
+    root.style.setProperty('--theme-accent-background', colorPatterns.background(palette.accent));
     
     // Also update ring and sidebar colors to match
     root.style.setProperty('--ring', hexToHSL(colors.primary));
