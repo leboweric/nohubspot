@@ -127,20 +127,25 @@ function getAnalogous(hsl: HSL): HSL[] {
 
 // Generate neutral palette from primary
 function generateNeutralPalette(primaryHsl: HSL): Record<string, string> {
-  // Create a desaturated version of the primary for neutrals
-  const neutralBase = { ...primaryHsl, s: 5 } // Very low saturation
+  // Create an almost completely desaturated version for true neutrals
+  // Just a TINY hint of the primary color (2-3% saturation)
+  const neutralBase = { 
+    ...primaryHsl, 
+    s: 2, // Barely any color - just a whisper
+    l: 50 // Start from middle gray
+  }
   
   return {
-    '50': rgbToString(hslToRgb(adjustLightness(neutralBase, 48))),
-    '100': rgbToString(hslToRgb(adjustLightness(neutralBase, 44))),
-    '200': rgbToString(hslToRgb(adjustLightness(neutralBase, 36))),
-    '300': rgbToString(hslToRgb(adjustLightness(neutralBase, 24))),
-    '400': rgbToString(hslToRgb(adjustLightness(neutralBase, 8))),
-    '500': rgbToString(hslToRgb(neutralBase)),
-    '600': rgbToString(hslToRgb(adjustLightness(neutralBase, -12))),
-    '700': rgbToString(hslToRgb(adjustLightness(neutralBase, -24))),
-    '800': rgbToString(hslToRgb(adjustLightness(neutralBase, -36))),
-    '900': rgbToString(hslToRgb(adjustLightness(neutralBase, -44))),
+    '50': rgbToString(hslToRgb({ ...neutralBase, l: 98 })),  // Almost white
+    '100': rgbToString(hslToRgb({ ...neutralBase, l: 96 })),
+    '200': rgbToString(hslToRgb({ ...neutralBase, l: 91 })),
+    '300': rgbToString(hslToRgb({ ...neutralBase, l: 84 })),
+    '400': rgbToString(hslToRgb({ ...neutralBase, l: 64 })),
+    '500': rgbToString(hslToRgb({ ...neutralBase, l: 45 })),
+    '600': rgbToString(hslToRgb({ ...neutralBase, l: 32 })),
+    '700': rgbToString(hslToRgb({ ...neutralBase, l: 24 })),
+    '800': rgbToString(hslToRgb({ ...neutralBase, l: 15 })),
+    '900': rgbToString(hslToRgb({ ...neutralBase, l: 9 })),   // Almost black
   }
 }
 
@@ -151,22 +156,33 @@ export function generateColorPalette(primaryHex: string): ColorPalette {
   const primaryRgb = hexToRgb(primaryHex)
   const primaryHsl = rgbToHsl(primaryRgb)
   
-  // Primary variations
-  const primary = rgbToString(primaryRgb)
-  const primaryLight = rgbToString(hslToRgb(adjustLightness(primaryHsl, 15)))
-  const primaryDark = rgbToString(hslToRgb(adjustLightness(primaryHsl, -15)))
+  // Primary variations (keep original but slightly muted)
+  const mutedPrimaryHsl = { ...primaryHsl, s: Math.min(primaryHsl.s, 40) } // Cap saturation at 40%
+  const primary = rgbToString(hslToRgb(mutedPrimaryHsl))
+  const primaryLight = rgbToString(hslToRgb(adjustLightness(mutedPrimaryHsl, 25)))
+  const primaryDark = rgbToString(hslToRgb(adjustLightness(mutedPrimaryHsl, -20)))
   
-  // Secondary (complementary for contrast)
+  // Secondary (complementary but VERY muted for subtlety)
   const secondaryHsl = getComplementary(primaryHsl)
-  const secondary = rgbToString(hslToRgb(secondaryHsl))
-  const secondaryLight = rgbToString(hslToRgb(adjustLightness(secondaryHsl, 15)))
-  const secondaryDark = rgbToString(hslToRgb(adjustLightness(secondaryHsl, -15)))
+  const mutedSecondaryHsl = { 
+    ...secondaryHsl, 
+    s: 15, // Very low saturation for subtle contrast
+    l: 45  // Mid-range lightness
+  }
+  const secondary = rgbToString(hslToRgb(mutedSecondaryHsl))
+  const secondaryLight = rgbToString(hslToRgb(adjustLightness(mutedSecondaryHsl, 20)))
+  const secondaryDark = rgbToString(hslToRgb(adjustLightness(mutedSecondaryHsl, -20)))
   
-  // Accent (analogous for harmony)
+  // Accent (analogous but heavily muted)
   const analogous = getAnalogous(primaryHsl)
-  const accent = rgbToString(hslToRgb(analogous[0]))
+  const mutedAccentHsl = { 
+    ...analogous[0], 
+    s: 20, // Low saturation for professional look
+    l: 50  // Neutral lightness
+  }
+  const accent = rgbToString(hslToRgb(mutedAccentHsl))
   
-  // Neutral palette
+  // Neutral palette (very subtle hint of primary)
   const neutral = generateNeutralPalette(primaryHsl)
   
   return {
