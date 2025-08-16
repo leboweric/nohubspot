@@ -58,12 +58,23 @@ export default function KanbanBoard({ stages, deals, onDealMove, onAddDeal, onEd
     if (!over) return
 
     const dealId = active.id as number
-    const overId = over.id as string
-
-    // Check if we're dropping over a stage column
-    const targetStageId = parseInt(overId.replace('stage-', ''))
+    const overId = over.id
     
-    if (isNaN(targetStageId)) return
+    let targetStageId: number | undefined
+
+    // Check if we're dropping over a stage column (string ID starting with 'stage-')
+    if (typeof overId === 'string' && overId.startsWith('stage-')) {
+      targetStageId = parseInt(overId.replace('stage-', ''))
+    }
+    // Check if we're dropping over another deal (number ID)
+    else if (typeof overId === 'number') {
+      const overDeal = deals.find(d => d.id === overId)
+      if (overDeal) {
+        targetStageId = overDeal.stage_id
+      }
+    }
+    
+    if (!targetStageId || isNaN(targetStageId)) return
 
     const deal = deals.find(d => d.id === dealId)
     if (!deal || deal.stage_id === targetStageId) return
