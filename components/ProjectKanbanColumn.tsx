@@ -44,15 +44,27 @@ export default function ProjectKanbanColumn({
       {/* Column Header */}
       <div 
         className="px-4 py-3 border-b border-gray-200 bg-white rounded-t-lg border-l-4"
-        style={{ borderLeftColor: 'var(--theme-primary)' }}
+        style={{ 
+          borderLeftColor: stage.name === 'Planning' ? 'var(--color-primary)' :
+                          stage.name === 'Active' ? 'var(--color-secondary)' :
+                          stage.name === 'Wrapping Up' ? 'var(--color-accent)' :
+                          stage.name === 'Closed' ? 'var(--color-neutral-400)' :
+                          'var(--color-neutral-300)'
+        }}
       >
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold text-gray-900">{stage.name}</h3>
           <span 
             className="text-sm font-medium px-2 py-0.5 rounded-full"
             style={{ 
-              backgroundColor: 'var(--theme-primary-background)',
-              color: 'var(--theme-primary)'
+              backgroundColor: stage.name === 'Planning' ? 'var(--color-primary-light)' :
+                             stage.name === 'Active' ? 'var(--color-secondary-light)' :
+                             stage.name === 'Wrapping Up' ? 'var(--color-accent)' :
+                             'var(--color-neutral-100)',
+              color: stage.name === 'Planning' ? 'var(--color-primary-dark)' :
+                    stage.name === 'Active' ? 'var(--color-secondary-dark)' :
+                    stage.name === 'Wrapping Up' ? 'var(--color-neutral-900)' :
+                    'var(--color-neutral-700)'
             }}
           >
             {projects.length}
@@ -73,8 +85,9 @@ export default function ProjectKanbanColumn({
       <div
         ref={setNodeRef}
         className={`flex-1 p-3 space-y-3 min-h-96 transition-colors bg-gray-50 ${
-          isOver ? 'bg-blue-50 border-2 border-dashed border-blue-300' : ''
+          isOver ? 'border-2 border-dashed' : ''
         }`}
+        style={isOver ? { borderColor: 'var(--color-secondary)', backgroundColor: 'var(--color-secondary-light)' } : {}}
       >
         {projects.length === 0 ? (
           <div className="flex items-center justify-center h-32 text-gray-500 text-sm border-2 border-dashed border-gray-300 rounded-lg bg-white">
@@ -97,16 +110,16 @@ export default function ProjectKanbanColumn({
             onClick={() => onAddProject(stage.id)}
             className="w-full p-3 text-sm border-2 border-dashed rounded-lg transition-all"
             style={{
-              borderColor: 'var(--theme-primary-border)',
-              color: 'var(--theme-primary)'
+              borderColor: 'var(--color-primary-light)',
+              color: 'var(--color-primary)'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--theme-primary-background)';
-              e.currentTarget.style.borderColor = 'var(--theme-primary)';
+              e.currentTarget.style.backgroundColor = 'var(--color-primary-light)';
+              e.currentTarget.style.borderColor = 'var(--color-primary)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = '';
-              e.currentTarget.style.borderColor = 'var(--theme-primary-border)';
+              e.currentTarget.style.borderColor = 'var(--color-primary-light)';
             }}
           >
             + Add Project
