@@ -162,23 +162,23 @@ export function generateColorPalette(primaryHex: string): ColorPalette {
   const primaryLight = rgbToString(hslToRgb(adjustLightness(mutedPrimaryHsl, 25)))
   const primaryDark = rgbToString(hslToRgb(adjustLightness(mutedPrimaryHsl, -20)))
   
-  // Secondary (complementary but VERY muted for subtlety)
+  // Secondary (complementary but muted for subtlety)
   const secondaryHsl = getComplementary(primaryHsl)
   const mutedSecondaryHsl = { 
     ...secondaryHsl, 
-    s: 15, // Very low saturation for subtle contrast
-    l: 45  // Mid-range lightness
+    s: 30, // Moderate saturation - visible but still professional
+    l: 50  // Mid-range lightness
   }
   const secondary = rgbToString(hslToRgb(mutedSecondaryHsl))
   const secondaryLight = rgbToString(hslToRgb(adjustLightness(mutedSecondaryHsl, 20)))
   const secondaryDark = rgbToString(hslToRgb(adjustLightness(mutedSecondaryHsl, -20)))
   
-  // Accent (analogous but heavily muted)
+  // Accent (analogous but muted)
   const analogous = getAnalogous(primaryHsl)
   const mutedAccentHsl = { 
     ...analogous[0], 
-    s: 20, // Low saturation for professional look
-    l: 50  // Neutral lightness
+    s: 25, // Moderate saturation for subtle harmony
+    l: 55  // Slightly lighter
   }
   const accent = rgbToString(hslToRgb(mutedAccentHsl))
   
