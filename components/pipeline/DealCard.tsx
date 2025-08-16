@@ -252,8 +252,8 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
             <span 
               className="px-2 py-1 rounded-full text-xs"
               style={{ 
-                backgroundColor: 'var(--theme-accent-background)',
-                color: 'var(--theme-accent)'
+                backgroundColor: 'var(--color-accent)',
+                color: 'var(--color-accent)'
               }}
             >
               {closeDateStatus.text}

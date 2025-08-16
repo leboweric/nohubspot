@@ -128,15 +128,15 @@ export default function CalendarStats({ events, currentDate }: CalendarStatsProp
           const getIconColor = (theme: string) => {
             switch (theme) {
               case 'primary':
-                return 'var(--theme-primary)'
+                return 'var(--color-primary)'
               case 'success':
-                return 'var(--theme-accent)'
+                return 'var(--color-accent)'
               case 'warning':
-                return 'var(--theme-secondary)'
+                return 'var(--color-secondary)'
               case 'accent':
-                return 'var(--theme-accent)'
+                return 'var(--color-accent)'
               default:
-                return 'var(--theme-primary)'
+                return 'var(--color-primary)'
             }
           }
           
@@ -176,10 +176,10 @@ export default function CalendarStats({ events, currentDate }: CalendarStatsProp
           
           <div className="space-y-3">
             {[
-              { type: 'Meetings', count: stats.meetings, icon: Users, color: 'var(--theme-primary)' },
-              { type: 'Calls', count: stats.calls, icon: Phone, color: 'var(--theme-accent)' },
-              { type: 'Tasks', count: stats.tasks, icon: CheckCircle, color: 'var(--theme-secondary)' },
-              { type: 'Reminders', count: stats.reminders, icon: AlertTriangle, color: 'var(--theme-accent)' }
+              { type: 'Meetings', count: stats.meetings, icon: Users, color: 'var(--color-primary)' },
+              { type: 'Calls', count: stats.calls, icon: Phone, color: 'var(--color-accent)' },
+              { type: 'Tasks', count: stats.tasks, icon: CheckCircle, color: 'var(--color-secondary)' },
+              { type: 'Reminders', count: stats.reminders, icon: AlertTriangle, color: 'var(--color-accent)' }
             ].map((item, index) => {
               const Icon = item.icon
               const percentage = stats.totalThisMonth > 0 

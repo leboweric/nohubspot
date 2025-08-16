@@ -65,7 +65,7 @@ export default function ContactCard({ contact, onDelete }: ContactCardProps) {
           <div 
             className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-semibold text-sm"
             style={{ 
-              background: `linear-gradient(135deg, var(--theme-accent), var(--theme-primary))` 
+              background: `linear-gradient(135deg, var(--color-accent), var(--color-primary))` 
             }}
           >
             {getInitials(contact.first_name, contact.last_name)}
@@ -80,7 +80,7 @@ export default function ContactCard({ contact, onDelete }: ContactCardProps) {
             {contact.company_name && (
               <p 
                 className="text-sm transition-colors truncate hover:opacity-80"
-                style={{ color: 'var(--theme-primary)' }}
+                style={{ color: 'var(--color-primary)' }}
               >
                 {contact.company_name}
               </p>

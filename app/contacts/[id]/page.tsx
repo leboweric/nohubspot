@@ -456,7 +456,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                 <div 
                   className="w-16 h-16 rounded-full flex items-center justify-center text-white font-semibold text-xl"
                   style={{ 
-                    background: `linear-gradient(135deg, var(--theme-accent), var(--theme-primary))` 
+                    background: `linear-gradient(135deg, var(--color-accent), var(--color-primary))` 
                   }}
                 >
                   {getInitials(contact.first_name, contact.last_name)}

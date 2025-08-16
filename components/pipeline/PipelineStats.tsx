@@ -166,15 +166,15 @@ export default function PipelineStats({ deals, stages, showOnlyTopRow = false }:
           const getIconColor = (theme: string) => {
             switch (theme) {
               case 'primary':
-                return 'var(--theme-primary)'
+                return 'var(--color-primary)'
               case 'success':
                 return '#10b981'
               case 'warning':
                 return '#f59e0b'
               case 'accent':
-                return 'var(--theme-accent)'
+                return 'var(--color-accent)'
               default:
-                return 'var(--theme-primary)'
+                return 'var(--color-primary)'
             }
           }
           
@@ -265,7 +265,7 @@ export default function PipelineStats({ deals, stages, showOnlyTopRow = false }:
                       className="h-2 rounded-full transition-all duration-500"
                       style={{ 
                         width: `${percentage}%`,
-                        backgroundColor: 'var(--theme-primary)'
+                        backgroundColor: 'var(--color-primary)'
                       }}
                     />
                   </div>

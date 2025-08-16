@@ -149,8 +149,8 @@ export default function ProjectCard({ project, onEdit, onDelete, isDragging }: P
         <div 
           className="px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1"
           style={{ 
-            backgroundColor: 'var(--color-primary-light)',
-            color: 'var(--color-primary-dark)'
+            backgroundColor: 'var(--color-neutral-100)',
+            color: 'var(--color-neutral-700)'
           }}
         >
           <HealthIcon className="w-3 h-3" />
@@ -220,7 +220,7 @@ export default function ProjectCard({ project, onEdit, onDelete, isDragging }: P
         <div className="flex items-baseline gap-2 mb-2">
           <span 
             className="text-xl font-semibold"
-            style={{ color: 'var(--theme-primary)' }}
+            style={{ color: 'var(--color-primary)' }}
           >
             {projectValue > 0 ? formatCurrency(projectValue) : 'TBD'}
           </span>
@@ -243,7 +243,7 @@ export default function ProjectCard({ project, onEdit, onDelete, isDragging }: P
                 className="h-2 rounded-full transition-all duration-500"
                 style={{ 
                   width: `${Math.min(progressPercentage, 100)}%`,
-                  backgroundColor: 'var(--theme-primary)'
+                  backgroundColor: 'var(--color-primary)'
                 }}
               />
             </div>
@@ -266,7 +266,7 @@ export default function ProjectCard({ project, onEdit, onDelete, isDragging }: P
             <Link
               href={`/contacts/${project.primary_contact_id}`}
               className="transition-colors truncate hover:opacity-80"
-              style={{ color: 'var(--theme-primary)' }}
+              style={{ color: 'var(--color-primary)' }}
               onClick={(e) => e.stopPropagation()}
             >
               {project.contact_name}
@@ -280,7 +280,7 @@ export default function ProjectCard({ project, onEdit, onDelete, isDragging }: P
             <Link
               href={`/companies/${project.company_id}`}
               className="transition-colors truncate hover:opacity-80"
-              style={{ color: 'var(--theme-primary)' }}
+              style={{ color: 'var(--color-primary)' }}
               onClick={(e) => e.stopPropagation()}
             >
               {project.company_name}
@@ -304,8 +304,8 @@ export default function ProjectCard({ project, onEdit, onDelete, isDragging }: P
             <span 
               className="px-2 py-1 rounded-full text-xs"
               style={{ 
-                backgroundColor: 'var(--theme-accent-background)',
-                color: 'var(--theme-accent)'
+                backgroundColor: 'var(--color-neutral-100)',
+                color: 'var(--color-neutral-700)'
               }}
             >
               {deadlineStatus.text}

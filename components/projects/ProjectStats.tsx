@@ -174,15 +174,15 @@ export default function ProjectStats({ projects, stages, showOnlyTopRow = false 
           const getIconColor = (theme: string) => {
             switch (theme) {
               case 'primary':
-                return 'var(--theme-primary)'
+                return 'var(--color-primary)'
               case 'success':
-                return '#10b981'
+                return 'var(--color-secondary)'
               case 'warning':
-                return '#f59e0b'
+                return 'var(--color-accent)'
               case 'accent':
-                return 'var(--theme-accent)'
+                return 'var(--color-accent)'
               default:
-                return 'var(--theme-primary)'
+                return 'var(--color-primary)'
             }
           }
           
@@ -247,7 +247,7 @@ export default function ProjectStats({ projects, stages, showOnlyTopRow = false 
             <h3 className="font-semibold text-gray-900">Stage Progression</h3>
             <TrendingUp 
               className="w-5 h-5 opacity-40" 
-              style={{ color: 'var(--theme-primary)' }}
+              style={{ color: 'var(--color-primary)' }}
             />
           </div>
           
@@ -276,7 +276,7 @@ export default function ProjectStats({ projects, stages, showOnlyTopRow = false 
                       className="h-2 rounded-full transition-all duration-500"
                       style={{ 
                         width: `${percentage}%`,
-                        backgroundColor: 'var(--theme-primary)'
+                        backgroundColor: 'var(--color-primary)'
                       }}
                     />
                   </div>
@@ -292,7 +292,7 @@ export default function ProjectStats({ projects, stages, showOnlyTopRow = false 
             <h3 className="font-semibold text-gray-900">Project Health</h3>
             <Zap 
               className="w-5 h-5 opacity-40" 
-              style={{ color: 'var(--theme-accent)' }}
+              style={{ color: 'var(--color-accent)' }}
             />
           </div>
           

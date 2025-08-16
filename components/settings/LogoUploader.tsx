@@ -320,7 +320,7 @@ export default function LogoUploader({
                 }}
                 className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                 style={{
-                  background: `linear-gradient(to right, rgb(var(--theme-primary)) 0%, rgb(var(--theme-primary)) ${((logoSize - 50) / 100) * 100}%, #e5e7eb ${((logoSize - 50) / 100) * 100}%, #e5e7eb 100%)`
+                  background: `linear-gradient(to right, rgb(var(--color-primary)) 0%, rgb(var(--color-primary)) ${((logoSize - 50) / 100) * 100}%, #e5e7eb ${((logoSize - 50) / 100) * 100}%, #e5e7eb 100%)`
                 }}
               />
               <span className="text-xs text-muted-foreground">150%</span>

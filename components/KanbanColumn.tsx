@@ -151,16 +151,16 @@ export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal, onDe
             onClick={() => onAddDeal(stage.id)}
             className="w-full p-3 text-sm border-2 border-dashed rounded-lg transition-all"
             style={{
-              borderColor: 'var(--theme-primary-border)',
-              color: 'var(--theme-primary)'
+              borderColor: 'var(--color-primary-light)',
+              color: 'var(--color-primary)'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--theme-primary-background)';
-              e.currentTarget.style.borderColor = 'var(--theme-primary)';
+              e.currentTarget.style.backgroundColor = 'var(--color-primary-light)';
+              e.currentTarget.style.borderColor = 'var(--color-primary)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = '';
-              e.currentTarget.style.borderColor = 'var(--theme-primary-border)';
+              e.currentTarget.style.borderColor = 'var(--color-primary-light)';
             }}
           >
             + Add Deal

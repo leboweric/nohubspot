@@ -133,7 +133,7 @@ export default function TaskStats({ tasks }: TaskStatsProps) {
           const getIconColor = (theme: string) => {
             switch (theme) {
               case 'primary':
-                return 'var(--theme-primary)'
+                return 'var(--color-primary)'
               case 'success':
                 return '#10b981'
               case 'warning':
@@ -141,9 +141,9 @@ export default function TaskStats({ tasks }: TaskStatsProps) {
               case 'danger':
                 return '#ef4444'
               case 'accent':
-                return 'var(--theme-accent)'
+                return 'var(--color-accent)'
               default:
-                return 'var(--theme-primary)'
+                return 'var(--color-primary)'
             }
           }
           
@@ -205,7 +205,7 @@ export default function TaskStats({ tasks }: TaskStatsProps) {
           <div className="flex items-center gap-3">
             <Calendar 
               className="w-5 h-5" 
-              style={{ color: 'var(--theme-primary)', opacity: 0.6 }}
+              style={{ color: 'var(--color-primary)', opacity: 0.6 }}
             />
             <div>
               <p className="font-semibold text-gray-800">This Week</p>

@@ -311,7 +311,7 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
           <div className="flex items-center justify-between mt-1">
             <div 
               className="text-lg font-bold"
-              style={{ color: 'var(--theme-primary)' }}
+              style={{ color: 'var(--color-primary)' }}
             >
               {calculateProjectValue() > 0 
                 ? formatCurrency(calculateProjectValue())
@@ -366,7 +366,7 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
             }}
             className="flex items-center justify-between w-full text-xs text-gray-600 transition-colors"
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--theme-primary)';
+              e.currentTarget.style.color = 'var(--color-primary)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.color = '';
@@ -399,7 +399,7 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
             }}
             className="flex items-center justify-between w-full text-xs text-gray-600 transition-colors"
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--theme-primary)';
+              e.currentTarget.style.color = 'var(--color-primary)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.color = '';
@@ -443,7 +443,7 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
                     <div 
                       className="h-1.5 rounded-full transition-all duration-300"
                       style={{ 
-                        backgroundColor: uploadSuccess ? 'var(--theme-accent)' : 'var(--theme-primary)'
+                        backgroundColor: uploadSuccess ? 'var(--color-accent)' : 'var(--color-primary)'
                       }}
                       style={{ width: `${uploadProgress}%` }}
                     />
@@ -455,9 +455,9 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
                   disabled={uploading}
                   className="w-full mb-2 px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg transition-colors flex items-center justify-center text-xs text-gray-600"
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--theme-primary)';
-                    e.currentTarget.style.backgroundColor = 'var(--theme-primary-background)';
-                    e.currentTarget.style.color = 'var(--theme-primary)';
+                    e.currentTarget.style.borderColor = 'var(--color-primary)';
+                    e.currentTarget.style.backgroundColor = 'var(--color-primary-light)';
+                    e.currentTarget.style.color = 'var(--color-primary)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = '';
@@ -490,7 +490,7 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
                         onClick={(e) => handleDownloadAttachment(attachment, e)}
                         className="flex items-center flex-1 min-w-0 text-left transition-colors"
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.color = 'var(--theme-primary)';
+                          e.currentTarget.style.color = 'var(--color-primary)';
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.color = '';

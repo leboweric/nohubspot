@@ -56,7 +56,7 @@ export default function CompanyCard({ company, onDelete }: CompanyCardProps) {
           <div 
             className="w-12 h-12 rounded-lg flex items-center justify-center text-white font-semibold text-sm"
             style={{ 
-              background: `linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))` 
+              background: `linear-gradient(135deg, var(--color-primary), var(--color-secondary))` 
             }}
           >
             {getInitials(company.name)}
@@ -82,13 +82,13 @@ export default function CompanyCard({ company, onDelete }: CompanyCardProps) {
         )}
         
         <div className="flex items-center gap-2 text-sm">
-          <Users className="w-4 h-4" style={{ color: 'var(--theme-primary)' }} />
+          <Users className="w-4 h-4" style={{ color: 'var(--color-primary)' }} />
           <span>{company.contact_count || 0} contacts</span>
         </div>
         
         {company.attachment_count > 0 && (
           <div className="flex items-center gap-2 text-sm">
-            <FileText className="w-4 h-4" style={{ color: 'var(--theme-accent)' }} />
+            <FileText className="w-4 h-4" style={{ color: 'var(--color-accent)' }} />
             <span>{company.attachment_count} files</span>
           </div>
         )}
