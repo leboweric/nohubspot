@@ -102,14 +102,12 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
       style={{
         borderColor: isDragging ? 'var(--color-secondary)' : undefined,
       } as React.CSSProperties}
-      onMouseEnter={(e) => {
+      onMouseEnter={!isDragging ? (e) => {
         e.currentTarget.style.borderColor = 'var(--color-primary)';
-      }}
-      onMouseLeave={(e) => {
-        if (!isDragging) {
-          e.currentTarget.style.borderColor = '';
-        }
-      }}
+      } : undefined}
+      onMouseLeave={!isDragging ? (e) => {
+        e.currentTarget.style.borderColor = '';
+      } : undefined}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
@@ -134,18 +132,19 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
         </div>
         
         {/* Menu button */}
-        <div className="relative ml-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setShowMenu(!showMenu)
-            }}
-            className="p-1 hover:bg-gray-100 rounded transition-colors"
-          >
-            <MoreVertical className="w-4 h-4 text-gray-500" />
-          </button>
-          
-          {showMenu && (
+        {!isDragging && (
+          <div className="relative ml-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowMenu(!showMenu)
+              }}
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
+            >
+              <MoreVertical className="w-4 h-4 text-gray-500" />
+            </button>
+            
+            {showMenu && (
             <>
               <div 
                 className="fixed inset-0 z-10"
@@ -184,7 +183,8 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
               </div>
             </>
           )}
-        </div>
+          </div>
+        )}
       </div>
       
       {/* Deal title and value */}
@@ -211,28 +211,40 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
         {deal.contact_name && (
           <div className="flex items-center gap-2">
             <User className="w-3 h-3" />
-            <Link
-              href={`/contacts/${deal.primary_contact_id}`}
-              className="transition-colors truncate hover:opacity-80"
-              style={{ color: 'var(--color-primary)' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {deal.contact_name}
-            </Link>
+            {!isDragging ? (
+              <Link
+                href={`/contacts/${deal.primary_contact_id}`}
+                className="transition-colors truncate hover:opacity-80"
+                style={{ color: 'var(--color-primary)' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {deal.contact_name}
+              </Link>
+            ) : (
+              <span className="truncate" style={{ color: 'var(--color-primary)' }}>
+                {deal.contact_name}
+              </span>
+            )}
           </div>
         )}
         
         {deal.company_name && (
           <div className="flex items-center gap-2">
             <Building2 className="w-3 h-3" />
-            <Link
-              href={`/companies/${deal.company_id}`}
-              className="transition-colors truncate hover:opacity-80"
-              style={{ color: 'var(--color-primary)' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {deal.company_name}
-            </Link>
+            {!isDragging ? (
+              <Link
+                href={`/companies/${deal.company_id}`}
+                className="transition-colors truncate hover:opacity-80"
+                style={{ color: 'var(--color-primary)' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {deal.company_name}
+              </Link>
+            ) : (
+              <span className="truncate" style={{ color: 'var(--color-primary)' }}>
+                {deal.company_name}
+              </span>
+            )}
           </div>
         )}
         
@@ -262,31 +274,33 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
         </div>
         
         {/* Quick actions */}
-        <div className="flex items-center gap-1">
-          {deal.contact_name && (
+        {!isDragging && (
+          <div className="flex items-center gap-1">
+            {deal.contact_name && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  window.location.href = `mailto:${deal.contact_name}`
+                }}
+                className="p-1 hover:bg-gray-100 rounded transition-colors"
+                title="Send email"
+              >
+                <Mail className="w-3 h-3 text-gray-500" />
+              </button>
+            )}
+            
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                window.location.href = `mailto:${deal.contact_name}`
+                onEdit(deal)
               }}
               className="p-1 hover:bg-gray-100 rounded transition-colors"
-              title="Send email"
+              title="Edit deal"
             >
-              <Mail className="w-3 h-3 text-gray-500" />
+              <Edit className="w-3 h-3 text-gray-500" />
             </button>
-          )}
-          
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onEdit(deal)
-            }}
-            className="p-1 hover:bg-gray-100 rounded transition-colors"
-            title="Edit deal"
-          >
-            <Edit className="w-3 h-3 text-gray-500" />
-          </button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )
