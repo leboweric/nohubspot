@@ -4,13 +4,53 @@
 
 @layer base {
   :root {
+    /* Design System Neutral Colors */
+    --color-neutral-50: rgb(249, 250, 251);
+    --color-neutral-100: rgb(243, 244, 246);
+    --color-neutral-200: rgb(229, 231, 235);
+    --color-neutral-300: rgb(209, 213, 219);
+    --color-neutral-400: rgb(156, 163, 175);
+    --color-neutral-500: rgb(107, 114, 128);
+    --color-neutral-600: rgb(75, 85, 99);
+    --color-neutral-700: rgb(55, 65, 81);
+    --color-neutral-800: rgb(31, 41, 55);
+    --color-neutral-900: rgb(17, 24, 39);
+    
+    /* Semantic colors (all gray for professional look) */
+    --color-success-light: rgb(243, 250, 247);
+    --color-success: rgb(156, 163, 175);
+    --color-success-dark: rgb(107, 114, 128);
+    --color-warning-light: rgb(254, 252, 251);
+    --color-warning: rgb(156, 163, 175);
+    --color-warning-dark: rgb(107, 114, 128);
+    --color-error-light: rgb(254, 250, 250);
+    --color-error: rgb(156, 163, 175);
+    --color-error-dark: rgb(107, 114, 128);
+    --color-info-light: rgb(248, 250, 252);
+    --color-info: rgb(156, 163, 175);
+    --color-info-dark: rgb(107, 114, 128);
+    
+    /* Component tokens */
+    --color-badge-background: rgb(243, 244, 246);
+    --color-badge-text: rgb(55, 65, 81);
+    --color-badge-border: rgb(229, 231, 235);
+    --color-priority-high: rgb(75, 85, 99);
+    --color-priority-medium: rgb(156, 163, 175);
+    --color-priority-low: rgb(209, 213, 219);
+    --color-status-active: rgb(243, 244, 246);
+    --color-status-inactive: rgb(249, 250, 251);
+    --color-status-pending: rgb(229, 231, 235);
+    --color-progress-background: rgb(229, 231, 235);
+    --color-progress-fill: rgb(107, 114, 128);
+    
+    /* Map to Tailwind/shadcn variables */
     --background: 0 0% 100%;
-    --foreground: 0 0% 15%; /* Changed from 20% - no pure black */
+    --foreground: 0 0% 15%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 15%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 15%;
-    --primary: 221 83% 53%; /* Modern blue instead of near-black */
+    --primary: 0 0% 45%; /* Gray primary */
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 15%;
@@ -18,12 +58,12 @@
     --muted-foreground: 0 0% 45.1%;
     --accent: 0 0% 96.1%;
     --accent-foreground: 0 0% 15%;
-    --destructive: 0 70% 50%; /* Muted red instead of bright */
+    --destructive: 0 0% 45%; /* Gray instead of red */
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 91%; /* Slightly lighter border */
+    --border: 0 0% 91%;
     --input: 0 0% 91%;
-    --ring: 221 83% 53%; /* Match primary for consistent focus */
-    --radius: 0.625rem; /* 10px - The golden radius */
+    --ring: 0 0% 45%; /* Gray focus ring */
+    --radius: 0.625rem;
     
     /* Sidebar colors */
     --sidebar-background: 0 0% 98%;
@@ -55,13 +95,53 @@
   }
   
   .dark {
+    /* Design System Neutral Colors - Dark Mode */
+    --color-neutral-50: rgb(17, 24, 39);
+    --color-neutral-100: rgb(31, 41, 55);
+    --color-neutral-200: rgb(55, 65, 81);
+    --color-neutral-300: rgb(75, 85, 99);
+    --color-neutral-400: rgb(107, 114, 128);
+    --color-neutral-500: rgb(156, 163, 175);
+    --color-neutral-600: rgb(209, 213, 219);
+    --color-neutral-700: rgb(229, 231, 235);
+    --color-neutral-800: rgb(243, 244, 246);
+    --color-neutral-900: rgb(249, 250, 251);
+    
+    /* Keep semantic colors consistent */
+    --color-success-light: rgb(31, 41, 55);
+    --color-success: rgb(156, 163, 175);
+    --color-success-dark: rgb(209, 213, 219);
+    --color-warning-light: rgb(31, 41, 55);
+    --color-warning: rgb(156, 163, 175);
+    --color-warning-dark: rgb(209, 213, 219);
+    --color-error-light: rgb(31, 41, 55);
+    --color-error: rgb(156, 163, 175);
+    --color-error-dark: rgb(209, 213, 219);
+    --color-info-light: rgb(31, 41, 55);
+    --color-info: rgb(156, 163, 175);
+    --color-info-dark: rgb(209, 213, 219);
+    
+    /* Component tokens - dark mode */
+    --color-badge-background: rgb(31, 41, 55);
+    --color-badge-text: rgb(229, 231, 235);
+    --color-badge-border: rgb(55, 65, 81);
+    --color-priority-high: rgb(209, 213, 219);
+    --color-priority-medium: rgb(156, 163, 175);
+    --color-priority-low: rgb(75, 85, 99);
+    --color-status-active: rgb(31, 41, 55);
+    --color-status-inactive: rgb(17, 24, 39);
+    --color-status-pending: rgb(55, 65, 81);
+    --color-progress-background: rgb(55, 65, 81);
+    --color-progress-fill: rgb(209, 213, 219);
+    
+    /* Map to Tailwind/shadcn variables */
     --background: 0 0% 9%;
-    --foreground: 0 0% 95%; /* No pure white */
+    --foreground: 0 0% 95%;
     --card: 0 0% 13%;
     --card-foreground: 0 0% 95%;
     --popover: 0 0% 13%;
     --popover-foreground: 0 0% 95%;
-    --primary: 221 83% 60%; /* Consistent blue in dark mode */
+    --primary: 0 0% 60%; /* Gray primary in dark mode */
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 20%;
     --secondary-foreground: 0 0% 95%;
@@ -69,11 +149,11 @@
     --muted-foreground: 0 0% 60%;
     --accent: 0 0% 20%;
     --accent-foreground: 0 0% 95%;
-    --destructive: 0 60% 45%; /* Muted red in dark mode */
+    --destructive: 0 0% 45%; /* Gray instead of red */
     --destructive-foreground: 0 0% 95%;
-    --border: 0 0% 18%; /* Subtle borders */
+    --border: 0 0% 18%;
     --input: 0 0% 18%;
-    --ring: 221 83% 60%; /* Match primary for consistent focus */
+    --ring: 0 0% 60%; /* Gray focus ring */
     
     /* Sidebar colors dark */
     --sidebar-background: 0 0% 13%;
