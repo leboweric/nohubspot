@@ -323,7 +323,9 @@ export default function LogoUploader({
                   const newSize = parseInt((e.target as HTMLInputElement).value);
                   console.log('Auto-saving logo size:', newSize);
                   try {
-                    await onSave(logoUrl, newSize);
+                    // Only save the size, not the data URL (if it's a data URL)
+                    const urlToSave = logoUrl && logoUrl.startsWith('data:') ? undefined : logoUrl;
+                    await onSave(urlToSave, newSize);
                   } catch (error) {
                     console.error('Failed to auto-save logo size:', error);
                   }
@@ -333,7 +335,9 @@ export default function LogoUploader({
                   const newSize = parseInt((e.target as HTMLInputElement).value);
                   console.log('Auto-saving logo size (touch):', newSize);
                   try {
-                    await onSave(logoUrl, newSize);
+                    // Only save the size, not the data URL (if it's a data URL)
+                    const urlToSave = logoUrl && logoUrl.startsWith('data:') ? undefined : logoUrl;
+                    await onSave(urlToSave, newSize);
                   } catch (error) {
                     console.error('Failed to auto-save logo size:', error);
                   }

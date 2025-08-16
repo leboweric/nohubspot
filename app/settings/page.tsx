@@ -666,12 +666,19 @@ export default function SettingsPage() {
             saving={logoSaving}
             onLogoChange={(logoUrl, logoSize) => {
               console.log('Logo change preview - size:', logoSize);
-              // Update local state for preview
-              if (organization) {
-                const updatedOrg = { ...organization, logo_url: logoUrl || organization.logo_url, logo_size: logoSize };
-                setOrganization(updatedOrg);
-                // Also update localStorage for immediate effect
-                localStorage.setItem('organization', JSON.stringify(updatedOrg));
+              // Update localStorage for immediate effect
+              const cachedOrg = localStorage.getItem('organization');
+              if (cachedOrg) {
+                try {
+                  const orgData = JSON.parse(cachedOrg);
+                  orgData.logo_size = logoSize;
+                  if (logoUrl !== undefined) {
+                    orgData.logo_url = logoUrl;
+                  }
+                  localStorage.setItem('organization', JSON.stringify(orgData));
+                } catch (err) {
+                  console.error('Failed to update localStorage:', err);
+                }
               }
             }}
             onSave={async (logoUrl, logoSize) => {
@@ -679,11 +686,16 @@ export default function SettingsPage() {
               setLogoSaving(true)
               try {
                 const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
+                // If logoUrl is undefined, get the current URL from organization
+                const finalLogoUrl = logoUrl !== undefined ? logoUrl : organization?.logo_url;
                 const requestBody = {
-                  logo_url: logoUrl,
+                  logo_url: finalLogoUrl,
                   logo_size: logoSize || 100
                 }
-                console.log('Sending logo update request with body:', requestBody)
+                console.log('Sending logo update request with body:', { 
+                  logo_url: finalLogoUrl?.substring(0, 50), 
+                  logo_size: requestBody.logo_size 
+                })
                 const response = await fetch(`${baseUrl}/api/organization/logo`, {
                   method: 'PUT',
                   headers: {
