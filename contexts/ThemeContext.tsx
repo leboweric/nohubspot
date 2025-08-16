@@ -162,9 +162,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     
     // Generate complete color palette from primary color
     const palette = generateColorPalette(colors.primary);
+    console.log('Generated palette:', palette); // Debug log
     
     // Apply the generated palette (includes complementary colors)
     const paletteVars = applyColorPalette(colors.primary);
+    console.log('Setting CSS variables:', paletteVars); // Debug log
     Object.entries(paletteVars).forEach(([key, value]) => {
       root.style.setProperty(key, value);
     });
