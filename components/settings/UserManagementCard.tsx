@@ -91,7 +91,10 @@ export default function UserManagementCard({
     >
       <div className="flex items-start gap-4">
         {/* Avatar */}
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-lg shadow-md">
+        <div 
+          className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-lg shadow-md"
+          style={{ backgroundColor: 'var(--color-primary)' }}
+        >
           {getInitials()}
         </div>
         
