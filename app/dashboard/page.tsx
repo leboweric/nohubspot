@@ -423,39 +423,6 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-semibold">{organizationName} Dashboard</h1>
         <p className="text-muted-foreground mt-1">Welcome back{firstName ? `, ${firstName}` : ''}. Here's what needs your attention today.</p>
         
-        {/* Color Palette Display - Temporary for testing - UPDATED */}
-        <div className="mt-4 p-4 bg-yellow-100 border-2 border-yellow-500 rounded-lg">
-          <h3 className="text-lg font-bold mb-2 text-black">🎨 COLOR TEST v2 - If you see this, deployment worked!</h3>
-        <div className="flex gap-2 items-center text-xs">
-          <div 
-            className="px-3 py-1 rounded text-white"
-            style={{ backgroundColor: 'var(--color-primary)' }}
-          >
-            Primary
-          </div>
-          <div 
-            className="px-3 py-1 rounded text-white"
-            style={{ backgroundColor: 'var(--color-secondary)' }}
-          >
-            Secondary (Complement)
-          </div>
-          <div 
-            className="px-3 py-1 rounded text-white"
-            style={{ backgroundColor: 'var(--color-accent)' }}
-          >
-            Accent
-          </div>
-          <div 
-            className="px-3 py-1 rounded"
-            style={{ 
-              backgroundColor: 'var(--color-neutral-200)',
-              color: 'var(--color-neutral-700)'
-            }}
-          >
-            Neutral
-          </div>
-        </div>
-        </div>
       </div>
 
       {/* Action Items Bar */}

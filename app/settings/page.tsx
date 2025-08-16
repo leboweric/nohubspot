@@ -973,8 +973,8 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white border rounded-lg p-6 hover:shadow-md transition-all duration-200">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                <Settings className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                <Settings className="w-5 h-5 text-gray-600" />
               </div>
               <div>
                 <h3 className="font-semibold">Technical Support</h3>
@@ -988,8 +988,8 @@ export default function SettingsPage() {
 
           <div className="bg-white border rounded-lg p-6 hover:shadow-md transition-all duration-200">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                <HelpCircle className="w-5 h-5 text-green-600" />
+              <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                <HelpCircle className="w-5 h-5 text-gray-600" />
               </div>
               <div>
                 <h3 className="font-semibold">Feature Requests</h3>
@@ -1020,14 +1020,14 @@ export default function SettingsPage() {
 
           {/* Success/Error Messages */}
           {error && (
-            <div className="rounded-lg bg-red-50 p-4 mb-6">
-              <div className="text-sm text-red-700">{error}</div>
+            <div className="rounded-lg bg-gray-50 p-4 mb-6">
+              <div className="text-sm text-gray-700">{error}</div>
             </div>
           )}
           
           {success && (
-            <div className="rounded-lg bg-green-50 p-4 mb-6">
-              <div className="text-sm text-green-700">{success}</div>
+            <div className="rounded-lg bg-gray-50 p-4 mb-6">
+              <div className="text-sm text-gray-700">{success}</div>
             </div>
           )}
 

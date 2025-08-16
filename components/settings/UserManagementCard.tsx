@@ -84,7 +84,11 @@ export default function UserManagementCard({
   const canManage = !isCurrentUser && user.role !== 'owner'
   
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg hover:border-gray-300 transition-all duration-200">
+    <div className="bg-white border rounded-lg p-4 hover:shadow-lg transition-all duration-200"
+      style={{ borderColor: 'var(--color-neutral-200)' }}
+      onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--color-primary-light)'}
+      onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--color-neutral-200)'}
+    >
       <div className="flex items-start gap-4">
         {/* Avatar */}
         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-lg shadow-md">
@@ -140,7 +144,7 @@ export default function UserManagementCard({
                           setShowMenu(false)
                           onDelete?.(user.id)
                         }}
-                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 text-left"
+                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 text-left"
                       >
                         <UserX className="w-4 h-4" />
                         Remove User
@@ -159,13 +163,13 @@ export default function UserManagementCard({
             <div className="flex items-center gap-1">
               {user.email_verified ? (
                 <>
-                  <CheckCircle className="w-3 h-3 text-green-500" />
-                  <span className="text-xs text-green-600 font-medium">Verified</span>
+                  <CheckCircle className="w-3 h-3 text-gray-500" />
+                  <span className="text-xs text-gray-600 font-medium">Verified</span>
                 </>
               ) : (
                 <>
-                  <AlertCircle className="w-3 h-3 text-orange-500" />
-                  <span className="text-xs text-orange-600 font-medium">Unverified</span>
+                  <AlertCircle className="w-3 h-3 text-gray-400" />
+                  <span className="text-xs text-gray-500 font-medium">Unverified</span>
                 </>
               )}
             </div>

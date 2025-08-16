@@ -46,8 +46,8 @@ export default function IntegrationCard({
   
   const getStatusColor = () => {
     if (!connected) return 'text-gray-500'
-    if (testStatus === 'failed') return 'text-orange-500'
-    return 'text-green-500'
+    if (testStatus === 'failed') return 'text-gray-600'
+    return 'text-gray-700'
   }
   
   const getStatusIcon = () => {
@@ -75,7 +75,11 @@ export default function IntegrationCard({
   }
   
   return (
-    <div className="bg-white border border-gray-200 rounded-lg hover:shadow-lg hover:border-gray-300 transition-all duration-200">
+    <div className="bg-white border rounded-lg hover:shadow-lg transition-all duration-200"
+      style={{ borderColor: 'var(--color-neutral-200)' }}
+      onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--color-primary-light)'}
+      onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--color-neutral-200)'}
+    >
       {/* Header */}
       <div className="p-6 border-b">
         <div className="flex items-start gap-4">
@@ -115,7 +119,7 @@ export default function IntegrationCard({
                   <span>Last sync: {getLastSyncText()}</span>
                 </div>
                 {testStatus === 'failed' && (
-                  <div className="flex items-center gap-2 text-sm text-orange-600">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
                     <AlertCircle className="w-3 h-3" />
                     <span>Connection test failed</span>
                   </div>
@@ -132,7 +136,7 @@ export default function IntegrationCard({
               {onDisconnect && (
                 <button
                   onClick={onDisconnect}
-                  className="px-4 py-2 text-sm text-red-600 border border-red-200 rounded-md hover:bg-red-50 transition-colors"
+                  className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
                 >
                   Disconnect
                 </button>
@@ -160,7 +164,10 @@ export default function IntegrationCard({
               {onConnect && (
                 <button
                   onClick={onConnect}
-                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  className="px-4 py-2 text-sm text-white rounded-md transition-colors flex items-center gap-2"
+                  style={{ backgroundColor: 'var(--color-primary)' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-primary-dark)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-primary)'}
                 >
                   <ExternalLink className="w-4 h-4" />
                   Connect
@@ -191,30 +198,30 @@ export default function IntegrationCard({
                   key={index}
                   className={`flex items-start gap-3 p-3 rounded-lg border ${
                     feature.enabled 
-                      ? 'bg-green-50 border-green-200' 
+                      ? 'bg-gray-100 border-gray-300' 
                       : 'bg-gray-50 border-gray-200'
                   }`}
                 >
                   <div className={`p-1 rounded ${
-                    feature.enabled ? 'bg-green-200 text-green-700' : 'bg-gray-200 text-gray-500'
+                    feature.enabled ? 'bg-gray-300 text-gray-700' : 'bg-gray-200 text-gray-500'
                   }`}>
                     <FeatureIcon className="w-3 h-3" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className={`text-sm font-medium ${
-                      feature.enabled ? 'text-green-900' : 'text-gray-700'
+                      feature.enabled ? 'text-gray-800' : 'text-gray-700'
                     }`}>
                       {feature.name}
                     </div>
                     <div className={`text-xs mt-1 ${
-                      feature.enabled ? 'text-green-700' : 'text-gray-600'
+                      feature.enabled ? 'text-gray-700' : 'text-gray-600'
                     }`}>
                       {feature.description}
                     </div>
                   </div>
                   <div className={`px-2 py-1 rounded-full text-xs font-medium ${
                     feature.enabled 
-                      ? 'bg-green-200 text-green-800' 
+                      ? 'bg-gray-300 text-gray-800' 
                       : 'bg-gray-200 text-gray-600'
                   }`}>
                     {feature.enabled ? 'Enabled' : 'Disabled'}

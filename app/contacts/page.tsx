@@ -456,15 +456,15 @@ export default function ContactsPage() {
                     <td className="px-6 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
                         contact.status === "Active" 
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400" 
-                          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                          ? "bg-gray-100 text-gray-700" 
+                          : "bg-gray-50 text-gray-500"
                       }`}>
                         {contact.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <div className="flex gap-3">
-                        <a href={`/contacts/${contact.id}`} className="text-primary hover:underline">
+                        <a href={`/contacts/${contact.id}`} className="hover:underline" style={{ color: 'var(--color-primary)' }}>
                           View
                         </a>
                         <a href={`/contacts/${contact.id}/edit`} className="hover:underline" style={{ color: 'var(--color-primary)' }}>
@@ -472,7 +472,7 @@ export default function ContactsPage() {
                         </a>
                         <button
                           onClick={() => handleDelete(contact.id, `${contact.first_name} ${contact.last_name}`)}
-                          className="text-red-600 hover:underline"
+                          className="text-gray-600 hover:underline"
                         >
                           Delete
                         </button>
