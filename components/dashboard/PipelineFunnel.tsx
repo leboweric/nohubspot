@@ -70,16 +70,20 @@ export default function PipelineFunnel({ stages, loading }: PipelineFunnelProps)
               </div>
               
               <div className="relative">
-                <div className="h-10 bg-gray-100 rounded-md overflow-hidden">
+                <div className="h-10 rounded-md overflow-hidden" style={{ backgroundColor: 'var(--color-neutral-100)' }}>
                   <div
-                    className="h-full bg-gray-300 transition-all duration-500 ease-out rounded-md"
+                    className="h-full transition-all duration-500 ease-out rounded-md"
                     style={{
                       width: `${percentage}%`,
-                      minWidth: stage.count > 0 ? '60px' : '0'
+                      minWidth: stage.count > 0 ? '60px' : '0',
+                      backgroundColor: index === 0 ? 'var(--color-primary)' : 
+                                     index === stages.length - 1 ? 'var(--color-secondary)' : 
+                                     index === Math.floor(stages.length / 2) ? 'var(--color-accent)' :
+                                     'var(--color-neutral-400)'
                     }}
                   >
                     <div className="h-full flex items-center px-3">
-                      <span className="text-xs text-gray-600 font-medium whitespace-nowrap">
+                      <span className="text-xs text-white font-medium whitespace-nowrap">
                         {stage.count > 0 && `${Math.round(percentage)}%`}
                       </span>
                     </div>

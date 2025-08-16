@@ -42,12 +42,12 @@ export default function PerformanceMetrics({ metrics, loading }: PerformanceMetr
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
-          className="text-gray-300"
+          style={{ color: index === 0 ? 'var(--color-primary-light)' : index === 1 ? 'var(--color-secondary-light)' : index === 2 ? 'var(--color-accent)' : 'var(--color-neutral-300)' }}
         />
         <polyline
           points={`${points} ${width},${height} 0,${height}`}
           fill="currentColor"
-          className="text-gray-100 opacity-50"
+          style={{ color: index === 0 ? 'var(--color-primary-light)' : index === 1 ? 'var(--color-secondary-light)' : index === 2 ? 'var(--color-accent)' : 'var(--color-neutral-100)', opacity: 0.3 }}
         />
       </svg>
     )
@@ -77,12 +77,24 @@ export default function PerformanceMetrics({ metrics, loading }: PerformanceMetr
         const ChangeIcon = isPositive ? ArrowUp : ArrowDown
         
         return (
-          <div key={index} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg hover:border-gray-300 transition-all">
+          <div key={index} 
+            className="bg-white border rounded-lg p-6 hover:shadow-lg transition-all"
+            style={{ 
+              borderColor: index === 0 ? 'var(--color-primary-light)' : index === 1 ? 'var(--color-secondary-light)' : index === 2 ? 'var(--color-accent)' : 'var(--color-neutral-200)',
+              borderWidth: '1px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = index === 0 ? 'var(--color-primary)' : index === 1 ? 'var(--color-secondary)' : index === 2 ? 'var(--color-accent)' : 'var(--color-neutral-300)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = index === 0 ? 'var(--color-primary-light)' : index === 1 ? 'var(--color-secondary-light)' : index === 2 ? 'var(--color-accent)' : 'var(--color-neutral-200)'
+            }}
+          >
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-600">
                 {metric.label}
               </span>
-              <Icon className="w-4 h-4 text-gray-400" />
+              <Icon className="w-4 h-4" style={{ color: index === 0 ? 'var(--color-primary)' : index === 1 ? 'var(--color-secondary)' : index === 2 ? 'var(--color-accent)' : 'var(--color-neutral-400)' }} />
             </div>
             
             <div className="mb-2">

@@ -22,7 +22,7 @@ export default function ActionItemsBar({ items }: ActionItemsBarProps) {
   }
 
   return (
-    <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4 mb-6">
+    <div className="border rounded-lg p-4 mb-6" style={{ backgroundColor: 'var(--color-neutral-50)', borderColor: 'var(--color-secondary-light)' }}>
       <h3 className="text-sm font-semibold text-gray-700 mb-3">
         🎯 Today's Priorities
       </h3>
@@ -35,7 +35,7 @@ export default function ActionItemsBar({ items }: ActionItemsBarProps) {
               href={item.href}
               className="flex items-center gap-3 p-3 bg-white rounded-lg hover:shadow-md transition-all group"
             >
-              <div className={`p-2 rounded-lg ${item.color}`}>
+              <div className="p-2 rounded-lg" style={{ backgroundColor: index === 0 ? 'var(--color-secondary)' : index === 1 ? 'var(--color-primary)' : index === 2 ? 'var(--color-accent)' : 'var(--color-neutral-400)' }}>
                 <Icon className="w-4 h-4 text-white" />
               </div>
               <div>

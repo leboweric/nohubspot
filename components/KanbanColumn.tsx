@@ -71,19 +71,29 @@ export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal, onDe
   }
 
   return (
-    <div className="flex flex-col w-80 bg-white border border-gray-200 rounded-lg">
+    <div className="flex flex-col w-80 bg-white border rounded-lg transition-all" style={{ borderColor: isOver ? 'var(--color-secondary)' : 'var(--color-neutral-200)' }}>
       {/* Column Header */}
       <div 
-        className="p-4 border-b border-gray-200 bg-white rounded-t-lg border-l-4"
-        style={{ borderLeftColor: 'var(--theme-primary)' }}
+        className="p-4 border-b bg-white rounded-t-lg border-l-4"
+        style={{ 
+          borderLeftColor: stage.name === 'Lead' ? 'var(--color-primary)' :
+                          stage.name === 'Closed Won' ? 'var(--color-secondary)' :
+                          stage.name === 'Negotiation' ? 'var(--color-accent)' :
+                          'var(--color-neutral-400)',
+          borderBottomColor: 'var(--color-neutral-200)'
+        }}
       >
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold text-gray-900">{stage.name}</h3>
           <span 
             className="text-sm font-medium px-2 py-0.5 rounded-full"
             style={{ 
-              backgroundColor: 'var(--theme-primary-background)',
-              color: 'var(--theme-primary)'
+              backgroundColor: stage.name === 'Lead' ? 'var(--color-primary-light)' :
+                             stage.name === 'Closed Won' ? 'var(--color-secondary-light)' :
+                             'var(--color-neutral-100)',
+              color: stage.name === 'Lead' ? 'var(--color-primary-dark)' :
+                    stage.name === 'Closed Won' ? 'var(--color-secondary-dark)' :
+                    'var(--color-neutral-700)'
             }}
           >
             {deals.length}
