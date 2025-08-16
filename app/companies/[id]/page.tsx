@@ -199,8 +199,8 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                   <h1 className="text-3xl font-semibold">{company.name}</h1>
                   <span className={`inline-flex px-3 py-1 text-sm rounded-full ${
                     company.status === "Active" 
-                      ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400" 
-                      : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400"
+                      ? "bg-gray-100 text-gray-700" 
+                      : "bg-gray-50 text-gray-500"
                   }`}>
                     {company.status}
                   </span>

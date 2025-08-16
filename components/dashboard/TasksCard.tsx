@@ -260,7 +260,7 @@ export default function TasksCard() {
         </div>
       ) : (
         <div className="text-center py-6">
-          <div className="text-2xl mb-2">✅</div>
+          <div className="text-2xl mb-2">✓</div>
           <p className="text-sm text-muted-foreground mb-2">No overdue or pending tasks</p>
           <Link 
             href="/tasks" 
