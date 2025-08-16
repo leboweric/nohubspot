@@ -15,6 +15,50 @@ interface KanbanColumnProps {
   onDeleteDeal?: (dealId: number) => void
 }
 
+// Move DraggableDealCard outside to prevent recreating on every render
+function DraggableDealCard({ deal, onEdit, onDelete }: { 
+  deal: Deal; 
+  onEdit?: (deal: Deal) => void; 
+  onDelete?: (dealId: number) => void 
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: deal.id,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  // Use stable empty functions
+  const noop = React.useCallback(() => {}, [])
+  const noopWithParam = React.useCallback((_: any) => {}, [])
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="cursor-grab active:cursor-grabbing"
+    >
+      <DealCard
+        deal={deal}
+        onEdit={onEdit || noop}
+        onDelete={onDelete || noopWithParam}
+        isDragging={isDragging}
+      />
+    </div>
+  )
+}
+
 export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal, onDeleteDeal }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `stage-${stage.id}`,
@@ -33,46 +77,6 @@ export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal, onDe
 
   const totalValue = deals.reduce((sum, deal) => sum + deal.value, 0)
   const weightedValue = deals.reduce((sum, deal) => sum + (deal.value * deal.probability / 100), 0)
-  
-  // Draggable Deal Card Wrapper
-  function DraggableDealCard({ deal, onEdit, onDelete }: { 
-    deal: Deal; 
-    onEdit?: (deal: Deal) => void; 
-    onDelete?: (dealId: number) => void 
-  }) {
-    const {
-      attributes,
-      listeners,
-      setNodeRef,
-      transform,
-      transition,
-      isDragging,
-    } = useSortable({
-      id: deal.id,
-    })
-
-    const style = {
-      transform: CSS.Transform.toString(transform),
-      transition,
-    }
-
-    return (
-      <div
-        ref={setNodeRef}
-        style={style}
-        {...attributes}
-        {...listeners}
-        className="cursor-grab active:cursor-grabbing"
-      >
-        <DealCard
-          deal={deal}
-          onEdit={onEdit || noop}
-          onDelete={onDelete || noopWithParam}
-          isDragging={isDragging}
-        />
-      </div>
-    )
-  }
 
   return (
     <div className="flex flex-col w-80 bg-white border rounded-lg transition-all" style={{ borderColor: isOver ? 'var(--color-secondary)' : 'var(--color-neutral-200)' }}>
@@ -153,18 +157,10 @@ export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal, onDe
         {onAddDeal && (
           <button
             onClick={() => onAddDeal(stage.id)}
-            className="w-full p-3 text-sm border-2 border-dashed rounded-lg transition-all"
+            className="w-full p-3 text-sm border-2 border-dashed rounded-lg transition-all hover:bg-gray-100"
             style={{
-              borderColor: 'var(--color-primary-light)',
+              borderColor: 'var(--color-neutral-300)',
               color: 'var(--color-primary)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--color-primary-light)';
-              e.currentTarget.style.borderColor = 'var(--color-primary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '';
-              e.currentTarget.style.borderColor = 'var(--color-primary-light)';
             }}
           >
             + Add Deal
