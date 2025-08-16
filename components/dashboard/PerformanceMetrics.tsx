@@ -18,7 +18,7 @@ interface PerformanceMetricsProps {
 }
 
 export default function PerformanceMetrics({ metrics, loading }: PerformanceMetricsProps) {
-  const generateSparkline = (data: number[] = []) => {
+  const generateSparkline = (data: number[] = [], metricIndex: number) => {
     if (data.length === 0) {
       data = [30, 35, 25, 45, 50, 40, 55, 60, 58, 65, 70, 68]
     }
@@ -42,12 +42,12 @@ export default function PerformanceMetrics({ metrics, loading }: PerformanceMetr
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
-          style={{ color: index === 0 ? 'var(--color-primary-light)' : index === 1 ? 'var(--color-secondary-light)' : index === 2 ? 'var(--color-accent)' : 'var(--color-neutral-300)' }}
+          style={{ color: metricIndex === 0 ? 'var(--color-primary-light)' : metricIndex === 1 ? 'var(--color-secondary-light)' : metricIndex === 2 ? 'var(--color-accent)' : 'var(--color-neutral-300)' }}
         />
         <polyline
           points={`${points} ${width},${height} 0,${height}`}
           fill="currentColor"
-          style={{ color: index === 0 ? 'var(--color-primary-light)' : index === 1 ? 'var(--color-secondary-light)' : index === 2 ? 'var(--color-accent)' : 'var(--color-neutral-100)', opacity: 0.3 }}
+          style={{ color: metricIndex === 0 ? 'var(--color-primary-light)' : metricIndex === 1 ? 'var(--color-secondary-light)' : metricIndex === 2 ? 'var(--color-accent)' : 'var(--color-neutral-100)', opacity: 0.3 }}
         />
       </svg>
     )
@@ -114,7 +114,7 @@ export default function PerformanceMetrics({ metrics, loading }: PerformanceMetr
             </div>
             
             <div className="mt-3">
-              {generateSparkline(metric.sparklineData)}
+              {generateSparkline(metric.sparklineData, index)}
             </div>
           </div>
         )
