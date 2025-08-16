@@ -389,23 +389,39 @@ export default function PipelinePage() {
                   >
                     All Stages
                   </button>
-                  {stages.map(stage => (
-                    <button
-                      key={stage.id}
-                      onClick={() => setSelectedStage(stage.id)}
-                      className={`px-3 py-1 rounded text-sm ${
-                        selectedStage === stage.id
-                          ? 'text-white'
-                          : 'text-muted-foreground hover:opacity-80'
-                      }`}
-                      style={{
-                        backgroundColor: selectedStage === stage.id ? stage.color : undefined,
-                        border: selectedStage !== stage.id ? `1px solid ${stage.color}` : undefined
-                      }}
-                    >
-                      {stage.name} ({stage.deal_count || 0})
-                    </button>
-                  ))}
+                  {stages.map(stage => {
+                    // Use color palette based on stage name
+                    const getStageColor = () => {
+                      switch(stage.name) {
+                        case 'Lead': return 'var(--color-primary)';
+                        case 'Qualified': return 'var(--color-primary-light)';
+                        case 'Proposal': return 'var(--color-accent)';
+                        case 'Negotiation': return 'var(--color-secondary-light)';
+                        case 'Closed Won': return 'var(--color-secondary)';
+                        case 'Closed Lost': return 'var(--color-neutral-400)';
+                        default: return 'var(--color-neutral-300)';
+                      }
+                    }
+                    const stageColor = getStageColor();
+                    
+                    return (
+                      <button
+                        key={stage.id}
+                        onClick={() => setSelectedStage(stage.id)}
+                        className={`px-3 py-1 rounded text-sm ${
+                          selectedStage === stage.id
+                            ? 'text-white'
+                            : 'text-gray-700 hover:opacity-80'
+                        }`}
+                        style={{
+                          backgroundColor: selectedStage === stage.id ? stageColor : undefined,
+                          border: selectedStage !== stage.id ? `1px solid ${stageColor}` : undefined
+                        }}
+                      >
+                        {stage.name} ({stage.deal_count || 0})
+                      </button>
+                    )
+                  })}
                 </div>
               )}
 
