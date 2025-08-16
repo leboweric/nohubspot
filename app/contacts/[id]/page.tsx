@@ -453,7 +453,12 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-start gap-4">
                 {/* Contact Avatar */}
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-xl">
+                <div 
+                  className="w-16 h-16 rounded-full flex items-center justify-center text-white font-semibold text-xl"
+                  style={{ 
+                    background: `linear-gradient(135deg, var(--theme-accent), var(--theme-primary))` 
+                  }}
+                >
                   {getInitials(contact.first_name, contact.last_name)}
                 </div>
                 
