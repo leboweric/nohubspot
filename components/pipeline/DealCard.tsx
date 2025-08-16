@@ -100,11 +100,10 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
       isDragging ? 'opacity-50 rotate-2 scale-105' : ''
     }`}
       style={{
-        borderColor: isDragging ? 'var(--theme-primary)' : undefined,
-        '--hover-border': 'var(--theme-primary-border)',
+        borderColor: isDragging ? 'var(--color-secondary)' : undefined,
       } as React.CSSProperties}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = 'var(--theme-primary-border)';
+        e.currentTarget.style.borderColor = 'var(--color-primary-light)';
       }}
       onMouseLeave={(e) => {
         if (!isDragging) {
@@ -118,7 +117,7 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
           {/* Priority indicator - using theme color */}
           <div 
             className="w-2 h-2 rounded-full flex-shrink-0"
-            style={{ backgroundColor: 'var(--theme-primary)' }}
+            style={{ backgroundColor: 'var(--color-primary)' }}
           ></div>
         </div>
         
@@ -126,8 +125,8 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
         <div 
           className="px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1"
           style={{ 
-            backgroundColor: 'var(--theme-primary-background)',
-            color: 'var(--theme-primary)'
+            backgroundColor: 'var(--color-primary-light)',
+            color: 'var(--color-primary-dark)'
           }}
         >
           <HealthIcon className="w-3 h-3" />
@@ -197,7 +196,7 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
         <div className="flex items-baseline gap-2">
           <span 
             className="text-xl font-semibold"
-            style={{ color: 'var(--theme-primary)' }}
+            style={{ color: 'var(--color-primary)' }}
           >
             {formatCurrency(deal.value, deal.currency)}
           </span>
@@ -215,7 +214,7 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
             <Link
               href={`/contacts/${deal.primary_contact_id}`}
               className="transition-colors truncate hover:opacity-80"
-              style={{ color: 'var(--theme-primary)' }}
+              style={{ color: 'var(--color-primary)' }}
               onClick={(e) => e.stopPropagation()}
             >
               {deal.contact_name}
@@ -229,7 +228,7 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
             <Link
               href={`/companies/${deal.company_id}`}
               className="transition-colors truncate hover:opacity-80"
-              style={{ color: 'var(--theme-primary)' }}
+              style={{ color: 'var(--color-primary)' }}
               onClick={(e) => e.stopPropagation()}
             >
               {deal.company_name}

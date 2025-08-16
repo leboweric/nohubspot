@@ -86,24 +86,24 @@ export default function TasksCard() {
   const getPriorityColor = (priority: string) => {
     switch (priority?.toLowerCase()) {
       case 'high':
-        return 'bg-red-500'
+        return 'bg-gray-600'
       case 'medium':
-        return 'bg-yellow-500'
-      case 'low':
-        return 'bg-green-500'
-      default:
         return 'bg-gray-500'
+      case 'low':
+        return 'bg-gray-400'
+      default:
+        return 'bg-gray-300'
     }
   }
 
   const getPriorityIcon = (priority: string) => {
     switch (priority?.toLowerCase()) {
       case 'high':
-        return '🔴'
+        return '⚫'
       case 'medium':
-        return '🟡'
+        return '⚫'
       case 'low':
-        return '🟢'
+        return '⚪'
       default:
         return '⚪'
     }

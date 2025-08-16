@@ -299,7 +299,16 @@ export default function ContactsPage() {
           
           <button
             onClick={() => setShowBulkUpload(true)}
-            className="flex items-center gap-2 px-4 py-2 border border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all text-blue-700"
+            className="flex items-center gap-2 px-4 py-2 border rounded-lg transition-all"
+            style={{ borderColor: 'var(--color-primary-light)', color: 'var(--color-primary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-primary)'
+              e.currentTarget.style.backgroundColor = 'var(--color-primary-light)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--color-primary-light)'
+              e.currentTarget.style.backgroundColor = 'transparent'
+            }}
           >
             <Upload className="w-4 h-4" />
             Bulk Upload
@@ -433,7 +442,7 @@ export default function ContactsPage() {
                         <div className="font-medium flex items-center space-x-2">
                           <span>{contact.first_name} {contact.last_name}</span>
                           {contact.shared_with_team && (
-                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full" title="Shared with team">
+                            <span className="text-xs px-2 py-0.5 rounded-full" title="Shared with team" style={{ backgroundColor: 'var(--color-primary-light)', color: 'var(--color-primary-dark)' }}>
                               Team
                             </span>
                           )}
@@ -458,7 +467,7 @@ export default function ContactsPage() {
                         <a href={`/contacts/${contact.id}`} className="text-primary hover:underline">
                           View
                         </a>
-                        <a href={`/contacts/${contact.id}/edit`} className="text-blue-600 hover:underline">
+                        <a href={`/contacts/${contact.id}/edit`} className="hover:underline" style={{ color: 'var(--color-primary)' }}>
                           Edit
                         </a>
                         <button

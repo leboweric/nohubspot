@@ -443,7 +443,16 @@ export default function CompaniesPage() {
               
               <button
                 onClick={() => setShowBulkUpload(true)}
-                className="flex items-center gap-2 px-4 py-2 border border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all text-blue-700"
+                className="flex items-center gap-2 px-4 py-2 border rounded-lg transition-all"
+                style={{ borderColor: 'var(--color-primary-light)', color: 'var(--color-primary)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-primary)'
+                  e.currentTarget.style.backgroundColor = 'var(--color-primary-light)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-primary-light)'
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                }}
               >
                 <Upload className="w-4 h-4" />
                 Bulk Upload
@@ -651,7 +660,7 @@ export default function CompaniesPage() {
                           <a href={`/companies/${company.id}`} className="text-primary hover:underline">
                             View
                           </a>
-                          <a href={`/companies/${company.id}/edit`} className="text-blue-600 hover:underline">
+                          <a href={`/companies/${company.id}/edit`} className="hover:underline" style={{ color: 'var(--color-primary)' }}>
                             Edit
                           </a>
                           <button

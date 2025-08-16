@@ -147,7 +147,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     }}
                   />
                 ) : (
-                  <span className="text-3xl font-bold text-blue-600 hover:text-blue-700 transition-colors tracking-tight">
+                  <span className="text-3xl font-bold transition-colors tracking-tight" style={{ color: 'var(--color-primary)' }}>
                     NHS
                   </span>
                 )}
@@ -162,9 +162,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
                         href={item.href}
                         className={`text-sm font-medium transition-colors ${
                           pathname === item.href
-                            ? "text-blue-600 border-b-2 border-blue-600 pb-4"
+                            ? "border-b-2 pb-4"
                             : "text-gray-600 hover:text-gray-900"
                         }`}
+                        style={pathname === item.href ? { color: 'var(--color-primary)', borderColor: 'var(--color-primary)' } : {}}
                       >
                         {item.name}
                       </Link>
@@ -178,8 +179,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
             {isAuthenticated && user ? (
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
-                  <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                    <span className="text-sm font-medium text-blue-600">
+                  <div className="h-8 w-8 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-primary-light)' }}>
+                    <span className="text-sm font-medium" style={{ color: 'var(--color-primary-dark)' }}>
                       {user.first_name?.[0] || user.email[0].toUpperCase()}
                     </span>
                   </div>
@@ -212,7 +213,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+                  className="text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  style={{ backgroundColor: 'var(--color-primary)' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-primary-dark)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-primary)'}
                 >
                   Get Started
                 </Link>
@@ -230,9 +234,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     href={item.href}
                     className={`text-sm font-medium px-2 py-1 rounded transition-colors ${
                       pathname === item.href
-                        ? "text-blue-600 bg-blue-50"
+                        ? ""
                         : "text-gray-600 hover:text-gray-900"
                     }`}
+                    style={pathname === item.href ? { color: 'var(--color-primary)', backgroundColor: 'var(--color-primary-light)' } : {}}
                   >
                     {item.name}
                   </Link>
@@ -242,8 +247,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <div className="border-t pt-3 mt-3">
                   {user && (
                     <div className="flex items-center space-x-3 px-2 py-2">
-                      <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                        <span className="text-sm font-medium text-blue-600">
+                      <div className="h-8 w-8 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-primary-light)' }}>
+                        <span className="text-sm font-medium" style={{ color: 'var(--color-primary-dark)' }}>
                           {user.first_name?.[0] || user.email[0].toUpperCase()}
                         </span>
                       </div>

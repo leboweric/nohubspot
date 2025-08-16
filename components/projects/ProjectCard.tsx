@@ -32,10 +32,10 @@ export default function ProjectCard({ project, onEdit, onDelete, isDragging }: P
   }
   
   const getPriorityColor = (value: number, daysToDeadline: number | null) => {
-    if (value >= 50000 && daysToDeadline !== null && daysToDeadline <= 14) return 'bg-red-500' // High value, urgent deadline
-    if (value >= 25000 || (daysToDeadline !== null && daysToDeadline <= 7)) return 'bg-orange-500' // Medium-high
-    if (value >= 10000 || (daysToDeadline !== null && daysToDeadline <= 30)) return 'bg-yellow-500' // Medium
-    return 'bg-green-500' // Low priority
+    if (value >= 50000 && daysToDeadline !== null && daysToDeadline <= 14) return 'bg-gray-600' // High value, urgent deadline
+    if (value >= 25000 || (daysToDeadline !== null && daysToDeadline <= 7)) return 'bg-gray-500' // Medium-high
+    if (value >= 10000 || (daysToDeadline !== null && daysToDeadline <= 30)) return 'bg-gray-400' // Medium
+    return 'bg-gray-300' // Low priority
   }
   
   const getPriorityIcon = (value: number, daysToDeadline: number | null) => {
@@ -53,22 +53,22 @@ export default function ProjectCard({ project, onEdit, onDelete, isDragging }: P
     
     // Health logic
     if (endDate && endDate < now && project.stage_name !== 'Completed') {
-      return { status: 'overdue', color: 'text-red-600 bg-red-100', icon: AlertTriangle, label: 'Overdue' }
+      return { status: 'overdue', color: 'text-gray-700 bg-gray-100', icon: AlertTriangle, label: 'Overdue' }
     } else if (projectedHours > 0 && actualHours > projectedHours * 1.2) {
-      return { status: 'over_budget', color: 'text-red-600 bg-red-100', icon: AlertCircle, label: 'Over Budget' }
+      return { status: 'over_budget', color: 'text-gray-700 bg-gray-100', icon: AlertCircle, label: 'Over Budget' }
     } else if (endDate) {
       const daysToEnd = Math.floor((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
       if (daysToEnd <= 7 && daysToEnd > 0) {
-        return { status: 'due_soon', color: 'text-orange-600 bg-orange-100', icon: Clock, label: 'Due Soon' }
+        return { status: 'due_soon', color: 'text-gray-600 bg-gray-100', icon: Clock, label: 'Due Soon' }
       } else if (projectedHours > 0 && actualHours > projectedHours * 1.1) {
-        return { status: 'at_risk', color: 'text-yellow-600 bg-yellow-100', icon: AlertCircle, label: 'At Risk' }
+        return { status: 'at_risk', color: 'text-gray-600 bg-gray-100', icon: AlertCircle, label: 'At Risk' }
       } else if (progressPercentage >= 80) {
-        return { status: 'nearly_done', color: 'text-green-600 bg-green-100', icon: CheckCircle, label: 'Nearly Done' }
+        return { status: 'nearly_done', color: 'text-gray-600 bg-gray-100', icon: CheckCircle, label: 'Nearly Done' }
       }
     }
     
     if (progressPercentage > 0) {
-      return { status: 'in_progress', color: 'text-blue-600 bg-blue-100', icon: Play, label: 'In Progress' }
+      return { status: 'in_progress', color: 'text-gray-600 bg-gray-100', icon: Play, label: 'In Progress' }
     }
     
     return { status: 'not_started', color: 'text-gray-600 bg-gray-100', icon: Pause, label: 'Not Started' }
@@ -86,13 +86,13 @@ export default function ProjectCard({ project, onEdit, onDelete, isDragging }: P
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     
     if (diffDays < 0) {
-      return { text: `Overdue ${Math.abs(diffDays)} ${Math.abs(diffDays) === 1 ? 'day' : 'days'}`, color: 'text-red-600 bg-red-100' }
+      return { text: `Overdue ${Math.abs(diffDays)} ${Math.abs(diffDays) === 1 ? 'day' : 'days'}`, color: 'text-gray-700 bg-gray-100' }
     } else if (diffDays === 0) {
-      return { text: 'Due today', color: 'text-orange-600 bg-orange-100' }
+      return { text: 'Due today', color: 'text-gray-600 bg-gray-100' }
     } else if (diffDays === 1) {
-      return { text: 'Due tomorrow', color: 'text-yellow-600 bg-yellow-100' }
+      return { text: 'Due tomorrow', color: 'text-gray-600 bg-gray-100' }
     } else if (diffDays <= 7) {
-      return { text: `Due in ${diffDays} days`, color: 'text-blue-600 bg-blue-100' }
+      return { text: `Due in ${diffDays} days`, color: 'text-gray-600 bg-gray-100' }
     } else if (diffDays <= 30) {
       return { text: `Due in ${diffDays} days`, color: 'text-gray-600 bg-gray-100' }
     } else {
@@ -124,11 +124,10 @@ export default function ProjectCard({ project, onEdit, onDelete, isDragging }: P
       isDragging ? 'opacity-50 rotate-2 scale-105' : ''
     }`}
       style={{
-        borderColor: isDragging ? 'var(--theme-primary)' : undefined,
-        '--hover-border': 'var(--theme-primary-border)',
+        borderColor: isDragging ? 'var(--color-secondary)' : undefined,
       } as React.CSSProperties}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = 'var(--theme-primary-border)';
+        e.currentTarget.style.borderColor = 'var(--color-primary-light)';
       }}
       onMouseLeave={(e) => {
         if (!isDragging) {
@@ -142,7 +141,7 @@ export default function ProjectCard({ project, onEdit, onDelete, isDragging }: P
           {/* Priority indicator - using theme color */}
           <div 
             className="w-2 h-2 rounded-full flex-shrink-0"
-            style={{ backgroundColor: 'var(--theme-primary)' }}
+            style={{ backgroundColor: 'var(--color-primary)' }}
           ></div>
         </div>
         
@@ -150,8 +149,8 @@ export default function ProjectCard({ project, onEdit, onDelete, isDragging }: P
         <div 
           className="px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1"
           style={{ 
-            backgroundColor: 'var(--theme-primary-background)',
-            color: 'var(--theme-primary)'
+            backgroundColor: 'var(--color-primary-light)',
+            color: 'var(--color-primary-dark)'
           }}
         >
           <HealthIcon className="w-3 h-3" />
@@ -201,7 +200,7 @@ export default function ProjectCard({ project, onEdit, onDelete, isDragging }: P
                     setShowMenu(false)
                     onDelete(project.id)
                   }}
-                  className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 text-left"
+                  className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 text-left"
                 >
                   <Trash2 className="w-4 h-4" />
                   Delete Project
