@@ -158,15 +158,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   // Apply theme colors to DOM as CSS custom properties
   const applyThemeToDOM = (colors: ThemeColors) => {
+    console.log('🎨 COLOR HARMONY v3 - ThemeContext running!');
     const root = document.documentElement;
     
     // Generate complete color palette from primary color
     const palette = generateColorPalette(colors.primary);
-    console.log('Generated palette:', palette); // Debug log
+    console.log('🎨 Generated palette:', palette); // Debug log
     
     // Apply the generated palette (includes complementary colors)
     const paletteVars = applyColorPalette(colors.primary);
-    console.log('Setting CSS variables:', paletteVars); // Debug log
+    console.log('🎨 Setting CSS variables:', paletteVars); // Debug log
     Object.entries(paletteVars).forEach(([key, value]) => {
       root.style.setProperty(key, value);
     });
