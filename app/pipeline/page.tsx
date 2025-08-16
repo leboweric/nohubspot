@@ -434,7 +434,16 @@ export default function PipelinePage() {
                         <div key={stage.id} className="bg-card border rounded-lg">
                           <div 
                             className="px-6 py-4 border-b"
-                            style={{ borderLeftColor: stage.color, borderLeftWidth: '4px' }}
+                            style={{ 
+                              borderLeftColor: stage.name === 'Lead' ? 'var(--color-primary)' :
+                                             stage.name === 'Qualified' ? 'var(--color-primary-light)' :
+                                             stage.name === 'Proposal' ? 'var(--color-accent)' :
+                                             stage.name === 'Negotiation' ? 'var(--color-secondary-light)' :
+                                             stage.name === 'Closed Won' ? 'var(--color-secondary)' :
+                                             stage.name === 'Closed Lost' ? 'var(--color-neutral-400)' :
+                                             'var(--color-neutral-300)',
+                              borderLeftWidth: '4px' 
+                            }}
                           >
                             <div className="flex items-center justify-between">
                               <div>

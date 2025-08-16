@@ -77,9 +77,12 @@ export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal, onDe
         className="p-4 border-b bg-white rounded-t-lg border-l-4"
         style={{ 
           borderLeftColor: stage.name === 'Lead' ? 'var(--color-primary)' :
+                          stage.name === 'Qualified' ? 'var(--color-primary-light)' :
+                          stage.name === 'Proposal' ? 'var(--color-accent)' :
+                          stage.name === 'Negotiation' ? 'var(--color-secondary-light)' :
                           stage.name === 'Closed Won' ? 'var(--color-secondary)' :
-                          stage.name === 'Negotiation' ? 'var(--color-accent)' :
-                          'var(--color-neutral-400)',
+                          stage.name === 'Closed Lost' ? 'var(--color-neutral-400)' :
+                          'var(--color-neutral-300)',
           borderBottomColor: 'var(--color-neutral-200)'
         }}
       >
@@ -89,10 +92,18 @@ export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal, onDe
             className="text-sm font-medium px-2 py-0.5 rounded-full"
             style={{ 
               backgroundColor: stage.name === 'Lead' ? 'var(--color-primary-light)' :
+                             stage.name === 'Qualified' ? 'var(--color-primary-light)' :
+                             stage.name === 'Proposal' ? 'var(--color-accent)' :
+                             stage.name === 'Negotiation' ? 'var(--color-secondary-light)' :
                              stage.name === 'Closed Won' ? 'var(--color-secondary-light)' :
+                             stage.name === 'Closed Lost' ? 'var(--color-neutral-100)' :
                              'var(--color-neutral-100)',
               color: stage.name === 'Lead' ? 'var(--color-primary-dark)' :
+                    stage.name === 'Qualified' ? 'var(--color-primary-dark)' :
+                    stage.name === 'Proposal' ? 'var(--color-neutral-900)' :
+                    stage.name === 'Negotiation' ? 'var(--color-secondary-dark)' :
                     stage.name === 'Closed Won' ? 'var(--color-secondary-dark)' :
+                    stage.name === 'Closed Lost' ? 'var(--color-neutral-700)' :
                     'var(--color-neutral-700)'
             }}
           >
