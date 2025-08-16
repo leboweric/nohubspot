@@ -107,7 +107,7 @@ function FolderTreeItem({
         className={`
           flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer
           hover:bg-gray-100 group transition-colors
-          ${isSelected ? 'bg-blue-50 text-blue-600' : ''}
+          ${isSelected ? 'bg-gray-50 text-gray-700' : ''}
         `}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
         onClick={() => onFolderSelect(folder)}
@@ -169,7 +169,7 @@ function FolderTreeItem({
                     }
                     setShowMenu(false)
                   }}
-                  className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-gray-100"
+                  className="flex items-center w-full px-3 py-2 text-sm text-gray-600 hover:bg-gray-100"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Delete Folder
@@ -239,11 +239,11 @@ function FileItem({
 
   const getFileIcon = (fileType?: string) => {
     if (!fileType) return <File className="w-8 h-8 text-gray-400" />
-    if (fileType.includes('pdf')) return <FileText className="w-8 h-8 text-red-500" />
+    if (fileType.includes('pdf')) return <FileText className="w-8 h-8 text-gray-500" />
     if (fileType.includes('spreadsheet') || fileType.includes('excel')) 
-      return <FileSpreadsheet className="w-8 h-8 text-green-500" />
+      return <FileSpreadsheet className="w-8 h-8 text-gray-500" />
     if (fileType.includes('presentation') || fileType.includes('powerpoint'))
-      return <Presentation className="w-8 h-8 text-orange-500" />
+      return <Presentation className="w-8 h-8 text-gray-500" />
     return <File className="w-8 h-8 text-gray-400" />
   }
 
@@ -267,7 +267,7 @@ function FileItem({
               <span>{formatFileSize(file.file_size)}</span>
               <span>{new Date(file.created_at).toLocaleDateString()}</span>
               {file.version && file.version > 1 && (
-                <span className="text-blue-600">v{file.version}</span>
+                <span className="text-gray-600">v{file.version}</span>
               )}
             </div>
             {file.tags && file.tags.length > 0 && (
@@ -280,7 +280,7 @@ function FileItem({
               </div>
             )}
             {file.expiry_date && (
-              <div className="flex items-center mt-2 text-xs text-orange-600">
+              <div className="flex items-center mt-2 text-xs text-gray-600">
                 <AlertCircle className="w-3 h-3 mr-1" />
                 Expires: {new Date(file.expiry_date).toLocaleDateString()}
               </div>
@@ -328,7 +328,7 @@ function FileItem({
                   }
                   setShowMenu(false)
                 }}
-                className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-gray-100"
+                className="flex items-center w-full px-3 py-2 text-sm text-gray-600 hover:bg-gray-100"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete
@@ -729,7 +729,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
           <div className="mb-4 space-y-2">
             <button
               onClick={() => setShowNewFolderDialog(true)}
-              className="w-full flex items-center justify-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              className="w-full flex items-center justify-center px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
             >
               <FolderPlus className="w-4 h-4 mr-2" />
               New Folder
@@ -738,7 +738,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
             {folders.length === 0 && (
               <button
                 onClick={initializeDefaultFolders}
-                className="w-full flex items-center justify-center px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
+                className="w-full flex items-center justify-center px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm"
               >
                 Initialize Smart Folders
               </button>
@@ -749,7 +749,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
             <div
               className={`
                 flex items-center px-2 py-1.5 rounded-md cursor-pointer
-                hover:bg-gray-100 ${!selectedFolder ? 'bg-blue-50 text-blue-600' : ''}
+                hover:bg-gray-100 ${!selectedFolder ? 'bg-gray-50 text-gray-700' : ''}
               `}
               onClick={() => setSelectedFolder(null)}
             >
@@ -790,7 +790,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
                   />
                 </div>
                 
-                <label className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer flex items-center">
+                <label className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 cursor-pointer flex items-center">
                   <Upload className="w-4 h-4 mr-2" />
                   Upload
                   <input
@@ -807,7 +807,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
           {/* Files Grid - Also serves as drop zone */}
           <div 
             className={`flex-1 p-4 overflow-y-auto transition-colors ${
-              isDraggingOver ? 'bg-blue-50 border-2 border-blue-300 border-dashed' : ''
+              isDraggingOver ? 'bg-gray-50 border-2 border-gray-300 border-dashed' : ''
             }`}
             onDragOver={(e) => {
               e.preventDefault()
@@ -892,7 +892,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
               </button>
               <button
                 onClick={handleCreateFolder}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
               >
                 Create
               </button>
