@@ -198,7 +198,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 
                 <button
                   onClick={handleLogout}
-                  className="text-sm text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1 rounded transition-colors"
+                  className="text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-50 px-3 py-1 rounded transition-colors"
                 >
                   Sign out
                 </button>
@@ -267,7 +267,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left px-2 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+                    className="w-full text-left px-2 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded transition-colors"
                   >
                     Sign out
                   </button>
