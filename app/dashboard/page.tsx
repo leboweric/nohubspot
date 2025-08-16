@@ -212,7 +212,7 @@ export default function DashboardPage() {
             change: -3,
             changeLabel: 'vs last month',
             icon: TrendingUp,
-            color: 'bg-purple-500',
+            color: 'bg-gray-500',
             sparklineData: [35, 34, 36, 35, 33, 34, 32, 33, 31, 32, 31, 32]
           },
           {
@@ -230,8 +230,8 @@ export default function DashboardPage() {
         // Calculate pipeline stages
         const stageData = [
           { name: 'Lead', count: 0, value: 0, color: 'bg-blue-500' },
-          { name: 'Qualified', count: 0, value: 0, color: 'bg-indigo-500' },
-          { name: 'Proposal', count: 0, value: 0, color: 'bg-purple-500' },
+          { name: 'Qualified', count: 0, value: 0, color: 'bg-gray-500' },
+          { name: 'Proposal', count: 0, value: 0, color: 'bg-gray-600' },
           { name: 'Negotiation', count: 0, value: 0, color: 'bg-orange-500' },
           { name: 'Closed Won', count: 0, value: 0, color: 'bg-green-500' }
         ]
@@ -477,7 +477,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Pipeline Value</p>
-              <p className="text-2xl font-bold mt-1 text-purple-600">
+              <p className="text-2xl font-bold mt-1 text-gray-700">
                 {metricsLoading ? (
                   <span className="animate-pulse bg-gray-200 h-8 w-24 block rounded"></span>
                 ) : (
@@ -485,7 +485,7 @@ export default function DashboardPage() {
                 )}
               </p>
             </div>
-            <svg className="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
           </div>

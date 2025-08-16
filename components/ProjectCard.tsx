@@ -49,14 +49,14 @@ export default function ProjectCard({ project, isDragging = false, onEdit }: Pro
   const getProjectTypeColor = (type?: string) => {
     if (!type) return 'text-gray-600 bg-gray-50 border-gray-200'
     
-    // Color mapping for different project types
+    // Color mapping for different project types - all subtle grays
     const colorMap: { [key: string]: string } = {
-      'Strategic Planning': 'text-purple-600 bg-purple-50 border-purple-200',
-      'Board Development': 'text-blue-600 bg-blue-50 border-blue-200',
-      'Capital Campaign': 'text-green-600 bg-green-50 border-green-200',
-      'Grant Writing': 'text-orange-600 bg-orange-50 border-orange-200',
-      'Fundraising Training': 'text-red-600 bg-red-50 border-red-200',
-      'Executive Search': 'text-indigo-600 bg-indigo-50 border-indigo-200',
+      'Strategic Planning': 'text-gray-700 bg-gray-50 border-gray-200',
+      'Board Development': 'text-gray-600 bg-gray-50 border-gray-200',
+      'Capital Campaign': 'text-gray-600 bg-gray-50 border-gray-200',
+      'Grant Writing': 'text-gray-600 bg-gray-50 border-gray-200',
+      'Fundraising Training': 'text-gray-600 bg-gray-50 border-gray-200',
+      'Executive Search': 'text-gray-700 bg-gray-50 border-gray-200',
     }
     
     return colorMap[type] || 'text-gray-600 bg-gray-50 border-gray-200'

@@ -904,7 +904,7 @@ export default function SettingsPage() {
                   setIsLoadingDuplicates(false)
                 }
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
               disabled={isLoadingDuplicates}
             >
               <Building2 className="w-4 h-4" />
@@ -934,7 +934,7 @@ export default function SettingsPage() {
                   setIsLoadingDuplicates(false)
                 }
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
               disabled={isLoadingDuplicates}
             >
               <User className="w-4 h-4" />

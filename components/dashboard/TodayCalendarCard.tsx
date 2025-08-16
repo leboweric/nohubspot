@@ -52,13 +52,13 @@ export default function TodayCalendarCard() {
   const getEventTypeColor = (eventType: string) => {
     switch (eventType) {
       case 'meeting':
-        return 'bg-blue-500'
+        return 'bg-gray-600'
       case 'call':
-        return 'bg-green-500'
+        return 'bg-gray-500'
       case 'task':
-        return 'bg-orange-500'
+        return 'bg-gray-400'
       case 'reminder':
-        return 'bg-purple-500'
+        return 'bg-gray-500'
       default:
         return 'bg-gray-500'
     }

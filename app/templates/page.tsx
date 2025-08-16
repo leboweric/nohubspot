@@ -92,11 +92,11 @@ export default function TemplatesPage() {
 
   const getCategoryColor = (category?: string) => {
     const colors: Record<string, string> = {
-      'sales': 'bg-blue-100 text-blue-800',
-      'support': 'bg-green-100 text-green-800',
-      'follow-up': 'bg-yellow-100 text-yellow-800',
-      'onboarding': 'bg-purple-100 text-purple-800',
-      'marketing': 'bg-pink-100 text-pink-800',
+      'sales': 'bg-gray-100 text-gray-700',
+      'support': 'bg-gray-50 text-gray-600',
+      'follow-up': 'bg-gray-100 text-gray-600',
+      'onboarding': 'bg-gray-100 text-gray-700',
+      'marketing': 'bg-gray-50 text-gray-600',
     }
     return colors[category?.toLowerCase() || ''] || 'bg-gray-100 text-gray-800'
   }

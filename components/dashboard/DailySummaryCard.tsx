@@ -211,15 +211,15 @@ export default function DailySummaryCard() {
           <div className="text-xs text-gray-600">Today</div>
         </div>
         <div className="text-center">
-          <div className="text-lg font-bold text-blue-600">{summary.quick_stats.total_contacts}</div>
+          <div className="text-lg font-bold text-gray-700">{summary.quick_stats.total_contacts}</div>
           <div className="text-xs text-gray-600">Contacts</div>
         </div>
         <div className="text-center">
-          <div className="text-lg font-bold text-purple-600">{summary.quick_stats.active_deals}</div>
+          <div className="text-lg font-bold text-gray-700">{summary.quick_stats.active_deals}</div>
           <div className="text-xs text-gray-600">Deals</div>
         </div>
         <div className="text-center">
-          <div className="text-lg font-bold text-green-600">{summary.quick_stats.active_companies}</div>
+          <div className="text-lg font-bold text-gray-700">{summary.quick_stats.active_companies}</div>
           <div className="text-xs text-gray-600">Customers</div>
         </div>
       </div>

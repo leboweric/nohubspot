@@ -48,10 +48,10 @@ export default function UserManagementCard({
   
   const getRoleBadge = () => {
     const roleConfig = {
-      owner: { label: 'Owner', color: 'bg-purple-100 text-purple-800', icon: Shield },
-      admin: { label: 'Admin', color: 'bg-blue-100 text-blue-800', icon: Shield },
-      user: { label: 'User', color: 'bg-green-100 text-green-800', icon: User },
-      read_only: { label: 'Read Only', color: 'bg-gray-100 text-gray-800', icon: User }
+      owner: { label: 'Owner', color: 'bg-gray-100 text-gray-800', icon: Shield },
+      admin: { label: 'Admin', color: 'bg-gray-100 text-gray-700', icon: Shield },
+      user: { label: 'User', color: 'bg-gray-50 text-gray-600', icon: User },
+      read_only: { label: 'Read Only', color: 'bg-gray-50 text-gray-500', icon: User }
     }
     
     const config = roleConfig[user.role] || roleConfig.user
