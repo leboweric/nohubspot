@@ -533,10 +533,6 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                 <Calendar className="w-4 h-4 text-muted-foreground" />
                 <span>Relationship: {getRelationshipDuration()}</span>
               </div>
-              <div className="flex items-center gap-1">
-                <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                <span className={engagement.color}>Engagement: {engagement.label}</span>
-              </div>
             </div>
           </div>
 
@@ -726,33 +722,6 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
 
                 {/* Sidebar */}
                 <div className="space-y-6">
-                  {/* Engagement Score */}
-                  <div className="bg-card border rounded-lg p-6">
-                    <h2 className="text-lg font-semibold mb-4">Engagement</h2>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold mb-2">
-                        {engagement.score}%
-                      </div>
-                      <p className={`text-sm font-medium ${engagement.color}`}>
-                        {engagement.label}
-                      </p>
-                    </div>
-                    <div className="mt-4 pt-4 border-t space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Emails</span>
-                        <span className="font-medium">{emails.length}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Meetings</span>
-                        <span className="font-medium">{activityStats.meetings}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Calls</span>
-                        <span className="font-medium">{activityStats.callsMade}</span>
-                      </div>
-                    </div>
-                  </div>
-
                   {/* Quick Actions */}
                   <div className="bg-card border rounded-lg p-6">
                     <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
@@ -989,9 +958,9 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                               <span>Due: {new Date(task.due_date).toLocaleDateString()}</span>
                             )}
                             <span className={`px-2 py-0.5 rounded-full ${
-                              task.priority === 'high' ? 'bg-red-100 text-red-700' :
-                              task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-gray-100 text-gray-700'
+                              task.priority === 'high' ? 'bg-gray-200 text-gray-800' :
+                              task.priority === 'medium' ? 'bg-gray-100 text-gray-700' :
+                              'bg-gray-50 text-gray-600'
                             }`}>
                               {task.priority}
                             </span>
