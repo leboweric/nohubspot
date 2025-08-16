@@ -247,13 +247,13 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
       {/* Footer */}
       <div className="flex items-center justify-between pt-3 border-t">
         <div className="flex items-center gap-3 text-xs">
-          {/* Close date - using theme */}
+          {/* Close date - using neutral colors */}
           {closeDateStatus && (
             <span 
               className="px-2 py-1 rounded-full text-xs"
               style={{ 
-                backgroundColor: 'var(--color-accent)',
-                color: 'var(--color-accent)'
+                backgroundColor: 'var(--color-neutral-100)',
+                color: 'var(--color-neutral-700)'
               }}
             >
               {closeDateStatus.text}
