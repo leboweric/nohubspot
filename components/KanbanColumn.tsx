@@ -20,6 +20,10 @@ export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal, onDe
     id: `stage-${stage.id}`,
   })
 
+  // Stable empty functions to avoid re-renders
+  const noop = React.useCallback(() => {}, [])
+  const noopWithParam = React.useCallback((_: any) => {}, [])
+
   const formatCurrency = (value: number, currency = 'USD') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -62,8 +66,8 @@ export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal, onDe
       >
         <DealCard
           deal={deal}
-          onEdit={onEdit || (() => {})}
-          onDelete={onDelete || (() => {})}
+          onEdit={onEdit || noop}
+          onDelete={onDelete || noopWithParam}
           isDragging={isDragging}
         />
       </div>
@@ -77,9 +81,9 @@ export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal, onDe
         className="p-4 border-b bg-white rounded-t-lg border-l-4"
         style={{ 
           borderLeftColor: stage.name === 'Lead' ? 'var(--color-primary)' :
-                          stage.name === 'Qualified' ? 'var(--color-primary-light)' :
+                          stage.name === 'Qualified' ? 'var(--color-primary)' :
                           stage.name === 'Proposal' ? 'var(--color-accent)' :
-                          stage.name === 'Negotiation' ? 'var(--color-secondary-light)' :
+                          stage.name === 'Negotiation' ? 'var(--color-secondary)' :
                           stage.name === 'Closed Won' ? 'var(--color-secondary)' :
                           stage.name === 'Closed Lost' ? 'var(--color-neutral-400)' :
                           'var(--color-neutral-300)',
@@ -91,18 +95,18 @@ export default function KanbanColumn({ stage, deals, onAddDeal, onEditDeal, onDe
           <span 
             className="text-sm font-medium px-2 py-0.5 rounded-full"
             style={{ 
-              backgroundColor: stage.name === 'Lead' ? 'var(--color-primary-light)' :
-                             stage.name === 'Qualified' ? 'var(--color-primary-light)' :
-                             stage.name === 'Proposal' ? 'var(--color-accent)' :
-                             stage.name === 'Negotiation' ? 'var(--color-secondary-light)' :
-                             stage.name === 'Closed Won' ? 'var(--color-secondary-light)' :
+              backgroundColor: stage.name === 'Lead' ? 'var(--color-neutral-100)' :
+                             stage.name === 'Qualified' ? 'var(--color-neutral-100)' :
+                             stage.name === 'Proposal' ? 'var(--color-neutral-100)' :
+                             stage.name === 'Negotiation' ? 'var(--color-neutral-100)' :
+                             stage.name === 'Closed Won' ? 'var(--color-neutral-100)' :
                              stage.name === 'Closed Lost' ? 'var(--color-neutral-100)' :
                              'var(--color-neutral-100)',
-              color: stage.name === 'Lead' ? 'var(--color-primary-dark)' :
-                    stage.name === 'Qualified' ? 'var(--color-primary-dark)' :
-                    stage.name === 'Proposal' ? 'var(--color-neutral-900)' :
-                    stage.name === 'Negotiation' ? 'var(--color-secondary-dark)' :
-                    stage.name === 'Closed Won' ? 'var(--color-secondary-dark)' :
+              color: stage.name === 'Lead' ? 'var(--color-neutral-700)' :
+                    stage.name === 'Qualified' ? 'var(--color-neutral-700)' :
+                    stage.name === 'Proposal' ? 'var(--color-neutral-700)' :
+                    stage.name === 'Negotiation' ? 'var(--color-neutral-700)' :
+                    stage.name === 'Closed Won' ? 'var(--color-neutral-700)' :
                     stage.name === 'Closed Lost' ? 'var(--color-neutral-700)' :
                     'var(--color-neutral-700)'
             }}
