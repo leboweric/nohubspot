@@ -686,14 +686,23 @@ export default function SettingsPage() {
               setLogoSaving(true)
               try {
                 const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
-                // If logoUrl is undefined, get the current URL from organization
-                const finalLogoUrl = logoUrl !== undefined ? logoUrl : organization?.logo_url;
-                const requestBody = {
-                  logo_url: finalLogoUrl,
+                
+                // Build request body - don't send data URLs to backend
+                const requestBody: any = {
                   logo_size: logoSize || 100
                 }
+                
+                // Only include logo_url if it's not a data URL or if it's being explicitly set
+                if (logoUrl !== undefined && !logoUrl.startsWith('data:')) {
+                  requestBody.logo_url = logoUrl;
+                } else if (logoUrl === null) {
+                  // Explicitly removing logo
+                  requestBody.logo_url = null;
+                }
+                // If logoUrl is undefined or a data URL, don't include it in the request
+                
                 console.log('Sending logo update request with body:', { 
-                  logo_url: finalLogoUrl?.substring(0, 50), 
+                  logo_url: requestBody.logo_url?.substring(0, 50), 
                   logo_size: requestBody.logo_size 
                 })
                 const response = await fetch(`${baseUrl}/api/organization/logo`, {
