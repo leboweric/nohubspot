@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+import { generateColorPalette, applyColorPalette } from '@/lib/color-harmony';
 
 interface ThemeColors {
   primary: string;
@@ -159,10 +160,20 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const applyThemeToDOM = (colors: ThemeColors) => {
     const root = document.documentElement;
     
-    // Set CSS custom properties
+    // Generate complete color palette from primary color
+    const palette = generateColorPalette(colors.primary);
+    
+    // Apply the generated palette (includes complementary colors)
+    const paletteVars = applyColorPalette(colors.primary);
+    Object.entries(paletteVars).forEach(([key, value]) => {
+      root.style.setProperty(key, value);
+    });
+    
+    // Override with user's selected secondary/accent if different from generated
+    // This allows users to customize beyond the auto-generated palette
     root.style.setProperty('--theme-primary', colors.primary);
-    root.style.setProperty('--theme-secondary', colors.secondary);
-    root.style.setProperty('--theme-accent', colors.accent);
+    root.style.setProperty('--theme-secondary', palette.secondary); // Use generated complementary
+    root.style.setProperty('--theme-accent', palette.accent); // Use generated accent
     
     // Set opacity variations
     root.style.setProperty('--theme-primary-hover', colorPatterns.hover(colors.primary));
@@ -170,8 +181,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--theme-primary-background', colorPatterns.background(colors.primary));
     root.style.setProperty('--theme-primary-border', colorPatterns.border(colors.primary));
     
-    root.style.setProperty('--theme-secondary-hover', colorPatterns.hover(colors.secondary));
-    root.style.setProperty('--theme-accent-background', colorPatterns.background(colors.accent));
+    root.style.setProperty('--theme-secondary-hover', colorPatterns.hover(palette.secondary));
+    root.style.setProperty('--theme-accent-background', colorPatterns.background(palette.accent));
+    
+    // Update the neutral colors to have a hint of the primary
+    Object.entries(palette.neutral).forEach(([key, value]) => {
+      root.style.setProperty(`--color-neutral-${key}`, value);
+    });
   };
 
   // Load theme on mount
