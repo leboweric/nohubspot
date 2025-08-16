@@ -318,6 +318,26 @@ export default function LogoUploader({
                     onLogoChange(logoUrl, newSize);
                   }
                 }}
+                onMouseUp={async (e) => {
+                  // Auto-save when user finishes dragging
+                  const newSize = parseInt((e.target as HTMLInputElement).value);
+                  console.log('Auto-saving logo size:', newSize);
+                  try {
+                    await onSave(logoUrl, newSize);
+                  } catch (error) {
+                    console.error('Failed to auto-save logo size:', error);
+                  }
+                }}
+                onTouchEnd={async (e) => {
+                  // Auto-save for touch devices
+                  const newSize = parseInt((e.target as HTMLInputElement).value);
+                  console.log('Auto-saving logo size (touch):', newSize);
+                  try {
+                    await onSave(logoUrl, newSize);
+                  } catch (error) {
+                    console.error('Failed to auto-save logo size:', error);
+                  }
+                }}
                 className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                 style={{
                   background: `linear-gradient(to right, rgb(var(--color-primary)) 0%, rgb(var(--color-primary)) ${((logoSize - 50) / 100) * 100}%, #e5e7eb ${((logoSize - 50) / 100) * 100}%, #e5e7eb 100%)`

@@ -698,11 +698,10 @@ export default function SettingsPage() {
                   console.log('Logo update response data:', { logo_url: data.logo_url, logo_size: data.logo_size })
                   // Update organization in localStorage
                   localStorage.setItem('organization', JSON.stringify(data))
-                  console.log('Saved to localStorage, reloading page...')
-                  // Reload page to update logo in navigation
-                  setTimeout(() => {
-                    window.location.reload()
-                  }, 500)
+                  console.log('Saved to localStorage')
+                  // Update local state
+                  setOrganization(data)
+                  // No page reload needed - MainLayout polls localStorage
                 } else {
                   throw new Error('Failed to update logo')
                 }
