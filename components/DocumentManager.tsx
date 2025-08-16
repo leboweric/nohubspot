@@ -130,7 +130,15 @@ function FolderTreeItem({
           )}
           <IconComponent 
             className="w-4 h-4 mr-2" 
-            style={{ color: folder.color || undefined }}
+            style={{ 
+              color: folder.name === 'Proposals & Quotes' ? 'var(--color-primary)' :
+                     folder.name === 'Contracts & Agreements' ? 'var(--color-secondary)' :
+                     folder.name === 'Financial Documents' ? 'var(--color-accent)' :
+                     folder.name === 'Communications' ? 'var(--color-primary-light)' :
+                     folder.name === 'Technical Specs' ? 'var(--color-secondary-light)' :
+                     folder.name === 'Presentations' ? 'var(--color-accent)' :
+                     'var(--color-neutral-500)'
+            }}
           />
           <span className="text-sm font-medium">{folder.name}</span>
           {folder.attachment_count !== undefined && folder.attachment_count > 0 && (
