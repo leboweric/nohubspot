@@ -419,8 +419,20 @@ export default function ProjectsPage() {
                           : 'text-muted-foreground hover:opacity-80'
                       }`}
                       style={{
-                        backgroundColor: selectedStage === stage.id ? stage.color : undefined,
-                        border: selectedStage !== stage.id ? `1px solid ${stage.color}` : undefined
+                        backgroundColor: selectedStage === stage.id ? (
+                          stage.name === 'Planning' ? 'var(--color-primary)' :
+                          stage.name === 'Active' ? 'var(--color-secondary)' :
+                          stage.name === 'Wrapping Up' ? 'var(--color-accent)' :
+                          stage.name === 'Closed' ? 'var(--color-neutral-400)' :
+                          'var(--color-neutral-300)'
+                        ) : undefined,
+                        border: selectedStage !== stage.id ? `1px solid ${
+                          stage.name === 'Planning' ? 'var(--color-primary)' :
+                          stage.name === 'Active' ? 'var(--color-secondary)' :
+                          stage.name === 'Wrapping Up' ? 'var(--color-accent)' :
+                          stage.name === 'Closed' ? 'var(--color-neutral-400)' :
+                          'var(--color-neutral-300)'
+                        }` : undefined
                       }}
                     >
                       {stage.name} ({stage.project_count || 0})
