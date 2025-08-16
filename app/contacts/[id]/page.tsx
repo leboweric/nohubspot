@@ -13,7 +13,7 @@ import { Task } from "@/components/tasks/types"
 import { 
   contactAPI, Contact, handleAPIError, CalendarEventCreate, calendarAPI, 
   emailThreadAPI, EmailThread, emailTrackingAPI, taskAPI, 
-  TaskCreate as TaskCreateType, o365IntegrationAPI, dealAPI, Deal, activityAPI, Activity 
+  TaskCreate as TaskCreateType, o365IntegrationAPI, dealAPI, Deal, dashboardAPI, Activity 
 } from "@/lib/api"
 import { 
   Mail, Phone, Building2, Calendar, Clock, Tag, Edit, Plus,
@@ -155,7 +155,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
       if (!contact || activeTab !== "activity") return
       
       try {
-        const activitiesData = await activityAPI.getAll()
+        const activitiesData = await dashboardAPI.getActivities(100)
         // Filter for this contact
         const contactActivities = activitiesData.filter(a => 
           a.description?.includes(`${contact.first_name} ${contact.last_name}`) || 

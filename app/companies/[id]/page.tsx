@@ -11,7 +11,7 @@ import {
   FileText, Users, FolderOpen, TrendingUp, MessageSquare, StickyNote,
   Edit, Plus, Clock, Tag
 } from "lucide-react"
-import { companyAPI, Company, handleAPIError, CalendarEventCreate, calendarAPI, contactAPI, Contact, dealAPI, Deal, activityAPI, Activity } from "@/lib/api"
+import { companyAPI, Company, handleAPIError, CalendarEventCreate, calendarAPI, contactAPI, Contact, dealAPI, Deal, dashboardAPI, Activity } from "@/lib/api"
 
 // Tab component
 function TabButton({ active, onClick, children, icon: Icon }: { 
@@ -105,7 +105,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
       if (!company || activeTab !== "activity") return
       
       try {
-        const activitiesData = await activityAPI.getAll()
+        const activitiesData = await dashboardAPI.getActivities(100)
         // Filter for this company (would be better with backend filtering)
         const companyActivities = activitiesData.filter(a => 
           a.description?.includes(company.name) || 
