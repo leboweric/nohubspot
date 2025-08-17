@@ -88,7 +88,7 @@ export default function LoginPage() {
             <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
               <span className="text-2xl font-bold">N</span>
             </div>
-            <span className="text-3xl font-bold">NHS</span>
+            <span className="text-3xl font-bold">NHS - The Simple CRM</span>
           </div>
 
           {/* Main Content */}
@@ -149,7 +149,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <div className="text-sm text-white/60">
-          © 2025 NHS. All rights reserved.
+          © 2025 NHS - The Simple CRM. All rights reserved.
         </div>
       </div>
 
@@ -165,7 +165,7 @@ export default function LoginPage() {
               >
                 <span className="text-xl font-bold">N</span>
               </div>
-              <span className="text-2xl font-bold text-gray-900">NHS</span>
+              <span className="text-2xl font-bold text-gray-900">NHS - The Simple CRM</span>
             </div>
           </div>
 

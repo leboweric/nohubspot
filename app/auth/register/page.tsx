@@ -127,7 +127,7 @@ export default function RegisterPage() {
             <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
               <span className="text-2xl font-bold">N</span>
             </div>
-            <span className="text-3xl font-bold">NHS</span>
+            <span className="text-3xl font-bold">NHS - The Simple CRM</span>
           </div>
 
           {/* Main Content */}
@@ -137,7 +137,7 @@ export default function RegisterPage() {
                 Start your journey
               </h1>
               <p className="text-xl text-white/80">
-                Join thousands of organizations managing their business with NHS
+                Join thousands of organizations managing their business with NHS - The Simple CRM
               </p>
             </div>
 
@@ -188,7 +188,7 @@ export default function RegisterPage() {
 
         {/* Footer */}
         <div className="text-sm text-white/60">
-          © 2025 NHS. All rights reserved.
+          © 2025 NHS - The Simple CRM. All rights reserved.
         </div>
       </div>
 
@@ -204,7 +204,7 @@ export default function RegisterPage() {
               >
                 <span className="text-xl font-bold">N</span>
               </div>
-              <span className="text-2xl font-bold text-gray-900">NHS</span>
+              <span className="text-2xl font-bold text-gray-900">NHS - The Simple CRM</span>
             </div>
           </div>
 
