@@ -51,8 +51,21 @@ export default function CalendarPage() {
       }
       
       const data = await calendarAPI.getAll(params)
+      console.log('Calendar API response:', data)
+      
       // Ensure data is an array (handle both array and paginated response)
-      const eventsArray = Array.isArray(data) ? data : (data?.items || [])
+      let eventsArray = []
+      if (Array.isArray(data)) {
+        eventsArray = data
+      } else if (data && typeof data === 'object' && Array.isArray(data.items)) {
+        eventsArray = data.items
+      } else if (data && typeof data === 'object' && Array.isArray(data.events)) {
+        eventsArray = data.events
+      } else {
+        console.warn('Unexpected calendar data format:', data)
+        eventsArray = []
+      }
+      
       setEvents(eventsArray)
     } catch (err) {
       setError(handleAPIError(err))

@@ -11,7 +11,10 @@ interface CalendarStatsProps {
   currentDate: Date
 }
 
-export default function CalendarStats({ events, currentDate }: CalendarStatsProps) {
+export default function CalendarStats({ events = [], currentDate }: CalendarStatsProps) {
+  // Ensure events is always an array
+  const safeEvents = Array.isArray(events) ? events : []
+  
   const today = new Date()
   const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
   const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
@@ -19,12 +22,12 @@ export default function CalendarStats({ events, currentDate }: CalendarStatsProp
   const endOfToday = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000)
 
   // Filter events for different time periods
-  const thisMonthEvents = events.filter(event => {
+  const thisMonthEvents = safeEvents.filter(event => {
     const eventDate = new Date(event.start_time)
     return eventDate >= startOfMonth && eventDate <= endOfMonth
   })
 
-  const todayEvents = events.filter(event => {
+  const todayEvents = safeEvents.filter(event => {
     const eventDate = new Date(event.start_time)
     return eventDate >= startOfToday && eventDate < endOfToday
   })

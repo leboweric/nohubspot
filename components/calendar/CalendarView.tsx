@@ -12,11 +12,14 @@ interface CalendarViewProps {
   onMonthChange: (date: Date) => void
 }
 
-export default function CalendarView({ events, currentDate, onDateClick, onEventClick, onMonthChange }: CalendarViewProps) {
+export default function CalendarView({ events = [], currentDate, onDateClick, onEventClick, onMonthChange }: CalendarViewProps) {
 
   const today = new Date()
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
+  
+  // Ensure events is always an array
+  const safeEvents = Array.isArray(events) ? events : []
   
 
   // Get first day of month and how many days
@@ -29,7 +32,7 @@ export default function CalendarView({ events, currentDate, onDateClick, onEvent
   const getEventsForDate = (date: Date) => {
     const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
     
-    return events.filter(event => {
+    return safeEvents.filter(event => {
       // Get start and end dates without time component
       const eventStartDate = new Date(event.start_time)
       const eventStart = new Date(eventStartDate.getFullYear(), eventStartDate.getMonth(), eventStartDate.getDate())
