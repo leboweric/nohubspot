@@ -142,7 +142,8 @@ export default function TasksCard() {
         <h2 className="text-lg font-semibold text-gray-900">Tasks</h2>
         <Link 
           href="/tasks" 
-          className="text-sm text-primary hover:text-primary/80 transition-colors"
+          className="text-sm hover:opacity-80 transition-colors"
+          style={{ color: 'var(--color-primary)' }}
         >
           View All Tasks
         </Link>
@@ -264,7 +265,8 @@ export default function TasksCard() {
           <p className="text-sm text-muted-foreground mb-2">No overdue or pending tasks</p>
           <Link 
             href="/tasks" 
-            className="text-sm text-primary hover:text-primary/80 transition-colors"
+            className="text-sm hover:opacity-80 transition-colors"
+            style={{ color: 'var(--color-primary)' }}
           >
             Create a task
           </Link>

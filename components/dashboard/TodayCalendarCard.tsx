@@ -93,7 +93,8 @@ export default function TodayCalendarCard() {
         </h2>
         <Link 
           href="/calendar" 
-          className="text-sm text-primary hover:text-primary/80 transition-colors"
+          className="text-sm hover:opacity-80 transition-colors"
+          style={{ color: 'var(--color-primary)' }}
         >
           View Calendar
         </Link>
@@ -162,7 +163,8 @@ export default function TodayCalendarCard() {
           <p className="text-sm text-muted-foreground mb-2">No events scheduled for today</p>
           <Link 
             href="/calendar" 
-            className="text-sm text-primary hover:text-primary/80 transition-colors"
+            className="text-sm hover:opacity-80 transition-colors"
+          style={{ color: 'var(--color-primary)' }}
           >
             Schedule something
           </Link>

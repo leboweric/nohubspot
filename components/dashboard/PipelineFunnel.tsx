@@ -45,7 +45,11 @@ export default function PipelineFunnel({ stages, loading }: PipelineFunnelProps)
     <div className="bg-white border border-gray-200 rounded-lg p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold">Pipeline Overview</h2>
-        <Link href="/pipeline" className="text-sm text-primary hover:underline">
+        <Link 
+          href="/pipeline" 
+          className="text-sm hover:underline"
+          style={{ color: 'var(--color-primary)' }}
+        >
           View Pipeline →
         </Link>
       </div>

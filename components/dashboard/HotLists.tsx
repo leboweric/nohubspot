@@ -101,7 +101,8 @@ export default function HotLists({ hotDeals, atRiskDeals, recentWins, loading }:
         {hotDeals.length > 5 && (
           <Link 
             href="/pipeline" 
-            className="block text-center text-sm text-primary hover:underline mt-4"
+            className="block text-center text-sm hover:underline mt-4"
+            style={{ color: 'var(--color-primary)' }}
           >
             View all {hotDeals.length} hot deals →
           </Link>
@@ -149,7 +150,8 @@ export default function HotLists({ hotDeals, atRiskDeals, recentWins, loading }:
         {atRiskDeals.length > 5 && (
           <Link 
             href="/pipeline" 
-            className="block text-center text-sm text-primary hover:underline mt-4"
+            className="block text-center text-sm hover:underline mt-4"
+            style={{ color: 'var(--color-primary)' }}
           >
             View all {atRiskDeals.length} at-risk deals →
           </Link>
@@ -191,7 +193,8 @@ export default function HotLists({ hotDeals, atRiskDeals, recentWins, loading }:
         {recentWins.length > 5 && (
           <Link 
             href="/pipeline" 
-            className="block text-center text-sm text-primary hover:underline mt-4"
+            className="block text-center text-sm hover:underline mt-4"
+            style={{ color: 'var(--color-primary)' }}
           >
             View all {recentWins.length} wins →
           </Link>
