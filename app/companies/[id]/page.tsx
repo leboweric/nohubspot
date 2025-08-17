@@ -445,23 +445,6 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                     </div>
                   </div>
 
-                  <div className="bg-card border rounded-lg p-6">
-                    <h2 className="text-lg font-semibold mb-4">Meta Information</h2>
-                    <dl className="space-y-2 text-sm">
-                      <div>
-                        <dt className="text-muted-foreground">Created</dt>
-                        <dd className="font-medium">
-                          {new Date(company.created_at).toLocaleDateString()}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="text-muted-foreground">Last Updated</dt>
-                        <dd className="font-medium">
-                          {new Date(company.updated_at).toLocaleDateString()}
-                        </dd>
-                      </div>
-                    </dl>
-                  </div>
                 </div>
               </div>
             )}

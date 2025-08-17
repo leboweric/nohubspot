@@ -498,15 +498,6 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                   <Edit className="w-4 h-4" />
                   Edit
                 </Link>
-                {o365Connected && (
-                  <button 
-                    onClick={handleSendEmail}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-                  >
-                    <Mail className="w-4 h-4" />
-                    Send Email
-                  </button>
-                )}
               </div>
             </div>
 
@@ -521,7 +512,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
               {contact.phone && (
                 <div className="flex items-center gap-1">
                   <Phone className="w-4 h-4 text-muted-foreground" />
-                  <a href={`tel:${contact.phone}`} className="hover:underline">
+                  <a href={`tel:${contact.phone}`} className="hover:underline text-gray-700">
                     {contact.phone}
                   </a>
                 </div>
@@ -547,16 +538,6 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
               >
                 Overview
               </TabButton>
-              {o365Connected && (
-                <TabButton 
-                  active={activeTab === "communication"} 
-                  onClick={() => setActiveTab("communication")}
-                  icon={MessageSquare}
-                  count={emails.length}
-                >
-                  Communication
-                </TabButton>
-              )}
               <TabButton 
                 active={activeTab === "deals"} 
                 onClick={() => setActiveTab("deals")}
@@ -620,7 +601,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                         <dt className="text-sm font-medium text-muted-foreground">Phone</dt>
                         <dd className="mt-1">
                           {contact.phone ? (
-                            <a href={`tel:${contact.phone}`} className="text-primary hover:underline">
+                            <a href={`tel:${contact.phone}`} className="hover:underline" style={{ color: 'var(--color-primary)' }}>
                               {contact.phone}
                             </a>
                           ) : (
@@ -750,15 +731,6 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                         <Phone className="w-4 h-4" />
                         Schedule Call
                       </button>
-                      {o365Connected && (
-                        <button 
-                          onClick={handleSendEmail}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm border rounded-md hover:bg-accent transition-colors"
-                        >
-                          <Mail className="w-4 h-4" />
-                          Send Email
-                        </button>
-                      )}
                     </div>
                   </div>
 
@@ -790,82 +762,6 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
               </div>
             )}
 
-            {/* Communication Tab */}
-            {activeTab === "communication" && o365Connected && (
-              <div className="bg-card border rounded-lg p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold">Email Communication</h2>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setShowEmailThread(true)}
-                      className="px-4 py-2 text-sm border rounded-md hover:bg-accent transition-colors"
-                    >
-                      View Thread
-                    </button>
-                    <button
-                      onClick={handleSendEmail}
-                      className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-                    >
-                      Send Email
-                    </button>
-                  </div>
-                </div>
-                
-                <EmailTrackingStatus contactId={contact.id} />
-                
-                <div className="mt-6">
-                  {emailsLoading ? (
-                    <div className="space-y-3">
-                      {[1, 2, 3].map(i => (
-                        <div key={i} className="animate-pulse">
-                          <div className="h-24 bg-gray-200 rounded"></div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : emails.length > 0 ? (
-                    <div className="space-y-4">
-                      {emails.map((email) => (
-                        <div key={email.id} className="border rounded-lg overflow-hidden">
-                          <div className="bg-muted px-4 py-2 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-2 h-2 rounded-full ${
-                                email.fromSelf ? 'bg-gray-600' : 'bg-gray-400'
-                              }`}></div>
-                              <span className="text-sm font-medium">
-                                {email.fromSelf ? 'You' : `${contact?.first_name} ${contact?.last_name}`}
-                              </span>
-                            </div>
-                            <span className="text-xs text-muted-foreground">
-                              {email.timestamp.toLocaleString()}
-                            </span>
-                          </div>
-                          <div className="p-4">
-                            <h4 className="text-sm font-semibold mb-2">{email.subject}</h4>
-                            <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-                              {email.message.length > 300 
-                                ? `${email.message.substring(0, 300)}...` 
-                                : email.message
-                              }
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">No email conversation yet</p>
-                      <button 
-                        onClick={handleSendEmail}
-                        className="mt-4 text-primary hover:underline"
-                      >
-                        Start a conversation
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* Deals Tab */}
             {activeTab === "deals" && (
