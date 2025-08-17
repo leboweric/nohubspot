@@ -303,7 +303,7 @@ export default function PipelinePage() {
                 <button
                   onClick={handleExportDeals}
                   disabled={loading || deals.length === 0}
-                  className="flex items-center gap-2 px-4 py-2 border border-green-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-all text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Download className="w-4 h-4" />
                   Export to CSV
