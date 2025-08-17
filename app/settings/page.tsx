@@ -531,7 +531,7 @@ export default function SettingsPage() {
         <div className="space-y-4">
           {usersLoading ? (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4" style={{ borderBottomColor: 'var(--color-primary)' }}></div>
               <p className="text-gray-500">Loading users...</p>
             </div>
           ) : users.length > 0 ? (

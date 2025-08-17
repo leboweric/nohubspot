@@ -873,7 +873,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold">Related Deals</h2>
                   <Link 
-                    href={`/pipeline/new?contactId=${contact.id}`}
+                    href={`/pipeline?createDeal=true&contactId=${contact.id}`}
                     className="flex items-center gap-2 px-4 py-2 rounded-md transition-all text-white hover:opacity-90"
                     style={{ backgroundColor: 'var(--color-primary)' }}
                   >
@@ -916,7 +916,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                     <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground mb-4">No deals yet</p>
                     <Link 
-                      href={`/pipeline/new?contactId=${contact.id}`}
+                      href={`/pipeline?createDeal=true&contactId=${contact.id}`}
                       className="hover:underline"
                       style={{ color: 'var(--color-primary)' }}
                     >

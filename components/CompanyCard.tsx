@@ -146,7 +146,10 @@ export default function CompanyCard({ company, onDelete }: CompanyCardProps) {
         <div className="flex gap-2">
           <Link 
             href={`/companies/${company.id}`}
-            className="px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 rounded-md transition-colors"
+            className="px-3 py-1.5 text-xs font-medium rounded-md transition-colors hover:opacity-80"
+            style={{ color: 'var(--color-primary)', backgroundColor: 'transparent' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-primary-light)'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             View Details
           </Link>

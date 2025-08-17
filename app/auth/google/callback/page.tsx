@@ -62,7 +62,7 @@ function GoogleCallbackContent() {
       <div className="max-w-md w-full bg-card border rounded-lg p-6 text-center">
         {status === 'processing' && (
           <>
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderBottomColor: 'var(--color-primary)' }}></div>
             <h2 className="text-lg font-semibold mb-2">Connecting to Google Workspace...</h2>
             <p className="text-sm text-muted-foreground">Please wait while we complete the connection</p>
           </>
@@ -108,7 +108,7 @@ export default function GoogleCallbackPage() {
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-card border rounded-lg p-6 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderBottomColor: 'var(--color-primary)' }}></div>
           <h2 className="text-lg font-semibold mb-2">Loading...</h2>
           <p className="text-sm text-muted-foreground">Please wait while we process your request</p>
         </div>

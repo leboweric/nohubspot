@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import KanbanBoard from "@/components/KanbanBoard"
@@ -13,6 +14,7 @@ import {
 } from "lucide-react"
 
 export default function PipelinePage() {
+  const searchParams = useSearchParams()
   const [stages, setStages] = useState<PipelineStage[]>([])
   const [deals, setDeals] = useState<Deal[]>([])
   const [loading, setLoading] = useState(true)
@@ -23,9 +25,22 @@ export default function PipelinePage() {
   const [showDealModal, setShowDealModal] = useState(false)
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null)
   const [defaultStageId, setDefaultStageId] = useState<number | undefined>(undefined)
+  const [defaultContactId, setDefaultContactId] = useState<number | undefined>(undefined)
+  const [defaultCompanyId, setDefaultCompanyId] = useState<number | undefined>(undefined)
 
   useEffect(() => {
     loadPipelineData()
+    
+    // Check if we should open the create deal modal
+    if (searchParams.get('createDeal') === 'true') {
+      const contactId = searchParams.get('contactId')
+      const companyId = searchParams.get('companyId')
+      
+      if (contactId) setDefaultContactId(parseInt(contactId))
+      if (companyId) setDefaultCompanyId(parseInt(companyId))
+      
+      setShowDealModal(true)
+    }
   }, [])
 
   const loadPipelineData = async () => {
@@ -151,6 +166,8 @@ export default function PipelinePage() {
     setShowDealModal(false)
     setSelectedDeal(null)
     setDefaultStageId(undefined)
+    setDefaultContactId(undefined)
+    setDefaultCompanyId(undefined)
   }
 
   const handleDeleteDeal = async (dealId: number) => {
@@ -276,7 +293,7 @@ export default function PipelinePage() {
         <MainLayout>
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderBottomColor: 'var(--color-primary)' }}></div>
               <p className="mt-4 text-muted-foreground">Loading pipeline...</p>
             </div>
           </div>
@@ -563,6 +580,8 @@ export default function PipelinePage() {
           stages={stages}
           deal={selectedDeal}
           defaultStageId={defaultStageId}
+          defaultContactId={defaultContactId}
+          defaultCompanyId={defaultCompanyId}
         />
       </MainLayout>
     </AuthGuard>

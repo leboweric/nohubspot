@@ -154,7 +154,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
         <MainLayout>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderBottomColor: 'var(--color-primary)' }}></div>
               <p className="text-muted-foreground">Loading company...</p>
             </div>
           </div>
@@ -429,7 +429,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                         Add Contact
                       </Link>
                       <Link 
-                        href={`/pipeline/new?companyId=${company.id}`}
+                        href={`/pipeline?createDeal=true&companyId=${company.id}`}
                         className="flex items-center gap-2 w-full px-3 py-2 text-sm border rounded-lg hover:bg-accent transition-colors"
                       >
                         <Plus className="w-4 h-4" />
@@ -542,7 +542,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold">Deals</h2>
                   <Link 
-                    href={`/pipeline/new?companyId=${company.id}`}
+                    href={`/pipeline?createDeal=true&companyId=${company.id}`}
                     className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
@@ -576,7 +576,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                     <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground mb-4">No deals yet</p>
                     <Link 
-                      href={`/pipeline/new?companyId=${company.id}`}
+                      href={`/pipeline?createDeal=true&companyId=${company.id}`}
                       className="text-primary hover:underline"
                     >
                       Create the first deal

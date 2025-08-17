@@ -9,7 +9,6 @@ import TasksCard from "@/components/dashboard/TasksCard"
 import ActionItemsBar from "@/components/dashboard/ActionItemsBar"
 import PerformanceMetrics from "@/components/dashboard/PerformanceMetrics"
 import PipelineFunnel from "@/components/dashboard/PipelineFunnel"
-import HotLists from "@/components/dashboard/HotLists"
 import { getAuthState } from "@/lib/auth"
 import { dashboardAPI, Activity, handleAPIError, o365IntegrationAPI, projectAPI, dealAPI, companyAPI, contactAPI, taskAPI } from "@/lib/api"
 import { AlertCircle, DollarSign, Phone, FileSignature, Users, TrendingUp, Clock, CheckCircle, Building2 } from "lucide-react"
@@ -36,11 +35,6 @@ export default function DashboardPage() {
   const [actionItems, setActionItems] = useState<any[]>([])
   const [performanceMetrics, setPerformanceMetrics] = useState<any[]>([])
   const [pipelineStages, setPipelineStages] = useState<any[]>([])
-  const [hotLists, setHotLists] = useState({
-    hotDeals: [],
-    atRiskDeals: [],
-    recentWins: []
-  })
   
   // Get auth state - will be null during SSR
   const { organization, user } = getAuthState()
@@ -259,39 +253,6 @@ export default function DashboardPage() {
         
         setPipelineStages(stageData)
         
-        // Calculate hot lists
-        const hotDeals = deals
-          .filter(d => d.is_active && (d.stage === 'Negotiation' || d.stage === 'Proposal'))
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 10)
-        
-        const thirtyDaysAgo = new Date()
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-        
-        const atRiskDeals = deals
-          .filter(d => {
-            if (!d.is_active) return false
-            const lastUpdate = new Date(d.updated_at)
-            const daysInStage = Math.floor((today.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24))
-            return daysInStage > 30 || (d.expected_close_date && new Date(d.expected_close_date) < today)
-          })
-          .map(d => ({
-            ...d,
-            days_in_stage: Math.floor((today.getTime() - new Date(d.updated_at).getTime()) / (1000 * 60 * 60 * 24))
-          }))
-          .slice(0, 10)
-        
-        const recentWins = deals
-          .filter(d => d.stage === 'Closed Won')
-          .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-          .slice(0, 10)
-        
-        setHotLists({
-          hotDeals,
-          atRiskDeals,
-          recentWins
-        })
-        
         setMetrics({
           activeProjects: activeProjects.length,
           totalProjectValue,
@@ -443,14 +404,6 @@ export default function DashboardPage() {
 
       {/* Performance Metrics */}
       <PerformanceMetrics metrics={performanceMetrics} loading={metricsLoading} />
-
-      {/* Hot Lists */}
-      <HotLists 
-        hotDeals={hotLists.hotDeals}
-        atRiskDeals={hotLists.atRiskDeals}
-        recentWins={hotLists.recentWins}
-        loading={metricsLoading}
-      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Pipeline Funnel */}

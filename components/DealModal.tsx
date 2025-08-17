@@ -12,6 +12,8 @@ interface DealModalProps {
   stages: PipelineStage[]
   deal?: Deal | null // For editing existing deals
   defaultStageId?: number // For creating deals in specific stages
+  defaultContactId?: number // For pre-selecting a contact
+  defaultCompanyId?: number // For pre-selecting a company
 }
 
 export default function DealModal({ 
@@ -21,7 +23,9 @@ export default function DealModal({
   onDelete,
   stages, 
   deal = null, 
-  defaultStageId 
+  defaultStageId,
+  defaultContactId,
+  defaultCompanyId 
 }: DealModalProps) {
   const [formData, setFormData] = useState<DealCreate>({
     title: '',
@@ -70,10 +74,16 @@ export default function DealModal({
         notes: deal.notes || '',
         tags: deal.tags || []
       })
-    } else if (defaultStageId) {
-      setFormData(prev => ({ ...prev, stage_id: defaultStageId }))
+    } else {
+      // Set defaults for new deals
+      setFormData(prev => ({
+        ...prev,
+        stage_id: defaultStageId || prev.stage_id,
+        contact_id: defaultContactId || prev.contact_id,
+        company_id: defaultCompanyId || prev.company_id
+      }))
     }
-  }, [deal, defaultStageId])
+  }, [deal, defaultStageId, defaultContactId, defaultCompanyId])
 
   const loadFormData = async () => {
     try {
