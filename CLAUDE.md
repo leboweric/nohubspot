@@ -150,3 +150,66 @@
 - ThemeContext provides theme management
 - Colors can be dynamically updated through settings
 - Theme variables include opacity variations for hover/selected states
+
+## 🔴 CRITICAL DEPLOYMENT DEBUGGING LESSON (August 17, 2025)
+
+### The Problem
+Spent over an hour with Railway deployment failures, initially blaming the platform when the issue was in our code.
+
+### What Happened
+1. **Initial symptoms**: Railway deployment kept failing with "service unavailable" health check errors
+2. **Wrong assumption**: We assumed it was a Railway platform issue since the database was accessible
+3. **Wasted time**: Spent significant time trying to prove our code wasn't the issue
+4. **The reality**: A SQL migration file (`add_file_data_to_attachments.sql`) was silently hanging during startup
+
+### The Solution (Thanks to Manus's Analysis)
+Added comprehensive logging to the migration runner which immediately revealed:
+- The app was hanging on a specific SQL migration
+- The `ALTER TABLE IF NOT EXISTS` command was not completing
+- The column already existed in production
+
+### Key Learnings
+1. **ALWAYS ADD LOGGING FIRST** - Don't assume, measure and log
+2. **Silent failures are the worst** - Make failures loud and visible
+3. **Platform blame is rarely correct** - It's almost always our code
+4. **Startup sequences need detailed logging** - Every step should log its progress
+5. **Database migrations are critical failure points** - They need extra attention and logging
+
+### Best Practices for Future Deployments
+1. **Comprehensive startup logging**:
+   ```python
+   logging.info("STARTUP: Step X starting...")
+   # do the work
+   logging.info("STARTUP: Step X completed successfully")
+   ```
+
+2. **Migration-specific logging**:
+   ```python
+   logging.info(f"MIGRATION: Executing {filename}")
+   try:
+       # execute migration
+       logging.info(f"MIGRATION: ✅ {filename} applied successfully")
+   except Exception as e:
+       logging.critical(f"MIGRATION_FAILURE: {filename} failed: {e}")
+       raise
+   ```
+
+3. **Health check endpoints should test everything**:
+   - Database connectivity
+   - Critical services
+   - Return detailed status not just "ok"
+
+4. **When debugging deployment issues**:
+   - Add logging FIRST before making assumptions
+   - Check the LAST successful log message
+   - Look for hanging operations (migrations, connections, etc.)
+   - Test locally with production-like data
+
+### The Fix That Worked
+Replaced the hanging `ALTER TABLE IF NOT EXISTS file_data BYTEA` with a simple `SELECT 1` no-op since the column already existed in production.
+
+### Time Wasted vs Time to Fix
+- Time wasted blaming Railway: ~1 hour
+- Time to fix after adding proper logging: ~5 minutes
+
+**Remember: When deployments fail mysteriously, ADD LOGGING FIRST!**
