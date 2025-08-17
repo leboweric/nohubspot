@@ -124,8 +124,9 @@ export default function RegisterPage() {
       >
         <div>
           {/* Logo */}
-          <div className="mb-16">
-            <NHSLogo className="h-12 text-white" variant="full" showTagline={true} />
+          <div className="flex items-center gap-3 mb-16">
+            <NHSLogo className="h-12 w-12 text-white" variant="icon" />
+            <span className="text-3xl font-bold">NHS - The Simple CRM</span>
           </div>
 
           {/* Main Content */}
@@ -195,7 +196,10 @@ export default function RegisterPage() {
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="lg:hidden mb-8 text-center">
-            <NHSLogo className="h-10 inline-block" variant="full" showTagline={true} />
+            <div className="inline-flex items-center gap-3">
+              <NHSLogo className="h-10 w-10" variant="icon" />
+              <span className="text-2xl font-bold text-gray-900">NHS - The Simple CRM</span>
+            </div>
           </div>
 
           {/* Form Header */}
