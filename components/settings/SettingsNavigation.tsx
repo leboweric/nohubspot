@@ -95,21 +95,22 @@ export default function SettingsNavigation({
             onClick={() => onTabChange(item.id)}
             className={`w-full flex items-start gap-3 p-3 rounded-lg text-left transition-all duration-200 ${
               isActive
-                ? 'bg-primary text-primary-foreground shadow-md'
+                ? 'text-white shadow-md'
                 : 'hover:bg-gray-50 text-gray-700 hover:text-gray-900'
             }`}
+            style={isActive ? { backgroundColor: 'var(--color-primary)' } : {}}
           >
             <Icon className={`w-5 h-5 mt-0.5 flex-shrink-0 ${
-              isActive ? 'text-primary-foreground' : 'text-gray-500'
+              isActive ? 'text-white' : 'text-gray-500'
             }`} />
             <div className="min-w-0 flex-1">
               <div className={`font-medium text-sm ${
-                isActive ? 'text-primary-foreground' : 'text-gray-900'
+                isActive ? 'text-white' : 'text-gray-900'
               }`}>
                 {item.label}
               </div>
               <div className={`text-xs mt-1 leading-relaxed ${
-                isActive ? 'text-primary-foreground/80' : 'text-gray-600'
+                isActive ? 'text-white/80' : 'text-gray-600'
               }`}>
                 {item.description}
               </div>
