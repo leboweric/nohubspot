@@ -11,6 +11,7 @@ import O365Connection from "@/components/settings/O365Connection"
 import GoogleConnection from "@/components/settings/GoogleConnection"
 import SettingsNavigation, { SettingsTab } from "@/components/settings/SettingsNavigation"
 import UserManagementCard from "@/components/settings/UserManagementCard"
+import EditUserModal from "@/components/settings/EditUserModal"
 import IntegrationCard from "@/components/settings/IntegrationCard"
 import ColorThemePicker from "@/components/settings/ColorThemePicker"
 import LogoUploader from "@/components/settings/LogoUploader"
@@ -57,6 +58,8 @@ export default function SettingsPage() {
   const [users, setUsers] = useState<any[]>([])
   const [usersLoading, setUsersLoading] = useState(true)
   const [logoSaving, setLogoSaving] = useState(false)
+  const [editingUser, setEditingUser] = useState<any>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
   
   // Auth and signature
   const { signature, saveSignature } = useEmailSignature()
@@ -276,8 +279,25 @@ export default function SettingsPage() {
   }
 
   const handleEditUser = async (user: any) => {
-    // For now, just show a message. Full edit functionality can be added later
-    alert('Edit functionality coming soon')
+    setEditingUser(user)
+    setShowEditModal(true)
+  }
+
+  const handleSaveUser = async (userId: number, updates: any) => {
+    try {
+      const updatedUser = await usersAPI.update(userId, updates)
+      
+      // Update the user in the local state
+      setUsers(prevUsers => 
+        prevUsers.map(u => u.id === userId ? { ...u, ...updatedUser } : u)
+      )
+      
+      setSuccess("User updated successfully!")
+      setTimeout(() => setSuccess(""), 3000)
+    } catch (error) {
+      const errorMessage = handleAPIError(error)
+      throw new Error(errorMessage)
+    }
   }
 
   const handleSaveO365Config = async (e: React.FormEvent) => {
@@ -1488,6 +1508,18 @@ export default function SettingsPage() {
             </div>
           </div>
         )}
+        
+        {/* Edit User Modal */}
+        <EditUserModal
+          user={editingUser}
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false)
+            setEditingUser(null)
+          }}
+          onSave={handleSaveUser}
+          currentUserRole={user?.role}
+        />
       </MainLayout>
     </AuthGuard>
   )
