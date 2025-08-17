@@ -121,7 +121,8 @@ export default function TemplatesPage() {
             </div>
             <button
               onClick={handleCreate}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors shadow-sm"
+              className="px-4 py-2 rounded-md transition-all text-white hover:opacity-90 shadow-sm"
+              style={{ backgroundColor: 'var(--color-primary)' }}
             >
               ➕ Create Template
             </button>
@@ -248,7 +249,8 @@ export default function TemplatesPage() {
                 {!searchTerm && !selectedCategory && (
                   <button
                     onClick={handleCreate}
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                    className="px-4 py-2 rounded-md transition-all text-white hover:opacity-90"
+                    style={{ backgroundColor: 'var(--color-primary)' }}
                   >
                     Create Your First Template
                   </button>
