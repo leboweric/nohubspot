@@ -59,7 +59,7 @@ from schemas import (
     ActivityResponse, DashboardStats, BulkUploadResult,
     OrganizationCreate, OrganizationResponse, OrganizationThemeUpdate, OrganizationLogoUpdate, UserRegister, UserLogin, UserResponse, UserCreate,
     UserInviteCreate, UserInviteResponse, UserInviteAccept, Token,
-    UserAdd, UserAddResponse,
+    UserAdd, UserAddResponse, UserUpdate,
     ProjectUpdateResponse, ProjectUpdateCreate, ProjectUpdateUpdate,
     DealUpdateResponse, DealUpdateCreate, DealUpdateUpdate,
     EmailTemplateCreate, EmailTemplateResponse, EmailTemplateUpdate,
@@ -882,6 +882,100 @@ async def get_organization_users(
         raise HTTPException(status_code=429, detail="Rate limit exceeded - too many requests")
     
     return get_users_by_organization(db, current_user.organization_id, skip, limit)
+
+# Update user endpoint
+@app.put("/api/users/{user_id}", response_model=UserResponse)
+async def update_user(
+    user_id: int,
+    user_update: UserUpdate,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Update a user's information (admin only)"""
+    # Get the user to update
+    user = db.query(User).filter(
+        User.id == user_id,
+        User.organization_id == current_user.organization_id
+    ).first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Prevent demoting the owner unless you are the owner
+    if user.role == 'owner' and user_update.role != 'owner' and current_user.role != 'owner':
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the owner can change the owner's role"
+        )
+    
+    # Update user fields
+    if user_update.first_name is not None:
+        user.first_name = user_update.first_name
+    if user_update.last_name is not None:
+        user.last_name = user_update.last_name
+    if user_update.role is not None:
+        user.role = user_update.role
+    
+    user.updated_at = datetime.utcnow()
+    
+    try:
+        db.commit()
+        db.refresh(user)
+        return user
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to update user: {str(e)}"
+        )
+
+# Delete user endpoint
+@app.delete("/api/users/{user_id}")
+async def delete_user(
+    user_id: int,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a user from the organization (admin only)"""
+    # Get the user to delete
+    user = db.query(User).filter(
+        User.id == user_id,
+        User.organization_id == current_user.organization_id
+    ).first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Prevent deleting the owner
+    if user.role == 'owner':
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot delete the organization owner"
+        )
+    
+    # Prevent self-deletion
+    if user.id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot delete your own account"
+        )
+    
+    try:
+        db.delete(user)
+        db.commit()
+        return {"message": f"User {user.email} deleted successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to delete user: {str(e)}"
+        )
 
 # Add user directly (replaces invite system)
 @app.post("/api/users/add", response_model=UserAddResponse)
