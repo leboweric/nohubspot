@@ -91,18 +91,17 @@ export default function DashboardPage() {
       try {
         setMetricsLoading(true)
         
-        // Load projects, deals, tasks, companies, and contacts in parallel
-        const [projects, deals, tasks, companiesResponse, contacts] = await Promise.all([
+        // Load stats, projects, deals, and tasks in parallel
+        const [stats, projects, deals, tasks] = await Promise.all([
+          dashboardAPI.getStats(), // Gets accurate total counts
           projectAPI.getProjects({ limit: 5000 }),
           dealAPI.getDeals({ limit: 5000 }),
-          taskAPI.getAll(),
-          companyAPI.getAll({ limit: 1 }), // We only need the total count, not the items
-          contactAPI.getAll({ limit: 5000 })
+          taskAPI.getAll()
         ])
         
-        // Extract companies from paginated response - use total for count
-        const companies = companiesResponse.items || []
-        const totalCompanies = companiesResponse.total || 0
+        // Use accurate counts from stats endpoint
+        const totalCompanies = stats.total_companies || 0
+        const totalContacts = stats.total_contacts || 0
         
         // Calculate project metrics
         const activeProjects = projects.filter(p => p.is_active)
@@ -207,13 +206,13 @@ export default function DashboardPage() {
           },
           {
             label: 'Number of Contacts',
-            value: contacts.length.toLocaleString(),
-            change: Math.round(contacts.length * 0.12),
+            value: totalContacts.toLocaleString(),
+            change: Math.round(totalContacts * 0.12),
             changeLabel: 'new this month',
             icon: Users,
             color: 'bg-green-500',
-            sparklineData: contacts.length > 0
-              ? Array(12).fill(0).map((_, i) => Math.round(contacts.length * (0.65 + i * 0.03)))
+            sparklineData: totalContacts > 0
+              ? Array(12).fill(0).map((_, i) => Math.round(totalContacts * (0.65 + i * 0.03)))
               : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
           },
           {
