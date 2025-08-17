@@ -93,15 +93,16 @@ export default function DashboardPage() {
         
         // Load projects, deals, tasks, companies, and contacts in parallel
         const [projects, deals, tasks, companiesResponse, contacts] = await Promise.all([
-          projectAPI.getProjects({ limit: 1000 }),
-          dealAPI.getDeals({ limit: 1000 }),
+          projectAPI.getProjects({ limit: 5000 }),
+          dealAPI.getDeals({ limit: 5000 }),
           taskAPI.getAll(),
-          companyAPI.getAll({ limit: 1000 }),
-          contactAPI.getAll({ limit: 1000 })
+          companyAPI.getAll({ limit: 1 }), // We only need the total count, not the items
+          contactAPI.getAll({ limit: 5000 })
         ])
         
-        // Extract companies from paginated response
+        // Extract companies from paginated response - use total for count
         const companies = companiesResponse.items || []
+        const totalCompanies = companiesResponse.total || 0
         
         // Calculate project metrics
         const activeProjects = projects.filter(p => p.is_active)
@@ -195,13 +196,13 @@ export default function DashboardPage() {
         const perfMetrics = [
           {
             label: 'Number of Companies',
-            value: companies.length.toLocaleString(),
-            change: Math.round(companies.length * 0.08),
+            value: totalCompanies.toLocaleString(),
+            change: Math.round(totalCompanies * 0.08),
             changeLabel: 'new this month',
             icon: Building2,
             color: 'bg-blue-500',
-            sparklineData: companies.length > 0 
-              ? Array(12).fill(0).map((_, i) => Math.round(companies.length * (0.7 + i * 0.025)))
+            sparklineData: totalCompanies > 0 
+              ? Array(12).fill(0).map((_, i) => Math.round(totalCompanies * (0.7 + i * 0.025)))
               : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
           },
           {
