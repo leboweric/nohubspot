@@ -46,8 +46,19 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
           contactAPI.getAll({ limit: 1000 }),
           companyAPI.getAll({ limit: 1000 })
         ])
-        setContacts(contactsData)
-        setCompanies(companiesData)
+        
+        // Handle both array and paginated responses for contacts
+        const contactsArray = Array.isArray(contactsData) 
+          ? contactsData 
+          : (contactsData?.items || contactsData?.contacts || [])
+        
+        // Handle both array and paginated responses for companies  
+        const companiesArray = Array.isArray(companiesData)
+          ? companiesData
+          : (companiesData?.items || companiesData?.companies || [])
+        
+        setContacts(contactsArray)
+        setCompanies(companiesArray)
       } catch (err) {
         console.error('Failed to load contacts/companies:', err)
       }
@@ -211,7 +222,8 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
   }
 
   const handleSelectAllAttendees = () => {
-    const allContactIds = companyContacts.map(contact => contact.id)
+    const safeCompanyContacts = Array.isArray(companyContacts) ? companyContacts : []
+    const allContactIds = safeCompanyContacts.map(contact => contact.id)
     const allSelected = allContactIds.every(id => formData.attendee_ids.includes(id))
     
     setFormData(prev => ({
@@ -361,7 +373,7 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
               className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="">Select a company</option>
-              {companies.map(company => (
+              {(Array.isArray(companies) ? companies : []).map(company => (
                 <option key={company.id} value={company.id}>
                   {company.name}
                 </option>
@@ -385,7 +397,7 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
                 </button>
               </div>
               <div className="border rounded-md p-4 max-h-48 overflow-y-auto bg-gray-50">
-                {companyContacts.map(contact => (
+                {(Array.isArray(companyContacts) ? companyContacts : []).map(contact => (
                   <label key={contact.id} className="flex items-center gap-3 py-2 hover:bg-gray-100 rounded px-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -417,13 +429,13 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
             >
               <option value="">Select a primary contact</option>
               {companyContacts.length > 0 ? (
-                companyContacts.map(contact => (
+                (Array.isArray(companyContacts) ? companyContacts : []).map(contact => (
                   <option key={contact.id} value={contact.id}>
                     {contact.first_name} {contact.last_name}
                   </option>
                 ))
               ) : (
-                contacts.map(contact => (
+                (Array.isArray(contacts) ? contacts : []).map(contact => (
                   <option key={contact.id} value={contact.id}>
                     {contact.first_name} {contact.last_name}
                   </option>
