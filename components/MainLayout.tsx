@@ -6,6 +6,7 @@ import { useState, useEffect } from "react"
 import { getAuthState, logout, isAdmin } from "@/lib/auth"
 import { o365IntegrationAPI } from "@/lib/api"
 import FloatingSupportButton from "./FloatingSupportButton"
+import NHSLogo, { NHSLogoModern } from "./NHSLogo"
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -147,9 +148,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     }}
                   />
                 ) : (
-                  <span className="text-3xl font-bold transition-colors tracking-tight" style={{ color: 'var(--color-primary)' }}>
-                    NHS
-                  </span>
+                  <NHSLogo className="h-10" variant="full" />
                 )}
               </Link>
               

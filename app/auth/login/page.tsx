@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Building2, Users, TrendingUp, Shield, Mail, Lock, ArrowRight } from "lucide-react"
+import NHSLogo from "@/components/NHSLogo"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -84,11 +85,8 @@ export default function LoginPage() {
       >
         <div>
           {/* Logo */}
-          <div className="flex items-center gap-3 mb-16">
-            <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-              <span className="text-2xl font-bold">N</span>
-            </div>
-            <span className="text-3xl font-bold">NHS - The Simple CRM</span>
+          <div className="mb-16">
+            <NHSLogo className="h-12 text-white" variant="full" showTagline={true} />
           </div>
 
           {/* Main Content */}
@@ -158,15 +156,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="lg:hidden mb-8 text-center">
-            <div className="inline-flex items-center gap-3">
-              <div 
-                className="w-10 h-10 rounded-lg flex items-center justify-center text-white"
-                style={{ backgroundColor: 'var(--color-primary)' }}
-              >
-                <span className="text-xl font-bold">N</span>
-              </div>
-              <span className="text-2xl font-bold text-gray-900">NHS - The Simple CRM</span>
-            </div>
+            <NHSLogo className="h-10 inline-block" variant="full" showTagline={true} />
           </div>
 
           {/* Form Header */}
