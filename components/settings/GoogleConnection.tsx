@@ -117,7 +117,8 @@ export default function GoogleConnection() {
               <button
                 onClick={handleSync}
                 disabled={syncing}
-                className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
+                className="px-4 py-2 text-sm rounded-md transition-all text-white hover:opacity-90 disabled:opacity-50"
+                style={{ backgroundColor: 'var(--color-primary)' }}
               >
                 {syncing ? 'Syncing...' : 'Sync Now'}
               </button>
@@ -160,7 +161,8 @@ export default function GoogleConnection() {
           <button
             onClick={handleConnect}
             disabled={connecting}
-            className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
+            className="w-full px-4 py-2 rounded-md transition-all text-white hover:opacity-90 disabled:opacity-50"
+            style={{ backgroundColor: 'var(--color-primary)' }}
           >
             {connecting ? 'Connecting...' : 'Connect Google Workspace'}
           </button>
