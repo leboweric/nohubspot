@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Building2, Users, TrendingUp, Shield, Mail, Lock, User, ArrowRight, CheckCircle } from "lucide-react"
-import NHSLogo from "@/components/NHSLogo"
+import Image from "next/image"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -124,9 +124,17 @@ export default function RegisterPage() {
       >
         <div>
           {/* Logo */}
-          <div className="flex items-center gap-3 mb-16">
-            <NHSLogo className="h-12 w-12 text-white" variant="icon" />
-            <span className="text-3xl font-bold">NHS - The Simple CRM</span>
+          <div className="flex items-center gap-4 mb-16">
+            <div className="bg-white rounded-lg p-2">
+              <Image 
+                src="/NHS_Logo_Compressed.png" 
+                alt="NHS Logo" 
+                width={60} 
+                height={60}
+                className="object-contain"
+              />
+            </div>
+            <span className="text-3xl font-bold">The Simple CRM</span>
           </div>
 
           {/* Main Content */}
@@ -197,8 +205,14 @@ export default function RegisterPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden mb-8 text-center">
             <div className="inline-flex items-center gap-3">
-              <NHSLogo className="h-10 w-10" variant="icon" />
-              <span className="text-2xl font-bold text-gray-900">NHS - The Simple CRM</span>
+              <Image 
+                src="/NHS_Logo_Compressed.png" 
+                alt="NHS Logo" 
+                width={48} 
+                height={48}
+                className="object-contain"
+              />
+              <span className="text-2xl font-bold text-gray-900">The Simple CRM</span>
             </div>
           </div>
 
