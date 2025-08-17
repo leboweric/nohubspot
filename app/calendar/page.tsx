@@ -51,7 +51,9 @@ export default function CalendarPage() {
       }
       
       const data = await calendarAPI.getAll(params)
-      setEvents(data)
+      // Ensure data is an array (handle both array and paginated response)
+      const eventsArray = Array.isArray(data) ? data : (data?.items || [])
+      setEvents(eventsArray)
     } catch (err) {
       setError(handleAPIError(err))
       // Debug: console.error('Failed to load calendar events:', err)
