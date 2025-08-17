@@ -119,8 +119,8 @@ export default function RegisterPage() {
     <div className="min-h-screen flex">
       {/* Left Side - Branding */}
       <div 
-        className="hidden lg:flex lg:w-1/2 xl:w-2/5 text-white p-12 flex-col justify-between"
-        style={{ backgroundColor: 'var(--color-primary)' }}
+        className="hidden lg:flex lg:w-1/2 xl:w-2/5 text-white p-12 flex-col justify-between bg-blue-600"
+        style={{ backgroundColor: 'var(--color-primary, #2563eb)' }}
       >
         <div>
           {/* Logo */}
@@ -248,8 +248,8 @@ export default function RegisterPage() {
                   name="companyName"
                   type="text"
                   required
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
-                  style={{ '--tw-ring-color': 'var(--color-primary)' } as any}
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  style={{ '--tw-ring-color': 'var(--color-primary, #2563eb)' } as any}
                   placeholder="Your company name"
                   value={formData.companyName}
                   onChange={handleChange}
@@ -272,8 +272,8 @@ export default function RegisterPage() {
                     name="firstName"
                     type="text"
                     required
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
-                    style={{ '--tw-ring-color': 'var(--color-primary)' } as any}
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    style={{ '--tw-ring-color': 'var(--color-primary, #2563eb)' } as any}
                     placeholder="John"
                     value={formData.firstName}
                     onChange={handleChange}
@@ -291,7 +291,7 @@ export default function RegisterPage() {
                   type="text"
                   required
                   className="block w-full px-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
-                  style={{ '--tw-ring-color': 'var(--color-primary)' } as any}
+                  style={{ '--tw-ring-color': 'var(--color-primary, #2563eb)' } as any}
                   placeholder="Doe"
                   value={formData.lastName}
                   onChange={handleChange}
@@ -314,8 +314,8 @@ export default function RegisterPage() {
                   type="email"
                   autoComplete="email"
                   required
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
-                  style={{ '--tw-ring-color': 'var(--color-primary)' } as any}
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  style={{ '--tw-ring-color': 'var(--color-primary, #2563eb)' } as any}
                   placeholder="john@company.com"
                   value={formData.email}
                   onChange={handleChange}
@@ -338,8 +338,8 @@ export default function RegisterPage() {
                   type="password"
                   autoComplete="new-password"
                   required
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
-                  style={{ '--tw-ring-color': 'var(--color-primary)' } as any}
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  style={{ '--tw-ring-color': 'var(--color-primary, #2563eb)' } as any}
                   placeholder="Minimum 8 characters"
                   value={formData.password}
                   onChange={handleChange}
@@ -376,8 +376,8 @@ export default function RegisterPage() {
                   type="password"
                   autoComplete="new-password"
                   required
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
-                  style={{ '--tw-ring-color': 'var(--color-primary)' } as any}
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  style={{ '--tw-ring-color': 'var(--color-primary, #2563eb)' } as any}
                   placeholder="Confirm your password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
@@ -392,8 +392,8 @@ export default function RegisterPage() {
                 type="checkbox"
                 className="mt-1 w-4 h-4 rounded border-gray-300 focus:ring-2 focus:ring-offset-0"
                 style={{ 
-                  accentColor: 'var(--color-primary)',
-                  '--tw-ring-color': 'var(--color-primary)' 
+                  accentColor: 'var(--color-primary, #2563eb)',
+                  '--tw-ring-color': 'var(--color-primary, #2563eb)' 
                 } as any}
                 checked={agreedToTerms}
                 onChange={(e) => setAgreedToTerms(e.target.checked)}
@@ -403,7 +403,7 @@ export default function RegisterPage() {
                 <Link 
                   href="/terms" 
                   className="font-medium hover:opacity-80 transition-opacity"
-                  style={{ color: 'var(--color-primary)' }}
+                  style={{ color: 'var(--color-primary, #2563eb)' }}
                 >
                   Terms of Service
                 </Link>{" "}
@@ -411,7 +411,7 @@ export default function RegisterPage() {
                 <Link 
                   href="/privacy" 
                   className="font-medium hover:opacity-80 transition-opacity"
-                  style={{ color: 'var(--color-primary)' }}
+                  style={{ color: 'var(--color-primary, #2563eb)' }}
                 >
                   Privacy Policy
                 </Link>
@@ -422,7 +422,7 @@ export default function RegisterPage() {
               type="submit"
               disabled={loading || !agreedToTerms}
               className="w-full flex items-center justify-center py-3 px-4 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 group"
-              style={{ backgroundColor: 'var(--color-primary)' }}
+              style={{ backgroundColor: 'var(--color-primary, #2563eb)' }}
             >
               {loading ? (
                 <div className="flex items-center">
@@ -446,7 +446,7 @@ export default function RegisterPage() {
                 <Link 
                   href="/auth/login" 
                   className="font-semibold hover:opacity-80 transition-opacity"
-                  style={{ color: 'var(--color-primary)' }}
+                  style={{ color: 'var(--color-primary, #2563eb)' }}
                 >
                   Sign in
                 </Link>

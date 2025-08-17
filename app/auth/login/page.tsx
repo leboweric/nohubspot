@@ -80,8 +80,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex">
       {/* Left Side - Branding */}
       <div 
-        className="hidden lg:flex lg:w-1/2 xl:w-2/5 text-white p-12 flex-col justify-between"
-        style={{ backgroundColor: 'var(--color-primary)' }}
+        className="hidden lg:flex lg:w-1/2 xl:w-2/5 text-white p-12 flex-col justify-between bg-blue-600"
+        style={{ backgroundColor: 'var(--color-primary, #2563eb)' }}
       >
         <div>
           {/* Logo */}
@@ -209,8 +209,8 @@ export default function LoginPage() {
                   type="email"
                   autoComplete="email"
                   required
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
-                  style={{ '--tw-ring-color': 'var(--color-primary)' } as any}
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  style={{ '--tw-ring-color': 'var(--color-primary, #2563eb)' } as any}
                   placeholder="you@example.com"
                   value={formData.email}
                   onChange={handleChange}
@@ -232,8 +232,8 @@ export default function LoginPage() {
                   type="password"
                   autoComplete="current-password"
                   required
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
-                  style={{ '--tw-ring-color': 'var(--color-primary)' } as any}
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  style={{ '--tw-ring-color': 'var(--color-primary, #2563eb)' } as any}
                   placeholder="Enter your password"
                   value={formData.password}
                   onChange={handleChange}
@@ -247,8 +247,8 @@ export default function LoginPage() {
                   type="checkbox"
                   className="w-4 h-4 rounded border-gray-300 focus:ring-2 focus:ring-offset-0"
                   style={{ 
-                    accentColor: 'var(--color-primary)',
-                    '--tw-ring-color': 'var(--color-primary)' 
+                    accentColor: 'var(--color-primary, #2563eb)',
+                    '--tw-ring-color': 'var(--color-primary, #2563eb)' 
                   } as any}
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
@@ -259,7 +259,7 @@ export default function LoginPage() {
               <Link 
                 href="/auth/forgot-password" 
                 className="text-sm font-medium hover:opacity-80 transition-opacity"
-                style={{ color: 'var(--color-primary)' }}
+                style={{ color: 'var(--color-primary, #2563eb)' }}
               >
                 Forgot password?
               </Link>
@@ -269,7 +269,7 @@ export default function LoginPage() {
               type="submit"
               disabled={loading}
               className="w-full flex items-center justify-center py-3 px-4 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 group"
-              style={{ backgroundColor: 'var(--color-primary)' }}
+              style={{ backgroundColor: 'var(--color-primary, #2563eb)' }}
             >
               {loading ? (
                 <div className="flex items-center">
@@ -302,7 +302,7 @@ export default function LoginPage() {
                 <Link 
                   href="/auth/register" 
                   className="font-semibold hover:opacity-80 transition-opacity"
-                  style={{ color: 'var(--color-primary)' }}
+                  style={{ color: 'var(--color-primary, #2563eb)' }}
                 >
                   Create your organization
                 </Link>
