@@ -174,7 +174,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
               <p className="text-muted-foreground mb-4">
                 {error || "The company you're looking for doesn't exist."}
               </p>
-              <Link href="/companies" className="text-primary hover:underline">
+              <Link href="/companies" className="hover:underline" style={{ color: 'var(--color-primary)' }}>
                 Back to Companies
               </Link>
             </div>
@@ -457,7 +457,8 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                   <h2 className="text-xl font-semibold">Contacts</h2>
                   <Link 
                     href={`/contacts/new?companyId=${company.id}&company=${encodeURIComponent(company.name)}`}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-white hover:opacity-90"
+                    style={{ backgroundColor: 'var(--color-primary)' }}
                   >
                     <Plus className="w-4 h-4" />
                     Add Contact
@@ -471,7 +472,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                         <div className="flex justify-between items-start mb-2">
                           <Link 
                             href={`/contacts/${contact.id}`}
-                            className="font-medium text-lg hover:text-primary"
+                            className="font-medium text-lg hover:opacity-80 transition-opacity"
                           >
                             {contact.first_name} {contact.last_name}
                           </Link>
@@ -486,7 +487,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                           <p className="text-sm font-medium text-muted-foreground mb-2">{contact.title}</p>
                         )}
                         <div className="space-y-1 text-sm">
-                          <a href={`mailto:${contact.email}`} className="flex items-center gap-1 text-primary hover:underline">
+                          <a href={`mailto:${contact.email}`} className="flex items-center gap-1 hover:underline" style={{ color: 'var(--color-primary)' }}>
                             {contact.email}
                           </a>
                           {contact.phone && (
@@ -504,7 +505,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                     <p className="text-muted-foreground mb-4">No contacts yet</p>
                     <Link 
                       href={`/contacts/new?companyId=${company.id}&company=${encodeURIComponent(company.name)}`}
-                      className="text-primary hover:underline"
+                      className="hover:underline" style={{ color: 'var(--color-primary)' }}
                     >
                       Add the first contact
                     </Link>
@@ -527,7 +528,8 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                   <h2 className="text-xl font-semibold">Deals</h2>
                   <Link 
                     href={`/pipeline?createDeal=true&companyId=${company.id}`}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-white hover:opacity-90"
+                    style={{ backgroundColor: 'var(--color-primary)' }}
                   >
                     <Plus className="w-4 h-4" />
                     Create Deal
@@ -547,7 +549,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                           </div>
                           <Link 
                             href="/pipeline"
-                            className="text-primary hover:underline text-sm"
+                            className="hover:underline text-sm" style={{ color: 'var(--color-primary)' }}
                           >
                             View in Pipeline
                           </Link>
@@ -561,7 +563,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                     <p className="text-muted-foreground mb-4">No deals yet</p>
                     <Link 
                       href={`/pipeline?createDeal=true&companyId=${company.id}`}
-                      className="text-primary hover:underline"
+                      className="hover:underline" style={{ color: 'var(--color-primary)' }}
                     >
                       Create the first deal
                     </Link>
@@ -627,7 +629,8 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                     <div className="flex gap-2 mt-4">
                       <button 
                         onClick={handleSaveNotes}
-                        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+                        className="px-4 py-2 rounded-lg transition-all text-white hover:opacity-90"
+                        style={{ backgroundColor: 'var(--color-primary)' }}
                       >
                         Save
                       </button>
