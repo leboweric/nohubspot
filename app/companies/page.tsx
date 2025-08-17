@@ -467,7 +467,8 @@ export default function CompaniesPage() {
               </button>
               <a 
                 href="/companies/new" 
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-white hover:opacity-90 shadow-sm"
+                style={{ backgroundColor: 'var(--color-primary)' }}
               >
                 <Plus className="w-4 h-4" />
                 Add Company

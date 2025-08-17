@@ -283,7 +283,8 @@ export default function TasksPage() {
               {/* Create Task */}
               <button
                 onClick={() => setShowCreateTask(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-white hover:opacity-90"
+                style={{ backgroundColor: 'var(--color-primary)' }}
               >
                 <Plus className="w-4 h-4" />
                 Create Task

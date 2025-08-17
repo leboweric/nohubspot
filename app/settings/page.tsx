@@ -462,7 +462,8 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={() => setShowSignatureBuilder(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-white hover:opacity-90"
+              style={{ backgroundColor: 'var(--color-primary)' }}
             >
               <Settings className="w-4 h-4" />
               {signature ? 'Edit Signature' : 'Create Signature'}
@@ -517,7 +518,8 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={() => setShowInviteForm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-white hover:opacity-90"
+              style={{ backgroundColor: 'var(--color-primary)' }}
             >
               <Plus className="w-4 h-4" />
               Add User
@@ -666,7 +668,8 @@ export default function SettingsPage() {
               </div>
               <a
                 href="/settings/project-types"
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-white hover:opacity-90"
+                style={{ backgroundColor: 'var(--color-primary)' }}
               >
                 <Settings className="w-4 h-4" />
                 Manage Types
@@ -913,7 +916,8 @@ export default function SettingsPage() {
                   setIsLoadingPhone(false)
                 }
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-white hover:opacity-90 disabled:opacity-50"
+              style={{ backgroundColor: 'var(--color-primary)' }}
               disabled={isLoadingPhone}
             >
               <Phone className="w-4 h-4" />
@@ -1014,7 +1018,8 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={() => setShowSupportModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-white hover:opacity-90"
+              style={{ backgroundColor: 'var(--color-primary)' }}
             >
               <Mail className="w-4 h-4" />
               Contact Support
@@ -1186,7 +1191,8 @@ export default function SettingsPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50"
+                    className="px-4 py-2 rounded-lg transition-all text-white hover:opacity-90 disabled:opacity-50"
+                    style={{ backgroundColor: 'var(--color-primary)' }}
                   >
                     {loading ? 'Adding...' : 'Add User'}
                   </button>
@@ -1350,7 +1356,8 @@ export default function SettingsPage() {
                       <button
                         type="submit"
                         disabled={o365Loading}
-                        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50"
+                        className="px-4 py-2 rounded-lg transition-all text-white hover:opacity-90 disabled:opacity-50"
+                        style={{ backgroundColor: 'var(--color-primary)' }}
                       >
                         {o365Loading ? 'Saving...' : (o365Config ? 'Update Configuration' : 'Save Configuration')}
                       </button>
@@ -1500,7 +1507,8 @@ export default function SettingsPage() {
                     setShowPasswordModal(false)
                     setTempPassword("")
                   }}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+                  className="px-4 py-2 rounded-lg transition-all text-white hover:opacity-90"
+                  style={{ backgroundColor: 'var(--color-primary)' }}
                 >
                   Close
                 </button>
