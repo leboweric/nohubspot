@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { Building2, Users, TrendingUp, Shield, Mail, Lock, ArrowRight } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -12,6 +13,16 @@ export default function LoginPage() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [rememberMe, setRememberMe] = useState(false)
+
+  // Check for saved email on mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("remembered_email")
+    if (savedEmail) {
+      setFormData(prev => ({ ...prev, email: savedEmail }))
+      setRememberMe(true)
+    }
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -24,6 +35,13 @@ export default function LoginPage() {
     e.preventDefault()
     setError("")
     setLoading(true)
+
+    // Handle remember me
+    if (rememberMe) {
+      localStorage.setItem("remembered_email", formData.email)
+    } else {
+      localStorage.removeItem("remembered_email")
+    }
 
     try {
       // Create form data for OAuth2PasswordRequestForm
@@ -58,90 +76,192 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex">
+      {/* Left Side - Branding */}
+      <div 
+        className="hidden lg:flex lg:w-1/2 xl:w-2/5 text-white p-12 flex-col justify-between"
+        style={{ backgroundColor: 'var(--color-primary)' }}
+      >
         <div>
-          <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-blue-100">
-            <svg className="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Welcome back to NHS
-          </p>
-        </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
+          {/* Logo */}
+          <div className="flex items-center gap-3 mb-16">
+            <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+              <span className="text-2xl font-bold">N</span>
             </div>
-          )}
+            <span className="text-3xl font-bold">NHS</span>
+          </div>
 
-          <div className="space-y-4">
+          {/* Main Content */}
+          <div className="space-y-8">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <h1 className="text-4xl xl:text-5xl font-bold mb-4">
+                Welcome back
+              </h1>
+              <p className="text-xl text-white/80">
+                Your all-in-one CRM platform for managing customers, deals, and projects
+              </p>
+            </div>
+
+            {/* Feature List */}
+            <div className="space-y-6 mt-12">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-1">Company Management</h3>
+                  <p className="text-sm text-white/70">Track and organize all your customer relationships in one place</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-1">Sales Pipeline</h3>
+                  <p className="text-sm text-white/70">Visualize and manage your deals through every stage</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-1">Project Tracking</h3>
+                  <p className="text-sm text-white/70">Keep projects on schedule with integrated task management</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-1">Secure & Reliable</h3>
+                  <p className="text-sm text-white/70">Enterprise-grade security with role-based access control</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-sm text-white/60">
+          © 2025 NHS. All rights reserved.
+        </div>
+      </div>
+
+      {/* Right Side - Login Form */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-gray-50">
+        <div className="w-full max-w-md">
+          {/* Mobile Logo */}
+          <div className="lg:hidden mb-8 text-center">
+            <div className="inline-flex items-center gap-3">
+              <div 
+                className="w-10 h-10 rounded-lg flex items-center justify-center text-white"
+                style={{ backgroundColor: 'var(--color-primary)' }}
+              >
+                <span className="text-xl font-bold">N</span>
+              </div>
+              <span className="text-2xl font-bold text-gray-900">NHS</span>
+            </div>
+          </div>
+
+          {/* Form Header */}
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Sign in to your account
+            </h2>
+            <p className="text-gray-600">
+              Enter your credentials to access your dashboard
+            </p>
+          </div>
+
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address
               </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="your@email.com"
-                value={formData.email}
-                onChange={handleChange}
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                  style={{ '--tw-ring-color': 'var(--color-primary)' } as any}
+                  placeholder="you@example.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Password
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Your password"
-                value={formData.password}
-                onChange={handleChange}
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+                  style={{ '--tw-ring-color': 'var(--color-primary)' } as any}
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                Remember me
+            <div className="flex items-center justify-between">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 rounded border-gray-300 focus:ring-2 focus:ring-offset-0"
+                  style={{ 
+                    accentColor: 'var(--color-primary)',
+                    '--tw-ring-color': 'var(--color-primary)' 
+                  } as any}
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
+                <span className="ml-2 text-sm text-gray-700">Remember me</span>
               </label>
-            </div>
 
-            <div className="text-sm">
-              <Link href="/auth/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
-                Forgot your password?
+              <Link 
+                href="/auth/forgot-password" 
+                className="text-sm font-medium hover:opacity-80 transition-opacity"
+                style={{ color: 'var(--color-primary)' }}
+              >
+                Forgot password?
               </Link>
             </div>
-          </div>
 
-          <div>
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center py-3 px-4 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 group"
+              style={{ backgroundColor: 'var(--color-primary)' }}
             >
               {loading ? (
                 <div className="flex items-center">
@@ -152,20 +272,36 @@ export default function LoginPage() {
                   Signing in...
                 </div>
               ) : (
-                "Sign in"
+                <>
+                  Sign in
+                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </>
               )}
             </button>
-          </div>
 
-          <div className="text-center">
-            <span className="text-sm text-gray-600">
-              Don't have an account?{" "}
-              <Link href="/auth/register" className="font-medium text-blue-600 hover:text-blue-500">
-                Create your organization
-              </Link>
-            </span>
-          </div>
-        </form>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-gray-50 text-gray-500">Or</span>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <span className="text-sm text-gray-600">
+                Don't have an account?{" "}
+                <Link 
+                  href="/auth/register" 
+                  className="font-semibold hover:opacity-80 transition-opacity"
+                  style={{ color: 'var(--color-primary)' }}
+                >
+                  Create your organization
+                </Link>
+              </span>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   )
