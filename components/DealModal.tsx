@@ -204,7 +204,7 @@ export default function DealModal({
 
   const getProbabilityColor = (prob: number) => {
     if (prob >= 80) return 'text-green-600'
-    if (prob >= 60) return 'text-blue-600'
+    if (prob >= 60) return 'text-gray-600'
     if (prob >= 40) return 'text-yellow-600'
     return 'text-red-600'
   }
@@ -244,7 +244,7 @@ export default function DealModal({
               type="text"
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Enter deal title..."
               required
             />
@@ -261,7 +261,7 @@ export default function DealModal({
                 value={formData.value}
                 onChange={(e) => setFormData(prev => ({ ...prev, value: parseFloat(e.target.value) || 0 }))}
                 onFocus={(e) => e.target.select()}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="0.00"
                 min="0"
                 step="0.01"
@@ -377,7 +377,7 @@ export default function DealModal({
               type="date"
               value={formData.expected_close_date}
               onChange={(e) => setFormData(prev => ({ ...prev, expected_close_date: e.target.value }))}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
@@ -390,7 +390,7 @@ export default function DealModal({
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={3}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Deal description or notes..."
             />
           </div>
@@ -404,7 +404,7 @@ export default function DealModal({
               value={formData.notes}
               onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
               rows={2}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Internal notes (not visible to client)..."
             />
           </div>
@@ -437,7 +437,7 @@ export default function DealModal({
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                className="px-6 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 transition-colors"
               >
                 {loading ? 'Saving...' : (deal ? 'Update Deal' : 'Create Deal')}
               </button>

@@ -314,7 +314,7 @@ export default function ProjectModal({
               type="text"
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Enter project title..."
               required
             />
@@ -328,7 +328,7 @@ export default function ProjectModal({
             <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Enter project description..."
               rows={3}
             />
@@ -398,7 +398,7 @@ export default function ProjectModal({
                 type="date"
                 value={formData.start_date}
                 onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
             <div>
@@ -409,7 +409,7 @@ export default function ProjectModal({
                 type="date"
                 value={formData.projected_end_date}
                 onChange={(e) => setFormData(prev => ({ ...prev, projected_end_date: e.target.value }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
           </div>
@@ -427,7 +427,7 @@ export default function ProjectModal({
                   ...prev, 
                   hourly_rate: e.target.value ? parseFloat(e.target.value) : undefined 
                 }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="0.00"
                 min="0"
                 step="0.01"
@@ -444,7 +444,7 @@ export default function ProjectModal({
                   ...prev, 
                   projected_hours: e.target.value ? parseFloat(e.target.value) : undefined 
                 }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="0"
                 min="0"
                 step="0.5"
@@ -454,8 +454,8 @@ export default function ProjectModal({
 
           {/* Calculated Project Value */}
           {calculateProjectValue() > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-              <div className="text-sm text-blue-700">
+            <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
+              <div className="text-sm text-gray-700">
                 <strong>Estimated Project Value: </strong>
                 ${calculateProjectValue().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
@@ -535,7 +535,7 @@ export default function ProjectModal({
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Additional notes..."
               rows={3}
             />
@@ -565,7 +565,7 @@ export default function ProjectModal({
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-6 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? 'Saving...' : (project ? 'Update Project' : 'Create Project')}
               </button>
