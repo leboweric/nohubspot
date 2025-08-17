@@ -25,9 +25,10 @@ function TabButton({ active, onClick, children, icon: Icon }: {
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
         active 
-          ? "border-primary text-primary" 
+          ? "" 
           : "border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300"
       }`}
+      style={active ? { borderColor: 'var(--color-primary)', color: 'var(--color-primary)' } : {}}
     >
       {Icon && <Icon className="w-4 h-4" />}
       {children}
