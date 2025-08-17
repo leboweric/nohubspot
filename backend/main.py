@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy import text, or_
+from sqlalchemy.exc import OperationalError
 from typing import List, Optional
 import os
 import uvicorn
@@ -11,9 +12,20 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from collections import defaultdict
 import time
+import logging
+
+# Configure detailed logging for debugging Railway deployment
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 
 # Load environment variables from .env file
 load_dotenv()
+
+# Log startup
+logging.info("STARTUP: Main.py module loaded, starting initialization sequence...")
 
 # Simple rate limiter to prevent API overwhelm
 request_counts = defaultdict(list)
@@ -124,12 +136,12 @@ from run_migrations import run_migrations
 from cleanup_routes import router as cleanup_router
 
 # Create database tables with error handling
-print("🔨 Starting database initialization...")
+logging.info("STARTUP: Starting database initialization and migration checks...")
 
 # Database migration function
 def migrate_tenant_to_organization(db_engine):
     """Migrate from tenant_id to organization_id columns"""
-    print("🔄 Checking for database migrations...")
+    logging.info("STARTUP: Checking for database migrations...")
     
     with db_engine.connect() as conn:
         try:
@@ -140,10 +152,10 @@ def migrate_tenant_to_organization(db_engine):
             """))
             
             if result.fetchone():
-                print("🔄 Migrating tenants table to organizations...")
+                logging.info("🔄 Migrating tenants table to organizations...")
                 # Rename tenants table to organizations
                 conn.execute(text("ALTER TABLE tenants RENAME TO organizations"))
-                print("  ✅ Renamed tenants table to organizations")
+                logging.info("  ✅ Renamed tenants table to organizations")
             
             # Check and migrate tenant_id columns to organization_id
             tables_to_migrate = ['users', 'companies', 'contacts', 'email_threads', 'tasks', 'activities', 'email_signatures', 'user_invites']
@@ -156,12 +168,12 @@ def migrate_tenant_to_organization(db_engine):
                 """))
                 
                 if result.fetchone():
-                    print(f"🔄 Migrating {table_name}.tenant_id to organization_id...")
+                    logging.info(f"🔄 Migrating {table_name}.tenant_id to organization_id...")
                     conn.execute(text(f"ALTER TABLE {table_name} RENAME COLUMN tenant_id TO organization_id"))
-                    print(f"  ✅ Migrated {table_name}.tenant_id to organization_id")
+                    logging.info(f"  ✅ Migrated {table_name}.tenant_id to organization_id")
             
             # Update foreign key constraints that still reference tenants table
-            print("🔄 Updating foreign key constraints...")
+            logging.info("🔄 Updating foreign key constraints...")
             try:
                 # Get all foreign key constraints that reference the old tenants table
                 fk_result = conn.execute(text("""
@@ -174,31 +186,35 @@ def migrate_tenant_to_organization(db_engine):
                 
                 for row in fk_result:
                     table_name, constraint_name, column_name = row
-                    print(f"🔄 Updating FK constraint {constraint_name} in {table_name}...")
+                    logging.info(f"🔄 Updating FK constraint {constraint_name} in {table_name}...")
                     # Drop old constraint and create new one
                     conn.execute(text(f"ALTER TABLE {table_name} DROP CONSTRAINT IF EXISTS {constraint_name}"))
                     conn.execute(text(f"ALTER TABLE {table_name} ADD CONSTRAINT {constraint_name} FOREIGN KEY ({column_name}) REFERENCES organizations(id)"))
-                    print(f"  ✅ Updated FK constraint {constraint_name}")
+                    logging.info(f"  ✅ Updated FK constraint {constraint_name}")
                     
             except Exception as fk_error:
-                print(f"  ⚠️  FK constraint update info: {fk_error}")
+                logging.info(f"  ⚠️  FK constraint update info: {fk_error}")
             
             conn.commit()
-            print("✅ Database migration completed successfully")
+            logging.info("✅ Database migration completed successfully")
             
         except Exception as e:
-            print(f"⚠️  Migration error: {e}")
+            logging.info(f"⚠️  Migration error: {e}")
             conn.rollback()
 
 # TEMPORARY: Force recreate tables to fix schema issues
 FORCE_RECREATE = False  # Set to True only when you need to reset the database
 
 try:
+    logging.info("STARTUP: Beginning database setup...")
+    
     # Run migration first
+    logging.info("STARTUP: Running tenant to organization migration...")
     migrate_tenant_to_organization(engine)
+    logging.info("STARTUP: Migration check completed")
     
     if FORCE_RECREATE:
-        print("⚠️  FORCE RECREATE MODE - Dropping all tables...")
+        logging.info("⚠️  FORCE RECREATE MODE - Dropping all tables...")
         from sqlalchemy import text
         
         # Drop all tables with CASCADE to handle foreign keys
@@ -209,9 +225,9 @@ try:
                 conn.execute(text("CREATE SCHEMA public"))
                 conn.execute(text("GRANT ALL ON SCHEMA public TO postgres"))
                 conn.execute(text("GRANT ALL ON SCHEMA public TO public"))
-                print("  ✅ Dropped and recreated public schema")
+                logging.info("  ✅ Dropped and recreated public schema")
             except Exception as e:
-                print(f"  Schema drop failed, trying table-by-table: {e}")
+                logging.info(f"  Schema drop failed, trying table-by-table: {e}")
                 # Fallback to individual table drops
                 result = conn.execute(text("""
                     SELECT tablename FROM pg_tables 
@@ -223,24 +239,24 @@ try:
                 for table in tables:
                     try:
                         conn.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
-                        print(f"  Dropped table: {table}")
+                        logging.info(f"  Dropped table: {table}")
                     except Exception as table_error:
-                        print(f"  Failed to drop {table}: {table_error}")
+                        logging.info(f"  Failed to drop {table}: {table_error}")
             
             conn.commit()
         
-        print("✅ All tables dropped")
+        logging.info("✅ All tables dropped")
     
     # Create all tables
-    print("🔨 Creating tables...")
+    logging.info("🔨 Creating tables...")
     Base.metadata.create_all(bind=engine)
-    print("✅ Database tables created successfully")
+    logging.info("✅ Database tables created successfully")
     
     # Run SQL migrations
     run_migrations()
     
     # Run company fields migration
-    print("🔄 Checking for new company fields...")
+    logging.info("🔄 Checking for new company fields...")
     from sqlalchemy import inspect
     inspector = inspect(engine)
     
@@ -262,41 +278,41 @@ try:
             fields_to_add.append(('annual_revenue', 'FLOAT'))
         
         if fields_to_add:
-            print(f"📦 Adding new company fields: {', '.join([f[0] for f in fields_to_add])}")
+            logging.info(f"📦 Adding new company fields: {', '.join([f[0] for f in fields_to_add])}")
             with engine.connect() as conn:
                 for field_name, field_type in fields_to_add:
                     try:
                         conn.execute(text(f"ALTER TABLE companies ADD COLUMN {field_name} {field_type}"))
                         conn.commit()
-                        print(f"  ✓ Added {field_name}")
+                        logging.info(f"  ✓ Added {field_name}")
                     except Exception as e:
-                        print(f"  ⚠️ Failed to add {field_name}: {e}")
-            print("✅ Company fields migration completed")
+                        logging.info(f"  ⚠️ Failed to add {field_name}: {e}")
+            logging.info("✅ Company fields migration completed")
     
     # Check if we need to seed data
     db = next(get_db())
     try:
         company_count = db.query(Company).count()
-        print(f"📊 Found {company_count} companies in database")
+        logging.info(f"📊 Found {company_count} companies in database")
         
         if company_count == 0:
-            print("📊 Skipping sample data seeding for now...")
+            logging.info("📊 Skipping sample data seeding for now...")
             # from init_db import seed_sample_data
             # seed_sample_data()
     except Exception as query_error:
-        print(f"⚠️  Query failed: {query_error}")
-        print("📊 Skipping seeding due to query error...")
+        logging.info(f"⚠️  Query failed: {query_error}")
+        logging.info("📊 Skipping seeding due to query error...")
         # try:
         #     from init_db import seed_sample_data
         #     seed_sample_data()
         # except Exception as seed_error:
-        #     print(f"❌ Seeding failed: {seed_error}")
+        #     logging.info(f"❌ Seeding failed: {seed_error}")
     finally:
         db.close()
         
 except Exception as e:
-    print(f"❌ Database initialization failed: {e}")
-    print("⚠️  The application will continue but database operations may fail")
+    logging.info(f"❌ Database initialization failed: {e}")
+    logging.info("⚠️  The application will continue but database operations may fail")
 
 # Initialize background scheduler
 from scheduler import init_scheduler, shutdown_scheduler
@@ -306,10 +322,16 @@ from contextlib import asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifespan"""
     # Startup
+    logging.info("STARTUP: FastAPI lifespan startup initiated")
+    logging.info("STARTUP: Initializing scheduler...")
     init_scheduler()
+    logging.info("STARTUP: Scheduler initialized successfully")
+    logging.info("STARTUP: Application ready to serve requests!")
     yield
     # Shutdown
+    logging.info("SHUTDOWN: Application shutdown initiated")
     shutdown_scheduler()
+    logging.info("SHUTDOWN: Application shutdown complete")
 
 app = FastAPI(
     title="NotHubSpot CRM API",
@@ -438,15 +460,19 @@ async def root():
 
 @app.get("/health")
 async def health_check():
+    logging.info("HEALTHCHECK: /health endpoint called")
     try:
         # ✅ Use dependency injection instead of manual session
         db = SessionLocal()
         try:
+            logging.info("HEALTHCHECK: Attempting database connection test...")
             db.execute(text("SELECT 1"))
+            logging.info("HEALTHCHECK: Database connection successful")
             return {"status": "healthy", "timestamp": datetime.utcnow(), "database": "connected"}
         finally:
             db.close()  # ✅ Always close in finally block
     except Exception as e:
+        logging.error(f"HEALTHCHECK: Database connection failed: {e}")
         return {"status": "unhealthy", "timestamp": datetime.utcnow(), "error": str(e)}
 
 @app.get("/api/health/users")  # Railway healthcheck endpoint
@@ -660,7 +686,7 @@ async def forgot_password(request: PasswordResetRequest, db: Session = Depends(g
         return PasswordResetResponse(message="If your email is registered, you will receive a password reset link.")
         
     except Exception as e:
-        print(f"Password reset error: {str(e)}")
+        logging.info(f"Password reset error: {str(e)}")
         return PasswordResetResponse(message="If your email is registered, you will receive a password reset link.")
 
 @app.post("/api/auth/reset-password", response_model=PasswordResetResponse)
@@ -678,7 +704,7 @@ async def reset_password(request: PasswordResetConfirm, db: Session = Depends(ge
             )
             
     except Exception as e:
-        print(f"Password reset confirmation error: {str(e)}")
+        logging.info(f"Password reset confirmation error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to reset password"
@@ -692,7 +718,7 @@ async def create_invite(
     db: Session = Depends(get_db)
 ):
     """Create a user invitation (admin only)"""
-    print(f"Creating invitation for: {invite.email} by user: {current_user.email}")
+    logging.info(f"Creating invitation for: {invite.email} by user: {current_user.email}")
     # Check if user already exists in the organization
     existing_user = get_user_by_email(db, invite.email, current_user.organization_id)
     if existing_user:
@@ -720,7 +746,7 @@ async def create_invite(
     
     if owner:
         owner_email = owner.email
-        print(f"CC'ing organization owner: {owner_email}")
+        logging.info(f"CC'ing organization owner: {owner_email}")
     
     # Send the invitation email
     inviter_name = f"{current_user.first_name} {current_user.last_name}"
@@ -734,7 +760,7 @@ async def create_invite(
     )
     
     if not email_sent:
-        print(f"Warning: Failed to send invitation email to {invite.email}")
+        logging.info(f"Warning: Failed to send invitation email to {invite.email}")
     
     return db_invite
 
@@ -1220,7 +1246,7 @@ async def send_calendar_event_invite(
             raise HTTPException(status_code=500, detail="Failed to send calendar invites")
             
     except Exception as e:
-        print(f"Error sending calendar invites: {str(e)}")
+        logging.info(f"Error sending calendar invites: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to send calendar invites: {str(e)}")
 
 # Office 365 Integration endpoints
@@ -1291,7 +1317,7 @@ async def create_organization_o365_config(
         
         return db_config
     except Exception as e:
-        print(f"Error creating O365 config: {e}")
+        logging.info(f"Error creating O365 config: {e}")
         raise HTTPException(status_code=500, detail="Failed to create Office 365 configuration")
 
 @app.put("/api/settings/o365/organization", response_model=O365OrganizationConfigResponse)
@@ -1326,7 +1352,7 @@ async def update_organization_o365_config(
         
         return db_config
     except Exception as e:
-        print(f"Error updating O365 config: {e}")
+        logging.info(f"Error updating O365 config: {e}")
         raise HTTPException(status_code=500, detail="Failed to update Office 365 configuration")
 
 @app.delete("/api/settings/o365/organization")
@@ -1582,13 +1608,13 @@ async def ai_chat(
 ):
     """Interactive AI chat for CRM questions"""
     try:
-        print(f"AI Chat request received: {request}")
+        logging.info(f"AI Chat request received: {request}")
         
         message = request.get("message", "")
         context = request.get("context", "general")
         summary_data = request.get("summary_data")
         
-        print(f"AI Chat - User: {current_user.id}, Org: {current_user.organization_id}, Message: {message}")
+        logging.info(f"AI Chat - User: {current_user.id}, Org: {current_user.organization_id}, Message: {message}")
         
         if not message.strip():
             raise HTTPException(
@@ -1605,16 +1631,16 @@ async def ai_chat(
             summary_data=summary_data
         )
         
-        print(f"AI Chat response: {response}")
+        logging.info(f"AI Chat response: {response}")
         
         return {"response": response}
         
     except HTTPException:
         raise
     except Exception as e:
-        print(f"AI Chat error: {str(e)}")
+        logging.info(f"AI Chat error: {str(e)}")
         import traceback
-        traceback.print_exc()
+        traceback.logging.info_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to process AI chat: {str(e)}"
@@ -1636,11 +1662,11 @@ async def create_new_company(
     db: Session = Depends(get_db)
 ):
     try:
-        print(f"Creating company: {company.dict()}")
-        print(f"User org_id: {current_user.organization_id}")
+        logging.info(f"Creating company: {company.dict()}")
+        logging.info(f"User org_id: {current_user.organization_id}")
         
         db_company = create_company(db, company, current_user.organization_id)
-        print(f"Company created with ID: {db_company.id}")
+        logging.info(f"Company created with ID: {db_company.id}")
         
         # Create activity log
         create_activity(
@@ -1655,7 +1681,7 @@ async def create_new_company(
         return db_company
         
     except Exception as e:
-        print(f"Error creating company: {str(e)}")
+        logging.info(f"Error creating company: {str(e)}")
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1769,11 +1795,11 @@ async def create_new_contact(
     db: Session = Depends(get_db)
 ):
     try:
-        print(f"Creating contact: {contact.dict()}")
-        print(f"User org_id: {current_user.organization_id}")
+        logging.info(f"Creating contact: {contact.dict()}")
+        logging.info(f"User org_id: {current_user.organization_id}")
         
         db_contact = create_contact(db, contact, current_user.organization_id)
-        print(f"Contact created with ID: {db_contact.id}")
+        logging.info(f"Contact created with ID: {db_contact.id}")
         
         create_activity(
             db,
@@ -1787,7 +1813,7 @@ async def create_new_contact(
         return db_contact
         
     except Exception as e:
-        print(f"Error creating contact: {str(e)}")
+        logging.info(f"Error creating contact: {str(e)}")
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -1973,7 +1999,7 @@ async def get_user_signature(
             
         return result
     except Exception as e:
-        print(f"Signature get error: {e}")
+        logging.info(f"Signature get error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get signature: {str(e)}")
 
 @app.post("/api/signature", response_model=EmailSignatureResponse)
@@ -1993,7 +2019,7 @@ async def create_or_update_signature(
             
         return result
     except Exception as e:
-        print(f"Signature save error: {e}")
+        logging.info(f"Signature save error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to save signature: {str(e)}")
 
 # Email Template endpoints
@@ -3645,7 +3671,7 @@ async def ensure_categories(
     """Ensure organization has default document categories"""
     from crud import ensure_organization_has_categories
     
-    print(f"Ensuring categories for organization {current_user.organization_id}")
+    logging.info(f"Ensuring categories for organization {current_user.organization_id}")
     
     try:
         # First check if table exists
@@ -3661,15 +3687,15 @@ async def ensure_categories(
             }
         
         categories = ensure_organization_has_categories(db, current_user.organization_id)
-        print(f"Organization {current_user.organization_id} now has {len(categories)} categories")
+        logging.info(f"Organization {current_user.organization_id} now has {len(categories)} categories")
         return {
             "message": f"Organization has {len(categories)} document categories",
             "categories": [{"name": c.name, "slug": c.slug} for c in categories]
         }
     except Exception as e:
-        print(f"Error ensuring categories: {e}")
+        logging.info(f"Error ensuring categories: {e}")
         import traceback
-        traceback.print_exc()
+        traceback.logging.info_exc()
         return {
             "message": "Failed to ensure categories",
             "categories": [],
@@ -3684,7 +3710,7 @@ async def initialize_company_folders(
     db: Session = Depends(get_db)
 ):
     """Create default smart folders for a company"""
-    print(f"Initializing folders for company {company_id}, org {current_user.organization_id}")
+    logging.info(f"Initializing folders for company {company_id}, org {current_user.organization_id}")
     
     # Verify company exists and user has access
     company = get_company(db, company_id, current_user.organization_id)
@@ -3694,17 +3720,17 @@ async def initialize_company_folders(
     # Check if folders already exist
     existing_folders = get_document_folders(db, company_id, current_user.organization_id)
     if existing_folders:
-        print(f"Company {company_id} already has {len(existing_folders)} folders")
+        logging.info(f"Company {company_id} already has {len(existing_folders)} folders")
         raise HTTPException(status_code=400, detail="Folders already exist for this company")
     
     try:
         folders = create_default_folders_for_company(db, company_id, current_user.organization_id, current_user.id)
-        print(f"Created {len(folders)} folders for company {company_id}")
+        logging.info(f"Created {len(folders)} folders for company {company_id}")
         return {"message": f"Created {len(folders)} default folders", "folders": folders}
     except Exception as e:
-        print(f"Error creating folders: {e}")
+        logging.info(f"Error creating folders: {e}")
         import traceback
-        traceback.print_exc()
+        traceback.logging.info_exc()
         return {"message": "Failed to create folders", "folders": [], "error": str(e)}
 
 
@@ -4008,7 +4034,7 @@ async def process_sendgrid_webhook(
         if not tracking:
             # Create a new tracking record if it doesn't exist
             # This might happen if the webhook arrives before our tracking record is created
-            print(f"Email tracking not found for message ID: {event.sg_message_id}")
+            logging.info(f"Email tracking not found for message ID: {event.sg_message_id}")
             return {"status": "skipped", "reason": "tracking_not_found"}
         
         # Create event record
@@ -4039,7 +4065,7 @@ async def process_sendgrid_webhook(
         return {"status": "processed", "event_type": event.event}
         
     except Exception as e:
-        print(f"Error processing SendGrid webhook: {str(e)}")
+        logging.info(f"Error processing SendGrid webhook: {str(e)}")
         db.rollback()
         # Return success to prevent SendGrid from retrying
         return {"status": "error", "message": str(e)}
@@ -4480,7 +4506,7 @@ async def o365_auth_callback(
         }
         
     except Exception as e:
-        print(f"O365 auth callback error: {e}")
+        logging.info(f"O365 auth callback error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -4494,11 +4520,11 @@ async def microsoft_oauth_callback_redirect(
 ):
     """Handle O365 OAuth callback and redirect to frontend"""
     # Log the incoming request for debugging
-    print(f"Microsoft OAuth callback received:")
-    print(f"  Code: {code}")
-    print(f"  State: {state}")
-    print(f"  Error: {error}")
-    print(f"  Query params: {dict(request.query_params)}")
+    logging.info(f"Microsoft OAuth callback received:")
+    logging.info(f"  Code: {code}")
+    logging.info(f"  State: {state}")
+    logging.info(f"  Error: {error}")
+    logging.info(f"  Query params: {dict(request.query_params)}")
     
     # Build the frontend URL with all parameters
     frontend_url = os.environ.get("FRONTEND_URL", "https://nothubspot.app")
@@ -4523,7 +4549,7 @@ async def microsoft_oauth_callback_redirect(
     # Redirect to frontend callback page
     query_string = urlencode(params)
     redirect_url = f"{frontend_url}/auth/microsoft/callback{'?' + query_string if query_string else ''}"
-    print(f"Redirecting to: {redirect_url}")
+    logging.info(f"Redirecting to: {redirect_url}")
     
     return RedirectResponse(url=redirect_url)
 
@@ -4587,7 +4613,7 @@ async def sync_o365_emails(
         }
         
     except Exception as e:
-        print(f"O365 sync error: {e}")
+        logging.info(f"O365 sync error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -4741,7 +4767,7 @@ async def google_auth_callback(
         }
         
     except Exception as e:
-        print(f"Google OAuth callback error: {str(e)}")
+        logging.info(f"Google OAuth callback error: {str(e)}")
         raise HTTPException(
             status_code=400, 
             detail=f"Failed to connect Google Workspace: {str(e)}"
@@ -4818,7 +4844,7 @@ async def sync_google_data(
         }
         
     except Exception as e:
-        print(f"Google sync error: {str(e)}")
+        logging.info(f"Google sync error: {str(e)}")
         connection.sync_error_count += 1
         connection.last_sync_error = str(e)
         db.commit()
@@ -4867,7 +4893,7 @@ async def process_inbound_email(
     subject = body.get("subject", "")
     content = body.get("content", "")
     
-    print(f"Processing inbound email from {from_email} to {to_email}")
+    logging.info(f"Processing inbound email from {from_email} to {to_email}")
     
     # Find contact by email
     contact = db.query(Contact).filter(
@@ -4875,7 +4901,7 @@ async def process_inbound_email(
     ).first()
     
     if not contact:
-        print(f"No contact found for email {from_email}, creating new contact")
+        logging.info(f"No contact found for email {from_email}, creating new contact")
         # Extract name from email if possible
         email_parts = from_email.split('@')[0].split('.')
         first_name = email_parts[0].title() if email_parts else "Unknown"
@@ -5065,7 +5091,7 @@ async def sync_contact_company_names_endpoint(
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
-    print(f"🚀 Starting NotHubSpot CRM API on port {port}")
+    logging.info(f"🚀 Starting NotHubSpot CRM API on port {port}")
     uvicorn.run(
         "main:app", 
         host="0.0.0.0", 
