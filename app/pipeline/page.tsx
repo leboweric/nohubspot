@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
@@ -13,7 +13,7 @@ import {
   TrendingUp, DollarSign, Target, Trophy
 } from "lucide-react"
 
-export default function PipelinePage() {
+function PipelineContent() {
   const searchParams = useSearchParams()
   const [stages, setStages] = useState<PipelineStage[]>([])
   const [deals, setDeals] = useState<Deal[]>([])
@@ -585,5 +585,24 @@ export default function PipelinePage() {
         />
       </MainLayout>
     </AuthGuard>
+  )
+}
+
+export default function PipelinePage() {
+  return (
+    <Suspense fallback={
+      <AuthGuard>
+        <MainLayout>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderBottomColor: 'var(--color-primary)' }}></div>
+              <p className="mt-4 text-muted-foreground">Loading pipeline...</p>
+            </div>
+          </div>
+        </MainLayout>
+      </AuthGuard>
+    }>
+      <PipelineContent />
+    </Suspense>
   )
 }
