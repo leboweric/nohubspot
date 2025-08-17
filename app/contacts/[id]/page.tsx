@@ -663,7 +663,8 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                       <h2 className="text-lg font-semibold">Recent Activity</h2>
                       <button 
                         onClick={() => setActiveTab("activity")}
-                        className="text-sm text-primary hover:underline"
+                        className="text-sm hover:underline"
+                        style={{ color: 'var(--color-primary)' }}
                       >
                         View all
                       </button>
@@ -694,7 +695,8 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                         <h2 className="text-lg font-semibold">Active Deals</h2>
                         <button 
                           onClick={() => setActiveTab("deals")}
-                          className="text-sm text-primary hover:underline"
+                          className="text-sm hover:underline"
+                          style={{ color: 'var(--color-primary)' }}
                         >
                           View all
                         </button>

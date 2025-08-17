@@ -368,7 +368,8 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                       <h2 className="text-lg font-semibold">Recent Contacts</h2>
                       <button 
                         onClick={() => setActiveTab("contacts")}
-                        className="text-sm text-primary hover:underline"
+                        className="text-sm hover:underline"
+                        style={{ color: 'var(--color-primary)' }}
                       >
                         View all
                       </button>
