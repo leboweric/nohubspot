@@ -216,13 +216,6 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                   <Edit className="w-4 h-4" />
                   Edit
                 </Link>
-                <button 
-                  onClick={handleScheduleMeeting}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-                >
-                  <Calendar className="w-4 h-4" />
-                  Schedule Meeting
-                </button>
               </div>
             </div>
 

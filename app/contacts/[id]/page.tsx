@@ -38,9 +38,10 @@ function TabButton({ active, onClick, children, icon: Icon, count }: {
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
         active 
-          ? "border-primary text-primary" 
+          ? "" 
           : "border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300"
       }`}
+      style={active ? { borderColor: 'var(--color-primary)', color: 'var(--color-primary)' } : {}}
     >
       {Icon && <Icon className="w-4 h-4" />}
       {children}
@@ -409,7 +410,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
         <MainLayout>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderBottomColor: 'var(--color-primary)' }}></div>
               <p className="text-muted-foreground">Loading contact...</p>
             </div>
           </div>
@@ -428,7 +429,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
               <p className="text-muted-foreground mb-4">
                 {error || "The contact you're looking for doesn't exist."}
               </p>
-              <Link href="/contacts" className="text-primary hover:underline">
+              <Link href="/contacts" className="hover:underline" style={{ color: 'var(--color-primary)' }}>
                 Back to Contacts
               </Link>
             </div>
@@ -478,7 +479,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                     {contact.title && contact.company_name && <span> at </span>}
                     {contact.company_name && (
                       contact.company_id ? (
-                        <Link href={`/companies/${contact.company_id}`} className="text-primary hover:underline">
+                        <Link href={`/companies/${contact.company_id}`} className="hover:underline" style={{ color: 'var(--color-primary)' }}>
                           {contact.company_name}
                         </Link>
                       ) : (
@@ -610,7 +611,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                       <div>
                         <dt className="text-sm font-medium text-muted-foreground">Email</dt>
                         <dd className="mt-1">
-                          <a href={`mailto:${contact.email}`} className="text-primary hover:underline">
+                          <a href={`mailto:${contact.email}`} className="hover:underline" style={{ color: 'var(--color-primary)' }}>
                             {contact.email}
                           </a>
                         </dd>
@@ -631,7 +632,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                         <dt className="text-sm font-medium text-muted-foreground">Company</dt>
                         <dd className="mt-1">
                           {contact.company_id && contact.company_name ? (
-                            <Link href={`/companies/${contact.company_id}`} className="text-primary hover:underline">
+                            <Link href={`/companies/${contact.company_id}`} className="hover:underline" style={{ color: 'var(--color-primary)' }}>
                               {contact.company_name}
                             </Link>
                           ) : contact.company_name ? (
@@ -871,7 +872,8 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                   <h2 className="text-xl font-semibold">Related Deals</h2>
                   <Link 
                     href={`/pipeline/new?contactId=${contact.id}`}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 rounded-md transition-all text-white hover:opacity-90"
+                    style={{ backgroundColor: 'var(--color-primary)' }}
                   >
                     <Plus className="w-4 h-4" />
                     Create Deal
@@ -913,7 +915,8 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                     <p className="text-muted-foreground mb-4">No deals yet</p>
                     <Link 
                       href={`/pipeline/new?contactId=${contact.id}`}
-                      className="text-primary hover:underline"
+                      className="hover:underline"
+                      style={{ color: 'var(--color-primary)' }}
                     >
                       Create the first deal
                     </Link>
@@ -929,7 +932,8 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                   <h2 className="text-xl font-semibold">Tasks</h2>
                   <button 
                     onClick={() => setShowCreateTask(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 rounded-md transition-all text-white hover:opacity-90"
+                    style={{ backgroundColor: 'var(--color-primary)' }}
                   >
                     <Plus className="w-4 h-4" />
                     Create Task
@@ -975,7 +979,8 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                     <p className="text-muted-foreground mb-4">No tasks yet</p>
                     <button 
                       onClick={() => setShowCreateTask(true)}
-                      className="text-primary hover:underline"
+                      className="hover:underline"
+                      style={{ color: 'var(--color-primary)' }}
                     >
                       Create the first task
                     </button>
