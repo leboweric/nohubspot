@@ -105,7 +105,7 @@ export default function GoogleConnection() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-green-600 font-medium">✓ Connected</p>
+              <p className="text-sm text-gray-700 font-medium">✓ Connected</p>
               <p className="text-sm text-muted-foreground">{status.email}</p>
               {status.last_sync && (
                 <p className="text-xs text-muted-foreground mt-1">
@@ -145,9 +145,9 @@ export default function GoogleConnection() {
             Connect your Google Workspace account to sync emails automatically.
           </p>
           
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-            <h4 className="text-sm font-medium text-blue-900 mb-2">What this enables:</h4>
-            <ul className="text-sm text-blue-800 space-y-1">
+          <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
+            <h4 className="text-sm font-medium text-gray-900 mb-2">What this enables:</h4>
+            <ul className="text-sm text-gray-700 space-y-1">
               <li>• Automatic Gmail threading for all sent and received emails</li>
               <li>• Send emails that appear in your Gmail sent folder</li>
               <li>• Track email conversations across Gmail and CRM</li>
@@ -166,7 +166,7 @@ export default function GoogleConnection() {
           </button>
           
           {status?.message && (
-            <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-md">
+            <p className="text-sm text-gray-700 bg-gray-100 p-3 rounded-md">
               ⚠️ {status.message}
             </p>
           )}

@@ -84,7 +84,9 @@ export default function IntegrationCard({
       <div className="p-6 border-b">
         <div className="flex items-start gap-4">
           {/* Icon */}
-          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white shadow-md">
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center text-white shadow-md"
+            style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))' }}
+          >
             <Icon className="w-6 h-6" />
           </div>
           

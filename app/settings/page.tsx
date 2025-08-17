@@ -1123,7 +1123,7 @@ export default function SettingsPage() {
                         type="text"
                         value={inviteFirstName}
                         onChange={(e) => setInviteFirstName(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         placeholder="John"
                         required
                       />
@@ -1137,7 +1137,7 @@ export default function SettingsPage() {
                         type="text"
                         value={inviteLastName}
                         onChange={(e) => setInviteLastName(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         placeholder="Doe"
                         required
                       />
@@ -1153,7 +1153,7 @@ export default function SettingsPage() {
                       type="email"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="user@example.com"
                       required
                     />
@@ -1167,7 +1167,7 @@ export default function SettingsPage() {
                       id="inviteRole"
                       value={inviteRole}
                       onChange={(e) => setInviteRole(e.target.value as "user" | "admin")}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     >
                       <option value="user">User - Can view and edit data</option>
                       <option value="admin">Admin - Can manage users and settings</option>
@@ -1186,7 +1186,7 @@ export default function SettingsPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50"
                   >
                     {loading ? 'Adding...' : 'Add User'}
                   </button>
@@ -1212,18 +1212,18 @@ export default function SettingsPage() {
 
               <div className="space-y-6">
                 {/* Instructions */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-medium text-blue-900 mb-2">Azure AD App Registration Required</h4>
-                  <p className="text-sm text-blue-800 mb-3">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <h4 className="font-medium text-gray-900 mb-2">Azure AD App Registration Required</h4>
+                  <p className="text-sm text-gray-700 mb-3">
                     Before configuring, you need to register an application in Azure Active Directory:
                   </p>
-                  <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                  <ol className="text-sm text-gray-700 space-y-1 list-decimal list-inside">
                     <li>Go to Azure Portal → App registrations → New registration</li>
-                    <li>Set redirect URI to: <code className="bg-blue-100 px-1 rounded">{process.env.NEXT_PUBLIC_API_URL}/api/auth/microsoft/callback</code></li>
+                    <li>Set redirect URI to: <code className="bg-gray-200 px-1 rounded">{process.env.NEXT_PUBLIC_API_URL}/api/auth/microsoft/callback</code></li>
                     <li>Generate a client secret in "Certificates & secrets"</li>
                     <li>Grant these API permissions: Calendar.ReadWrite, Mail.Send, Contacts.ReadWrite</li>
                   </ol>
-                  <p className="text-sm text-blue-800 mt-2">
+                  <p className="text-sm text-gray-700 mt-2">
                     <a href="/docs/office-365-setup-guide.html" target="_blank" rel="noopener noreferrer" className="underline">
                       View detailed setup guide →
                     </a>
@@ -1241,7 +1241,7 @@ export default function SettingsPage() {
                       type="text"
                       value={o365FormData.client_id}
                       onChange={(e) => setO365FormData({...o365FormData, client_id: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                       required
                     />
@@ -1256,7 +1256,7 @@ export default function SettingsPage() {
                       type="password"
                       value={o365FormData.client_secret}
                       onChange={(e) => setO365FormData({...o365FormData, client_secret: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="Enter client secret"
                       required={!o365Config}
                     />
@@ -1276,7 +1276,7 @@ export default function SettingsPage() {
                       type="text"
                       value={o365FormData.tenant_id}
                       onChange={(e) => setO365FormData({...o365FormData, tenant_id: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                       required
                     />
@@ -1292,7 +1292,7 @@ export default function SettingsPage() {
                         type="checkbox"
                         checked={o365FormData.calendar_sync_enabled}
                         onChange={(e) => setO365FormData({...o365FormData, calendar_sync_enabled: e.target.checked})}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-gray-300 text-primary focus:ring-primary"
                       />
                       <label htmlFor="calendar_sync" className="text-sm font-medium">
                         Calendar Sync
@@ -1305,7 +1305,7 @@ export default function SettingsPage() {
                         type="checkbox"
                         checked={o365FormData.email_sending_enabled}
                         onChange={(e) => setO365FormData({...o365FormData, email_sending_enabled: e.target.checked})}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-gray-300 text-primary focus:ring-primary"
                       />
                       <label htmlFor="email_sending" className="text-sm font-medium">
                         Email Sending
@@ -1318,7 +1318,7 @@ export default function SettingsPage() {
                         type="checkbox"
                         checked={o365FormData.contact_sync_enabled}
                         onChange={(e) => setO365FormData({...o365FormData, contact_sync_enabled: e.target.checked})}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-gray-300 text-primary focus:ring-primary"
                       />
                       <label htmlFor="contact_sync" className="text-sm font-medium">
                         Contact Sync
@@ -1350,7 +1350,7 @@ export default function SettingsPage() {
                       <button
                         type="submit"
                         disabled={o365Loading}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50"
                       >
                         {o365Loading ? 'Saving...' : (o365Config ? 'Update Configuration' : 'Save Configuration')}
                       </button>
@@ -1480,7 +1480,7 @@ export default function SettingsPage() {
                       navigator.clipboard.writeText(tempPassword)
                       alert('Password copied to clipboard!')
                     }}
-                    className="ml-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    className="ml-2 px-3 py-2 text-primary hover:bg-gray-50 rounded-lg transition-colors"
                     title="Copy to clipboard"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1500,7 +1500,7 @@ export default function SettingsPage() {
                     setShowPasswordModal(false)
                     setTempPassword("")
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
                 >
                   Close
                 </button>
