@@ -3436,7 +3436,8 @@ async def download_attachment(
     db: Session = Depends(get_db)
 ):
     """Download an attachment file from PostgreSQL"""
-    from fastapi.responses import Response
+    from fastapi.responses import StreamingResponse
+    import io
     import logging
     
     try:
@@ -3461,12 +3462,23 @@ async def download_attachment(
             else:
                 raise HTTPException(status_code=404, detail="File content not found in database")
         
-        # Return file data from database
-        return Response(
-            content=attachment.file_data,
+        # Convert file_data to bytes if needed (PostgreSQL might return memoryview)
+        file_content = attachment.file_data
+        if isinstance(file_content, memoryview):
+            file_content = bytes(file_content)
+        elif not isinstance(file_content, bytes):
+            file_content = bytes(file_content)
+        
+        # Create a BytesIO object from the file data
+        file_stream = io.BytesIO(file_content)
+        
+        # Return as streaming response
+        return StreamingResponse(
+            file_stream,
             media_type=attachment.file_type or 'application/octet-stream',
             headers={
-                "Content-Disposition": f"attachment; filename=\"{attachment.name}\""
+                "Content-Disposition": f"attachment; filename=\"{attachment.name}\"",
+                "Content-Length": str(len(file_content))
             }
         )
     except HTTPException:
