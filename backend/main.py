@@ -56,7 +56,7 @@ from schemas import (
     EmailThreadCreate, EmailThreadResponse,
     EmailMessageCreate, EmailMessageResponse, AttachmentCreate, AttachmentResponse,
     EmailSignatureCreate, EmailSignatureResponse, EmailSignatureUpdate,
-    ActivityResponse, DashboardStats, BulkUploadResult,
+    ActivityCreate, ActivityResponse, DashboardStats, BulkUploadResult,
     OrganizationCreate, OrganizationResponse, OrganizationThemeUpdate, OrganizationLogoUpdate, UserRegister, UserLogin, UserResponse, UserCreate,
     UserInviteCreate, UserInviteResponse, UserInviteAccept, Token,
     UserAdd, UserAddResponse, UserUpdate,
