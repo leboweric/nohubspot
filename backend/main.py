@@ -3561,17 +3561,17 @@ async def upload_company_attachment(
         if folder:
             db.refresh(db_attachment)  # Refresh to get updated folder_id
     
-    # Log activity
-    activity = Activity(
-        organization_id=current_user.organization_id,
-        title=f"File uploaded to company",
-        description=f"File '{file.filename}' was uploaded to company '{company.name}'",
-        type="attachment",
-        entity_id=str(company_id),
-        created_by=f"{current_user.first_name} {current_user.last_name}"
-    )
-    db.add(activity)
-    db.commit()
+    # Log activity - DISABLED per user request for manual activities only
+    # activity = Activity(
+    #     organization_id=current_user.organization_id,
+    #     title=f"File uploaded to company",
+    #     description=f"File '{file.filename}' was uploaded to company '{company.name}'",
+    #     type="attachment",
+    #     entity_id=str(company_id),
+    #     created_by=f"{current_user.first_name} {current_user.last_name}"
+    # )
+    # db.add(activity)
+    # db.commit()
     
     return AttachmentResponse(
         id=db_attachment.id,
