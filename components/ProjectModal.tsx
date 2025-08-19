@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { ProjectStage, Project, ProjectCreate, companyAPI, contactAPI, Company, Contact, projectAPI, usersAPI, User } from '@/lib/api'
 import ModernSelect from '@/components/ui/ModernSelect'
+import MultiSelect from '@/components/ui/MultiSelect'
 
 interface ProjectModalProps {
   isOpen: boolean
@@ -498,32 +499,30 @@ export default function ProjectModal({
             </div>
           </div>
 
-          {/* Consultant */}
+          {/* Team Members (Multiple Consultants) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Consultant
+              Team Members
             </label>
-            <ModernSelect
-              value={formData.assigned_team_members?.[0] || ''}
+            <MultiSelect
+              value={formData.assigned_team_members || []}
               onChange={(value) => setFormData(prev => ({ 
                 ...prev, 
-                assigned_team_members: value ? [value as number] : []
+                assigned_team_members: value as number[]
               }))}
               disabled={loadingData}
-              options={[
-                { value: '', label: loadingData ? 'Loading consultants...' : 'Select Consultant' },
-                ...users
-                  .filter(user => 
-                    // Exclude Eric Lebow and Super User from consultant dropdown
-                    user.email !== 'elebow@strategic-cc.com' && 
-                    user.email !== 'superuser+7@nothubspot.com'
-                  )
-                  .map(user => ({
+              options={users
+                .filter(user => 
+                  // Exclude Eric Lebow and Super User from consultant dropdown
+                  user.email !== 'elebow@strategic-cc.com' && 
+                  user.email !== 'superuser+7@nothubspot.com'
+                )
+                .map(user => ({
                   value: user.id,
                   label: `${user.first_name} ${user.last_name}${user.role === 'admin' ? ' (Admin)' : ''}`
                 }))
-              ]}
-              placeholder="Select consultant"
+              }
+              placeholder={loadingData ? 'Loading team members...' : 'Select team members'}
             />
           </div>
 
