@@ -152,7 +152,7 @@ function FolderTreeItem({
         </div>
         
         {folder.folder_type === 'custom' && (
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="relative opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={(e) => {
                 e.stopPropagation()
@@ -164,7 +164,7 @@ function FolderTreeItem({
             </button>
             
             {showMenu && (
-              <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg z-10 border">
+              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-md shadow-lg z-50 border">
                 <button
                   onClick={() => {
                     onFolderEdit?.(folder)
@@ -314,7 +314,7 @@ function FileItem({
           </div>
         </div>
         
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="relative opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={(e) => {
               e.stopPropagation()
@@ -326,7 +326,7 @@ function FileItem({
           </button>
           
           {showMenu && (
-            <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg z-10 border">
+            <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-md shadow-lg z-50 border">
               <button
                 onClick={() => {
                   onDownload(file)
