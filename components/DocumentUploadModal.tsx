@@ -10,6 +10,7 @@ interface DocumentUploadModalProps {
   onUpload: (file: File, privacy: PrivacySettings) => Promise<void>
   companyId: number
   folderId?: number
+  preselectedFile?: File | null
 }
 
 interface PrivacySettings {
@@ -23,13 +24,21 @@ export default function DocumentUploadModal({
   onClose, 
   onUpload,
   companyId,
-  folderId
+  folderId,
+  preselectedFile
 }: DocumentUploadModalProps) {
-  const [file, setFile] = useState<File | null>(null)
+  const [file, setFile] = useState<File | null>(preselectedFile || null)
   const [uploading, setUploading] = useState(false)
   const [privacyLevel, setPrivacyLevel] = useState<PrivacySettings['privacy_level']>('public')
   const [isConfidential, setIsConfidential] = useState(false)
   const [dragActive, setDragActive] = useState(false)
+
+  // Update file when preselectedFile changes
+  React.useEffect(() => {
+    if (preselectedFile) {
+      setFile(preselectedFile)
+    }
+  }, [preselectedFile])
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault()
@@ -110,7 +119,9 @@ export default function DocumentUploadModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg w-full max-w-md mx-4">
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">Upload Document</h2>
+          <h2 className="text-lg font-semibold">
+            {preselectedFile ? 'Set Privacy for Dropped File' : 'Upload Document'}
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -120,16 +131,17 @@ export default function DocumentUploadModal({
         </div>
 
         <div className="p-4 space-y-4">
-          {/* File Drop Zone */}
-          <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
-            }`}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-          >
+          {/* File Drop Zone - only show if no file is preselected */}
+          {!preselectedFile && (
+            <div
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+              }`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
             {file ? (
               <div className="space-y-2">
                 <div className="w-12 h-12 mx-auto bg-green-100 rounded-full flex items-center justify-center">
@@ -162,7 +174,25 @@ export default function DocumentUploadModal({
                 </label>
               </div>
             )}
-          </div>
+            </div>
+          )}
+          
+          {/* Show file info if preselected */}
+          {preselectedFile && (
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <UserCheck className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">{preselectedFile.name}</p>
+                  <p className="text-xs text-gray-500">
+                    {(preselectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Privacy Settings */}
           <div className="space-y-3">

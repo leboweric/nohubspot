@@ -382,6 +382,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
   const [initialized, setInitialized] = useState(false)
   const [isDraggingOver, setIsDraggingOver] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
+  const [droppedFile, setDroppedFile] = useState<File | null>(null)
   
   const { token } = getAuthState()
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nohubspot-production.up.railway.app'
@@ -861,7 +862,9 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
               // Handle file drop from computer
               if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                 const file = e.dataTransfer.files[0]
-                await handleFileUploadDirect(file)
+                // Save the dropped file and show the upload modal for privacy settings
+                setDroppedFile(file)
+                setShowUploadModal(true)
               }
             }}
           >
@@ -946,13 +949,18 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
       {/* Upload Modal */}
       <DocumentUploadModal
         isOpen={showUploadModal}
-        onClose={() => setShowUploadModal(false)}
+        onClose={() => {
+          setShowUploadModal(false)
+          setDroppedFile(null) // Clear the dropped file when closing
+        }}
         onUpload={async (file, privacySettings) => {
           await handleFileUploadDirect(file, privacySettings)
           setShowUploadModal(false)
+          setDroppedFile(null) // Clear the dropped file after upload
         }}
         companyId={companyId}
         folderId={selectedFolder?.id}
+        preselectedFile={droppedFile}
       />
     </DndContext>
   )
