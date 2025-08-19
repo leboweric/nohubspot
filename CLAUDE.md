@@ -213,3 +213,108 @@ Replaced the hanging `ALTER TABLE IF NOT EXISTS file_data BYTEA` with a simple `
 - Time to fix after adding proper logging: ~5 minutes
 
 **Remember: When deployments fail mysteriously, ADD LOGGING FIRST!**
+
+## Recent Session Summary (August 19, 2025)
+
+### Major Feature Implementations
+
+1. **Account Team Members for Companies and Contacts**
+   - Added JSON field to store multiple team member IDs
+   - Created inline editing UI with MultiSelect component
+   - Backend computes team member names via @property decorator
+   - SQL migration: `add_account_team_members.sql`
+   - Allows tracking multiple people involved with each account
+
+2. **Multi-Select for Project Team Members**
+   - Changed from single consultant dropdown to multi-select
+   - Created reusable `MultiSelect` component (`/components/ui/MultiSelect.tsx`)
+   - Updated ProjectModal to use `assigned_team_members` array field
+   - Backend already supported arrays via JSON field
+
+3. **Project Types Management Improvements**
+   - Fixed silent deletion failures by improving error handling
+   - Implemented soft delete (deactivation) for types in use by projects
+   - Added visual separation between Active and Inactive project types
+   - Sorted all project types alphabetically (removed display_order sorting)
+   - Removed up/down reorder buttons in favor of automatic alpha sort
+   - Clear messaging when types are deactivated vs permanently deleted
+
+4. **Scalable Company Search for 2200+ Companies**
+   - Created `CompanySearch` component with type-ahead autocomplete
+   - Replaced dropdowns in DealModal and ProjectModal
+   - Debounced search (300ms) to prevent API flooding
+   - Shows top 50 matches with option to refine search
+   - Solved issue where dropdown only showed companies A-K
+
+5. **Document Management Improvements**
+   - Fixed document download encoding errors (switched to StreamingResponse)
+   - Fixed text overflow in document cards with proper CSS
+   - Disabled automatic activity tracking for file uploads (manual only)
+
+### Technical Solutions & Patterns
+
+1. **Handling Large Datasets**
+   - Problem: Dropdowns failing with 2200+ items
+   - Solution: Searchable autocomplete with debounced API calls
+   - Pattern: Load on-demand rather than preloading everything
+
+2. **Soft Delete Pattern**
+   - Problem: Can't delete project types referenced by projects
+   - Solution: Mark as inactive rather than delete when in use
+   - UI clearly shows Active vs Inactive sections
+
+3. **Computed Properties in SQLAlchemy**
+   - Used @property decorator for read-only computed fields
+   - Example: `account_team_member_names` computed from IDs
+   - Important: These fields have no setter, only getter
+
+4. **Multi-Select Implementation**
+   - Stores array of IDs in JSON database field
+   - UI component handles tags display and removal
+   - Filtering users to exclude system/test accounts
+
+### Bug Fixes
+
+1. **File Download Issues**
+   - Error: 'latin-1' codec can't encode character
+   - Fix: Use StreamingResponse with BytesIO for binary data
+   - Added comprehensive error handling and logging
+
+2. **Property Setter Errors**
+   - Error: "property 'primary_account_owner_name' has no setter"
+   - Fix: Don't try to set computed @property fields
+   - Let SQLAlchemy compute them automatically
+
+3. **UI Overflow Issues**
+   - Document card text extending beyond boundaries
+   - Fix: Added `min-w-0` and `break-words` CSS classes
+
+### Dependencies Added
+- lodash & @types/lodash (for debouncing in CompanySearch)
+
+### Pending Client Clarifications
+1. **Multi-company meetings**: Proposed solution - upload to one company, share/link to others
+2. **Contact Primary Account Owner**: Should it auto-inherit from Company owner?
+
+### Key Learnings
+1. **Scale considerations**: Always test with realistic data volumes (2200+ records)
+2. **Soft deletes**: Maintain data integrity by deactivating rather than deleting referenced records
+3. **Computed fields**: Use @property for derived data, don't try to set them manually
+4. **Search vs Load All**: For large datasets, implement search rather than loading everything
+5. **User feedback**: Clear messaging about what happened (deactivated vs deleted)
+
+### Files Created/Modified
+- Created: `/components/ui/MultiSelect.tsx`
+- Created: `/components/ui/CompanySearch.tsx`  
+- Created: `/backend/migrations/add_account_team_members.sql`
+- Modified: `/components/ProjectModal.tsx` (multi-select team)
+- Modified: `/components/DealModal.tsx` (company search)
+- Modified: `/app/companies/[id]/page.tsx` (team members editing)
+- Modified: `/app/contacts/[id]/page.tsx` (team members editing)
+- Modified: `/app/settings/project-types/page.tsx` (improved deletion)
+- Modified: `/backend/crud.py` (alphabetical sorting)
+
+### Deployment Notes
+- All changes deployed successfully
+- Company search scales to any number of companies
+- Project types properly handle soft/hard delete scenarios
