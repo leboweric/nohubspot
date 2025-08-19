@@ -516,6 +516,13 @@ export interface Activity {
   created_at: string
 }
 
+export interface ActivityCreate {
+  title: string
+  description?: string
+  type: string
+  entity_id?: string
+}
+
 export const dashboardAPI = {
   // Get dashboard stats
   getStats: (): Promise<DashboardStats> =>
@@ -524,6 +531,13 @@ export const dashboardAPI = {
   // Get recent activities
   getActivities: (limit: number = 10): Promise<Activity[]> =>
     apiRequest(`/api/activities?limit=${limit}`),
+
+  // Create a new activity
+  createActivity: (activity: ActivityCreate): Promise<Activity> =>
+    apiRequest('/api/activities', {
+      method: 'POST',
+      body: JSON.stringify(activity),
+    }),
 
   // Get AI-powered daily summary
   getDailySummary: (): Promise<{

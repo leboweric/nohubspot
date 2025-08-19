@@ -9,6 +9,7 @@ import EmailThreadComponent from "@/components/email/EmailThread"
 import EmailTrackingStatus from "@/components/email/EmailTrackingStatus"
 import TaskCreate from "@/components/tasks/TaskCreate"
 import EventFormModal from "@/components/calendar/EventFormModal"
+import ActivityModal from "@/components/ActivityModal"
 import { Task } from "@/components/tasks/types"
 import { 
   contactAPI, Contact, handleAPIError, CalendarEventCreate, calendarAPI, 
@@ -80,6 +81,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
   const [activities, setActivities] = useState<Activity[]>([])
   const [editingNotes, setEditingNotes] = useState(false)
   const [notes, setNotes] = useState("")
+  const [showActivityModal, setShowActivityModal] = useState(false)
 
   useEffect(() => {
     const loadContact = async () => {
@@ -893,7 +895,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold">Activity Timeline</h2>
                   <button
-                    onClick={() => alert('Add Activity feature coming soon!')}
+                    onClick={() => setShowActivityModal(true)}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-white hover:opacity-90"
                     style={{ backgroundColor: 'var(--color-primary)' }}
                   >
@@ -1080,6 +1082,27 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
         event={null}
         selectedDate={null}
         preselectedContactId={contact?.id}
+      />
+
+      {/* Activity Modal */}
+      <ActivityModal
+        isOpen={showActivityModal}
+        onClose={() => setShowActivityModal(false)}
+        onSave={() => {
+          // Refresh activities
+          if (activeTab === "activity" && contact) {
+            dashboardAPI.getActivities(100).then(activitiesData => {
+              const contactActivities = activitiesData.filter(a => 
+                a.description?.includes(`${contact.first_name} ${contact.last_name}`) || 
+                a.entity_id === contact.id.toString()
+              )
+              setActivities(contactActivities)
+            }).catch(err => console.error('Failed to refresh activities:', err))
+          }
+        }}
+        entityType="contact"
+        entityId={contact?.id.toString() || ""}
+        entityName={`${contact?.first_name} ${contact?.last_name}` || ""}
       />
         </div>
       </MainLayout>

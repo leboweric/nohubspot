@@ -6,6 +6,7 @@ import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import EventFormModal from "@/components/calendar/EventFormModal"
 import DocumentManager from "@/components/DocumentManager"
+import ActivityModal from "@/components/ActivityModal"
 import { 
   Building2, Phone, Globe, DollarSign, User, MapPin, Calendar, 
   FileText, Users, FolderOpen, TrendingUp, MessageSquare, StickyNote,
@@ -47,6 +48,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
   const [showScheduleEvent, setShowScheduleEvent] = useState(false)
   const [notes, setNotes] = useState("")
   const [editingNotes, setEditingNotes] = useState(false)
+  const [showActivityModal, setShowActivityModal] = useState(false)
 
   useEffect(() => {
     const loadCompany = async () => {
@@ -578,7 +580,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold">Activity Timeline</h2>
                   <button
-                    onClick={() => alert('Add Activity feature coming soon!')}
+                    onClick={() => setShowActivityModal(true)}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-white hover:opacity-90"
                     style={{ backgroundColor: 'var(--color-primary)' }}
                   >
@@ -676,6 +678,27 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
             event={null}
             selectedDate={null}
             preselectedCompanyId={company?.id}
+          />
+
+          {/* Activity Modal */}
+          <ActivityModal
+            isOpen={showActivityModal}
+            onClose={() => setShowActivityModal(false)}
+            onSave={() => {
+              // Refresh activities
+              if (activeTab === "activity" && company) {
+                dashboardAPI.getActivities(100).then(activitiesData => {
+                  const companyActivities = activitiesData.filter(a => 
+                    a.description?.includes(company.name) || 
+                    a.entity_id === company.id.toString()
+                  )
+                  setActivities(companyActivities)
+                }).catch(err => console.error('Failed to refresh activities:', err))
+              }
+            }}
+            entityType="company"
+            entityId={company?.id.toString() || ""}
+            entityName={company?.name || ""}
           />
         </div>
       </MainLayout>

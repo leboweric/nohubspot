@@ -1748,6 +1748,30 @@ async def get_activities(
 ):
     return get_recent_activities(db, current_user.organization_id, limit=limit)
 
+@app.post("/api/activities", response_model=ActivityResponse)
+async def create_new_activity(
+    activity: ActivityCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    try:
+        db_activity = create_activity(
+            db,
+            title=activity.title,
+            description=activity.description,
+            type=activity.type,
+            organization_id=current_user.organization_id,
+            entity_id=activity.entity_id,
+            created_by=f"{current_user.first_name} {current_user.last_name}" if current_user.first_name else current_user.email
+        )
+        return db_activity
+    except Exception as e:
+        logging.error(f"Failed to create activity: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create activity: {str(e)}"
+        )
+
 # Company endpoints
 @app.post("/api/companies", response_model=CompanyResponse)
 async def create_new_company(
