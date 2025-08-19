@@ -638,6 +638,14 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                         </dd>
                       </div>
                       <div>
+                        <dt className="text-sm font-medium text-muted-foreground">Team Members</dt>
+                        <dd className="mt-1">
+                          {contact.account_team_member_names && contact.account_team_member_names.length > 0 
+                            ? contact.account_team_member_names.join(', ')
+                            : "No team members assigned"}
+                        </dd>
+                      </div>
+                      <div>
                         <dt className="text-sm font-medium text-muted-foreground">Status</dt>
                         <dd className="mt-1">
                           <span className={`inline-flex px-2 py-1 text-xs rounded-full ${

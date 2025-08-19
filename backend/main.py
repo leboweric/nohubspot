@@ -1822,6 +1822,21 @@ async def read_companies(
     # Get companies
     companies = get_companies(db, current_user.organization_id, skip=skip, limit=limit, search=search, status=status, sort_by=sort_by, sort_order=sort_order)
     
+    # Populate team member names for each company
+    for company in companies:
+        if company.account_team_members:
+            team_members = db.query(User).filter(
+                User.id.in_(company.account_team_members),
+                User.organization_id == current_user.organization_id
+            ).all()
+            company.account_team_member_names = [
+                f"{member.first_name} {member.last_name}" for member in team_members
+            ]
+        
+        # Populate primary account owner name
+        if company.primary_account_owner:
+            company.primary_account_owner_name = f"{company.primary_account_owner.first_name} {company.primary_account_owner.last_name}"
+    
     # Get total count - we need to create a count function
     from sqlalchemy import func
     query = db.query(func.count(Company.id)).filter(Company.organization_id == current_user.organization_id)
@@ -1862,6 +1877,21 @@ async def read_company(
     company = get_company(db, company_id, current_user.organization_id)
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Populate account team member names
+    if company.account_team_members:
+        team_members = db.query(User).filter(
+            User.id.in_(company.account_team_members),
+            User.organization_id == current_user.organization_id
+        ).all()
+        company.account_team_member_names = [
+            f"{member.first_name} {member.last_name}" for member in team_members
+        ]
+    
+    # Populate primary account owner name
+    if company.primary_account_owner:
+        company.primary_account_owner_name = f"{company.primary_account_owner.first_name} {company.primary_account_owner.last_name}"
+    
     return company
 
 @app.put("/api/companies/{company_id}", response_model=CompanyResponse)
@@ -1953,7 +1983,7 @@ async def read_contacts(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    return get_contacts(
+    contacts = get_contacts(
         db, 
         current_user.organization_id,
         skip=skip, 
@@ -1962,6 +1992,19 @@ async def read_contacts(
         company_id=company_id, 
         status=status
     )
+    
+    # Populate team member names for each contact
+    for contact in contacts:
+        if contact.account_team_members:
+            team_members = db.query(User).filter(
+                User.id.in_(contact.account_team_members),
+                User.organization_id == current_user.organization_id
+            ).all()
+            contact.account_team_member_names = [
+                f"{member.first_name} {member.last_name}" for member in team_members
+            ]
+    
+    return contacts
 
 @app.get("/api/contacts/{contact_id}", response_model=ContactResponse)
 async def read_contact(
@@ -1972,6 +2015,17 @@ async def read_contact(
     contact = get_contact(db, contact_id, current_user.organization_id)
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
+    
+    # Populate account team member names
+    if contact.account_team_members:
+        team_members = db.query(User).filter(
+            User.id.in_(contact.account_team_members),
+            User.organization_id == current_user.organization_id
+        ).all()
+        contact.account_team_member_names = [
+            f"{member.first_name} {member.last_name}" for member in team_members
+        ]
+    
     return contact
 
 @app.put("/api/contacts/{contact_id}", response_model=ContactResponse)

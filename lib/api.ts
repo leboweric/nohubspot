@@ -110,6 +110,8 @@ export interface Company {
   attachment_count: number
   primary_account_owner_id?: number
   primary_account_owner_name?: string
+  account_team_members?: number[]
+  account_team_member_names?: string[]
   created_at: string
   updated_at: string
 }
@@ -127,6 +129,7 @@ export interface CompanyCreate {
   phone?: string
   annual_revenue?: number
   primary_account_owner_id?: number
+  account_team_members?: number[]
   status?: string
 }
 
@@ -143,6 +146,7 @@ export interface CompanyUpdate {
   phone?: string
   annual_revenue?: number
   primary_account_owner_id?: number
+  account_team_members?: number[]
   status?: string
 }
 
@@ -250,6 +254,8 @@ export interface Contact {
   notes?: string
   primary_account_owner_id?: number
   primary_account_owner_name?: string
+  account_team_members?: number[]
+  account_team_member_names?: string[]
   created_at: string
   updated_at: string
   last_activity: string
@@ -266,6 +272,7 @@ export interface ContactCreate {
   status?: string
   notes?: string
   primary_account_owner_id?: number
+  account_team_members?: number[]
 }
 
 export interface ContactUpdate {
@@ -279,6 +286,7 @@ export interface ContactUpdate {
   status?: string
   notes?: string
   primary_account_owner_id?: number
+  account_team_members?: number[]
 }
 
 export const contactAPI = {

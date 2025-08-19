@@ -28,6 +28,7 @@ class CompanyBase(BaseModel):
     phone: Optional[str] = Field(None, max_length=50)
     annual_revenue: Optional[float] = None
     primary_account_owner_id: Optional[int] = None
+    account_team_members: Optional[List[int]] = Field(default_factory=list)  # User IDs
     primary_referral_source: Optional[str] = None
     status: str = Field(default="Active", max_length=50)
 
@@ -47,6 +48,7 @@ class CompanyUpdate(BaseModel):
     phone: Optional[str] = Field(None, max_length=50)
     annual_revenue: Optional[float] = None
     primary_account_owner_id: Optional[int] = None
+    account_team_members: Optional[List[int]] = None
     primary_referral_source: Optional[str] = None
     status: Optional[str] = Field(None, max_length=50)
 
@@ -57,6 +59,7 @@ class CompanyResponse(CompanyBase, TimestampMixin):
     
     # Populated by API
     primary_account_owner_name: Optional[str] = None
+    account_team_member_names: Optional[List[str]] = Field(default_factory=list)  # Names of team members
     
     class Config:
         from_attributes = True
@@ -82,6 +85,7 @@ class ContactBase(BaseModel):
 
 class ContactCreate(ContactBase):
     primary_account_owner_id: Optional[int] = None
+    account_team_members: Optional[List[int]] = Field(default_factory=list)  # User IDs
 
 class ContactUpdate(BaseModel):
     first_name: Optional[str] = Field(None, min_length=1, max_length=100)
@@ -94,12 +98,15 @@ class ContactUpdate(BaseModel):
     status: Optional[str] = Field(None, max_length=50)
     notes: Optional[str] = None
     primary_account_owner_id: Optional[int] = None
+    account_team_members: Optional[List[int]] = None
 
 class ContactResponse(ContactBase, TimestampMixin):
     id: int
     last_activity: datetime
     primary_account_owner_id: Optional[int] = None
     primary_account_owner_name: Optional[str] = None
+    account_team_members: Optional[List[int]] = Field(default_factory=list)  # User IDs
+    account_team_member_names: Optional[List[str]] = Field(default_factory=list)  # Names of team members
     # Privacy fields
     owner_id: Optional[int] = None
     shared_with_team: bool = False

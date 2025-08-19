@@ -343,6 +343,14 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                           {company.primary_account_owner_name || "Not assigned"}
                         </dd>
                       </div>
+                      <div>
+                        <dt className="text-sm font-medium text-muted-foreground">Team Members</dt>
+                        <dd className="mt-1">
+                          {company.account_team_member_names && company.account_team_member_names.length > 0 
+                            ? company.account_team_member_names.join(', ')
+                            : "No team members assigned"}
+                        </dd>
+                      </div>
                       <div className="md:col-span-2">
                         <dt className="text-sm font-medium text-muted-foreground">Address</dt>
                         <dd className="mt-1">
