@@ -566,7 +566,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                 onClick={() => setActiveTab("notes")}
                 icon={StickyNote}
               >
-                Notes
+                Internal Notes
               </TabButton>
             </div>
           </div>
@@ -890,7 +890,17 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
             {/* Activity Tab */}
             {activeTab === "activity" && (
               <div className="bg-card border rounded-lg p-6">
-                <h2 className="text-xl font-semibold mb-6">Activity Timeline</h2>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold">Activity Timeline</h2>
+                  <button
+                    onClick={() => alert('Add Activity feature coming soon!')}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-white hover:opacity-90"
+                    style={{ backgroundColor: 'var(--color-primary)' }}
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Activity
+                  </button>
+                </div>
                 
                 {activities.length > 0 ? (
                   <div className="space-y-4">

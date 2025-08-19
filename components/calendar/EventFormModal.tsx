@@ -47,15 +47,28 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
           companyAPI.getAll({ limit: 1000 })
         ])
         
+        console.log('EventFormModal - contactsData:', contactsData)
+        console.log('EventFormModal - companiesData:', companiesData)
+        
         // Handle both array and paginated responses for contacts
-        const contactsArray = Array.isArray(contactsData) 
-          ? contactsData 
-          : (contactsData?.items || contactsData?.contacts || [])
+        let contactsArray: Contact[] = []
+        if (Array.isArray(contactsData)) {
+          contactsArray = contactsData
+        } else if (contactsData && typeof contactsData === 'object') {
+          // @ts-ignore - Handle paginated response
+          contactsArray = contactsData.items || contactsData.contacts || []
+        }
         
         // Handle both array and paginated responses for companies  
-        const companiesArray = Array.isArray(companiesData)
-          ? companiesData
-          : (companiesData?.items || companiesData?.companies || [])
+        let companiesArray: Company[] = []
+        if (Array.isArray(companiesData)) {
+          companiesArray = companiesData
+        } else if (companiesData && typeof companiesData === 'object' && 'items' in companiesData) {
+          companiesArray = companiesData.items || []
+        }
+        
+        console.log('EventFormModal - processed contacts:', contactsArray)
+        console.log('EventFormModal - processed companies:', companiesArray)
         
         setContacts(contactsArray)
         setCompanies(companiesArray)
