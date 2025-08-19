@@ -1832,10 +1832,7 @@ async def read_companies(
             company.account_team_member_names = [
                 f"{member.first_name} {member.last_name}" for member in team_members
             ]
-        
-        # Populate primary account owner name
-        if company.primary_account_owner:
-            company.primary_account_owner_name = f"{company.primary_account_owner.first_name} {company.primary_account_owner.last_name}"
+        # Note: primary_account_owner_name is auto-populated via @property
     
     # Get total count - we need to create a count function
     from sqlalchemy import func
@@ -1887,10 +1884,7 @@ async def read_company(
         company.account_team_member_names = [
             f"{member.first_name} {member.last_name}" for member in team_members
         ]
-    
-    # Populate primary account owner name
-    if company.primary_account_owner:
-        company.primary_account_owner_name = f"{company.primary_account_owner.first_name} {company.primary_account_owner.last_name}"
+    # Note: primary_account_owner_name is auto-populated via @property
     
     return company
 
