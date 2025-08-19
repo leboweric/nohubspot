@@ -269,11 +269,11 @@ function FileItem({
       className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow cursor-move group"
     >
       <div className="flex items-start justify-between">
-        <div className="flex items-start space-x-3">
+        <div className="flex items-start space-x-3 min-w-0 flex-1">
           {getFileIcon(file.file_type)}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h4 className="font-medium text-sm text-gray-900 truncate">{file.name}</h4>
+              <h4 className="font-medium text-sm text-gray-900 truncate max-w-full">{file.name}</h4>
               {file.privacy_level === 'private' && (
                 <Lock className="w-3 h-3 text-red-600" title="Private - Only you can view" />
               )}
@@ -287,7 +287,7 @@ function FileItem({
               )}
             </div>
             {file.description && (
-              <p className="text-xs text-gray-600 mt-1">{file.description}</p>
+              <p className="text-xs text-gray-600 mt-1 break-words">{file.description}</p>
             )}
             <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
               <span>{formatFileSize(file.file_size)}</span>
