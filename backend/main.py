@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, status, Request, Form
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -3436,11 +3436,12 @@ async def download_attachment(
     db: Session = Depends(get_db)
 ):
     """Download an attachment file from PostgreSQL"""
-    from fastapi.responses import StreamingResponse
     import io
     import logging
     
     try:
+        logging.info(f"Download request for attachment {attachment_id}")
+        
         # Get attachment and verify user has access
         attachment = db.query(Attachment).filter(
             Attachment.id == attachment_id,
@@ -3469,15 +3470,22 @@ async def download_attachment(
         elif not isinstance(file_content, bytes):
             file_content = bytes(file_content)
         
+        logging.info(f"File content type: {type(file_content)}, size: {len(file_content)} bytes")
+        
         # Create a BytesIO object from the file data
         file_stream = io.BytesIO(file_content)
         
-        # Return as streaming response
+        # Use proper filename encoding
+        safe_filename = attachment.name.encode('utf-8', 'ignore').decode('ascii', 'ignore')
+        if not safe_filename:
+            safe_filename = f"file_{attachment_id}"
+        
+        # Return as streaming response with explicit binary mode
         return StreamingResponse(
             file_stream,
             media_type=attachment.file_type or 'application/octet-stream',
             headers={
-                "Content-Disposition": f"attachment; filename=\"{attachment.name}\"",
+                "Content-Disposition": f'attachment; filename="{safe_filename}"',
                 "Content-Length": str(len(file_content))
             }
         )
@@ -3485,6 +3493,9 @@ async def download_attachment(
         raise  # Re-raise HTTP exceptions
     except Exception as e:
         logging.error(f"Error downloading attachment {attachment_id}: {str(e)}")
+        logging.error(f"Error type: {type(e).__name__}")
+        import traceback
+        logging.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Failed to download file: {str(e)}")
 
 @app.delete("/api/attachments/{attachment_id}")
