@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { contactAPI, companyAPI, Contact, Company, handleAPIError } from "@/lib/api"
+import { contactAPI, companyAPI, Contact, Company, handleAPIError, usersAPI, User } from "@/lib/api"
 import { normalizePhoneNumber } from "@/lib/phoneUtils"
 import ModernSelect from "@/components/ui/ModernSelect"
 
@@ -14,6 +14,7 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
   const [error, setError] = useState<string | null>(null)
   const [companies, setCompanies] = useState<Company[]>([])
   const [loadingCompanies, setLoadingCompanies] = useState(true)
+  const [users, setUsers] = useState<User[]>([])
   
   const [formData, setFormData] = useState({
     first_name: "",
@@ -22,7 +23,8 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
     phone: "",
     title: "",
     company_id: "",
-    status: "Lead"
+    status: "Lead",
+    primary_account_owner_id: ""
   })
 
   // Load companies on component mount
@@ -41,7 +43,18 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
     }
 
     loadCompanies()
+    loadUsers()
   }, [])
+
+  const loadUsers = async () => {
+    try {
+      const data = await usersAPI.getAll()
+      setUsers(data || [])
+    } catch (err) {
+      console.error('Failed to load users:', err)
+      setUsers([]) // Set to empty array on error
+    }
+  }
 
   useEffect(() => {
     const loadContact = async () => {
@@ -57,7 +70,8 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
           phone: contactData.phone || "",
           title: contactData.title || "",
           company_id: contactData.company_id ? contactData.company_id.toString() : "",
-          status: contactData.status
+          status: contactData.status,
+          primary_account_owner_id: contactData.primary_account_owner_id ? contactData.primary_account_owner_id.toString() : ""
         })
       } catch (err) {
         setError(handleAPIError(err))
@@ -103,12 +117,18 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
       const updateData = {
         ...formData,
         phone: normalizePhoneNumber(formData.phone),
-        company_id: formData.company_id ? parseInt(formData.company_id) : undefined
+        company_id: formData.company_id ? parseInt(formData.company_id) : undefined,
+        primary_account_owner_id: formData.primary_account_owner_id ? parseInt(formData.primary_account_owner_id) : undefined
       }
       
       // Remove company_id from updateData if it's empty string
       if (!formData.company_id) {
         delete updateData.company_id
+      }
+      
+      // Remove primary_account_owner_id from updateData if it's empty string
+      if (!formData.primary_account_owner_id) {
+        delete updateData.primary_account_owner_id
       }
       
       await contactAPI.update(parseInt(params.id), updateData)
@@ -255,6 +275,24 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
               { value: "Inactive", label: "Inactive" }
             ]}
             placeholder="Select status"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="primary_account_owner_id" className="block text-sm font-medium mb-2">
+            Primary Account Owner
+          </label>
+          <ModernSelect
+            value={formData.primary_account_owner_id}
+            onChange={(value) => setFormData(prev => ({ ...prev, primary_account_owner_id: value as string }))}
+            options={[
+              { value: "", label: "Select account owner" },
+              ...users.map(user => ({
+                value: user.id.toString(),
+                label: `${user.first_name} ${user.last_name}` || user.email
+              }))
+            ]}
+            placeholder="Select account owner"
           />
         </div>
 

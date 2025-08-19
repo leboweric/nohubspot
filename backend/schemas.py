@@ -81,7 +81,7 @@ class ContactBase(BaseModel):
     notes: Optional[str] = None
 
 class ContactCreate(ContactBase):
-    pass
+    primary_account_owner_id: Optional[int] = None
 
 class ContactUpdate(BaseModel):
     first_name: Optional[str] = Field(None, min_length=1, max_length=100)
@@ -93,10 +93,13 @@ class ContactUpdate(BaseModel):
     company_name: Optional[str] = Field(None, max_length=255)
     status: Optional[str] = Field(None, max_length=50)
     notes: Optional[str] = None
+    primary_account_owner_id: Optional[int] = None
 
 class ContactResponse(ContactBase, TimestampMixin):
     id: int
     last_activity: datetime
+    primary_account_owner_id: Optional[int] = None
+    primary_account_owner_name: Optional[str] = None
     # Privacy fields
     owner_id: Optional[int] = None
     shared_with_team: bool = False

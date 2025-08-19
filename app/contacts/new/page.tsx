@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
-import { contactAPI, companyAPI, handleAPIError, Company } from "@/lib/api"
+import { contactAPI, companyAPI, handleAPIError, Company, usersAPI, User } from "@/lib/api"
 import { normalizePhoneNumber } from "@/lib/phoneUtils"
 import ModernSelect from "@/components/ui/ModernSelect"
 
@@ -18,12 +18,14 @@ export default function NewContactPage() {
     phone: "",
     title: "",
     company_id: "",
-    status: "Lead"
+    status: "Lead",
+    primary_account_owner_id: ""
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [companies, setCompanies] = useState<Company[]>([])
   const [loadingCompanies, setLoadingCompanies] = useState(true)
+  const [users, setUsers] = useState<User[]>([])
 
   // Load companies on component mount
   useEffect(() => {
@@ -41,7 +43,18 @@ export default function NewContactPage() {
     }
 
     loadCompanies()
+    loadUsers()
   }, [])
+
+  const loadUsers = async () => {
+    try {
+      const data = await usersAPI.getAll()
+      setUsers(data || [])
+    } catch (err) {
+      console.error('Failed to load users:', err)
+      setUsers([]) // Set to empty array on error
+    }
+  }
 
   useEffect(() => {
     const companyIdParam = searchParams.get('companyId')
@@ -78,12 +91,18 @@ export default function NewContactPage() {
       const formattedData = {
         ...formData,
         phone: normalizePhoneNumber(formData.phone),
-        company_id: formData.company_id ? parseInt(formData.company_id) : undefined
+        company_id: formData.company_id ? parseInt(formData.company_id) : undefined,
+        primary_account_owner_id: formData.primary_account_owner_id ? parseInt(formData.primary_account_owner_id) : undefined
       }
       
       // Remove company_id from formData if it's empty string
       if (!formData.company_id) {
         delete formattedData.company_id
+      }
+      
+      // Remove primary_account_owner_id from formData if it's empty string
+      if (!formData.primary_account_owner_id) {
+        delete formattedData.primary_account_owner_id
       }
       
       console.log("Formatted contact data:", formattedData)
@@ -246,6 +265,24 @@ export default function NewContactPage() {
               { value: "Inactive", label: "Inactive" }
             ]}
             placeholder="Select status"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="primary_account_owner_id" className="block text-sm font-medium mb-2">
+            Primary Account Owner
+          </label>
+          <ModernSelect
+            value={formData.primary_account_owner_id}
+            onChange={(value) => setFormData(prev => ({ ...prev, primary_account_owner_id: value as string }))}
+            options={[
+              { value: "", label: "Select account owner" },
+              ...users.map(user => ({
+                value: user.id.toString(),
+                label: `${user.first_name} ${user.last_name}` || user.email
+              }))
+            ]}
+            placeholder="Select account owner"
           />
         </div>
 

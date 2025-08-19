@@ -519,6 +519,12 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                   </a>
                 </div>
               )}
+              {contact.primary_account_owner_name && (
+                <div className="flex items-center gap-1">
+                  <User className="w-4 h-4 text-muted-foreground" />
+                  <span>{contact.primary_account_owner_name}</span>
+                </div>
+              )}
               <div className="flex items-center gap-1">
                 <Clock className="w-4 h-4 text-muted-foreground" />
                 <span>Last activity: {formatRelativeTime(contact.last_activity)}</span>
@@ -623,6 +629,12 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                           ) : (
                             <span className="text-muted-foreground">Not specified</span>
                           )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-muted-foreground">Account Owner</dt>
+                        <dd className="mt-1">
+                          {contact.primary_account_owner_name || "Not assigned"}
                         </dd>
                       </div>
                       <div>

@@ -248,6 +248,8 @@ export interface Contact {
   company_name?: string
   status: string
   notes?: string
+  primary_account_owner_id?: number
+  primary_account_owner_name?: string
   created_at: string
   updated_at: string
   last_activity: string
@@ -263,6 +265,7 @@ export interface ContactCreate {
   company_name?: string
   status?: string
   notes?: string
+  primary_account_owner_id?: number
 }
 
 export interface ContactUpdate {
@@ -275,6 +278,7 @@ export interface ContactUpdate {
   company_name?: string
   status?: string
   notes?: string
+  primary_account_owner_id?: number
 }
 
 export const contactAPI = {

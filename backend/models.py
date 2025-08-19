@@ -155,6 +155,7 @@ class Contact(Base):
     company_name = Column(String(255))  # Denormalized for easier queries
     status = Column(String(50), default="Active")  # Active, Lead, Inactive
     notes = Column(Text)
+    primary_account_owner_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     
     # Privacy and sharing settings
     is_shared = Column(Boolean, default=False)  # Deprecated - use shared_with_team
@@ -174,6 +175,13 @@ class Contact(Base):
                             primaryjoin="and_(cast(Contact.id, String) == Activity.entity_id, Activity.type == 'contact')",
                             overlaps="activities")
     owner = relationship("User", foreign_keys=[owner_id])
+    primary_account_owner = relationship("User", foreign_keys=[primary_account_owner_id])
+    
+    @property
+    def primary_account_owner_name(self):
+        if self.primary_account_owner:
+            return f"{self.primary_account_owner.first_name} {self.primary_account_owner.last_name}"
+        return None
 
 class EmailThread(Base):
     __tablename__ = "email_threads"
