@@ -1365,7 +1365,8 @@ def get_project_types(db: Session, organization_id: int, include_inactive: bool 
     if not include_inactive:
         query = query.filter(ProjectType.is_active == True)
     
-    return query.order_by(ProjectType.display_order, ProjectType.name).all()
+    # Sort alphabetically by name
+    return query.order_by(ProjectType.name).all()
 
 def get_project_type(db: Session, project_type_id: int, organization_id: int) -> ProjectType:
     return db.query(ProjectType).filter(

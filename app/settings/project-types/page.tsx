@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Pencil, Trash2, Plus, ChevronUp, ChevronDown, AlertCircle } from 'lucide-react'
+import { Pencil, Trash2, Plus, AlertCircle } from 'lucide-react'
 import { projectAPI } from '@/lib/api'
 import { getAuthState, isAdmin } from '@/lib/auth'
 
@@ -64,7 +64,8 @@ export default function ProjectTypesSettings() {
       if (!response.ok) throw new Error('Failed to load project types')
       
       const data = await response.json()
-      setProjectTypes(data.sort((a: ProjectType, b: ProjectType) => a.display_order - b.display_order))
+      // Sort alphabetically by name instead of display_order
+      setProjectTypes(data.sort((a: ProjectType, b: ProjectType) => a.name.localeCompare(b.name)))
     } catch (err) {
       setError('Failed to load project types')
       console.error(err)
@@ -169,59 +170,6 @@ export default function ProjectTypesSettings() {
     }
   }
 
-  const handleMoveUp = async (type: ProjectType, index: number) => {
-    if (index === 0) return
-    
-    const newTypes = [...projectTypes]
-    newTypes[index] = projectTypes[index - 1]
-    newTypes[index - 1] = type
-    
-    // Update display orders
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nohubspot-production.up.railway.app'
-    for (let i = 0; i < newTypes.length; i++) {
-      try {
-        await fetch(`${baseUrl}/api/project-types/${newTypes[i].id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ display_order: i })
-        })
-      } catch (err) {
-        console.error('Failed to update order', err)
-      }
-    }
-    
-    setProjectTypes(newTypes)
-  }
-
-  const handleMoveDown = async (type: ProjectType, index: number) => {
-    if (index === projectTypes.length - 1) return
-    
-    const newTypes = [...projectTypes]
-    newTypes[index] = projectTypes[index + 1]
-    newTypes[index + 1] = type
-    
-    // Update display orders
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nohubspot-production.up.railway.app'
-    for (let i = 0; i < newTypes.length; i++) {
-      try {
-        await fetch(`${baseUrl}/api/project-types/${newTypes[i].id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ display_order: i })
-        })
-      } catch (err) {
-        console.error('Failed to update order', err)
-      }
-    }
-    
-    setProjectTypes(newTypes)
-  }
 
   const initializeDefaults = async () => {
     try {
@@ -347,22 +295,6 @@ export default function ProjectTypesSettings() {
                         </div>
                         
                         <div className="flex items-center gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleMoveUp(type, projectTypes.indexOf(type))}
-                            disabled={projectTypes.indexOf(type) === 0}
-                          >
-                            <ChevronUp className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleMoveDown(type, projectTypes.indexOf(type))}
-                            disabled={projectTypes.indexOf(type) === projectTypes.length - 1}
-                          >
-                            <ChevronDown className="h-4 w-4" />
-                          </Button>
                           <Button
                             size="sm"
                             variant="ghost"

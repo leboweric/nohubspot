@@ -149,7 +149,8 @@ export default function ProjectModal({
         console.error('Failed to load companies:', err)
       }
       
-      setProjectTypes(projectTypesData || [])
+      // Sort project types alphabetically
+      setProjectTypes((projectTypesData || []).sort((a, b) => a.localeCompare(b)))
       setUsers(usersData || [])
       setCompanies(companiesData || [])
       
