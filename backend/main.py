@@ -24,8 +24,8 @@ logging.basicConfig(
 # Load environment variables from .env file
 load_dotenv()
 
-# Log startup
-logging.info("STARTUP: Main.py module loaded, starting initialization sequence...")
+# Log startup with version info
+logging.info("STARTUP: Main.py module loaded, starting initialization sequence... v2")
 
 # Simple rate limiter to prevent API overwhelm
 request_counts = defaultdict(list)
