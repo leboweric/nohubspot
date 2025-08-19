@@ -699,9 +699,44 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
         a.click()
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
+      } else {
+        console.error('Download failed with status:', response.status)
+        alert('Failed to download file. Please try again.')
       }
     } catch (error) {
       console.error('Failed to download file:', error)
+      alert('Failed to download file. Please try again.')
+    }
+  }
+
+  const handleEditFile = async (file: Attachment) => {
+    // For now, just show an alert that edit is not implemented
+    // In the future, this could open a modal to edit file details like description, tags, privacy, etc.
+    const newDescription = prompt('Edit file description:', file.description || '')
+    
+    if (newDescription !== null && newDescription !== file.description) {
+      try {
+        const response = await fetch(`${baseUrl}/api/attachments/${file.id}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            description: newDescription
+          })
+        })
+        
+        if (response.ok) {
+          // Reload attachments to show updated description
+          await loadAttachments(selectedFolder?.id || null)
+        } else {
+          alert('Failed to update file description')
+        }
+      } catch (error) {
+        console.error('Failed to update file:', error)
+        alert('Failed to update file description')
+      }
     }
   }
 
@@ -891,7 +926,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
                       file={file}
                       onDownload={handleDownloadFile}
                       onDelete={handleDeleteFile}
-                      onEdit={() => {}}
+                      onEdit={handleEditFile}
                     />
                   ))}
                 </div>
