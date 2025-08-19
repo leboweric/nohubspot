@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { PipelineStage, Deal, DealCreate, companyAPI, contactAPI, Company, Contact } from '@/lib/api'
 import ModernSelect from '@/components/ui/ModernSelect'
+import CompanySearch from '@/components/ui/CompanySearch'
 
 interface DealModalProps {
   isOpen: boolean
@@ -42,7 +43,6 @@ export default function DealModal({
     tags: []
   })
 
-  const [companies, setCompanies] = useState<Company[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -87,15 +87,10 @@ export default function DealModal({
 
   const loadFormData = async () => {
     try {
-      const [companiesResponse, contactsData] = await Promise.all([
-        companyAPI.getAll({ limit: 1000 }), // Increased to get all companies
-        contactAPI.getAll({ limit: 1000 })   // Increased to get more contacts
-      ])
-      // Extract items array from paginated response
-      setCompanies(companiesResponse?.items || [])
+      const contactsData = await contactAPI.getAll({ limit: 1000 })  // Load contacts
       setContacts(Array.isArray(contactsData) ? contactsData : [])
     } catch (err) {
-      console.error('Failed to load form data:', err)
+      console.error('Failed to load contacts:', err)
     }
   }
 
@@ -335,17 +330,12 @@ export default function DealModal({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Company
               </label>
-              <ModernSelect
-                value={formData.company_id || ''}
-                onChange={(value) => handleCompanyChange(value.toString())}
-                options={[
-                  { value: '', label: 'Select company...' },
-                  ...companies.map(company => ({
-                    value: company.id,
-                    label: company.name
-                  }))
-                ]}
-                placeholder="Select company"
+              <CompanySearch
+                value={formData.company_id || null}
+                onChange={(companyId, companyName) => {
+                  handleCompanyChange(companyId ? companyId.toString() : '')
+                }}
+                placeholder="Search for a company..."
               />
             </div>
             <div>

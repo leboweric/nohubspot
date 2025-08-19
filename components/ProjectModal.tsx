@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { ProjectStage, Project, ProjectCreate, companyAPI, contactAPI, Company, Contact, projectAPI, usersAPI, User } from '@/lib/api'
 import ModernSelect from '@/components/ui/ModernSelect'
 import MultiSelect from '@/components/ui/MultiSelect'
+import CompanySearch from '@/components/ui/CompanySearch'
 
 interface ProjectModalProps {
   isOpen: boolean
@@ -42,7 +43,6 @@ export default function ProjectModal({
 
   const [projectTypes, setProjectTypes] = useState<string[]>([])
   const [users, setUsers] = useState<User[]>([])
-  const [companies, setCompanies] = useState<Company[]>([])
   const [companyContacts, setCompanyContacts] = useState<Contact[]>([])
   const [loadingContacts, setLoadingContacts] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -123,7 +123,6 @@ export default function ProjectModal({
       // Load each resource separately to better handle errors
       let projectTypesData: string[] = []
       let usersData: User[] = []
-      let companiesData: Company[] = []
       
       try {
         const types = await projectAPI.getProjectTypes()
@@ -141,21 +140,12 @@ export default function ProjectModal({
         console.error('Failed to load users:', err)
       }
       
-      try {
-        const companiesResponse = await companyAPI.getAll({ limit: 1000 })
-        companiesData = companiesResponse?.items || []
-        console.log('Companies loaded:', companiesData?.length || 0)
-      } catch (err) {
-        console.error('Failed to load companies:', err)
-      }
-      
       // Sort project types alphabetically
       setProjectTypes((projectTypesData || []).sort((a, b) => a.localeCompare(b)))
       setUsers(usersData || [])
-      setCompanies(companiesData || [])
       
       // Clear error if at least some data loaded
-      if (projectTypesData.length > 0 || usersData.length > 0 || companiesData.length > 0) {
+      if (projectTypesData.length > 0 || usersData.length > 0) {
         setError('')
       }
     } catch (err) {
@@ -342,18 +332,13 @@ export default function ProjectModal({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Company
               </label>
-              <ModernSelect
-                value={formData.company_id || ''}
-                onChange={(value) => handleCompanyChange(value.toString())}
+              <CompanySearch
+                value={formData.company_id || null}
+                onChange={(companyId, companyName) => {
+                  handleCompanyChange(companyId ? companyId.toString() : '')
+                }}
+                placeholder="Search for a company..."
                 disabled={loadingData}
-                options={[
-                  { value: '', label: 'Select company...' },
-                  ...companies.map(company => ({
-                    value: company.id,
-                    label: company.name
-                  }))
-                ]}
-                placeholder="Select company"
               />
             </div>
             <div>
