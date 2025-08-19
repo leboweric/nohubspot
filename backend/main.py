@@ -1130,15 +1130,15 @@ async def create_new_calendar_event(
 ):
     db_event = create_calendar_event(db, event, current_user.organization_id, current_user.id)
     
-    # Create activity log
-    create_activity(
-        db,
-        title="Calendar Event Created",
-        description=f"Created event: {event.title}",
-        type="calendar",
-        entity_id=str(db_event.id),
-        organization_id=current_user.organization_id
-    )
+    # # Create activity log - disabled for automatic tracking
+    # create_activity(
+    #     db,
+    #     title="Calendar Event Created",
+    #     description=f"Created event: {event.title}",
+    #     type="calendar",
+    #     entity_id=str(db_event.id),
+    #     organization_id=current_user.organization_id
+    # )
     
     return db_event
 
@@ -1215,14 +1215,15 @@ async def update_existing_calendar_event(
     if not event:
         raise HTTPException(status_code=404, detail="Calendar event not found")
     
-    create_activity(
-        db,
-        title="Calendar Event Updated",
-        description=f"Updated event: {event.title}",
-        type="calendar",
-        entity_id=str(event.id),
-        organization_id=current_user.organization_id
-    )
+    # # Disabled automatic activity tracking
+    # create_activity(
+    #     db,
+    #     title="Calendar Event Updated",
+    #     description=f"Updated event: {event.title}",
+    #     type="calendar",
+    #     entity_id=str(event.id),
+    #     organization_id=current_user.organization_id
+    # )
     
     return event
 
@@ -1236,14 +1237,15 @@ async def delete_existing_calendar_event(
     if not success:
         raise HTTPException(status_code=404, detail="Calendar event not found")
     
-    create_activity(
-        db,
-        title="Calendar Event Deleted",
-        description=f"Deleted calendar event",
-        type="calendar",
-        entity_id=str(event_id),
-        organization_id=current_user.organization_id
-    )
+    # # Disabled automatic activity tracking
+    # create_activity(
+    #     db,
+    #     title="Calendar Event Deleted",
+    #     description=f"Deleted calendar event",
+    #     type="calendar",
+    #     entity_id=str(event_id),
+    #     organization_id=current_user.organization_id
+    # )
     
     return {"message": "Calendar event deleted successfully"}
 
@@ -1321,15 +1323,15 @@ async def send_calendar_event_invite(
             
             db.commit()
             
-            # Create activity log
-            create_activity(
-                db,
-                title="Calendar Invites Sent",
-                description=f"Sent calendar invites for '{event.title}' to {len(attendee_emails)} attendees",
-                type="calendar",
-                entity_id=str(event.id),
-                organization_id=current_user.organization_id
-            )
+            # # Create activity log - disabled automatic tracking
+            # create_activity(
+            #     db,
+            #     title="Calendar Invites Sent",
+            #     description=f"Sent calendar invites for '{event.title}' to {len(attendee_emails)} attendees",
+            #     type="calendar",
+            #     entity_id=str(event.id),
+            #     organization_id=current_user.organization_id
+            # )
             
             return {
                 "success": True,
@@ -1399,15 +1401,15 @@ async def create_organization_o365_config(
     try:
         db_config = create_o365_org_config(db, config, current_user.organization_id)
         
-        # Create activity log
-        create_activity(
-            db,
-            title="Office 365 Configuration Created",
-            description=f"Office 365 integration configured for organization",
-            type="settings",
-            entity_id=str(current_user.organization_id),
-            organization_id=current_user.organization_id
-        )
+        # # Create activity log - disabled automatic tracking
+        # create_activity(
+        #     db,
+        #     title="Office 365 Configuration Created",
+        #     description=f"Office 365 integration configured for organization",
+        #     type="settings",
+        #     entity_id=str(current_user.organization_id),
+        #     organization_id=current_user.organization_id
+        # )
         
         return db_config
     except Exception as e:
@@ -1434,15 +1436,15 @@ async def update_organization_o365_config(
             create_config = O365OrganizationConfigCreate(**config_update.dict(exclude_unset=True))
             db_config = create_o365_org_config(db, create_config, current_user.organization_id)
         
-        # Create activity log
-        create_activity(
-            db,
-            title="Office 365 Configuration Updated",
-            description=f"Office 365 integration settings updated",
-            type="settings",
-            entity_id=str(current_user.organization_id),
-            organization_id=current_user.organization_id
-        )
+        # # Create activity log - disabled automatic tracking
+        # create_activity(
+        #     db,
+        #     title="Office 365 Configuration Updated",
+        #     description=f"Office 365 integration settings updated",
+        #     type="settings",
+        #     entity_id=str(current_user.organization_id),
+        #     organization_id=current_user.organization_id
+        # )
         
         return db_config
     except Exception as e:
@@ -1465,15 +1467,15 @@ async def delete_organization_o365_config(
     if not success:
         raise HTTPException(status_code=404, detail="Office 365 configuration not found")
     
-    # Create activity log
-    create_activity(
-        db,
-        title="Office 365 Configuration Deleted",
-        description=f"Office 365 integration disabled for organization",
-        type="settings",
-        entity_id=str(current_user.organization_id),
-        organization_id=current_user.organization_id
-    )
+    # # Create activity log - disabled automatic tracking
+    # create_activity(
+    #     db,
+    #     title="Office 365 Configuration Deleted",
+    #     description=f"Office 365 integration disabled for organization",
+    #     type="settings",
+    #     entity_id=str(current_user.organization_id),
+    #     organization_id=current_user.organization_id
+    # )
     
     return {"message": "Office 365 configuration deleted successfully"}
 
@@ -1591,15 +1593,15 @@ async def update_organization_theme(
     db.commit()
     db.refresh(org)
     
-    # Create activity log
-    create_activity(
-        db,
-        title="Theme Colors Updated",
-        description=f"Organization theme colors updated",
-        type="settings",
-        entity_id=str(org.id),
-        organization_id=current_user.organization_id
-    )
+    # # Create activity log - disabled automatic tracking
+    # create_activity(
+    #     db,
+    #     title="Theme Colors Updated",
+    #     description=f"Organization theme colors updated",
+    #     type="settings",
+    #     entity_id=str(org.id),
+    #     organization_id=current_user.organization_id
+    # )
     
     return org
 
@@ -1630,15 +1632,15 @@ async def update_organization_logo(
     db.commit()
     db.refresh(org)
     
-    # Create activity log
-    create_activity(
-        db,
-        title="Organization Logo Updated",
-        description=f"Organization logo {'uploaded' if logo_update.logo_url else 'removed'}",
-        type="settings",
-        entity_id=str(org.id),
-        organization_id=current_user.organization_id
-    )
+    # # Create activity log - disabled automatic tracking
+    # create_activity(
+    #     db,
+    #     title="Organization Logo Updated",
+    #     description=f"Organization logo {'uploaded' if logo_update.logo_url else 'removed'}",
+    #     type="settings",
+    #     entity_id=str(org.id),
+    #     organization_id=current_user.organization_id
+    # )
     
     return org
 
@@ -1786,15 +1788,15 @@ async def create_new_company(
         db_company = create_company(db, company, current_user.organization_id)
         logging.info(f"Company created with ID: {db_company.id}")
         
-        # Create activity log
-        create_activity(
-            db, 
-            title="Company Added",
-            description=f"Added {company.name} as a new company",
-            type="company",
-            entity_id=str(db_company.id),
-            organization_id=current_user.organization_id
-        )
+        # # Create activity log - disabled for automatic tracking
+        # create_activity(
+        #     db, 
+        #     title="Company Added",
+        #     description=f"Added {company.name} as a new company",
+        #     type="company",
+        #     entity_id=str(db_company.id),
+        #     organization_id=current_user.organization_id
+        # )
         
         return db_company
         
@@ -1873,14 +1875,15 @@ async def update_existing_company(
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
     
-    create_activity(
-        db,
-        title="Company Updated", 
-        description=f"Updated {company.name}",
-        type="company",
-        entity_id=str(company.id),
-        organization_id=current_user.organization_id
-    )
+    # # Disabled automatic activity tracking
+    # create_activity(
+    #     db,
+    #     title="Company Updated", 
+    #     description=f"Updated {company.name}",
+    #     type="company",
+    #     entity_id=str(company.id),
+    #     organization_id=current_user.organization_id
+    # )
     
     return company
 
@@ -1894,14 +1897,15 @@ async def delete_existing_company(
     if not success:
         raise HTTPException(status_code=404, detail="Company not found")
     
-    create_activity(
-        db,
-        title="Company Deleted",
-        description=f"Deleted company",
-        type="company",
-        entity_id=str(company_id),
-        organization_id=current_user.organization_id
-    )
+    # # Disabled automatic activity tracking
+    # create_activity(
+    #     db,
+    #     title="Company Deleted",
+    #     description=f"Deleted company",
+    #     type="company",
+    #     entity_id=str(company_id),
+    #     organization_id=current_user.organization_id
+    # )
     
     return {"message": "Company deleted successfully"}
 
@@ -1919,14 +1923,15 @@ async def create_new_contact(
         db_contact = create_contact(db, contact, current_user.organization_id)
         logging.info(f"Contact created with ID: {db_contact.id}")
         
-        create_activity(
-            db,
-            title="Contact Added",
-            description=f"Added {contact.first_name} {contact.last_name} as a new contact",
-            type="contact", 
-            entity_id=str(db_contact.id),
-            organization_id=current_user.organization_id
-        )
+        # # Disabled automatic activity tracking
+        # create_activity(
+        #     db,
+        #     title="Contact Added",
+        #     description=f"Added {contact.first_name} {contact.last_name} as a new contact",
+        #     type="contact", 
+        #     entity_id=str(db_contact.id),
+        #     organization_id=current_user.organization_id
+        # )
         
         return db_contact
         
@@ -1980,14 +1985,15 @@ async def update_existing_contact(
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
     
-    create_activity(
-        db,
-        title="Contact Updated",
-        description=f"Updated {contact.first_name} {contact.last_name}",
-        type="contact",
-        entity_id=str(contact.id),
-        organization_id=current_user.organization_id
-    )
+    # # Disabled automatic activity tracking
+    # create_activity(
+    #     db,
+    #     title="Contact Updated",
+    #     description=f"Updated {contact.first_name} {contact.last_name}",
+    #     type="contact",
+    #     entity_id=str(contact.id),
+    #     organization_id=current_user.organization_id
+    # )
     
     return contact
 
@@ -2011,14 +2017,15 @@ async def create_new_task(
 ):
     db_task = create_task(db, task, current_user.organization_id)
     
-    create_activity(
-        db,
-        title="Task Created",
-        description=f"Created task: {task.title}",
-        type="task",
-        entity_id=str(db_task.id),
-        organization_id=current_user.organization_id
-    )
+    # # Disabled automatic activity tracking
+    # create_activity(
+    #     db,
+    #     title="Task Created",
+    #     description=f"Created task: {task.title}",
+    #     type="task",
+    #     entity_id=str(db_task.id),
+    #     organization_id=current_user.organization_id
+    # )
     
     return db_task
 
@@ -2068,14 +2075,15 @@ async def update_existing_task(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     
-    create_activity(
-        db,
-        title="Task Updated",
-        description=f"Updated task: {task.title}",
-        type="task",
-        entity_id=str(task.id),
-        organization_id=current_user.organization_id
-    )
+    # # Disabled automatic activity tracking
+    # create_activity(
+    #     db,
+    #     title="Task Updated",
+    #     description=f"Updated task: {task.title}",
+    #     type="task",
+    #     entity_id=str(task.id),
+    #     organization_id=current_user.organization_id
+    # )
     
     return task
 
@@ -2089,14 +2097,15 @@ async def delete_existing_task(
     if not success:
         raise HTTPException(status_code=404, detail="Task not found")
     
-    create_activity(
-        db,
-        title="Task Deleted",
-        description=f"Deleted task",
-        type="task",
-        entity_id=str(task_id),
-        organization_id=current_user.organization_id
-    )
+    # # Disabled automatic activity tracking
+    # create_activity(
+    #     db,
+    #     title="Task Deleted",
+    #     description=f"Deleted task",
+    #     type="task",
+    #     entity_id=str(task_id),
+    #     organization_id=current_user.organization_id
+    # )
     
     return {"message": "Task deleted successfully"}
 
@@ -2344,14 +2353,14 @@ async def bulk_upload_companies(
             for company in db_companies:
                 db.refresh(company)
                 
-            # Create activity for bulk upload
-            create_activity(
-                db,
-                title="Bulk Companies Upload",
-                description=f"Uploaded {success_count} companies",
-                type="company",
-                organization_id=current_user.organization_id
-            )
+            # # Create activity for bulk upload - disabled automatic tracking
+            # create_activity(
+            #     db,
+            #     title="Bulk Companies Upload",
+            #     description=f"Uploaded {success_count} companies",
+            #     type="company",
+            #     organization_id=current_user.organization_id
+            # )
         except Exception as e:
             db.rollback()
             raise HTTPException(
@@ -2375,14 +2384,14 @@ async def bulk_upload_contacts(
     try:
         db_contacts = bulk_create_contacts(db, contacts, current_user.organization_id)
         
-        # Create activity for bulk upload
-        create_activity(
-            db,
-            title="Bulk Contacts Upload",
-            description=f"Uploaded {len(db_contacts)} contacts",
-            type="contact",
-            organization_id=current_user.organization_id
-        )
+        # # Create activity for bulk upload - disabled automatic tracking
+        # create_activity(
+        #     db,
+        #     title="Bulk Contacts Upload",
+        #     description=f"Uploaded {len(db_contacts)} contacts",
+        #     type="contact",
+        #     organization_id=current_user.organization_id
+        # )
         
         return BulkUploadResult(
             success_count=len(db_contacts),
@@ -2582,14 +2591,14 @@ async def create_stage(
     """Create a new pipeline stage"""
     db_stage = create_pipeline_stage(db, stage, current_user.organization_id)
     
-    # Create activity log
-    create_activity(
-        db,
-        title="Pipeline Stage Created",
-        description=f"Created pipeline stage: {stage.name}",
-        type="pipeline",
-        organization_id=current_user.organization_id
-    )
+    # # Create activity log - disabled automatic tracking
+    # create_activity(
+    #     db,
+    #     title="Pipeline Stage Created",
+    #     description=f"Created pipeline stage: {stage.name}",
+    #     type="pipeline",
+    #     organization_id=current_user.organization_id
+    # )
     
     return db_stage
 
@@ -2800,14 +2809,14 @@ async def create_project_stage_endpoint(
     """Create a new project stage"""
     db_stage = create_project_stage(db, stage, current_user.organization_id)
     
-    # Create activity log
-    create_activity(
-        db,
-        title="Project Stage Created",
-        description=f"Created project stage: {stage.name}",
-        type="project",
-        organization_id=current_user.organization_id
-    )
+    # # Create activity log - disabled automatic tracking
+    # create_activity(
+    #     db,
+    #     title="Project Stage Created",
+    #     description=f"Created project stage: {stage.name}",
+    #     type="project",
+    #     organization_id=current_user.organization_id
+    # )
     
     return db_stage
 
@@ -4867,15 +4876,15 @@ async def google_auth_callback(
         
         db.commit()
         
-        # Create activity log
-        create_activity(
-            db,
-            title="Google Workspace Connected",
-            description=f"Connected Google account: {user_info.get('email', '')}",
-            activity_type="integration",
-            user_id=current_user.id,
-            organization_id=current_user.organization_id
-        )
+        # # Create activity log - disabled automatic tracking
+        # create_activity(
+        #     db,
+        #     title="Google Workspace Connected",
+        #     description=f"Connected Google account: {user_info.get('email', '')}",
+        #     activity_type="integration",
+        #     user_id=current_user.id,
+        #     organization_id=current_user.organization_id
+        # )
         
         return {
             "success": True,
