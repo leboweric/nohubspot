@@ -131,7 +131,12 @@ export default function ProjectTypesSettings() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this project type?')) return
+    const typeToDelete = projectTypes.find(t => t.id === id)
+    const confirmMessage = typeToDelete?.is_active === false 
+      ? 'This project type is already inactive. Do you want to permanently delete it?'
+      : 'Are you sure you want to delete this project type? If it\'s in use by any projects, it will be deactivated instead of deleted.'
+    
+    if (!confirm(confirmMessage)) return
     
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nohubspot-production.up.railway.app'
@@ -148,8 +153,15 @@ export default function ProjectTypesSettings() {
       }
       
       await loadProjectTypes()
-      setSuccess('Project type deleted successfully')
-      setTimeout(() => setSuccess(null), 3000)
+      
+      // Check if it was soft-deleted (deactivated) or hard-deleted
+      const updatedType = projectTypes.find(t => t.id === id)
+      if (updatedType && !updatedType.is_active) {
+        setSuccess('Project type deactivated (still in use by projects)')
+      } else {
+        setSuccess('Project type deleted successfully')
+      }
+      setTimeout(() => setSuccess(null), 5000)
     } catch (err: any) {
       console.error('Delete error:', err)
       setError(err.message || 'Failed to delete project type')
@@ -312,69 +324,126 @@ export default function ProjectTypesSettings() {
               <p className="text-sm mt-2">Click "Initialize Defaults" to add standard project types or "Add Project Type" to create custom ones.</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {projectTypes.map((type, index) => (
-                <div
-                  key={type.id}
-                  className={`flex items-center justify-between p-3 border rounded-lg ${
-                    type.is_active ? 'bg-white' : 'bg-gray-50'
-                  }`}
-                >
-                  <div className="flex-1">
-                    <div className="font-medium">
-                      {type.name}
-                      {!type.is_active && (
-                        <span className="ml-2 text-xs text-gray-500">(Inactive)</span>
-                      )}
+            <div className="space-y-4">
+              {/* Active Project Types */}
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Active Project Types</h3>
+                <div className="space-y-2">
+                  {projectTypes.filter(t => t.is_active).length === 0 ? (
+                    <div className="text-sm text-gray-500 italic p-3 border rounded-lg bg-gray-50">
+                      No active project types
                     </div>
-                    {type.description && (
-                      <div className="text-sm text-gray-600 mt-1">{type.description}</div>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleMoveUp(type, index)}
-                      disabled={index === 0}
-                    >
-                      <ChevronUp className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleMoveDown(type, index)}
-                      disabled={index === projectTypes.length - 1}
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setEditingType(type)
-                        setFormData({
-                          name: type.name,
-                          description: type.description || '',
-                          is_active: type.is_active
-                        })
-                        setShowEditDialog(true)
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleDelete(type.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  ) : (
+                    projectTypes.filter(t => t.is_active).map((type, index) => (
+                      <div
+                        key={type.id}
+                        className="flex items-center justify-between p-3 border rounded-lg bg-white"
+                      >
+                        <div className="flex-1">
+                          <div className="font-medium">{type.name}</div>
+                          {type.description && (
+                            <div className="text-sm text-gray-600 mt-1">{type.description}</div>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleMoveUp(type, projectTypes.indexOf(type))}
+                            disabled={projectTypes.indexOf(type) === 0}
+                          >
+                            <ChevronUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleMoveDown(type, projectTypes.indexOf(type))}
+                            disabled={projectTypes.indexOf(type) === projectTypes.length - 1}
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingType(type)
+                              setFormData({
+                                name: type.name,
+                                description: type.description || '',
+                                is_active: type.is_active
+                              })
+                              setShowEditDialog(true)
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDelete(type.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+              
+              {/* Inactive Project Types */}
+              {projectTypes.filter(t => !t.is_active).length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">Inactive Project Types</h3>
+                  <div className="space-y-2">
+                    {projectTypes.filter(t => !t.is_active).map((type, index) => (
+                      <div
+                        key={type.id}
+                        className="flex items-center justify-between p-3 border rounded-lg bg-gray-50 opacity-60"
+                      >
+                        <div className="flex-1">
+                          <div className="font-medium">
+                            {type.name}
+                            <span className="ml-2 text-xs text-gray-500">(Inactive - in use by projects)</span>
+                          </div>
+                          {type.description && (
+                            <div className="text-sm text-gray-600 mt-1">{type.description}</div>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingType(type)
+                              setFormData({
+                                name: type.name,
+                                description: type.description || '',
+                                is_active: type.is_active
+                              })
+                              setShowEditDialog(true)
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDelete(type.id)}
+                            className="text-red-600 hover:text-red-700"
+                            title="Permanently delete this inactive type"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           )}
         </CardContent>
