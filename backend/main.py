@@ -3437,27 +3437,43 @@ async def download_attachment(
 ):
     """Download an attachment file from PostgreSQL"""
     from fastapi.responses import Response
+    import logging
     
-    # Get attachment and verify user has access
-    attachment = db.query(Attachment).filter(
-        Attachment.id == attachment_id,
-        Attachment.organization_id == current_user.organization_id
-    ).first()
-    
-    if not attachment:
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    if not attachment.file_data:
-        raise HTTPException(status_code=404, detail="File content not found")
-    
-    # Return file data from database
-    return Response(
-        content=attachment.file_data,
-        media_type=attachment.file_type or 'application/octet-stream',
-        headers={
-            "Content-Disposition": f"attachment; filename=\"{attachment.name}\""
-        }
-    )
+    try:
+        # Get attachment and verify user has access
+        attachment = db.query(Attachment).filter(
+            Attachment.id == attachment_id,
+            Attachment.organization_id == current_user.organization_id
+        ).first()
+        
+        if not attachment:
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Check if file_data exists
+        if not attachment.file_data:
+            logging.error(f"File data missing for attachment {attachment_id}: {attachment.name}")
+            # If file_data is missing, check if there's a file_url (legacy attachments)
+            if attachment.file_url:
+                raise HTTPException(
+                    status_code=400, 
+                    detail="This file was uploaded using the old storage system. Please re-upload the file."
+                )
+            else:
+                raise HTTPException(status_code=404, detail="File content not found in database")
+        
+        # Return file data from database
+        return Response(
+            content=attachment.file_data,
+            media_type=attachment.file_type or 'application/octet-stream',
+            headers={
+                "Content-Disposition": f"attachment; filename=\"{attachment.name}\""
+            }
+        )
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions
+    except Exception as e:
+        logging.error(f"Error downloading attachment {attachment_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to download file: {str(e)}")
 
 @app.delete("/api/attachments/{attachment_id}")
 async def delete_attachment(
