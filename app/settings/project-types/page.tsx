@@ -28,6 +28,8 @@ export default function ProjectTypesSettings() {
   const { user, token } = getAuthState()
   const isUserAdmin = user?.role === 'owner' || user?.role === 'admin'
   
+  console.log('User role:', user?.role, 'Is admin:', isUserAdmin)
+  
   const [projectTypes, setProjectTypes] = useState<ProjectType[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -140,13 +142,18 @@ export default function ProjectTypesSettings() {
         }
       })
       
-      if (!response.ok) throw new Error('Failed to delete project type')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Failed to delete project type')
+      }
       
       await loadProjectTypes()
       setSuccess('Project type deleted successfully')
       setTimeout(() => setSuccess(null), 3000)
-    } catch (err) {
-      setError('Failed to delete project type')
+    } catch (err: any) {
+      console.error('Delete error:', err)
+      setError(err.message || 'Failed to delete project type')
+      setTimeout(() => setError(null), 5000)
     }
   }
 
