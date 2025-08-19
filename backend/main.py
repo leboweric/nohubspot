@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, status, Request
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, status, Request, Form
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
@@ -3518,7 +3518,9 @@ async def delete_attachment(
 async def upload_company_attachment(
     company_id: int,
     file: UploadFile = FastAPIFile(...),
-    folder_id: Optional[int] = None,
+    folder_id: Optional[int] = Form(None),
+    privacy_level: Optional[str] = Form("public"),
+    is_confidential: Optional[bool] = Form(False),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
@@ -3543,7 +3545,10 @@ async def upload_company_attachment(
         company_id=company_id,
         folder_id=folder_id,  # Can be None for root level
         organization_id=current_user.organization_id,
-        uploaded_by=f"{current_user.first_name} {current_user.last_name}"
+        uploaded_by=f"{current_user.first_name} {current_user.last_name}",
+        uploaded_by_id=current_user.id,
+        privacy_level=privacy_level,
+        is_confidential=is_confidential
     )
     
     db.add(db_attachment)

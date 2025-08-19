@@ -6,8 +6,9 @@ import {
   Search, Filter, Download, Trash2, Edit2, X, Check,
   FileText, FileSpreadsheet, DollarSign, MessageSquare, 
   Settings, Presentation, ChevronRight, ChevronDown,
-  Clock, Tag, AlertCircle, FolderPlus, Move
+  Clock, Tag, AlertCircle, FolderPlus, Move, Lock, Users, Globe
 } from 'lucide-react'
+import DocumentUploadModal from './DocumentUploadModal'
 import { getAuthState } from '@/lib/auth'
 import { 
   DndContext, 
@@ -53,6 +54,10 @@ interface Attachment {
   expiry_date?: string
   version?: number
   uploaded_by?: string
+  uploaded_by_id?: number
+  privacy_level?: 'private' | 'team' | 'public' | 'restricted'
+  is_confidential?: boolean
+  restricted_users?: number[]
   created_at: string
 }
 
@@ -267,7 +272,20 @@ function FileItem({
         <div className="flex items-start space-x-3">
           {getFileIcon(file.file_type)}
           <div className="flex-1">
-            <h4 className="font-medium text-sm text-gray-900 truncate">{file.name}</h4>
+            <div className="flex items-center gap-2">
+              <h4 className="font-medium text-sm text-gray-900 truncate">{file.name}</h4>
+              {file.privacy_level === 'private' && (
+                <Lock className="w-3 h-3 text-red-600" title="Private - Only you can view" />
+              )}
+              {file.privacy_level === 'team' && (
+                <Users className="w-3 h-3 text-blue-600" title="Team only" />
+              )}
+              {file.is_confidential && (
+                <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 text-xs rounded font-medium">
+                  NDA
+                </span>
+              )}
+            </div>
             {file.description && (
               <p className="text-xs text-gray-600 mt-1">{file.description}</p>
             )}
@@ -363,6 +381,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
   const [draggedFile, setDraggedFile] = useState<Attachment | null>(null)
   const [initialized, setInitialized] = useState(false)
   const [isDraggingOver, setIsDraggingOver] = useState(false)
+  const [showUploadModal, setShowUploadModal] = useState(false)
   
   const { token } = getAuthState()
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nohubspot-production.up.railway.app'
@@ -553,13 +572,19 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
     }
   }
 
-  const handleFileUploadDirect = async (file: File) => {
+  const handleFileUploadDirect = async (file: File, privacySettings?: { privacy_level: string, is_confidential: boolean }) => {
     setUploading(true)
     const formData = new FormData()
     formData.append('file', file)
     
     if (selectedFolder) {
       formData.append('folder_id', selectedFolder.id.toString())
+    }
+    
+    // Add privacy settings if provided
+    if (privacySettings) {
+      formData.append('privacy_level', privacySettings.privacy_level)
+      formData.append('is_confidential', privacySettings.is_confidential.toString())
     }
 
     try {
@@ -798,16 +823,14 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
                   />
                 </div>
                 
-                <label className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 cursor-pointer flex items-center">
+                <button
+                  onClick={() => setShowUploadModal(true)}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center"
+                  disabled={uploading}
+                >
                   <Upload className="w-4 h-4 mr-2" />
                   Upload
-                  <input
-                    type="file"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    disabled={uploading}
-                  />
-                </label>
+                </button>
               </div>
             </div>
           </div>
@@ -919,6 +942,18 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
           </div>
         ) : null}
       </DragOverlay>
+      
+      {/* Upload Modal */}
+      <DocumentUploadModal
+        isOpen={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        onUpload={async (file, privacySettings) => {
+          await handleFileUploadDirect(file, privacySettings)
+          setShowUploadModal(false)
+        }}
+        companyId={companyId}
+        folderId={selectedFolder?.id}
+      />
     </DndContext>
   )
 }

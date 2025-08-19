@@ -260,8 +260,14 @@ class Attachment(Base):
     deal_id = Column(Integer, ForeignKey("deals.id"), nullable=True)
     folder_id = Column(Integer, ForeignKey("document_folders.id", ondelete="SET NULL"), nullable=True)
     uploaded_by = Column(String(255))
+    uploaded_by_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Privacy controls
+    privacy_level = Column(String(20), default="public")  # private, team, public, restricted
+    is_confidential = Column(Boolean, default=False)
+    restricted_users = Column(JSON, nullable=True)  # List of user IDs who can access if privacy_level is "restricted"
     
     # Document metadata
     version = Column(Integer, default=1)
@@ -273,6 +279,7 @@ class Attachment(Base):
     project_rel = relationship("Project", back_populates="attachments")
     deal_rel = relationship("Deal", back_populates="attachments")
     folder = relationship("DocumentFolder", back_populates="attachments")
+    uploader = relationship("User", foreign_keys=[uploaded_by_id])
 
 class Activity(Base):
     __tablename__ = "activities"

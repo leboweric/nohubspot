@@ -194,7 +194,9 @@ class AttachmentBase(BaseModel):
     uploaded_by: Optional[str] = Field(None, max_length=255)
 
 class AttachmentCreate(AttachmentBase):
-    pass
+    privacy_level: Optional[str] = Field(default="public", regex="^(private|team|public|restricted)$")
+    is_confidential: Optional[bool] = False
+    restricted_users: Optional[List[int]] = None
 
 class AttachmentResponse(AttachmentBase):
     id: int
@@ -203,6 +205,10 @@ class AttachmentResponse(AttachmentBase):
     version: Optional[int] = 1
     tags: Optional[List[str]] = None
     expiry_date: Optional[datetime] = None
+    privacy_level: str = "public"
+    is_confidential: bool = False
+    restricted_users: Optional[List[int]] = None
+    uploaded_by_id: Optional[int] = None
     
     class Config:
         from_attributes = True
@@ -1101,6 +1107,9 @@ class AttachmentUpdate(BaseModel):
     folder_id: Optional[int] = None
     tags: Optional[List[str]] = None
     expiry_date: Optional[datetime] = None
+    privacy_level: Optional[str] = Field(None, regex="^(private|team|public|restricted)$")
+    is_confidential: Optional[bool] = None
+    restricted_users: Optional[List[int]] = None
 
 
 # Update forward references
