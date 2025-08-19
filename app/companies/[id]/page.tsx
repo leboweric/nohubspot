@@ -10,9 +10,10 @@ import ActivityModal from "@/components/ActivityModal"
 import { 
   Building2, Phone, Globe, DollarSign, User, MapPin, Calendar, 
   FileText, Users, FolderOpen, TrendingUp, MessageSquare, StickyNote,
-  Edit, Plus, Clock, Tag
+  Edit, Plus, Clock, Tag, Check, X
 } from "lucide-react"
-import { companyAPI, Company, handleAPIError, CalendarEventCreate, calendarAPI, contactAPI, Contact, dealAPI, Deal, dashboardAPI, Activity } from "@/lib/api"
+import { companyAPI, Company, handleAPIError, CalendarEventCreate, calendarAPI, contactAPI, Contact, dealAPI, Deal, dashboardAPI, Activity, usersAPI } from "@/lib/api"
+import MultiSelect from "@/components/ui/MultiSelect"
 
 // Tab component
 function TabButton({ active, onClick, children, icon: Icon }: { 
@@ -48,6 +49,10 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
   const [showScheduleEvent, setShowScheduleEvent] = useState(false)
   const [notes, setNotes] = useState("")
   const [editingNotes, setEditingNotes] = useState(false)
+  const [editingTeamMembers, setEditingTeamMembers] = useState(false)
+  const [selectedTeamMembers, setSelectedTeamMembers] = useState<number[]>([])
+  const [users, setUsers] = useState<any[]>([])
+  const [savingTeamMembers, setSavingTeamMembers] = useState(false)
   const [showActivityModal, setShowActivityModal] = useState(false)
 
   useEffect(() => {
@@ -59,6 +64,8 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
         setCompany(companyData)
         // Load notes from description for now
         setNotes(companyData.description || "")
+        // Initialize team members
+        setSelectedTeamMembers(companyData.account_team_members || [])
       } catch (err) {
         setError(handleAPIError(err))
         console.error('Failed to load company:', err)
@@ -102,6 +109,19 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
     loadDeals()
   }, [company, activeTab])
 
+  // Load users for team member selection
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const usersData = await usersAPI.getAll()
+        setUsers(usersData)
+      } catch (err) {
+        console.error('Failed to load users:', err)
+      }
+    }
+    loadUsers()
+  }, [])
+
   // Load activities when activity tab is active
   useEffect(() => {
     const loadActivities = async () => {
@@ -122,6 +142,26 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
 
     loadActivities()
   }, [company, activeTab])
+
+  const handleSaveTeamMembers = async () => {
+    if (!company) return
+    
+    setSavingTeamMembers(true)
+    try {
+      await companyAPI.update(company.id, {
+        account_team_members: selectedTeamMembers
+      })
+      // Reload company to get updated team member names
+      const updatedCompany = await companyAPI.getById(company.id)
+      setCompany(updatedCompany)
+      setEditingTeamMembers(false)
+    } catch (err) {
+      console.error('Failed to save team members:', err)
+      alert('Failed to save team members')
+    } finally {
+      setSavingTeamMembers(false)
+    }
+  }
 
   const handleScheduleMeeting = () => {
     setShowScheduleEvent(true)
@@ -344,11 +384,54 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-sm font-medium text-muted-foreground">Team Members</dt>
+                        <dt className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                          Team Members
+                          {!editingTeamMembers && (
+                            <button
+                              onClick={() => setEditingTeamMembers(true)}
+                              className="text-xs text-gray-500 hover:text-gray-700"
+                            >
+                              <Edit className="w-3 h-3" />
+                            </button>
+                          )}
+                        </dt>
                         <dd className="mt-1">
-                          {company.account_team_member_names && company.account_team_member_names.length > 0 
-                            ? company.account_team_member_names.join(', ')
-                            : "No team members assigned"}
+                          {editingTeamMembers ? (
+                            <div className="space-y-2">
+                              <MultiSelect
+                                value={selectedTeamMembers}
+                                onChange={setSelectedTeamMembers}
+                                options={users.map(user => ({
+                                  value: user.id,
+                                  label: `${user.first_name} ${user.last_name}`
+                                }))}
+                                placeholder="Select team members"
+                                className="w-full"
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={handleSaveTeamMembers}
+                                  disabled={savingTeamMembers}
+                                  className="px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50"
+                                >
+                                  {savingTeamMembers ? 'Saving...' : 'Save'}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingTeamMembers(false)
+                                    setSelectedTeamMembers(company.account_team_members || [])
+                                  }}
+                                  className="px-3 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            company.account_team_member_names && company.account_team_member_names.length > 0 
+                              ? company.account_team_member_names.join(', ')
+                              : "No team members assigned"
+                          )}
                         </dd>
                       </div>
                       <div className="md:col-span-2">
