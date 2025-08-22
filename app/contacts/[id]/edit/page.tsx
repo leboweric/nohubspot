@@ -6,14 +6,13 @@ import Link from "next/link"
 import { contactAPI, companyAPI, Contact, Company, handleAPIError, usersAPI, User } from "@/lib/api"
 import { normalizePhoneNumber } from "@/lib/phoneUtils"
 import ModernSelect from "@/components/ui/ModernSelect"
+import CompanySearch from "@/components/ui/CompanySearch"
 
 export default function EditContactPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const [contact, setContact] = useState<Contact | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [companies, setCompanies] = useState<Company[]>([])
-  const [loadingCompanies, setLoadingCompanies] = useState(true)
   const [users, setUsers] = useState<User[]>([])
   
   const [formData, setFormData] = useState({
@@ -22,27 +21,13 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
     email: "",
     phone: "",
     title: "",
-    company_id: "",
+    company_id: null as number | null,
     status: "Lead",
     primary_account_owner_id: ""
   })
 
-  // Load companies on component mount
+  // Load users on component mount
   useEffect(() => {
-    const loadCompanies = async () => {
-      try {
-        setLoadingCompanies(true)
-        const response = await companyAPI.getAll({ limit: 1000 })
-        setCompanies(response.items || [])
-      } catch (err) {
-        console.error('Failed to load companies:', err)
-        setError('Failed to load companies. Please refresh the page.')
-      } finally {
-        setLoadingCompanies(false)
-      }
-    }
-
-    loadCompanies()
     loadUsers()
   }, [])
 
@@ -69,7 +54,7 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
           email: contactData.email,
           phone: contactData.phone || "",
           title: contactData.title || "",
-          company_id: contactData.company_id ? contactData.company_id.toString() : "",
+          company_id: contactData.company_id || null,
           status: contactData.status,
           primary_account_owner_id: contactData.primary_account_owner_id ? contactData.primary_account_owner_id.toString() : ""
         })
@@ -117,7 +102,7 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
       const updateData = {
         ...formData,
         phone: normalizePhoneNumber(formData.phone),
-        company_id: formData.company_id ? parseInt(formData.company_id) : undefined,
+        company_id: formData.company_id || undefined,
         primary_account_owner_id: formData.primary_account_owner_id ? parseInt(formData.primary_account_owner_id) : undefined
       }
       
@@ -237,29 +222,14 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
           <label htmlFor="company_id" className="block text-sm font-medium mb-2">
             Company *
           </label>
-          {loadingCompanies ? (
-            <div className="w-full px-4 py-2 border rounded-md bg-gray-50 text-gray-500">
-              Loading companies...
-            </div>
-          ) : (
-            <ModernSelect
-              value={formData.company_id}
-              onChange={(value) => setFormData(prev => ({ ...prev, company_id: value as string }))}
-              options={[
-                { value: "", label: "Select a company" },
-                ...(Array.isArray(companies) ? companies : []).map(company => ({
-                  value: company.id.toString(),
-                  label: company.name
-                }))
-              ]}
-              placeholder="Select company"
-            />
-          )}
-          {companies.length === 0 && !loadingCompanies && (
-            <p className="text-sm text-gray-600 mt-1">
-              No companies found. <a href="/companies/new" className="text-blue-600 hover:underline">Create a company first</a>.
-            </p>
-          )}
+          <CompanySearch
+            value={formData.company_id}
+            onChange={(companyId, companyName) => {
+              setFormData(prev => ({ ...prev, company_id: companyId }))
+            }}
+            placeholder="Search for a company..."
+            required={true}
+          />
         </div>
 
         <div>

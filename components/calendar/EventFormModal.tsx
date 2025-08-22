@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { CalendarEvent, CalendarEventCreate, contactAPI, companyAPI, calendarAPI, Contact, Company, handleAPIError } from "@/lib/api"
 import { X, Calendar, Clock, MapPin, Users, Phone, CheckCircle, AlertTriangle, Mail, Trash2 } from "lucide-react"
+import CompanySearch from "@/components/ui/CompanySearch"
 
 interface EventFormModalProps {
   isOpen: boolean
@@ -32,7 +33,6 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
   })
 
   const [contacts, setContacts] = useState<Contact[]>([])
-  const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(false)
   const [companyContacts, setCompanyContacts] = useState<Contact[]>([])
   const [showAttendeeSelection, setShowAttendeeSelection] = useState(false)
@@ -42,13 +42,9 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [contactsData, companiesData] = await Promise.all([
-          contactAPI.getAll({ limit: 1000 }),
-          companyAPI.getAll({ limit: 1000 })
-        ])
+        const contactsData = await contactAPI.getAll({ limit: 1000 })
         
         console.log('EventFormModal - contactsData:', contactsData)
-        console.log('EventFormModal - companiesData:', companiesData)
         
         // Handle both array and paginated responses for contacts
         let contactsArray: Contact[] = []
@@ -59,19 +55,9 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
           contactsArray = contactsData.items || contactsData.contacts || []
         }
         
-        // Handle both array and paginated responses for companies  
-        let companiesArray: Company[] = []
-        if (Array.isArray(companiesData)) {
-          companiesArray = companiesData
-        } else if (companiesData && typeof companiesData === 'object' && 'items' in companiesData) {
-          companiesArray = companiesData.items || []
-        }
-        
         console.log('EventFormModal - processed contacts:', contactsArray)
-        console.log('EventFormModal - processed companies:', companiesArray)
         
         setContacts(contactsArray)
-        setCompanies(companiesArray)
       } catch (err) {
         console.error('Failed to load contacts/companies:', err)
       }
@@ -378,20 +364,20 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
             <label htmlFor="company_id" className="block text-sm font-medium mb-2">
               Related Company *
             </label>
-            <select
-              id="company_id"
-              name="company_id"
-              value={formData.company_id}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="">Select a company</option>
-              {(Array.isArray(companies) ? companies : []).map(company => (
-                <option key={company.id} value={company.id}>
-                  {company.name}
-                </option>
-              ))}
-            </select>
+            <CompanySearch
+              value={formData.company_id ? parseInt(formData.company_id) : null}
+              onChange={(companyId) => {
+                setFormData(prev => ({ 
+                  ...prev, 
+                  company_id: companyId ? companyId.toString() : '' 
+                }))
+                // Load contacts for selected company if needed
+                if (companyId && showAttendeeSelection) {
+                  loadCompanyContacts(companyId)
+                }
+              }}
+              placeholder="Search for a company..."
+            />
           </div>
 
           {/* Attendee Selection */}
