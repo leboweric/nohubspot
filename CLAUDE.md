@@ -2,6 +2,86 @@
 
 - 1 is perfectly fine. I can see a situation where the Org has Sales Reps or Consultants or some other role that is the primary owner of a customers so we should just be able to select any user of NotHubSpot and assign it to the Company/Customer
 
+## Recent Session Summary (August 22, 2025)
+
+### Major Accomplishments
+
+1. **Fixed Company Pre-selection in Add Contact Form**
+   - Issue: Quality Forklifts company wasn't being pre-selected when clicking "+ Add Contact" from company page
+   - Root cause: Company ID 201 wasn't in the first 1000 companies loaded from API
+   - Initially increased limit to 5000, but realized this wasn't scalable with 2200+ companies
+   - Final solution: Replaced dropdown with CompanySearch component for better scalability
+
+2. **Replaced All Company Dropdowns Platform-wide**
+   - Replaced company dropdowns with searchable CompanySearch component in:
+     - Add Contact page (`/app/contacts/new/page.tsx`)
+     - Edit Contact page (`/app/contacts/[id]/edit/page.tsx`)
+     - Calendar Event Modal (`/components/calendar/EventFormModal.tsx`)
+   - Benefits: Scales to any number of companies, better performance, consistent UX
+   - Removed need to load thousands of companies on page mount
+
+3. **Fixed Search Input Focus Loss Issue Platform-wide**
+   - Problem: Search inputs were losing focus when pausing during typing
+   - Root cause: `disabled={loading}` attribute was causing focus loss during API calls
+   - Fixed on: Companies, Contacts, Tasks, and Templates pages
+   - Solution:
+     - Added `isSearching` state to track active typing
+     - Only set loading state when NOT searching
+     - Removed disabled attribute from search inputs
+     - Search inputs now maintain focus while results update
+
+### Key Technical Learnings
+
+1. **Scalability Considerations**
+   - Loading 1000+ items in a dropdown is not scalable
+   - Search-based components (like CompanySearch) are better for large datasets
+   - API limits can cause subtle bugs (Quality Forklifts at ID 201 wasn't in first 1000)
+
+2. **UX Best Practices**
+   - Never disable form inputs during background operations if user is actively typing
+   - Maintain focus on inputs during async operations for smooth user experience
+   - Use debouncing for search inputs to reduce API calls
+
+3. **Debugging Approach**
+   - When pre-selection doesn't work, check if the data is actually loaded
+   - Console logging is essential for debugging data flow issues
+   - Focus loss issues are often caused by component re-renders or disabled states
+
+### Code Patterns Established
+
+1. **Search Input Pattern**
+   ```typescript
+   const searchInputRef = useRef<HTMLInputElement>(null)
+   const [isSearching, setIsSearching] = useState(false)
+   
+   // Only set loading if not searching
+   if (!isSearching) {
+     setLoading(true)
+   }
+   ```
+
+2. **CompanySearch Usage**
+   ```typescript
+   <CompanySearch
+     value={formData.company_id}
+     onChange={(companyId, companyName) => {
+       setFormData(prev => ({ ...prev, company_id: companyId }))
+     }}
+     placeholder="Search for a company..."
+     required={true}
+   />
+   ```
+
+### Files Modified
+- `/app/contacts/new/page.tsx` - Replaced dropdown with CompanySearch
+- `/app/contacts/[id]/edit/page.tsx` - Replaced dropdown with CompanySearch
+- `/components/calendar/EventFormModal.tsx` - Replaced dropdown with CompanySearch
+- `/app/companies/page.tsx` - Fixed search focus loss
+- `/app/contacts/page.tsx` - Fixed search focus loss
+- `/app/tasks/page.tsx` - Fixed search focus loss
+- `/app/templates/page.tsx` - Fixed search focus loss
+- `/components/ui/ModernSelect.tsx` - Fixed value comparison for mixed types
+
 ## Recent Session Summary (July 27, 2025)
 
 ### Major Accomplishments
