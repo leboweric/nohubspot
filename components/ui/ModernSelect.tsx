@@ -25,8 +25,17 @@ export default function ModernSelect({
   disabled = false,
   className = ""
 }: ModernSelectProps) {
+  // Debug logging
+  console.log('ModernSelect Debug:', {
+    value,
+    valueType: typeof value,
+    optionsCount: options.length,
+    firstFewOptions: options.slice(0, 3).map(o => ({ value: o.value, type: typeof o.value }))
+  })
+  
   // Convert both to strings for comparison to handle mixed types
   const selectedOption = options.find(opt => String(opt.value) === String(value))
+  console.log('Selected option found:', selectedOption)
 
   return (
     <Listbox value={value} onChange={onChange} disabled={disabled}>
