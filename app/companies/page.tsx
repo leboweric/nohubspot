@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import BulkUpload, { BulkUploadData, FieldMapping } from "@/components/upload/BulkUpload"
@@ -25,11 +25,16 @@ export default function CompaniesPage() {
   const [totalCompanies, setTotalCompanies] = useState(0)
   const [recordsPerPage, setRecordsPerPage] = useState(100)
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const [isSearching, setIsSearching] = useState(false)
 
   // Load companies from API
   const loadCompanies = useCallback(async () => {
     try {
-      setLoading(true)
+      // Only set loading if not searching (to avoid disabling input)
+      if (!isSearching) {
+        setLoading(true)
+      }
       setError(null)
       console.log('Loading companies with search term:', searchTerm)
       
@@ -61,8 +66,9 @@ export default function CompaniesPage() {
       }
     } finally {
       setLoading(false)
+      setIsSearching(false)
     }
-  }, [searchTerm, sortBy, sortOrder, currentPage, recordsPerPage])
+  }, [searchTerm, sortBy, sortOrder, currentPage, recordsPerPage, isSearching])
 
   // Load companies when component mounts or pagination/sorting changes
   useEffect(() => {
@@ -72,7 +78,7 @@ export default function CompaniesPage() {
     }, searchTerm ? 500 : 0)
     
     return () => clearTimeout(timeoutId)
-  }, [currentPage, recordsPerPage, sortBy, sortOrder, searchTerm])
+  }, [currentPage, recordsPerPage, sortBy, sortOrder, searchTerm, loadCompanies])
   
   // Load users on mount
   useEffect(() => {
@@ -478,17 +484,20 @@ export default function CompaniesPage() {
 
           <div className="mb-6 space-y-4">
             <input
+              ref={searchInputRef}
               type="text"
               placeholder="Search companies..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value)
+                setIsSearching(true)
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault()
                 }
               }}
-              disabled={loading}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
             />
             
             <div className="flex gap-4">
@@ -554,7 +563,7 @@ export default function CompaniesPage() {
             </div>
           )}
 
-          {loading ? (
+          {loading && !isSearching ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4" style={{ borderBottomColor: 'var(--color-primary)' }}></div>
