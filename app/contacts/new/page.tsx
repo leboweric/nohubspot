@@ -7,6 +7,7 @@ import MainLayout from "@/components/MainLayout"
 import { contactAPI, companyAPI, handleAPIError, Company, usersAPI, User } from "@/lib/api"
 import { normalizePhoneNumber } from "@/lib/phoneUtils"
 import ModernSelect from "@/components/ui/ModernSelect"
+import CompanySearch from "@/components/ui/CompanySearch"
 
 export default function NewContactPage() {
   const router = useRouter()
@@ -17,58 +18,28 @@ export default function NewContactPage() {
     email: "",
     phone: "",
     title: "",
-    company_id: "",
+    company_id: null as number | null,
     status: "Lead",
     primary_account_owner_id: ""
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [companies, setCompanies] = useState<Company[]>([])
-  const [loadingCompanies, setLoadingCompanies] = useState(true)
   const [users, setUsers] = useState<User[]>([])
 
-  // Load companies on component mount
+  // Set pre-selected company from URL params
   useEffect(() => {
-    const loadCompanies = async () => {
-      try {
-        setLoadingCompanies(true)
-        // Increase limit to get all companies including Quality Forklift
-        const response = await companyAPI.getAll({ limit: 5000 })
-        setCompanies(response.items || [])
-        
-        // Check for pre-selected company after companies are loaded
-        const companyIdParam = searchParams.get('companyId')
-        const companyNameParam = searchParams.get('company')
-        
-        if (companyIdParam) {
-          // Always prefer the company ID if provided
-          const companyIdStr = companyIdParam.trim()
-          setFormData(prev => ({
-            ...prev,
-            company_id: companyIdStr
-          }))
-        } else if (companyNameParam && response.items) {
-          // Fallback to name matching with better normalization
-          const normalizedSearchName = companyNameParam.trim().toLowerCase()
-          const company = response.items.find((c: Company) => 
-            c.name.trim().toLowerCase() === normalizedSearchName
-          )
-          if (company) {
-            setFormData(prev => ({
-              ...prev,
-              company_id: company.id.toString()
-            }))
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load companies:', err)
-        setError('Failed to load companies. Please refresh the page.')
-      } finally {
-        setLoadingCompanies(false)
+    const companyIdParam = searchParams.get('companyId')
+    
+    if (companyIdParam) {
+      const companyId = parseInt(companyIdParam)
+      if (!isNaN(companyId)) {
+        setFormData(prev => ({
+          ...prev,
+          company_id: companyId
+        }))
       }
     }
-
-    loadCompanies()
+    
     loadUsers()
   }, [searchParams])
 
@@ -90,15 +61,15 @@ export default function NewContactPage() {
     try {
       console.log("Submitting contact:", formData)
       
-      // Format phone number and company_id before submitting
+      // Format phone number and primary_account_owner_id before submitting
       const formattedData = {
         ...formData,
         phone: normalizePhoneNumber(formData.phone),
-        company_id: formData.company_id ? parseInt(formData.company_id) : undefined,
+        company_id: formData.company_id || undefined,
         primary_account_owner_id: formData.primary_account_owner_id ? parseInt(formData.primary_account_owner_id) : undefined
       }
       
-      // Remove company_id from formData if it's empty string
+      // Remove company_id from formData if it's null
       if (!formData.company_id) {
         delete formattedData.company_id
       }
@@ -230,29 +201,17 @@ export default function NewContactPage() {
           <label htmlFor="company_id" className="block text-sm font-medium mb-2">
             Company *
           </label>
-          {loadingCompanies ? (
-            <div className="w-full px-4 py-2 border rounded-md bg-gray-50 text-gray-500">
-              Loading companies...
-            </div>
-          ) : (
-            <ModernSelect
-              value={formData.company_id}
-              onChange={(value) => setFormData(prev => ({ ...prev, company_id: value as string }))}
-              options={[
-                { value: "", label: "Select a company" },
-                ...(Array.isArray(companies) ? companies : []).map(company => ({
-                  value: company.id.toString(),
-                  label: company.name
-                }))
-              ]}
-              placeholder="Select company"
-            />
-          )}
-          {companies.length === 0 && !loadingCompanies && (
-            <p className="text-sm text-gray-600 mt-1">
-              No companies found. <a href="/companies/new" className="text-blue-600 hover:underline">Create a company first</a>.
-            </p>
-          )}
+          <CompanySearch
+            value={formData.company_id}
+            onChange={(companyId, companyName) => {
+              setFormData(prev => ({ ...prev, company_id: companyId }))
+            }}
+            placeholder="Search for a company..."
+            required={true}
+          />
+          <p className="text-sm text-gray-600 mt-1">
+            Can't find the company? <a href="/companies/new" className="text-blue-600 hover:underline">Create a new one</a>.
+          </p>
         </div>
 
         <div>
