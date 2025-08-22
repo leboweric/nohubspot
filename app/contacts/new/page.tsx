@@ -39,16 +39,26 @@ export default function NewContactPage() {
         const companyIdParam = searchParams.get('companyId')
         const companyNameParam = searchParams.get('company')
         
+        console.log('URL Params:', { companyIdParam, companyNameParam })
+        console.log('Companies loaded:', response.items?.length)
+        
         if (companyIdParam) {
-          setFormData(prev => ({
-            ...prev,
-            company_id: companyIdParam
-          }))
+          console.log('Setting company_id from URL param:', companyIdParam)
+          setFormData(prev => {
+            console.log('Previous formData:', prev)
+            const newData = {
+              ...prev,
+              company_id: companyIdParam
+            }
+            console.log('New formData:', newData)
+            return newData
+          })
         } else if (companyNameParam && response.items) {
           const company = response.items.find((c: Company) => 
             c.name.toLowerCase() === companyNameParam.toLowerCase()
           )
           if (company) {
+            console.log('Found company by name:', company)
             setFormData(prev => ({
               ...prev,
               company_id: company.id.toString()
@@ -230,18 +240,21 @@ export default function NewContactPage() {
               Loading companies...
             </div>
           ) : (
-            <ModernSelect
-              value={formData.company_id}
-              onChange={(value) => setFormData(prev => ({ ...prev, company_id: value as string }))}
-              options={[
-                { value: "", label: "Select a company" },
-                ...(Array.isArray(companies) ? companies : []).map(company => ({
-                  value: company.id.toString(),
-                  label: company.name
-                }))
-              ]}
-              placeholder="Select company"
-            />
+            <>
+              {console.log('ModernSelect value:', formData.company_id, 'Type:', typeof formData.company_id)}
+              <ModernSelect
+                value={formData.company_id}
+                onChange={(value) => setFormData(prev => ({ ...prev, company_id: value as string }))}
+                options={[
+                  { value: "", label: "Select a company" },
+                  ...(Array.isArray(companies) ? companies : []).map(company => ({
+                    value: company.id.toString(),
+                    label: company.name
+                  }))
+                ]}
+                placeholder="Select company"
+              />
+            </>
           )}
           {companies.length === 0 && !loadingCompanies && (
             <p className="text-sm text-gray-600 mt-1">
