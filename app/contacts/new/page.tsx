@@ -32,40 +32,17 @@ export default function NewContactPage() {
     const loadCompanies = async () => {
       try {
         setLoadingCompanies(true)
-        const response = await companyAPI.getAll({ limit: 1000 })
+        // Increase limit to get all companies including Quality Forklift
+        const response = await companyAPI.getAll({ limit: 5000 })
         setCompanies(response.items || [])
         
         // Check for pre-selected company after companies are loaded
         const companyIdParam = searchParams.get('companyId')
         const companyNameParam = searchParams.get('company')
         
-        // Debug logging for Quality Forklifts issue
-        if (companyNameParam && companyNameParam.toLowerCase().includes('quality')) {
-          console.log('Quality company detected:', {
-            companyIdParam,
-            companyNameParam,
-            matchingCompanies: response.items?.filter((c: Company) => 
-              c.name.toLowerCase().includes('quality')
-            ).map((c: Company) => ({ id: c.id, name: c.name }))
-          })
-        }
-        
         if (companyIdParam) {
           // Always prefer the company ID if provided
           const companyIdStr = companyIdParam.trim()
-          console.log('Setting company by ID:', companyIdStr)
-          
-          // Verify the company exists in the list
-          const companyExists = response.items?.find((c: Company) => 
-            String(c.id) === companyIdStr
-          )
-          
-          if (companyExists) {
-            console.log('Company found in list:', companyExists.name)
-          } else {
-            console.log('Warning: Company ID not found in list:', companyIdStr)
-          }
-          
           setFormData(prev => ({
             ...prev,
             company_id: companyIdStr
@@ -77,13 +54,10 @@ export default function NewContactPage() {
             c.name.trim().toLowerCase() === normalizedSearchName
           )
           if (company) {
-            console.log('Found company by name:', company.name, 'ID:', company.id)
             setFormData(prev => ({
               ...prev,
               company_id: company.id.toString()
             }))
-          } else {
-            console.log('Could not find company by name:', companyNameParam)
           }
         }
       } catch (err) {
