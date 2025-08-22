@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import TaskList from "@/components/tasks/TaskList"
@@ -26,11 +26,16 @@ export default function TasksPage() {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list')
   const [showFilters, setShowFilters] = useState(false)
   const [selectedTasks, setSelectedTasks] = useState<number[]>([])
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const [isSearching, setIsSearching] = useState(false)
 
   // Load tasks from API
   const loadTasks = async () => {
     try {
-      setLoading(true)
+      // Only set loading if not searching (to avoid disabling input)
+      if (!isSearching) {
+        setLoading(true)
+      }
       setError(null)
       const params: any = { limit: 1000 }
       
@@ -56,6 +61,7 @@ export default function TasksPage() {
       console.error('Failed to load tasks:', err)
     } finally {
       setLoading(false)
+      setIsSearching(false)
     }
   }
 
@@ -354,12 +360,15 @@ export default function TasksPage() {
             
             <div className={`grid grid-cols-1 md:grid-cols-4 gap-4 ${showFilters ? '' : 'hidden'}`}>
               <input
+                ref={searchInputRef}
                 type="text"
                 placeholder="Search tasks..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                disabled={loading}
-                className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                onChange={(e) => {
+                  setSearchTerm(e.target.value)
+                  setIsSearching(true)
+                }}
+                className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
               />
               
               <ModernSelect

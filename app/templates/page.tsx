@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import EmailTemplateModal from "@/components/templates/EmailTemplateModal"
@@ -15,12 +15,17 @@ export default function TemplatesPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [showModal, setShowModal] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const [isSearching, setIsSearching] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
 
   // Load templates and categories
   const loadData = async () => {
     try {
-      setLoading(true)
+      // Only set loading if not searching (to avoid disabling input)
+      if (!isSearching) {
+        setLoading(true)
+      }
       setError(null)
       
       const [templatesData, categoriesData] = await Promise.all([
@@ -39,6 +44,7 @@ export default function TemplatesPage() {
       console.error('Failed to load templates:', err)
     } finally {
       setLoading(false)
+      setIsSearching(false)
     }
   }
 
@@ -132,12 +138,15 @@ export default function TemplatesPage() {
           <div className="mb-6 flex gap-4">
             <div className="flex-1">
               <input
+                ref={searchInputRef}
                 type="text"
                 placeholder="Search templates..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                disabled={loading}
-                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                onChange={(e) => {
+                  setSearchTerm(e.target.value)
+                  setIsSearching(true)
+                }}
+                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
             <select

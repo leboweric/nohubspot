@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
 import BulkUpload, { BulkUploadData, FieldMapping } from "@/components/upload/BulkUpload"
@@ -19,11 +19,16 @@ export default function ContactsPage() {
   const [companyFilter, setCompanyFilter] = useState<string>("all")
   const [companies, setCompanies] = useState<Company[]>([])
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const [isSearching, setIsSearching] = useState(false)
 
   // Load contacts from API
   const loadContacts = async () => {
     try {
-      setLoading(true)
+      // Only set loading if not searching (to avoid disabling input)
+      if (!isSearching) {
+        setLoading(true)
+      }
       setError(null)
       const data = await contactAPI.getAll({ 
         search: searchTerm || undefined,
@@ -35,6 +40,7 @@ export default function ContactsPage() {
       console.error('Failed to load contacts:', err)
     } finally {
       setLoading(false)
+      setIsSearching(false)
     }
   }
 
@@ -334,12 +340,15 @@ export default function ContactsPage() {
 
       <div className="mb-6 space-y-4">
         <input
+          ref={searchInputRef}
           type="text"
           placeholder="Search contacts..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          disabled={loading}
-          className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+          onChange={(e) => {
+            setSearchTerm(e.target.value)
+            setIsSearching(true)
+          }}
+          className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
         />
         
         <div className="flex gap-4">
