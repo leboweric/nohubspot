@@ -34,6 +34,27 @@ export default function NewContactPage() {
         setLoadingCompanies(true)
         const response = await companyAPI.getAll({ limit: 1000 })
         setCompanies(response.items || [])
+        
+        // Check for pre-selected company after companies are loaded
+        const companyIdParam = searchParams.get('companyId')
+        const companyNameParam = searchParams.get('company')
+        
+        if (companyIdParam) {
+          setFormData(prev => ({
+            ...prev,
+            company_id: companyIdParam
+          }))
+        } else if (companyNameParam && response.items) {
+          const company = response.items.find((c: Company) => 
+            c.name.toLowerCase() === companyNameParam.toLowerCase()
+          )
+          if (company) {
+            setFormData(prev => ({
+              ...prev,
+              company_id: company.id.toString()
+            }))
+          }
+        }
       } catch (err) {
         console.error('Failed to load companies:', err)
         setError('Failed to load companies. Please refresh the page.')
@@ -44,7 +65,7 @@ export default function NewContactPage() {
 
     loadCompanies()
     loadUsers()
-  }, [])
+  }, [searchParams])
 
   const loadUsers = async () => {
     try {
@@ -55,29 +76,6 @@ export default function NewContactPage() {
       setUsers([]) // Set to empty array on error
     }
   }
-
-  useEffect(() => {
-    const companyIdParam = searchParams.get('companyId')
-    const companyNameParam = searchParams.get('company')
-    
-    // First try to use companyId if provided
-    if (companyIdParam) {
-      setFormData(prev => ({
-        ...prev,
-        company_id: companyIdParam
-      }))
-    } 
-    // Fallback to company name search if only name is provided
-    else if (companyNameParam && companies.length > 0) {
-      const company = companies.find(c => c.name.toLowerCase() === companyNameParam.toLowerCase())
-      if (company) {
-        setFormData(prev => ({
-          ...prev,
-          company_id: company.id.toString()
-        }))
-      }
-    }
-  }, [searchParams, companies])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
