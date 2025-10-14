@@ -34,20 +34,18 @@ CREATE INDEX IF NOT EXISTS idx_project_updates_created_at ON project_updates(cre
 
 -- Add some sample milestones for existing projects (optional)
 -- This is commented out by default, uncomment if you want to add sample data
-/*
-INSERT INTO project_updates (project_id, organization_id, title, description, update_type, is_milestone, milestone_date, created_by, created_by_name)
-SELECT 
-    p.id,
-    p.organization_id,
-    'Project Kickoff',
-    'Initial project planning and setup completed',
-    'milestone',
-    true,
-    p.start_date,
-    p.created_by,
-    CONCAT(u.first_name, ' ', u.last_name)
-FROM projects p
-JOIN users u ON p.created_by = u.id
-WHERE p.is_active = true
-LIMIT 5;
-*/
+-- INSERT INTO project_updates (project_id, organization_id, title, description, update_type, is_milestone, milestone_date, created_by, created_by_name)
+-- SELECT 
+--     p.id,
+--     p.organization_id,
+--     'Project Kickoff',
+--     'Initial project planning and setup completed',
+--     'milestone',
+--     true,
+--     p.start_date,
+--     p.created_by,
+--     CONCAT(u.first_name, ' ', u.last_name)
+-- FROM projects p
+-- JOIN users u ON p.created_by = u.id
+-- WHERE p.is_active = true
+-- LIMIT 5;
