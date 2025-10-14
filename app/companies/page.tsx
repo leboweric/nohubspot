@@ -411,6 +411,90 @@ export default function CompaniesPage() {
     }
   }
 
+  const handleExportAllCompanies = async () => {
+    try {
+      setLoading(true)
+      
+      // Fetch ALL companies without pagination limit
+      const response = await companyAPI.getAll({ 
+        limit: 10000, // Set a very high limit to get all companies
+        sort_by: 'name',
+        sort_order: 'asc'
+      })
+      
+      const allCompanies = response.items || []
+      
+      // Create CSV headers
+      const headers = [
+        'Company Name',
+        'Account Owner',
+        'Phone Number',
+        'City',
+        'State/Region',
+        'Postal Code',
+        'Industry',
+        'Street Address',
+        'Annual Revenue',
+        'Website',
+        'Status',
+        'Contact Count',
+        'Description'
+      ]
+      
+      // Create CSV rows
+      const rows = allCompanies.map(company => [
+        company.name,
+        company.primary_account_owner_name || '',
+        company.phone || '',
+        company.city || '',
+        company.state || '',
+        company.postal_code || '',
+        company.industry || '',
+        company.street_address || '',
+        company.annual_revenue?.toString() || '',
+        company.website || '',
+        company.status,
+        company.contact_count.toString(),
+        company.description || ''
+      ])
+      
+      // Combine headers and rows
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => 
+          row.map(cell => {
+            // Escape quotes and wrap in quotes if contains comma, newline, or quotes
+            const escaped = cell.replace(/"/g, '""')
+            return /[,"\n]/.test(cell) ? `"${escaped}"` : escaped
+          }).join(',')
+        )
+      ].join('\n')
+      
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      
+      link.setAttribute('href', url)
+      link.setAttribute('download', `all_companies_export_${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = 'hidden'
+      
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      // Clean up
+      URL.revokeObjectURL(url)
+      
+      alert(`Successfully exported ALL ${allCompanies.length} companies to CSV!`)
+    } catch (error) {
+      console.error('Failed to export all companies:', error)
+      alert('Failed to export all companies. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <AuthGuard>
       <MainLayout>
@@ -467,9 +551,19 @@ export default function CompaniesPage() {
                 onClick={handleExportCompanies}
                 disabled={loading || filteredCompanies.length === 0}
                 className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Export currently filtered companies"
               >
                 <Download className="w-4 h-4" />
-                Export to CSV
+                Export Filtered
+              </button>
+              <button
+                onClick={handleExportAllCompanies}
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Export all companies (no filters)"
+              >
+                <Download className="w-4 h-4" />
+                Export All
               </button>
               <a 
                 href="/companies/new" 
@@ -717,6 +811,9 @@ export default function CompaniesPage() {
                     <option value={50}>50</option>
                     <option value={100}>100</option>
                     <option value={250}>250</option>
+                    <option value={500}>500</option>
+                    <option value={1000}>1000</option>
+                    <option value={10000}>All</option>
                   </select>
                 </div>
                 
