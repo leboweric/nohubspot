@@ -10,7 +10,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sqlalchemy.orm import Session
 from database import get_db
 from models import User, Organization
-from passlib.context import CryptContext
+# Removed direct passlib import - using centralized auth function
 import logging
 from datetime import datetime
 import re
@@ -22,8 +22,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Import the centralized password hashing function
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from auth import get_password_hash
 
 def sanitize_org_name(org_name: str) -> str:
     """Convert organization name to a safe email suffix."""
@@ -39,8 +40,8 @@ def create_org_specific_super_users(password: str = "SuperUser123!"):
     db = next(get_db())
     
     try:
-        # Hash the password
-        hashed_password = pwd_context.hash(password)
+        # Hash the password using centralized function
+        hashed_password = get_password_hash(password)
         
         # Get all organizations
         organizations = db.query(Organization).order_by(Organization.name).all()
