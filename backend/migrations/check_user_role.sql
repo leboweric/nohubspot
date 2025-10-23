@@ -1,6 +1,3 @@
--- Check user role for eric@profitbuildernetwork.com
--- First, let's see the user's current role and organization
-
 SELECT 
     u.id,
     u.email,
@@ -14,7 +11,6 @@ FROM users u
 JOIN organizations o ON u.organization_id = o.id
 WHERE u.email = 'eric@profitbuildernetwork.com';
 
--- Check all users in the Profitbuilder Network organization
 SELECT 
     u.id,
     u.email,
@@ -38,10 +34,3 @@ ORDER BY
         WHEN 'readonly' THEN 4
         ELSE 5
     END;
-
-/* 
-Administrative notes:
-- To update role to admin: UPDATE users SET role = 'admin' WHERE email = 'eric@profitbuildernetwork.com';
-- To update role to owner: UPDATE users SET role = 'owner' WHERE email = 'eric@profitbuildernetwork.com';
-- To verify changes: SELECT email, role FROM users WHERE email = 'eric@profitbuildernetwork.com';
-*/
