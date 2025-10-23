@@ -31,5 +31,3 @@ CREATE INDEX IF NOT EXISTS idx_project_updates_project_id ON project_updates(pro
 CREATE INDEX IF NOT EXISTS idx_project_updates_organization_id ON project_updates(organization_id);
 CREATE INDEX IF NOT EXISTS idx_project_updates_is_milestone ON project_updates(is_milestone);
 CREATE INDEX IF NOT EXISTS idx_project_updates_created_at ON project_updates(created_at DESC);
-
--- Migration completed successfully
