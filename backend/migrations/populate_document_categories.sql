@@ -1,7 +1,3 @@
--- Check and populate document categories for all organizations
--- This script ensures every organization has the default document categories
-
--- First, check if categories exist
 SELECT 
     o.id as org_id,
     o.name as org_name,
@@ -9,8 +5,6 @@ SELECT
 FROM organizations o
 LEFT JOIN document_categories dc ON dc.organization_id = o.id
 GROUP BY o.id, o.name;
-
--- Insert default document categories for organizations that don't have them
 INSERT INTO document_categories (organization_id, name, description, slug, color, icon, sort_order, keywords, file_extensions, is_system)
 SELECT 
     o.id,
@@ -43,8 +37,6 @@ WHERE NOT EXISTS (
     SELECT 1 FROM document_categories dc 
     WHERE dc.organization_id = o.id AND dc.slug = cat.slug
 );
-
--- Verify the results
 SELECT 
     o.id as org_id,
     o.name as org_name,

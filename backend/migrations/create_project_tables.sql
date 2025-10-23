@@ -1,7 +1,3 @@
--- Create Project Management tables
--- This migration adds project stages and projects tables for project management functionality
-
--- Create project_stages table
 CREATE TABLE IF NOT EXISTS project_stages (
     id SERIAL PRIMARY KEY,
     organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -14,8 +10,6 @@ CREATE TABLE IF NOT EXISTS project_stages (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
--- Create projects table
 CREATE TABLE IF NOT EXISTS projects (
     id SERIAL PRIMARY KEY,
     organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -39,11 +33,8 @@ CREATE TABLE IF NOT EXISTS projects (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
--- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_project_stages_organization_id ON project_stages(organization_id);
 CREATE INDEX IF NOT EXISTS idx_project_stages_position ON project_stages(organization_id, position);
-
 CREATE INDEX IF NOT EXISTS idx_projects_organization_id ON projects(organization_id);
 CREATE INDEX IF NOT EXISTS idx_projects_stage_id ON projects(stage_id);
 CREATE INDEX IF NOT EXISTS idx_projects_company_id ON projects(company_id);
@@ -51,8 +42,6 @@ CREATE INDEX IF NOT EXISTS idx_projects_contact_id ON projects(contact_id);
 CREATE INDEX IF NOT EXISTS idx_projects_created_by ON projects(created_by);
 CREATE INDEX IF NOT EXISTS idx_projects_start_date ON projects(start_date);
 CREATE INDEX IF NOT EXISTS idx_projects_projected_end_date ON projects(projected_end_date);
-
--- Insert default project stages for each organization
 INSERT INTO project_stages (organization_id, name, description, position, is_closed, color)
 SELECT 
     id as organization_id,
@@ -74,8 +63,6 @@ WHERE NOT EXISTS (
     WHERE ps.organization_id = o.id 
     AND ps.name = stages.stage_name
 );
-
--- Verify tables were created
 SELECT 
     table_name, 
     column_name, 

@@ -1,7 +1,3 @@
--- Fixed version of check_categories.sql
--- Compatible with migration systems that split on semicolons
--- This uses a single INSERT with a subquery instead of a DO block
-
 INSERT INTO document_categories (organization_id, name, description, slug, color, icon, sort_order, keywords, file_extensions, is_system, is_active)
 SELECT 
     org.id,
