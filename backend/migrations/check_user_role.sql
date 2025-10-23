@@ -39,15 +39,9 @@ ORDER BY
         ELSE 5
     END;
 
--- If you need to UPDATE eric@profitbuildernetwork.com to admin role, uncomment and run:
--- UPDATE users 
--- SET role = 'admin'
--- WHERE email = 'eric@profitbuildernetwork.com';
-
--- If you need to make them the OWNER (highest privileges), uncomment and run:
--- UPDATE users 
--- SET role = 'owner'
--- WHERE email = 'eric@profitbuildernetwork.com';
-
--- After any update, verify the change:
--- SELECT email, role FROM users WHERE email = 'eric@profitbuildernetwork.com';
+/* 
+Administrative notes:
+- To update role to admin: UPDATE users SET role = 'admin' WHERE email = 'eric@profitbuildernetwork.com';
+- To update role to owner: UPDATE users SET role = 'owner' WHERE email = 'eric@profitbuildernetwork.com';
+- To verify changes: SELECT email, role FROM users WHERE email = 'eric@profitbuildernetwork.com';
+*/
