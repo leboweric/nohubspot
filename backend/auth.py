@@ -10,6 +10,9 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 import secrets
 import string
+import logging
+
+logger = logging.getLogger(__name__)
 
 from database import get_db
 from models import User, Organization
@@ -27,54 +30,43 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash"""
-    import logging
-    
-    # Ensure we have strings
-    if not isinstance(plain_password, str):
-        plain_password = str(plain_password)
-    if not isinstance(hashed_password, str):
-        hashed_password = str(hashed_password)
-    
-    # Bcrypt has a 72-byte limit, ALWAYS truncate to be safe
-    password_bytes = plain_password.encode('utf-8')
-    if len(password_bytes) > 72:
-        logging.warning(f"Password too long for bcrypt: {len(password_bytes)} bytes, truncating to 72 bytes")
-        plain_password = password_bytes[:72].decode('utf-8', errors='ignore')
-    
+    """
+    Verify a plain password against a hashed password.
+    Handles bcrypt's 72-byte limit by truncating if necessary.
+    """
     try:
+        # Truncate password to 72 bytes if needed (bcrypt limit)
+        password_bytes = plain_password.encode('utf-8')
+        if len(password_bytes) > 72:
+            plain_password = password_bytes[:72].decode('utf-8', errors='ignore')
+        
         return pwd_context.verify(plain_password, hashed_password)
     except Exception as e:
-        logging.error(f"Password verification error: {e}")
-        # Try once more with aggressive truncation
+        logger.error(f"Password verification error: {e}")
+        # Try with truncated password as fallback
         try:
-            truncated = plain_password[:72] if len(plain_password) > 72 else plain_password
-            return pwd_context.verify(truncated, hashed_password)
+            password_bytes = plain_password.encode('utf-8')[:72]
+            truncated_password = password_bytes.decode('utf-8', errors='ignore')
+            return pwd_context.verify(truncated_password, hashed_password)
         except Exception as e2:
-            logging.error(f"Password verification failed even with truncation: {e2}")
+            logger.error(f"Password verification failed even with truncation: {e2}")
             return False
 
-def get_password_hash(password: str) -> str:
-    """Hash a password"""
-    import logging
-    
-    # Ensure we have a string
-    if not isinstance(password, str):
-        password = str(password)
-    
-    # Bcrypt has a 72-byte limit, ALWAYS truncate to be safe
+def hash_password(password: str) -> str:
+    """
+    Hash a password using bcrypt.
+    Truncates to 72 bytes if necessary (bcrypt limit).
+    """
+    # Truncate password to 72 bytes if needed (bcrypt limit)
     password_bytes = password.encode('utf-8')
     if len(password_bytes) > 72:
-        logging.warning(f"Password too long for hashing: {len(password_bytes)} bytes, truncating to 72 bytes")
         password = password_bytes[:72].decode('utf-8', errors='ignore')
     
-    try:
-        return pwd_context.hash(password)
-    except Exception as e:
-        logging.error(f"Password hashing error: {e}")
-        # Try with aggressive character truncation
-        truncated = password[:72] if len(password) > 72 else password
-        return pwd_context.hash(truncated)
+    return pwd_context.hash(password)
+
+def get_password_hash(password: str) -> str:
+    """Backward compatibility wrapper for hash_password"""
+    return hash_password(password)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     """Create a JWT access token"""
