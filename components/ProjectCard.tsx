@@ -40,6 +40,11 @@ export default function ProjectCard({ project, isDragging = false, onEdit }: Pro
   }
 
   const calculateProjectValue = () => {
+    // Use fixed_value if set (for retainer/fixed-fee projects)
+    if (project.fixed_value && project.fixed_value > 0) {
+      return project.fixed_value
+    }
+    // Otherwise calculate from hourly rate and projected hours
     if (project.hourly_rate && project.projected_hours) {
       return project.hourly_rate * project.projected_hours
     }
@@ -154,7 +159,12 @@ export default function ProjectCard({ project, isDragging = false, onEdit }: Pro
           </div>
         )}
         
-        {project.projected_end_date && (
+        {project.is_ongoing ? (
+          <div className="flex items-center">
+            <span className="w-1.5 h-1.5 bg-green-400 rounded-full mr-2"></span>
+            <span className="truncate text-green-600">Ongoing</span>
+          </div>
+        ) : project.projected_end_date && (
           <div className="flex items-center">
             <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2"></span>
             <span className="truncate">

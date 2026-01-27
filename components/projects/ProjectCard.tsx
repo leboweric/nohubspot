@@ -20,6 +20,11 @@ export default function ProjectCard({ project, onEdit, onDelete, isDragging }: P
   const [showMenu, setShowMenu] = useState(false)
   
   const calculateProjectValue = (project: Project) => {
+    // Use fixed_value if set (for retainer/fixed-fee projects)
+    if (project.fixed_value && project.fixed_value > 0) {
+      return project.fixed_value
+    }
+    // Otherwise calculate from hourly rate and projected hours
     if (!project.hourly_rate || !project.projected_hours) return 0
     return project.hourly_rate * project.projected_hours
   }

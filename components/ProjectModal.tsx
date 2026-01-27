@@ -37,6 +37,8 @@ export default function ProjectModal({
     contact_id: undefined,
     company_id: undefined,
     assigned_team_members: [],
+    is_ongoing: false,
+    fixed_value: undefined,
     notes: '',
     tags: []
   })
@@ -76,6 +78,8 @@ export default function ProjectModal({
         contact_id: project.contact_id,
         company_id: project.company_id,
         assigned_team_members: project.assigned_team_members || [],
+        is_ongoing: project.is_ongoing || false,
+        fixed_value: project.fixed_value,
         notes: project.notes || '',
         tags: project.tags || []
       })
@@ -192,15 +196,17 @@ export default function ProjectModal({
         start_date: formData.start_date 
           ? new Date(formData.start_date).toISOString()
           : undefined,
-        projected_end_date: formData.projected_end_date 
+        projected_end_date: formData.is_ongoing ? undefined : (formData.projected_end_date 
           ? new Date(formData.projected_end_date).toISOString()
-          : undefined,
+          : undefined),
         contact_id: formData.contact_id || undefined,
         company_id: formData.company_id || undefined,
         hourly_rate: formData.hourly_rate || undefined,
         projected_hours: formData.projected_hours || undefined,
         project_type: formData.project_type || undefined,
         assigned_team_members: formData.assigned_team_members?.length ? formData.assigned_team_members : undefined,
+        is_ongoing: formData.is_ongoing || undefined,
+        fixed_value: formData.fixed_value || undefined,
         tags: formData.tags?.length ? formData.tags : undefined
       }
       
@@ -238,6 +244,8 @@ export default function ProjectModal({
       contact_id: undefined,
       company_id: undefined,
       assigned_team_members: [],
+      is_ongoing: false,
+      fixed_value: undefined,
       notes: '',
       tags: []
     })
@@ -265,6 +273,11 @@ export default function ProjectModal({
   }
 
   const calculateProjectValue = () => {
+    // Use fixed_value if set (for retainer/fixed-fee projects)
+    if (formData.fixed_value && formData.fixed_value > 0) {
+      return formData.fixed_value
+    }
+    // Otherwise calculate from hourly rate and projected hours
     if (formData.hourly_rate && formData.projected_hours) {
       return formData.hourly_rate * formData.projected_hours
     }
@@ -396,9 +409,28 @@ export default function ProjectModal({
                 type="date"
                 value={formData.projected_end_date}
                 onChange={(e) => setFormData(prev => ({ ...prev, projected_end_date: e.target.value }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
+                disabled={formData.is_ongoing}
               />
             </div>
+          </div>
+
+          {/* Ongoing Project Checkbox */}
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="is_ongoing"
+              checked={formData.is_ongoing || false}
+              onChange={(e) => setFormData(prev => ({ 
+                ...prev, 
+                is_ongoing: e.target.checked,
+                projected_end_date: e.target.checked ? '' : prev.projected_end_date
+              }))}
+              className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary"
+            />
+            <label htmlFor="is_ongoing" className="ml-2 block text-sm text-gray-700">
+              Ongoing project (no end date)
+            </label>
           </div>
 
           {/* Hourly Rate and Projected Hours */}
@@ -439,12 +471,38 @@ export default function ProjectModal({
             </div>
           </div>
 
+          {/* Fixed Project Value - for retainer/fixed-fee projects */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Fixed Project Value ($)
+              <span className="font-normal text-gray-500 ml-1">(for retainer/fixed-fee projects)</span>
+            </label>
+            <input
+              type="number"
+              value={formData.fixed_value || ''}
+              onChange={(e) => setFormData(prev => ({ 
+                ...prev, 
+                fixed_value: e.target.value ? parseFloat(e.target.value) : undefined 
+              }))}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="0.00"
+              min="0"
+              step="0.01"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              If set, this value will be used instead of calculating from hourly rate × hours
+            </p>
+          </div>
+
           {/* Calculated Project Value */}
           {calculateProjectValue() > 0 && (
             <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
               <div className="text-sm text-gray-700">
                 <strong>Estimated Project Value: </strong>
                 ${calculateProjectValue().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {formData.fixed_value && formData.fixed_value > 0 && (
+                  <span className="ml-2 text-gray-500">(fixed value)</span>
+                )}
               </div>
             </div>
           )}

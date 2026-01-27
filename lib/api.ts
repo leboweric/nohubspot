@@ -1050,6 +1050,8 @@ export interface Project {
   company_id?: number
   assigned_team_members?: number[]
   is_active: boolean
+  is_ongoing?: boolean
+  fixed_value?: number
   notes?: string
   tags?: string[]
   created_at: string
@@ -1076,6 +1078,8 @@ export interface ProjectCreate {
   contact_id?: number
   company_id?: number
   assigned_team_members?: number[]
+  is_ongoing?: boolean
+  fixed_value?: number
   notes?: string
   tags?: string[]
 }
@@ -1094,6 +1098,8 @@ export interface ProjectUpdate {
   contact_id?: number
   company_id?: number
   assigned_team_members?: number[]
+  is_ongoing?: boolean
+  fixed_value?: number
   notes?: string
   tags?: string[]
   is_active?: boolean
