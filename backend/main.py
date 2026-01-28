@@ -3298,6 +3298,29 @@ async def update_project_endpoint(
     if not db_project:
         raise HTTPException(status_code=404, detail="Project not found")
     
+    # Populate additional fields (same as get_project_endpoint)
+    if db_project.stage:
+        db_project.stage_name = db_project.stage.name
+        db_project.stage_color = db_project.stage.color
+    
+    if db_project.company:
+        db_project.company_name = db_project.company.name
+    
+    if db_project.contact:
+        db_project.contact_name = f"{db_project.contact.first_name} {db_project.contact.last_name}"
+    
+    if db_project.creator:
+        db_project.creator_name = f"{db_project.creator.first_name} {db_project.creator.last_name}"
+    
+    if db_project.assigned_team_members:
+        team_members = db.query(User).filter(
+            User.id.in_(db_project.assigned_team_members),
+            User.organization_id == current_user.organization_id
+        ).all()
+        db_project.assigned_team_member_names = [
+            f"{member.first_name} {member.last_name}" for member in team_members
+        ]
+    
     return db_project
 
 @app.delete("/api/projects/{project_id}")

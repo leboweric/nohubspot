@@ -820,6 +820,8 @@ class ProjectBase(BaseModel):
     contact_id: Optional[int] = None
     company_id: Optional[int] = None
     assigned_team_members: Optional[List[int]] = Field(default_factory=list)  # User IDs
+    is_ongoing: Optional[bool] = Field(default=False)  # For projects with no end date
+    fixed_value: Optional[float] = Field(None, ge=0)  # Fixed project value for retainer/fixed-fee projects
     notes: Optional[str] = None
     tags: Optional[List[str]] = Field(default_factory=list)
 
@@ -840,6 +842,8 @@ class ProjectUpdate(BaseModel):
     contact_id: Optional[int] = None
     company_id: Optional[int] = None
     assigned_team_members: Optional[List[int]] = None
+    is_ongoing: Optional[bool] = None  # For projects with no end date
+    fixed_value: Optional[float] = Field(None, ge=0)  # Fixed project value for retainer/fixed-fee projects
     notes: Optional[str] = None
     tags: Optional[List[str]] = None
     is_active: Optional[bool] = None

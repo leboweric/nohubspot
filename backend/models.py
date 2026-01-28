@@ -679,6 +679,8 @@ class Project(Base):
     
     # Status and tracking
     is_active = Column(Boolean, default=True)
+    is_ongoing = Column(Boolean, default=False)  # For projects with no end date
+    fixed_value = Column(Float, nullable=True)  # Fixed project value for retainer/fixed-fee projects
     notes = Column(Text)
     tags = Column(JSON)  # Store as JSON array
     
