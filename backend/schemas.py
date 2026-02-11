@@ -719,6 +719,7 @@ class DealBase(BaseModel):
     currency: str = Field(default="USD", max_length=3)
     probability: int = Field(default=50, ge=0, le=100)
     expected_close_date: Optional[datetime] = None
+    proposal_submitted_date: Optional[datetime] = None  # Date proposal was submitted to client
     contact_id: Optional[int] = None
     company_id: Optional[int] = None
     assigned_to: Optional[int] = None
@@ -736,6 +737,7 @@ class DealUpdate(BaseModel):
     probability: Optional[int] = Field(None, ge=0, le=100)
     expected_close_date: Optional[datetime] = None
     actual_close_date: Optional[datetime] = None
+    proposal_submitted_date: Optional[datetime] = None  # Date proposal was submitted to client
     stage_id: Optional[int] = None
     contact_id: Optional[int] = None
     company_id: Optional[int] = None

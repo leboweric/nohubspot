@@ -35,6 +35,7 @@ export default function DealModal({
     currency: 'USD',
     probability: 50,
     expected_close_date: '',
+    proposal_submitted_date: '',
     stage_id: defaultStageId || stages[0]?.id || 1,
     contact_id: undefined,
     company_id: undefined,
@@ -66,6 +67,9 @@ export default function DealModal({
         probability: deal.probability,
         expected_close_date: deal.expected_close_date 
           ? new Date(deal.expected_close_date).toISOString().split('T')[0] 
+          : '',
+        proposal_submitted_date: deal.proposal_submitted_date 
+          ? new Date(deal.proposal_submitted_date).toISOString().split('T')[0] 
           : '',
         stage_id: deal.stage_id,
         contact_id: deal.contact_id,
@@ -142,6 +146,9 @@ export default function DealModal({
         expected_close_date: formData.expected_close_date 
           ? new Date(formData.expected_close_date).toISOString()
           : undefined,
+        proposal_submitted_date: formData.proposal_submitted_date 
+          ? new Date(formData.proposal_submitted_date).toISOString()
+          : undefined,
         contact_id: formData.contact_id || undefined,
         company_id: formData.company_id || undefined,
         assigned_to: formData.assigned_to || undefined,
@@ -177,6 +184,7 @@ export default function DealModal({
       currency: 'USD',
       probability: 50,
       expected_close_date: '',
+      proposal_submitted_date: '',
       stage_id: defaultStageId || stages[0]?.id || 1,
       contact_id: undefined,
       company_id: undefined,
@@ -368,17 +376,30 @@ export default function DealModal({
             </div>
           </div>
 
-          {/* Expected Close Date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Expected Close Date
-            </label>
-            <input
-              type="date"
-              value={formData.expected_close_date}
-              onChange={(e) => setFormData(prev => ({ ...prev, expected_close_date: e.target.value }))}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+          {/* Expected Close Date and Proposal Submitted Date */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Expected Close Date
+              </label>
+              <input
+                type="date"
+                value={formData.expected_close_date}
+                onChange={(e) => setFormData(prev => ({ ...prev, expected_close_date: e.target.value }))}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Proposal Submitted Date
+              </label>
+              <input
+                type="date"
+                value={formData.proposal_submitted_date}
+                onChange={(e) => setFormData(prev => ({ ...prev, proposal_submitted_date: e.target.value }))}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
           </div>
 
           {/* Description */}

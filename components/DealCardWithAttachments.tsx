@@ -336,6 +336,15 @@ export default function DealCardWithAttachments({ deal, isDragging = false, onEd
             </div>
           )}
           
+          {deal.proposal_submitted_date && (
+            <div className="flex items-center">
+              <span className="w-1.5 h-1.5 bg-blue-400 rounded-full mr-2"></span>
+              <span className="truncate">
+                Proposal Submitted: {formatDate(deal.proposal_submitted_date)}
+              </span>
+            </div>
+          )}
+          
           {deal.assignee_name && (
             <div className="flex items-center">
               <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2"></span>

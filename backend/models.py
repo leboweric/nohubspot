@@ -595,6 +595,7 @@ class Deal(Base):
     # Dates
     expected_close_date = Column(DateTime(timezone=True))
     actual_close_date = Column(DateTime(timezone=True))
+    proposal_submitted_date = Column(DateTime(timezone=True), nullable=True)  # Date proposal was submitted to client
     
     # Relationships
     stage_id = Column(Integer, ForeignKey("pipeline_stages.id"), nullable=False)

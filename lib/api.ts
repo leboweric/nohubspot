@@ -949,6 +949,7 @@ export interface Deal {
   probability: number
   expected_close_date?: string
   actual_close_date?: string
+  proposal_submitted_date?: string
   stage_id: number
   contact_id?: number
   company_id?: number
@@ -974,6 +975,7 @@ export interface DealCreate {
   currency?: string
   probability?: number
   expected_close_date?: string
+  proposal_submitted_date?: string
   stage_id: number
   contact_id?: number
   company_id?: number
@@ -990,6 +992,7 @@ export interface DealUpdate {
   probability?: number
   expected_close_date?: string
   actual_close_date?: string
+  proposal_submitted_date?: string
   stage_id?: number
   contact_id?: number
   company_id?: number

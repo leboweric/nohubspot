@@ -123,6 +123,15 @@ export default function DealCard({ deal, isDragging = false, onEdit }: DealCardP
             </span>
           </div>
         )}
+        
+        {deal.proposal_submitted_date && (
+          <div className="flex items-center">
+            <span className="w-1.5 h-1.5 bg-blue-400 rounded-full mr-2"></span>
+            <span className="truncate">
+              Proposal Submitted: {new Date(deal.proposal_submitted_date).toLocaleDateString()}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Deal Description */}

@@ -254,6 +254,13 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
             <span className="truncate">{deal.assignee_name}</span>
           </div>
         )}
+        
+        {deal.proposal_submitted_date && (
+          <div className="flex items-center gap-2">
+            <Calendar className="w-3 h-3" />
+            <span className="truncate">Proposal: {new Date(deal.proposal_submitted_date).toLocaleDateString()}</span>
+          </div>
+        )}
       </div>
       
       {/* Footer */}
