@@ -18,7 +18,13 @@ export default function ContactsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [companyFilter, setCompanyFilter] = useState<string>("all")
   const [companies, setCompanies] = useState<Company[]>([])
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('contacts_view_mode')
+      if (saved === 'list' || saved === 'grid') return saved
+    }
+    return 'grid'
+  })
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [isSearching, setIsSearching] = useState(false)
   const [sortColumn, setSortColumn] = useState<'name' | 'company' | null>(null)
@@ -320,7 +326,7 @@ export default function ContactsPage() {
           {/* View Toggle */}
           <div className="flex items-center bg-gray-100 rounded-lg p-1">
             <button
-              onClick={() => setViewMode('grid')}
+              onClick={() => { setViewMode('grid'); localStorage.setItem('contacts_view_mode', 'grid') }}
               className={`p-2 rounded transition-colors ${
                 viewMode === 'grid' 
                   ? 'bg-white shadow-sm text-primary' 
@@ -331,7 +337,7 @@ export default function ContactsPage() {
               <LayoutGrid className="w-4 h-4" />
             </button>
             <button
-              onClick={() => setViewMode('list')}
+              onClick={() => { setViewMode('list'); localStorage.setItem('contacts_view_mode', 'list') }}
               className={`p-2 rounded transition-colors ${
                 viewMode === 'list' 
                   ? 'bg-white shadow-sm text-primary' 
