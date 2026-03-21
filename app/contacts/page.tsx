@@ -7,7 +7,7 @@ import BulkUpload, { BulkUploadData, FieldMapping } from "@/components/upload/Bu
 import ContactCard from "@/components/ContactCard"
 import { contactAPI, Contact, ContactCreate, handleAPIError, companyAPI, Company } from "@/lib/api"
 import ModernSelect from "@/components/ui/ModernSelect"
-import { LayoutGrid, List, Plus, Upload, Download, Users } from "lucide-react"
+import { LayoutGrid, List, Plus, Upload, Download, Users, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -21,6 +21,8 @@ export default function ContactsPage() {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [isSearching, setIsSearching] = useState(false)
+  const [sortColumn, setSortColumn] = useState<'name' | 'company' | null>(null)
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
   // Load contacts from API
   const loadContacts = async () => {
@@ -112,7 +114,45 @@ export default function ContactsPage() {
     }
     
     return true
+  }).sort((a, b) => {
+    if (!sortColumn) return 0
+    
+    let valA = ''
+    let valB = ''
+    
+    if (sortColumn === 'company') {
+      valA = (a.company_name || '').toLowerCase()
+      valB = (b.company_name || '').toLowerCase()
+    } else if (sortColumn === 'name') {
+      valA = `${a.first_name} ${a.last_name}`.toLowerCase()
+      valB = `${b.first_name} ${b.last_name}`.toLowerCase()
+    }
+    
+    if (valA < valB) return sortDirection === 'asc' ? -1 : 1
+    if (valA > valB) return sortDirection === 'asc' ? 1 : -1
+    return 0
   })
+
+  const handleSort = (column: 'name' | 'company') => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc')
+      } else {
+        // Third click clears the sort
+        setSortColumn(null)
+        setSortDirection('asc')
+      }
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
+
+  const SortIcon = ({ column }: { column: 'name' | 'company' }) => {
+    if (sortColumn !== column) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-40" />
+    if (sortDirection === 'asc') return <ArrowUp className="w-3 h-3 ml-1" />
+    return <ArrowDown className="w-3 h-3 ml-1" />
+  }
 
   const handleDelete = async (contactId: number, contactName: string) => {
     const confirmed = confirm(`Are you sure you want to delete ${contactName}? This action cannot be undone.`)
@@ -436,10 +476,14 @@ export default function ContactsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Name</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('name')}>
+                    <span className="flex items-center">Name<SortIcon column="name" /></span>
+                  </th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Email</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Phone</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Company</th>
+                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('company')}>
+                    <span className="flex items-center">Company<SortIcon column="company" /></span>
+                  </th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Status</th>
                   <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Actions</th>
                 </tr>
