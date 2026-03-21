@@ -55,6 +55,7 @@ export default function BulkEmailPage() {
   // Form state
   const [fromName, setFromName] = useState("")
   const [fromEmail, setFromEmail] = useState("")
+  const [bccEmail, setBccEmail] = useState("")
   const [subject, setSubject] = useState("")
   const [htmlContent, setHtmlContent] = useState("")
   
@@ -291,6 +292,7 @@ export default function BulkEmailPage() {
         html_content: htmlContent,
         from_email: fromEmail.trim() || undefined,
         from_name: fromName.trim() || undefined,
+        bcc_email: bccEmail.trim() || undefined,
       }
 
       if (sendMode === "schedule") {
@@ -646,6 +648,23 @@ export default function BulkEmailPage() {
                       </div>
                     </div>
 
+                    {/* BCC */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        BCC <span className="text-gray-400 font-normal">(optional)</span>
+                      </label>
+                      <input
+                        type="email"
+                        value={bccEmail}
+                        onChange={(e) => setBccEmail(e.target.value)}
+                        placeholder="e.g. tracking@aiop.one — receives a copy of every sent email"
+                        className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-xs text-gray-400 mt-1">
+                        This address will be BCC'd on every email sent to each recipient
+                      </p>
+                    </div>
+
                     {/* Subject */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -759,6 +778,7 @@ export default function BulkEmailPage() {
                       <div className="grid grid-cols-2 gap-2">
                         <div><span className="text-gray-500">From:</span> {fromName || "(default)"} &lt;{fromEmail || "(default)"}&gt;</div>
                         <div><span className="text-gray-500">To:</span> {selectedIds.size} recipient{selectedIds.size !== 1 ? 's' : ''}</div>
+                        {bccEmail && <div><span className="text-gray-500">BCC:</span> {bccEmail}</div>}
                         <div className="col-span-2"><span className="text-gray-500">Subject:</span> {subject || "(no subject)"}</div>
                         {sendMode === "schedule" && scheduleDate && (
                           <div className="col-span-2">

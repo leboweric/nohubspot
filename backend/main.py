@@ -5341,6 +5341,7 @@ class BulkEmailRequest(BaseModel):
     from_email: Optional[str] = None
     from_name: Optional[str] = None
     text_content: Optional[str] = None
+    bcc_email: Optional[str] = None  # BCC email to receive copies of sent emails
     scheduled_at: Optional[str] = None  # ISO datetime string for scheduling
 
 @app.post("/api/bulk-email/send")
@@ -5376,6 +5377,7 @@ async def bulk_email_send(
             from_email=request.from_email,
             from_name=request.from_name,
             contact_ids=request.contact_ids,
+            bcc_email=request.bcc_email,
             scheduled_at=scheduled_dt,
             status="pending"
         )
@@ -5402,6 +5404,7 @@ async def bulk_email_send(
         from_email=request.from_email,
         from_name=request.from_name,
         text_content=request.text_content,
+        bcc_email=request.bcc_email,
     )
     
     return result
@@ -5483,6 +5486,7 @@ async def bulk_email_process_scheduled(
                 from_email=scheduled.from_email,
                 from_name=scheduled.from_name,
                 text_content=scheduled.text_content,
+                bcc_email=scheduled.bcc_email,
             )
             
             scheduled.status = "sent"

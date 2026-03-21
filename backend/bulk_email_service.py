@@ -36,6 +36,7 @@ async def send_bulk_email(
     from_email: Optional[str] = None,
     from_name: Optional[str] = None,
     text_content: Optional[str] = None,
+    bcc_email: Optional[str] = None,
 ) -> dict:
     """
     Send an email to multiple contacts with throttling.
@@ -95,6 +96,7 @@ async def send_bulk_email(
                 text_content=personalized_text,
                 from_email=actual_from_email,
                 from_name=actual_from_name,
+                bcc_emails=[bcc_email] if bcc_email else None,
             )
             
             if success:

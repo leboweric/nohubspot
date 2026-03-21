@@ -86,6 +86,7 @@ async def send_email(
     from_name: Optional[str] = None,
     attachments: Optional[List[dict]] = None,
     cc_emails: Optional[List[str]] = None,
+    bcc_emails: Optional[List[str]] = None,
     disable_tracking: bool = False
 ) -> bool:
     """Send email via SendGrid"""
@@ -115,6 +116,8 @@ async def send_email(
     personalization = {"to": [{"email": to_email}]}
     if cc_emails:
         personalization["cc"] = [{"email": email} for email in cc_emails]
+    if bcc_emails:
+        personalization["bcc"] = [{"email": email} for email in bcc_emails]
     
     data = {
         "personalizations": [personalization],
@@ -152,7 +155,8 @@ async def send_email(
             
             if response.status_code in [200, 201, 202]:
                 cc_msg = f" (CC: {', '.join(cc_emails)})" if cc_emails else ""
-                print(f"Email sent successfully to {to_email}{cc_msg}")
+                bcc_msg = f" (BCC: {', '.join(bcc_emails)})" if bcc_emails else ""
+                print(f"Email sent successfully to {to_email}{cc_msg}{bcc_msg}")
                 return True
             else:
                 print(f"ERROR: Failed to send email to {to_email}")
