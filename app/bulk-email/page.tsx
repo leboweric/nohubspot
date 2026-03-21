@@ -318,8 +318,22 @@ export default function BulkEmailPage() {
       if (result.scheduled) {
         setScheduleResult(result as ScheduleResult)
         fetchScheduledEmails()
+        // Reset form after successful schedule
+        setSelectedIds(new Set())
+        setSubject("")
+        setHtmlContent("")
+        setBccEmail("")
+        setSendMode("now")
+        setScheduleDate("")
+        setScheduleTime("08:00")
+        setActiveTab("scheduled")
       } else {
         setSendResult(result as SendResult)
+        // Reset form after successful send
+        setSelectedIds(new Set())
+        setSubject("")
+        setHtmlContent("")
+        setBccEmail("")
       }
     } catch (err: any) {
       setError(err.message || 'Failed to send emails')
