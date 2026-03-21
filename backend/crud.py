@@ -11,7 +11,8 @@ from models import (
     GoogleOrganizationConfig, GoogleUserConnection,
     User, PipelineStage, Deal,
     ProjectStage, Project, ProjectType,
-    DocumentFolder, DocumentCategory
+    DocumentFolder, DocumentCategory,
+    EmailTracking, EmailTrackingEvent
 )
 from schemas import (
     CompanyCreate, CompanyUpdate, ContactCreate, ContactUpdate,
@@ -310,6 +311,23 @@ def delete_contact(db: Session, contact_id: int, organization_id: int) -> bool:
         company = get_company(db, db_contact.company_id, organization_id)
         if company and company.contact_count > 0:
             company.contact_count -= 1
+    
+    # Delete related records that have foreign keys to this contact
+    # 1. Email tracking events (child of email_tracking)
+    tracking_ids = [t.id for t in db.query(EmailTracking.id).filter(EmailTracking.contact_id == contact_id).all()]
+    if tracking_ids:
+        db.query(EmailTrackingEvent).filter(EmailTrackingEvent.tracking_id.in_(tracking_ids)).delete(synchronize_session=False)
+    # 2. Email tracking records
+    db.query(EmailTracking).filter(EmailTracking.contact_id == contact_id).delete(synchronize_session=False)
+    # 3. Event attendees
+    db.query(EventAttendee).filter(EventAttendee.contact_id == contact_id).delete(synchronize_session=False)
+    # 4. Nullify contact_id on related records (keep the records but remove the link)
+    db.query(Deal).filter(Deal.contact_id == contact_id).update({Deal.contact_id: None}, synchronize_session=False)
+    db.query(Project).filter(Project.contact_id == contact_id).update({Project.contact_id: None}, synchronize_session=False)
+    db.query(Task).filter(Task.contact_id == contact_id).update({Task.contact_id: None}, synchronize_session=False)
+    db.query(CalendarEvent).filter(CalendarEvent.contact_id == contact_id).update({CalendarEvent.contact_id: None}, synchronize_session=False)
+    # 5. Delete email threads (they are specific to a contact)
+    db.query(EmailThread).filter(EmailThread.contact_id == contact_id).delete(synchronize_session=False)
     
     db.delete(db_contact)
     db.commit()
