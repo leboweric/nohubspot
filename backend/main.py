@@ -48,7 +48,7 @@ def rate_limit_check(client_ip: str, endpoint: str, max_requests: int = 30, wind
 
 from database import get_db, SessionLocal, engine
 import models
-from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, GoogleOrganizationConfig, GoogleUserConnection, PipelineStage, Deal, EmailTracking, EmailEvent, EmailSharingPermission, ProjectStage, Project, ProjectType, ProjectUpdate, DealUpdate
+from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, GoogleOrganizationConfig, GoogleUserConnection, PipelineStage, Deal, EmailTracking, EmailEvent, EmailSharingPermission, ProjectStage, Project, ProjectType, ProjectUpdate, DealUpdate, ScheduledEmail
 from schemas import (
     CompanyCreate, CompanyResponse, CompanyUpdate, CompanyPaginatedResponse,
     ContactCreate, ContactResponse, ContactUpdate,
@@ -5341,6 +5341,7 @@ class BulkEmailRequest(BaseModel):
     from_email: Optional[str] = None
     from_name: Optional[str] = None
     text_content: Optional[str] = None
+    scheduled_at: Optional[str] = None  # ISO datetime string for scheduling
 
 @app.post("/api/bulk-email/send")
 async def bulk_email_send(
@@ -5348,7 +5349,7 @@ async def bulk_email_send(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """Send bulk email to selected contacts"""
+    """Send bulk email to selected contacts, or schedule for later"""
     if not request.contact_ids:
         raise HTTPException(status_code=400, detail="No contacts selected")
     
@@ -5358,6 +5359,39 @@ async def bulk_email_send(
     if not request.html_content:
         raise HTTPException(status_code=400, detail="HTML content is required")
     
+    # If scheduled_at is provided, save for later instead of sending now
+    if request.scheduled_at:
+        try:
+            scheduled_dt = datetime.fromisoformat(request.scheduled_at.replace('Z', '+00:00'))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid scheduled_at datetime format. Use ISO format.")
+        
+        import json
+        scheduled_email = ScheduledEmail(
+            organization_id=current_user.organization_id,
+            created_by=current_user.id,
+            subject=request.subject,
+            html_content=request.html_content,
+            text_content=request.text_content,
+            from_email=request.from_email,
+            from_name=request.from_name,
+            contact_ids=request.contact_ids,
+            scheduled_at=scheduled_dt,
+            status="pending"
+        )
+        db.add(scheduled_email)
+        db.commit()
+        db.refresh(scheduled_email)
+        
+        return {
+            "scheduled": True,
+            "scheduled_email_id": scheduled_email.id,
+            "scheduled_at": scheduled_email.scheduled_at.isoformat(),
+            "contact_count": len(request.contact_ids),
+            "message": f"Email scheduled for {scheduled_email.scheduled_at.strftime('%B %d, %Y at %I:%M %p')} to {len(request.contact_ids)} contacts"
+        }
+    
+    # Send immediately
     result = await send_bulk_email(
         db=db,
         organization_id=current_user.organization_id,
@@ -5371,6 +5405,102 @@ async def bulk_email_send(
     )
     
     return result
+
+
+@app.get("/api/bulk-email/scheduled")
+async def bulk_email_list_scheduled(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """List all scheduled emails for the organization"""
+    scheduled = db.query(ScheduledEmail).filter(
+        ScheduledEmail.organization_id == current_user.organization_id
+    ).order_by(ScheduledEmail.scheduled_at.desc()).all()
+    
+    return [{
+        "id": s.id,
+        "subject": s.subject,
+        "from_email": s.from_email,
+        "from_name": s.from_name,
+        "contact_count": len(s.contact_ids) if s.contact_ids else 0,
+        "scheduled_at": s.scheduled_at.isoformat() if s.scheduled_at else None,
+        "status": s.status,
+        "sent_at": s.sent_at.isoformat() if s.sent_at else None,
+        "result": s.result,
+        "created_at": s.created_at.isoformat() if s.created_at else None,
+    } for s in scheduled]
+
+
+@app.delete("/api/bulk-email/scheduled/{scheduled_id}")
+async def bulk_email_cancel_scheduled(
+    scheduled_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Cancel a scheduled email"""
+    scheduled = db.query(ScheduledEmail).filter(
+        ScheduledEmail.id == scheduled_id,
+        ScheduledEmail.organization_id == current_user.organization_id
+    ).first()
+    
+    if not scheduled:
+        raise HTTPException(status_code=404, detail="Scheduled email not found")
+    
+    if scheduled.status != "pending":
+        raise HTTPException(status_code=400, detail=f"Cannot cancel email with status '{scheduled.status}'")
+    
+    scheduled.status = "cancelled"
+    db.commit()
+    
+    return {"message": "Scheduled email cancelled", "id": scheduled_id}
+
+
+@app.post("/api/bulk-email/process-scheduled")
+async def bulk_email_process_scheduled(
+    db: Session = Depends(get_db)
+):
+    """Process pending scheduled emails that are due. Called by cron/scheduler."""
+    now = datetime.utcnow()
+    
+    pending = db.query(ScheduledEmail).filter(
+        ScheduledEmail.status == "pending",
+        ScheduledEmail.scheduled_at <= now
+    ).all()
+    
+    results = []
+    for scheduled in pending:
+        try:
+            scheduled.status = "sending"
+            db.commit()
+            
+            result = await send_bulk_email(
+                db=db,
+                organization_id=scheduled.organization_id,
+                sender_user_id=scheduled.created_by,
+                contact_ids=scheduled.contact_ids,
+                subject=scheduled.subject,
+                html_content=scheduled.html_content,
+                from_email=scheduled.from_email,
+                from_name=scheduled.from_name,
+                text_content=scheduled.text_content,
+            )
+            
+            scheduled.status = "sent"
+            scheduled.sent_at = datetime.utcnow()
+            scheduled.result = result
+            db.commit()
+            
+            results.append({"id": scheduled.id, "status": "sent", "result": result})
+            logging.info(f"Scheduled email {scheduled.id} sent successfully: {result['message']}")
+            
+        except Exception as e:
+            scheduled.status = "failed"
+            scheduled.result = {"error": str(e)}
+            db.commit()
+            results.append({"id": scheduled.id, "status": "failed", "error": str(e)})
+            logging.error(f"Scheduled email {scheduled.id} failed: {e}")
+    
+    return {"processed": len(results), "results": results}
 
 @app.get("/api/bulk-email/contacts")
 async def bulk_email_get_contacts(

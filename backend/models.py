@@ -18,6 +18,26 @@ class InviteStatus(enum.Enum):
     ACCEPTED = "accepted"
     EXPIRED = "expired"
 
+class ScheduledEmail(Base):
+    __tablename__ = "scheduled_emails"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    subject = Column(Text, nullable=False)
+    html_content = Column(Text, nullable=False)
+    text_content = Column(Text)
+    from_email = Column(String(255))
+    from_name = Column(String(255))
+    contact_ids = Column(JSON, nullable=False)  # List of contact IDs
+    scheduled_at = Column(DateTime(timezone=True), nullable=False)  # When to send
+    status = Column(String(50), default="pending")  # pending, sending, sent, failed, cancelled
+    sent_at = Column(DateTime(timezone=True))  # When actually sent
+    result = Column(JSON)  # Send results (success_count, error_count, etc.)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
 class Organization(Base):
     __tablename__ = "organizations"
     
