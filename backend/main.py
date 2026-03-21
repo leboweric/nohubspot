@@ -128,6 +128,7 @@ from email_template_crud import (
     get_template_categories, replace_template_variables
 )
 from ai_service import generate_daily_summary
+from bulk_email_service import send_bulk_email
 from password_utils import generate_temporary_password
 from ai_chat import process_ai_chat
 from o365_service import O365Service, get_oauth_url, exchange_code_for_tokens
@@ -5329,6 +5330,92 @@ async def sync_contact_company_names_endpoint(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================== Bulk Email Endpoints ====================
+
+class BulkEmailRequest(BaseModel):
+    contact_ids: List[int]
+    subject: str
+    html_content: str
+    from_email: Optional[str] = None
+    from_name: Optional[str] = None
+    text_content: Optional[str] = None
+
+@app.post("/api/bulk-email/send")
+async def bulk_email_send(
+    request: BulkEmailRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Send bulk email to selected contacts"""
+    if not request.contact_ids:
+        raise HTTPException(status_code=400, detail="No contacts selected")
+    
+    if not request.subject:
+        raise HTTPException(status_code=400, detail="Subject is required")
+    
+    if not request.html_content:
+        raise HTTPException(status_code=400, detail="HTML content is required")
+    
+    result = await send_bulk_email(
+        db=db,
+        organization_id=current_user.organization_id,
+        sender_user_id=current_user.id,
+        contact_ids=request.contact_ids,
+        subject=request.subject,
+        html_content=request.html_content,
+        from_email=request.from_email,
+        from_name=request.from_name,
+        text_content=request.text_content,
+    )
+    
+    return result
+
+@app.get("/api/bulk-email/contacts")
+async def bulk_email_get_contacts(
+    search: Optional[str] = None,
+    company_name: Optional[str] = None,
+    status: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get contacts available for bulk email (excludes placeholder emails)"""
+    query = db.query(Contact).filter(
+        Contact.organization_id == current_user.organization_id,
+        ~Contact.email.like('%@placeholder.com'),
+        Contact.unsubscribed == False
+    )
+    
+    if search:
+        search_filter = f"%{search}%"
+        query = query.filter(
+            (Contact.first_name.ilike(search_filter)) |
+            (Contact.last_name.ilike(search_filter)) |
+            (Contact.email.ilike(search_filter)) |
+            (Contact.company_name.ilike(search_filter))
+        )
+    
+    if company_name:
+        query = query.filter(Contact.company_name.ilike(f"%{company_name}%"))
+    
+    if status:
+        query = query.filter(Contact.status == status)
+    
+    contacts = query.order_by(Contact.first_name, Contact.last_name).limit(1000).all()
+    
+    return [
+        {
+            "id": c.id,
+            "first_name": c.first_name,
+            "last_name": c.last_name,
+            "email": c.email,
+            "company_name": c.company_name,
+            "title": c.title,
+            "status": c.status,
+        }
+        for c in contacts
+    ]
 
 
 if __name__ == "__main__":

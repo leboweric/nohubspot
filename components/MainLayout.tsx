@@ -119,6 +119,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     { name: "Tasks", href: "/tasks" },
     { name: "Pipeline", href: "/pipeline" },
     { name: "Projects", href: "/projects" },
+    { name: "Bulk Email", href: "/bulk-email" },
     ...(o365Connected ? [{ name: "Templates", href: "/templates" }] : []),
     { name: "Settings", href: "/settings" },
   ]

@@ -163,6 +163,7 @@ class Contact(Base):
     is_shared = Column(Boolean, default=False)  # Deprecated - use shared_with_team
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     shared_with_team = Column(Boolean, default=False)  # If true, all team members can see this contact
+    unsubscribed = Column(Boolean, default=False)  # If true, exclude from bulk emails
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
