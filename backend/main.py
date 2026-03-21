@@ -5388,7 +5388,7 @@ async def bulk_email_send(
         return {
             "scheduled": True,
             "scheduled_email_id": scheduled_email.id,
-            "scheduled_at": scheduled_email.scheduled_at.isoformat(),
+            "scheduled_at": scheduled_email.scheduled_at.isoformat().replace('+00:00', 'Z') if scheduled_email.scheduled_at.tzinfo else scheduled_email.scheduled_at.isoformat() + 'Z',
             "contact_count": len(request.contact_ids),
             "message": f"Email scheduled for {scheduled_email.scheduled_at.strftime('%B %d, %Y at %I:%M %p')} to {len(request.contact_ids)} contacts"
         }
@@ -5426,7 +5426,7 @@ async def bulk_email_list_scheduled(
         "from_email": s.from_email,
         "from_name": s.from_name,
         "contact_count": len(s.contact_ids) if s.contact_ids else 0,
-        "scheduled_at": s.scheduled_at.isoformat() if s.scheduled_at else None,
+        "scheduled_at": (s.scheduled_at.isoformat().replace('+00:00', 'Z') if s.scheduled_at.tzinfo else s.scheduled_at.isoformat() + 'Z') if s.scheduled_at else None,
         "status": s.status,
         "sent_at": s.sent_at.isoformat() if s.sent_at else None,
         "result": s.result,
