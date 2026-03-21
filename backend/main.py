@@ -290,6 +290,19 @@ try:
                         logging.info(f"  ⚠️ Failed to add {field_name}: {e}")
             logging.info("✅ Company fields migration completed")
     
+    # Add schedule_timezone column to scheduled_emails if missing
+    if 'scheduled_emails' in inspector.get_table_names():
+        se_columns = [col['name'] for col in inspector.get_columns('scheduled_emails')]
+        if 'schedule_timezone' not in se_columns:
+            logging.info("📦 Adding schedule_timezone column to scheduled_emails")
+            with engine.connect() as conn:
+                try:
+                    conn.execute(text("ALTER TABLE scheduled_emails ADD COLUMN schedule_timezone VARCHAR(50)"))
+                    conn.commit()
+                    logging.info("  ✓ Added schedule_timezone")
+                except Exception as e:
+                    logging.info(f"  ⚠️ Failed to add schedule_timezone: {e}")
+
     # Check if we need to seed data
     db = next(get_db())
     try:
@@ -5343,6 +5356,7 @@ class BulkEmailRequest(BaseModel):
     text_content: Optional[str] = None
     bcc_email: Optional[str] = None  # BCC email to receive copies of sent emails
     scheduled_at: Optional[str] = None  # ISO datetime string for scheduling
+    schedule_timezone: Optional[str] = None  # User's selected timezone e.g. America/Chicago
 
 @app.post("/api/bulk-email/send")
 async def bulk_email_send(
@@ -5379,6 +5393,7 @@ async def bulk_email_send(
             contact_ids=request.contact_ids,
             bcc_email=request.bcc_email,
             scheduled_at=scheduled_dt,
+            schedule_timezone=request.schedule_timezone,
             status="pending"
         )
         db.add(scheduled_email)
@@ -5427,6 +5442,7 @@ async def bulk_email_list_scheduled(
         "from_name": s.from_name,
         "contact_count": len(s.contact_ids) if s.contact_ids else 0,
         "scheduled_at": (s.scheduled_at.isoformat().replace('+00:00', 'Z') if s.scheduled_at.tzinfo else s.scheduled_at.isoformat() + 'Z') if s.scheduled_at else None,
+        "schedule_timezone": s.schedule_timezone,
         "status": s.status,
         "sent_at": s.sent_at.isoformat() if s.sent_at else None,
         "result": s.result,

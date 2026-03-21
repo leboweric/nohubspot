@@ -31,7 +31,8 @@ class ScheduledEmail(Base):
     from_name = Column(String(255))
     contact_ids = Column(JSON, nullable=False)  # List of contact IDs
     bcc_email = Column(String(255))  # BCC email to receive copies
-    scheduled_at = Column(DateTime(timezone=True), nullable=False)  # When to send
+    scheduled_at = Column(DateTime(timezone=True), nullable=False)  # When to send (stored in UTC)
+    schedule_timezone = Column(String(50))  # User's selected timezone e.g. America/Chicago
     status = Column(String(50), default="pending")  # pending, sending, sent, failed, cancelled
     sent_at = Column(DateTime(timezone=True))  # When actually sent
     result = Column(JSON)  # Send results (success_count, error_count, etc.)

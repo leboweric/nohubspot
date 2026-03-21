@@ -45,6 +45,7 @@ interface ScheduledEmail {
   from_name: string
   contact_count: number
   scheduled_at: string
+  schedule_timezone: string | null
   status: string
   sent_at: string | null
   result: any
@@ -222,37 +223,54 @@ export default function BulkEmailPage() {
   }, [htmlContent, contacts, selectedIds])
 
   // Convert schedule datetime in selected timezone to UTC ISO string
+  // Uses hardcoded offsets based on whether DST is active for the date
   const getScheduledAtISO = (): string | null => {
     if (sendMode !== "schedule" || !scheduleDate || !scheduleTime) return null
     
-    try {
-      // Map timezone names to fixed UTC offsets
-      // CDT = UTC-5, CST = UTC-6, EDT = UTC-4, EST = UTC-5, MDT = UTC-6, MST = UTC-7, PDT = UTC-7, PST = UTC-8
-      // We use the current offset for the selected IANA timezone to handle DST automatically
-      const tzOffsets: Record<string, string> = {}
-      
-      // Create a reference date at the scheduled time to get the correct DST offset
-      const refDate = new Date(`${scheduleDate}T12:00:00Z`)
-      const getOffset = (tz: string): number => {
-        const utcStr = refDate.toLocaleString('en-US', { timeZone: 'UTC' })
-        const tzStr = refDate.toLocaleString('en-US', { timeZone: tz })
-        const utcMs = new Date(utcStr).getTime()
-        const tzMs = new Date(tzStr).getTime()
-        return tzMs - utcMs // positive = ahead of UTC, negative = behind
-      }
-      
-      const offsetMs = getOffset(scheduleTimezone)
-      
-      // User entered scheduleTime in their selected timezone
-      // To get UTC: subtract the timezone offset
-      // e.g., 14:00 CDT (UTC-5) => 14:00 + 5h = 19:00 UTC
-      const localMs = new Date(`${scheduleDate}T${scheduleTime}:00Z`).getTime()
-      const utcMs = localMs - offsetMs
-      
-      return new Date(utcMs).toISOString()
-    } catch {
-      return new Date(`${scheduleDate}T${scheduleTime}:00Z`).toISOString()
+    // Hardcoded UTC offsets in hours (negative = behind UTC)
+    // DST runs roughly Mar second Sunday to Nov first Sunday
+    const isDST = (() => {
+      const d = new Date(`${scheduleDate}T12:00:00Z`)
+      const month = d.getUTCMonth() // 0-indexed
+      if (month > 2 && month < 10) return true  // Apr-Oct always DST
+      if (month < 2 || month > 10) return false  // Jan-Feb, Dec never DST
+      // March or November - approximate
+      if (month === 2) return d.getUTCDate() >= 10 // After ~Mar 10
+      return d.getUTCDate() < 3 // Before ~Nov 3
+    })()
+    
+    const offsets: Record<string, number> = {
+      'America/New_York': isDST ? -4 : -5,
+      'America/Chicago': isDST ? -5 : -6,
+      'America/Denver': isDST ? -6 : -7,
+      'America/Los_Angeles': isDST ? -7 : -8,
+      'UTC': 0
     }
+    
+    const offsetHours = offsets[scheduleTimezone] ?? -5 // default CDT
+    
+    // Parse the user's time as a pure number, add the negative offset to get UTC
+    // e.g., user says 14:00 Chicago CDT (offset -5) => UTC = 14:00 - (-5) = 19:00
+    const [hours, minutes] = scheduleTime.split(':').map(Number)
+    const userMinutes = hours * 60 + minutes
+    const utcMinutes = userMinutes - offsetHours * 60 // subtract offset (offset is negative, so this adds)
+    
+    // Handle day rollover
+    let utcDay = new Date(`${scheduleDate}T00:00:00Z`)
+    let finalMinutes = utcMinutes
+    if (finalMinutes >= 1440) {
+      finalMinutes -= 1440
+      utcDay = new Date(utcDay.getTime() + 86400000)
+    } else if (finalMinutes < 0) {
+      finalMinutes += 1440
+      utcDay = new Date(utcDay.getTime() - 86400000)
+    }
+    
+    const utcH = Math.floor(finalMinutes / 60).toString().padStart(2, '0')
+    const utcM = (finalMinutes % 60).toString().padStart(2, '0')
+    const utcDateStr = utcDay.toISOString().split('T')[0]
+    
+    return `${utcDateStr}T${utcH}:${utcM}:00Z`
   }
 
   // Send or schedule bulk email
@@ -299,6 +317,7 @@ export default function BulkEmailPage() {
 
       if (sendMode === "schedule") {
         payload.scheduled_at = getScheduledAtISO()
+        payload.schedule_timezone = scheduleTimezone
       }
 
       const res = await fetch(`${API_BASE_URL}/api/bulk-email/send`, {
@@ -344,10 +363,10 @@ export default function BulkEmailPage() {
     }
   }
 
-  const formatScheduledDate = (isoStr: string) => {
+  const formatScheduledDate = (isoStr: string, timezone?: string | null) => {
     try {
       const d = new Date(isoStr)
-      return d.toLocaleString('en-US', {
+      const opts: Intl.DateTimeFormatOptions = {
         weekday: 'short',
         month: 'short',
         day: 'numeric',
@@ -356,7 +375,12 @@ export default function BulkEmailPage() {
         minute: '2-digit',
         hour12: true,
         timeZoneName: 'short'
-      })
+      }
+      // If we have the original timezone, display in that timezone
+      if (timezone) {
+        opts.timeZone = timezone
+      }
+      return d.toLocaleString('en-US', opts)
     } catch {
       return isoStr
     }
@@ -867,7 +891,7 @@ export default function BulkEmailPage() {
                                 <div className="flex items-center gap-4 text-xs text-gray-500">
                                   <span className="flex items-center gap-1">
                                     <Clock className="w-3 h-3" />
-                                    {formatScheduledDate(email.scheduled_at)}
+                                    {formatScheduledDate(email.scheduled_at, email.schedule_timezone)}
                                   </span>
                                   <span className="flex items-center gap-1">
                                     <Users className="w-3 h-3" />
