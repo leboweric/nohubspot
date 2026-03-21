@@ -221,35 +221,37 @@ export default function BulkEmailPage() {
     return preview
   }, [htmlContent, contacts, selectedIds])
 
-  // Convert local schedule datetime to UTC ISO string
+  // Convert schedule datetime in selected timezone to UTC ISO string
   const getScheduledAtISO = (): string | null => {
     if (sendMode !== "schedule" || !scheduleDate || !scheduleTime) return null
     
-    // Create a datetime string in the user's selected timezone
-    const localDatetime = `${scheduleDate}T${scheduleTime}:00`
-    
-    // Use Intl to convert to UTC
     try {
-      const date = new Date(localDatetime)
-      // Get the offset for the selected timezone
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: scheduleTimezone,
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-        hour12: false
-      })
+      // Map timezone names to fixed UTC offsets
+      // CDT = UTC-5, CST = UTC-6, EDT = UTC-4, EST = UTC-5, MDT = UTC-6, MST = UTC-7, PDT = UTC-7, PST = UTC-8
+      // We use the current offset for the selected IANA timezone to handle DST automatically
+      const tzOffsets: Record<string, string> = {}
       
-      // Simple approach: create date as if it's in the target timezone
-      // by calculating the offset difference
-      const targetDate = new Date(localDatetime)
-      const utcDate = new Date(targetDate.toLocaleString('en-US', { timeZone: 'UTC' }))
-      const tzDate = new Date(targetDate.toLocaleString('en-US', { timeZone: scheduleTimezone }))
-      const offset = utcDate.getTime() - tzDate.getTime()
+      // Create a reference date at the scheduled time to get the correct DST offset
+      const refDate = new Date(`${scheduleDate}T12:00:00Z`)
+      const getOffset = (tz: string): number => {
+        const utcStr = refDate.toLocaleString('en-US', { timeZone: 'UTC' })
+        const tzStr = refDate.toLocaleString('en-US', { timeZone: tz })
+        const utcMs = new Date(utcStr).getTime()
+        const tzMs = new Date(tzStr).getTime()
+        return tzMs - utcMs // positive = ahead of UTC, negative = behind
+      }
       
-      const adjustedDate = new Date(targetDate.getTime() + offset)
-      return adjustedDate.toISOString()
+      const offsetMs = getOffset(scheduleTimezone)
+      
+      // User entered scheduleTime in their selected timezone
+      // To get UTC: subtract the timezone offset
+      // e.g., 14:00 CDT (UTC-5) => 14:00 + 5h = 19:00 UTC
+      const localMs = new Date(`${scheduleDate}T${scheduleTime}:00Z`).getTime()
+      const utcMs = localMs - offsetMs
+      
+      return new Date(utcMs).toISOString()
     } catch {
-      return new Date(`${scheduleDate}T${scheduleTime}:00`).toISOString()
+      return new Date(`${scheduleDate}T${scheduleTime}:00Z`).toISOString()
     }
   }
 
