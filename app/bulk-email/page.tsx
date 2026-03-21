@@ -141,6 +141,38 @@ export default function BulkEmailPage() {
     }
   }
 
+  const deleteScheduledEmail = async (id: number) => {
+    if (!confirm('Delete this entry?')) return
+    try {
+      const token = localStorage.getItem('auth_token')
+      const res = await fetch(`${API_BASE_URL}/api/bulk-email/scheduled/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (!res.ok) throw new Error('Failed to delete')
+      fetchScheduledEmails()
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete scheduled email')
+    }
+  }
+
+  const clearCompletedEmails = async () => {
+    const toDelete = scheduledEmails.filter(e => e.status === 'cancelled' || e.status === 'sent' || e.status === 'failed')
+    if (!confirm(`Delete ${toDelete.length} completed/cancelled entries?`)) return
+    const token = localStorage.getItem('auth_token')
+    for (const email of toDelete) {
+      try {
+        await fetch(`${API_BASE_URL}/api/bulk-email/scheduled/${email.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      } catch (err) {
+        console.error(`Failed to delete scheduled email ${email.id}:`, err)
+      }
+    }
+    fetchScheduledEmails()
+  }
+
   // Filter contacts based on search and company
   const filteredContacts = useMemo(() => {
     return contacts.filter(c => {
@@ -856,13 +888,24 @@ export default function BulkEmailPage() {
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-semibold text-gray-800">Scheduled Emails</h3>
-                      <button
-                        onClick={fetchScheduledEmails}
-                        className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
-                      >
-                        <Loader2 className={`w-3 h-3 ${loadingScheduled ? 'animate-spin' : ''}`} />
-                        Refresh
-                      </button>
+                      <div className="flex items-center gap-3">
+                        {scheduledEmails.some(e => e.status === 'cancelled' || e.status === 'sent' || e.status === 'failed') && (
+                          <button
+                            onClick={clearCompletedEmails}
+                            className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Clear Old
+                          </button>
+                        )}
+                        <button
+                          onClick={fetchScheduledEmails}
+                          className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                        >
+                          <Loader2 className={`w-3 h-3 ${loadingScheduled ? 'animate-spin' : ''}`} />
+                          Refresh
+                        </button>
+                      </div>
                     </div>
 
                     {loadingScheduled ? (
@@ -912,11 +955,19 @@ export default function BulkEmailPage() {
                                   </p>
                                 )}
                               </div>
-                              {email.status === 'pending' && (
+                              {email.status === 'pending' ? (
                                 <button
                                   onClick={() => cancelScheduledEmail(email.id)}
                                   className="ml-3 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                                   title="Cancel scheduled email"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => deleteScheduledEmail(email.id)}
+                                  className="ml-3 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                  title="Delete entry"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>

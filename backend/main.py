@@ -5456,7 +5456,7 @@ async def bulk_email_cancel_scheduled(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """Cancel a scheduled email"""
+    """Cancel or delete a scheduled email. Pending emails are cancelled, cancelled/sent/failed emails are deleted."""
     scheduled = db.query(ScheduledEmail).filter(
         ScheduledEmail.id == scheduled_id,
         ScheduledEmail.organization_id == current_user.organization_id
@@ -5465,13 +5465,16 @@ async def bulk_email_cancel_scheduled(
     if not scheduled:
         raise HTTPException(status_code=404, detail="Scheduled email not found")
     
-    if scheduled.status != "pending":
-        raise HTTPException(status_code=400, detail=f"Cannot cancel email with status '{scheduled.status}'")
-    
-    scheduled.status = "cancelled"
-    db.commit()
-    
-    return {"message": "Scheduled email cancelled", "id": scheduled_id}
+    if scheduled.status == "pending":
+        scheduled.status = "cancelled"
+        db.commit()
+        return {"message": "Scheduled email cancelled", "id": scheduled_id}
+    elif scheduled.status in ["cancelled", "sent", "failed"]:
+        db.delete(scheduled)
+        db.commit()
+        return {"message": "Scheduled email deleted", "id": scheduled_id}
+    else:
+        raise HTTPException(status_code=400, detail=f"Cannot modify email with status '{scheduled.status}'")
 
 
 @app.post("/api/bulk-email/process-scheduled")
