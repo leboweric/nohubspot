@@ -12,7 +12,7 @@ from models import (
     User, PipelineStage, Deal,
     ProjectStage, Project, ProjectType,
     DocumentFolder, DocumentCategory,
-    EmailTracking, EmailTrackingEvent
+    EmailTracking, EmailEvent
 )
 from schemas import (
     CompanyCreate, CompanyUpdate, ContactCreate, ContactUpdate,
@@ -316,7 +316,7 @@ def delete_contact(db: Session, contact_id: int, organization_id: int) -> bool:
     # 1. Email tracking events (child of email_tracking)
     tracking_ids = [t.id for t in db.query(EmailTracking.id).filter(EmailTracking.contact_id == contact_id).all()]
     if tracking_ids:
-        db.query(EmailTrackingEvent).filter(EmailTrackingEvent.tracking_id.in_(tracking_ids)).delete(synchronize_session=False)
+        db.query(EmailEvent).filter(EmailEvent.tracking_id.in_(tracking_ids)).delete(synchronize_session=False)
     # 2. Email tracking records
     db.query(EmailTracking).filter(EmailTracking.contact_id == contact_id).delete(synchronize_session=False)
     # 3. Event attendees
