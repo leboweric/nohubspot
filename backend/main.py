@@ -5418,6 +5418,67 @@ async def bulk_email_get_contacts(
     ]
 
 
+# ==================== Unsubscribe Endpoint (Public) ====================
+
+from fastapi.responses import HTMLResponse
+import hashlib
+import hmac
+
+UNSUBSCRIBE_SECRET = os.environ.get("UNSUBSCRIBE_SECRET", "nhs-unsub-2026")
+
+def generate_unsubscribe_token(contact_id: int, email: str) -> str:
+    """Generate a simple HMAC token for unsubscribe verification"""
+    message = f"{contact_id}:{email}"
+    return hmac.new(UNSUBSCRIBE_SECRET.encode(), message.encode(), hashlib.sha256).hexdigest()[:16]
+
+@app.get("/api/unsubscribe", response_class=HTMLResponse)
+async def unsubscribe_contact(
+    cid: int,
+    email: str,
+    token: str,
+    db: Session = Depends(get_db)
+):
+    """Public unsubscribe endpoint - no auth required (linked from emails)"""
+    # Verify token
+    expected_token = generate_unsubscribe_token(cid, email)
+    if not hmac.compare_digest(token, expected_token):
+        return HTMLResponse(
+            content="""
+            <html><body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5;">
+            <div style="text-align: center; padding: 40px; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="color: #e53e3e;">Invalid Link</h2>
+            <p style="color: #666;">This unsubscribe link is invalid or has expired.</p>
+            </div></body></html>
+            """,
+            status_code=400
+        )
+    
+    # Find and update the contact
+    contact = db.query(Contact).filter(
+        Contact.id == cid,
+        Contact.email == email
+    ).first()
+    
+    if contact:
+        contact.unsubscribed = True
+        db.commit()
+        logging.info(f"Contact {email} (ID: {cid}) unsubscribed from bulk emails")
+    
+    return HTMLResponse(
+        content=f"""
+        <html><body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #0B1426;">
+        <div style="text-align: center; padding: 40px; background: #0F1B2E; border-radius: 12px; border: 1px solid #1E2D45; max-width: 480px;">
+        <div style="width: 64px; height: 64px; background: rgba(74,222,128,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </div>
+        <h2 style="color: white; margin-bottom: 12px;">You've Been Unsubscribed</h2>
+        <p style="color: #8B95A5; line-height: 1.6;">You ({email}) have been successfully removed from our mailing list. You will no longer receive bulk emails from us.</p>
+        <p style="color: #4A5568; font-size: 14px; margin-top: 20px;">If this was a mistake, please contact us at <a href="mailto:info@aiop.one" style="color: #5B8DEF;">info@aiop.one</a></p>
+        </div></body></html>
+        """
+    )
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     logging.info(f"🚀 Starting NotHubSpot CRM API on port {port}")

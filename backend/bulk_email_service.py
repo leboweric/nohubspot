@@ -4,11 +4,26 @@ Handles sending emails to multiple contacts with throttling and tracking
 """
 import asyncio
 import os
+import hashlib
+import hmac
 from typing import List, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
 from models import Contact, EmailTracking, User
 from email_service import send_email
+
+UNSUBSCRIBE_SECRET = os.environ.get("UNSUBSCRIBE_SECRET", "nhs-unsub-2026")
+BACKEND_URL = os.environ.get("BACKEND_URL", "https://nohubspot-production.up.railway.app")
+
+def generate_unsubscribe_token(contact_id: int, email: str) -> str:
+    """Generate a simple HMAC token for unsubscribe verification"""
+    message = f"{contact_id}:{email}"
+    return hmac.new(UNSUBSCRIBE_SECRET.encode(), message.encode(), hashlib.sha256).hexdigest()[:16]
+
+def generate_unsubscribe_url(contact: Contact) -> str:
+    """Generate the full unsubscribe URL for a contact"""
+    token = generate_unsubscribe_token(contact.id, contact.email)
+    return f"{BACKEND_URL}/api/unsubscribe?cid={contact.id}&email={contact.email}&token={token}"
 
 
 async def send_bulk_email(
@@ -143,6 +158,8 @@ def personalize_content(content: str, contact: Contact) -> str:
     if not content:
         return content
     
+    unsubscribe_url = generate_unsubscribe_url(contact)
+    
     replacements = {
         "{{contact.first_name}}": contact.first_name or "",
         "{{contact.last_name}}": contact.last_name or "",
@@ -154,6 +171,7 @@ def personalize_content(content: str, contact: Contact) -> str:
         "{{last_name}}": contact.last_name or "",
         "{{email}}": contact.email or "",
         "{{company_name}}": contact.company_name or "",
+        "{{unsubscribe_url}}": unsubscribe_url,
     }
     
     result = content
