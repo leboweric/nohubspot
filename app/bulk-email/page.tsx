@@ -5,7 +5,7 @@ import MainLayout from "@/components/MainLayout"
 import { 
   Send, Search, Users, Eye, Code, CheckSquare, Square,
   AlertCircle, CheckCircle, Loader2, ChevronDown, ChevronUp,
-  Mail, X, Filter, Clock, Calendar, Trash2
+  Mail, X, Filter, Clock, Calendar, Trash2, Pencil
 } from "lucide-react"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
@@ -78,6 +78,10 @@ export default function BulkEmailPage() {
   const [scheduledEmails, setScheduledEmails] = useState<ScheduledEmail[]>([])
   const [loadingScheduled, setLoadingScheduled] = useState(false)
   
+  // Edit state
+  const [editingScheduledId, setEditingScheduledId] = useState<number | null>(null)
+  const [savingEdit, setSavingEdit] = useState(false)
+
   // UI state
   const [activeTab, setActiveTab] = useState<"compose" | "preview" | "scheduled">("compose")
   const [sending, setSending] = useState(false)
@@ -171,6 +175,120 @@ export default function BulkEmailPage() {
       }
     }
     fetchScheduledEmails()
+  }
+
+  const editScheduledEmail = async (id: number) => {
+    try {
+      const token = localStorage.getItem('auth_token')
+      const res = await fetch(`${API_BASE_URL}/api/bulk-email/scheduled/${id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (!res.ok) throw new Error('Failed to load scheduled email')
+      const data = await res.json()
+      
+      // Populate the form with the scheduled email data
+      setSubject(data.subject || '')
+      setHtmlContent(data.html_content || '')
+      setFromEmail(data.from_email || '')
+      setFromName(data.from_name || '')
+      setBccEmail(data.bcc_email || '')
+      
+      // Select the contacts
+      if (data.contact_ids && data.contact_ids.length > 0) {
+        setSelectedIds(new Set(data.contact_ids))
+      }
+      
+      // Set schedule mode and parse the scheduled time
+      setSendMode('schedule')
+      if (data.scheduled_at) {
+        const tz = data.schedule_timezone || 'America/Chicago'
+        setScheduleTimezone(tz)
+        // Convert UTC time to the scheduled timezone for the date/time inputs
+        const d = new Date(data.scheduled_at)
+        const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' })
+        const timeFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false })
+        setScheduleDate(formatter.format(d)) // YYYY-MM-DD format
+        const timeParts = timeFormatter.format(d) // HH:MM format
+        setScheduleTime(timeParts.replace(/^24:/, '00:'))
+      }
+      
+      setEditingScheduledId(id)
+      setActiveTab('compose')
+      setError('')
+    } catch (err: any) {
+      setError(err.message || 'Failed to load scheduled email for editing')
+    }
+  }
+
+  const saveScheduledEdit = async () => {
+    if (!editingScheduledId) return
+    if (selectedIds.size === 0) {
+      setError('Please select at least one contact')
+      return
+    }
+    if (!subject.trim()) {
+      setError('Please enter a subject line')
+      return
+    }
+    if (!htmlContent.trim()) {
+      setError('Please paste your HTML email content')
+      return
+    }
+    
+    setSavingEdit(true)
+    setError('')
+    
+    try {
+      const token = localStorage.getItem('auth_token')
+      const payload: any = {
+        subject: subject.trim(),
+        html_content: htmlContent,
+        from_email: fromEmail.trim() || null,
+        from_name: fromName.trim() || null,
+        bcc_email: bccEmail.trim() || null,
+        contact_ids: Array.from(selectedIds),
+        scheduled_at: getScheduledAtISO(),
+        schedule_timezone: scheduleTimezone,
+      }
+      
+      const res = await fetch(`${API_BASE_URL}/api/bulk-email/scheduled/${editingScheduledId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      })
+      
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.detail || 'Failed to update scheduled email')
+      }
+      
+      // Success — reset form and go to scheduled tab
+      cancelEdit()
+      fetchScheduledEmails()
+      setActiveTab('scheduled')
+      setScheduleResult({ scheduled: true, scheduled_email_id: editingScheduledId, scheduled_at: '', contact_count: selectedIds.size, message: 'Scheduled email updated successfully' })
+    } catch (err: any) {
+      setError(err.message || 'Failed to update scheduled email')
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
+  const cancelEdit = () => {
+    setEditingScheduledId(null)
+    setSelectedIds(new Set())
+    setSubject('')
+    setHtmlContent('')
+    setFromEmail('')
+    setFromName('')
+    setBccEmail('')
+    setSendMode('now')
+    setScheduleDate('')
+    setScheduleTime('08:00')
+    setError('')
   }
 
   // Filter contacts based on search and company
@@ -692,6 +810,21 @@ export default function BulkEmailPage() {
               <div className="p-4">
                 {activeTab === "compose" ? (
                   <div className="space-y-4">
+                    {/* Editing Banner */}
+                    {editingScheduledId && (
+                      <div className="p-3 rounded-lg border bg-blue-50 border-blue-200 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Pencil className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-800">Editing scheduled email</span>
+                        </div>
+                        <button
+                          onClick={cancelEdit}
+                          className="text-sm text-blue-600 hover:text-blue-800 font-medium px-3 py-1 rounded hover:bg-blue-100 transition-colors"
+                        >
+                          Cancel Edit
+                        </button>
+                      </div>
+                    )}
                     {/* From fields */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
@@ -956,13 +1089,22 @@ export default function BulkEmailPage() {
                                 )}
                               </div>
                               {email.status === 'pending' ? (
-                                <button
-                                  onClick={() => cancelScheduledEmail(email.id)}
-                                  className="ml-3 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                                  title="Cancel scheduled email"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
+                                <div className="flex items-center gap-1 ml-3">
+                                  <button
+                                    onClick={() => editScheduledEmail(email.id)}
+                                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                    title="Edit scheduled email"
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => cancelScheduledEmail(email.id)}
+                                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                    title="Cancel scheduled email"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
                               ) : (
                                 <button
                                   onClick={() => deleteScheduledEmail(email.id)}
@@ -1000,29 +1142,59 @@ export default function BulkEmailPage() {
                         <span>Ready to send to <strong>{selectedIds.size}</strong> contact{selectedIds.size !== 1 ? 's' : ''}</span>
                       )}
                     </div>
-                    <button
-                      onClick={handleSend}
-                      disabled={sending || selectedIds.size === 0 || !subject.trim() || !htmlContent.trim() || (sendMode === "schedule" && (!scheduleDate || !scheduleTime))}
-                      className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-white font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
-                      style={{ backgroundColor: sendMode === "schedule" ? '#2563EB' : 'var(--color-primary)' }}
-                    >
-                      {sending ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          {sendMode === "schedule" ? "Scheduling..." : "Sending..."}
-                        </>
-                      ) : sendMode === "schedule" ? (
-                        <>
-                          <Clock className="w-4 h-4" />
-                          Schedule Email
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-4 h-4" />
-                          Send Emails
-                        </>
-                      )}
-                    </button>
+                    {editingScheduledId ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={cancelEdit}
+                          className="flex items-center gap-2 px-4 py-2.5 rounded-lg border font-medium transition-all hover:bg-gray-50"
+                        >
+                          <X className="w-4 h-4" />
+                          Cancel
+                        </button>
+                        <button
+                          onClick={saveScheduledEdit}
+                          disabled={savingEdit || selectedIds.size === 0 || !subject.trim() || !htmlContent.trim() || !scheduleDate || !scheduleTime}
+                          className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-white font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+                          style={{ backgroundColor: '#2563EB' }}
+                        >
+                          {savingEdit ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Pencil className="w-4 h-4" />
+                              Update Scheduled Email
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleSend}
+                        disabled={sending || selectedIds.size === 0 || !subject.trim() || !htmlContent.trim() || (sendMode === "schedule" && (!scheduleDate || !scheduleTime))}
+                        className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-white font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+                        style={{ backgroundColor: sendMode === "schedule" ? '#2563EB' : 'var(--color-primary)' }}
+                      >
+                        {sending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            {sendMode === "schedule" ? "Scheduling..." : "Sending..."}
+                          </>
+                        ) : sendMode === "schedule" ? (
+                          <>
+                            <Clock className="w-4 h-4" />
+                            Schedule Email
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4" />
+                            Send Emails
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
               )}

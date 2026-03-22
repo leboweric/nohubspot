@@ -5450,6 +5450,108 @@ async def bulk_email_list_scheduled(
     } for s in scheduled]
 
 
+@app.get("/api/bulk-email/scheduled/{scheduled_id}")
+async def bulk_email_get_scheduled(
+    scheduled_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get a single scheduled email with full details for editing"""
+    scheduled = db.query(ScheduledEmail).filter(
+        ScheduledEmail.id == scheduled_id,
+        ScheduledEmail.organization_id == current_user.organization_id
+    ).first()
+    
+    if not scheduled:
+        raise HTTPException(status_code=404, detail="Scheduled email not found")
+    
+    return {
+        "id": scheduled.id,
+        "subject": scheduled.subject,
+        "html_content": scheduled.html_content,
+        "text_content": scheduled.text_content,
+        "from_email": scheduled.from_email,
+        "from_name": scheduled.from_name,
+        "bcc_email": scheduled.bcc_email,
+        "contact_ids": scheduled.contact_ids,
+        "scheduled_at": (scheduled.scheduled_at.isoformat().replace('+00:00', 'Z') if scheduled.scheduled_at.tzinfo else scheduled.scheduled_at.isoformat() + 'Z') if scheduled.scheduled_at else None,
+        "schedule_timezone": scheduled.schedule_timezone,
+        "status": scheduled.status,
+        "sent_at": scheduled.sent_at.isoformat() if scheduled.sent_at else None,
+        "result": scheduled.result,
+        "created_at": scheduled.created_at.isoformat() if scheduled.created_at else None,
+    }
+
+
+class UpdateScheduledEmailRequest(BaseModel):
+    subject: Optional[str] = None
+    html_content: Optional[str] = None
+    text_content: Optional[str] = None
+    from_email: Optional[str] = None
+    from_name: Optional[str] = None
+    bcc_email: Optional[str] = None
+    contact_ids: Optional[List[int]] = None
+    scheduled_at: Optional[str] = None
+    schedule_timezone: Optional[str] = None
+
+
+@app.put("/api/bulk-email/scheduled/{scheduled_id}")
+async def bulk_email_update_scheduled(
+    scheduled_id: int,
+    request: UpdateScheduledEmailRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update a pending scheduled email — subject, content, recipients, schedule time, etc."""
+    scheduled = db.query(ScheduledEmail).filter(
+        ScheduledEmail.id == scheduled_id,
+        ScheduledEmail.organization_id == current_user.organization_id
+    ).first()
+    
+    if not scheduled:
+        raise HTTPException(status_code=404, detail="Scheduled email not found")
+    
+    if scheduled.status != "pending":
+        raise HTTPException(status_code=400, detail=f"Cannot edit email with status '{scheduled.status}'. Only pending emails can be edited.")
+    
+    # Update fields that were provided
+    if request.subject is not None:
+        scheduled.subject = request.subject
+    if request.html_content is not None:
+        scheduled.html_content = request.html_content
+    if request.text_content is not None:
+        scheduled.text_content = request.text_content
+    if request.from_email is not None:
+        scheduled.from_email = request.from_email
+    if request.from_name is not None:
+        scheduled.from_name = request.from_name
+    if request.bcc_email is not None:
+        scheduled.bcc_email = request.bcc_email
+    if request.contact_ids is not None:
+        if not request.contact_ids:
+            raise HTTPException(status_code=400, detail="Must have at least one recipient")
+        scheduled.contact_ids = request.contact_ids
+    if request.scheduled_at is not None:
+        try:
+            scheduled.scheduled_at = datetime.fromisoformat(request.scheduled_at.replace('Z', '+00:00'))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid scheduled_at datetime format")
+    if request.schedule_timezone is not None:
+        scheduled.schedule_timezone = request.schedule_timezone
+    
+    db.commit()
+    db.refresh(scheduled)
+    
+    return {
+        "message": "Scheduled email updated",
+        "id": scheduled.id,
+        "subject": scheduled.subject,
+        "contact_count": len(scheduled.contact_ids) if scheduled.contact_ids else 0,
+        "scheduled_at": (scheduled.scheduled_at.isoformat().replace('+00:00', 'Z') if scheduled.scheduled_at.tzinfo else scheduled.scheduled_at.isoformat() + 'Z') if scheduled.scheduled_at else None,
+        "schedule_timezone": scheduled.schedule_timezone,
+    }
+
+
 @app.delete("/api/bulk-email/scheduled/{scheduled_id}")
 async def bulk_email_cancel_scheduled(
     scheduled_id: int,
