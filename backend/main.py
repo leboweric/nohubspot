@@ -62,7 +62,7 @@ from schemas import (
     UserAdd, UserAddResponse, UserUpdate,
     ProjectUpdateResponse, ProjectUpdateCreate, ProjectUpdateUpdate,
     DealUpdateResponse, DealUpdateCreate, DealUpdateUpdate,
-    EmailTemplateCreate, EmailTemplateResponse, EmailTemplateUpdate,
+
     CalendarEventCreate, CalendarEventResponse, CalendarEventUpdate,
     EventAttendeeCreate, EventAttendeeResponse,
     PasswordResetRequest, PasswordResetConfirm, PasswordResetResponse,
@@ -122,11 +122,7 @@ from auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
 from email_service import send_welcome_email, send_password_reset_email, send_calendar_invite, send_invite_email
-from email_template_crud import (
-    get_email_templates, get_email_template, create_email_template,
-    update_email_template, delete_email_template, increment_template_usage,
-    get_template_categories, replace_template_variables
-)
+# email_template_crud not used - using inline template routes instead
 from ai_service import generate_daily_summary
 from bulk_email_service import send_bulk_email
 from password_utils import generate_temporary_password
@@ -2211,167 +2207,7 @@ async def create_or_update_signature(
         logging.info(f"Signature save error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to save signature: {str(e)}")
 
-# Email Template endpoints
-@app.get("/api/email-templates", response_model=List[EmailTemplateResponse])
-async def get_templates(
-    skip: int = 0,
-    limit: int = 100,
-    category: Optional[str] = None,
-    search: Optional[str] = None,
-    include_personal: bool = True,
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
-):
-    """Get email templates for the organization"""
-    templates = get_email_templates(
-        db, current_user.organization_id, current_user.id,
-        skip=skip, limit=limit, category=category, search=search,
-        include_personal=include_personal
-    )
-    
-    # Add creator names
-    for template in templates:
-        if template.created_by:
-            creator = db.query(User).filter(User.id == template.created_by).first()
-            template.creator_name = f"{creator.first_name} {creator.last_name}".strip() if creator else None
-    
-    return templates
 
-@app.get("/api/email-templates/categories")
-async def get_categories(
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
-):
-    """Get all template categories for the organization"""
-    categories = get_template_categories(db, current_user.organization_id)
-    return {"categories": categories}
-
-@app.get("/api/email-templates/{template_id}", response_model=EmailTemplateResponse)
-async def get_template(
-    template_id: int,
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
-):
-    """Get a specific email template"""
-    template = get_email_template(db, template_id, current_user.organization_id, current_user.id)
-    if not template:
-        raise HTTPException(status_code=404, detail="Template not found")
-    
-    # Add creator name
-    if template.created_by:
-        creator = db.query(User).filter(User.id == template.created_by).first()
-        template.creator_name = f"{creator.first_name} {creator.last_name}".strip() if creator else None
-    
-    return template
-
-@app.post("/api/email-templates", response_model=EmailTemplateResponse)
-async def create_template(
-    template: EmailTemplateCreate,
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
-):
-    """Create a new email template"""
-    db_template = create_email_template(db, template, current_user.organization_id, current_user.id)
-    
-    # Add creator name
-    creator = db.query(User).filter(User.id == current_user.id).first()
-    db_template.creator_name = f"{creator.first_name} {creator.last_name}".strip() if creator else None
-    
-    return db_template
-
-@app.put("/api/email-templates/{template_id}", response_model=EmailTemplateResponse)
-async def update_template(
-    template_id: int,
-    template_update: EmailTemplateUpdate,
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
-):
-    """Update an email template"""
-    db_template = update_email_template(
-        db, template_id, template_update, current_user.organization_id, current_user.id
-    )
-    if not db_template:
-        raise HTTPException(status_code=404, detail="Template not found or access denied")
-    
-    # Add creator name
-    if db_template.created_by:
-        creator = db.query(User).filter(User.id == db_template.created_by).first()
-        db_template.creator_name = f"{creator.first_name} {creator.last_name}".strip() if creator else None
-    
-    return db_template
-
-@app.delete("/api/email-templates/{template_id}")
-async def delete_template(
-    template_id: int,
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
-):
-    """Delete an email template"""
-    success = delete_email_template(db, template_id, current_user.organization_id, current_user.id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Template not found or access denied")
-    return {"message": "Template deleted successfully"}
-
-@app.post("/api/email-templates/{template_id}/use")
-async def use_template(
-    template_id: int,
-    contact_id: Optional[int] = None,
-    company_id: Optional[int] = None,
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
-):
-    """Get template with variables replaced and increment usage count"""
-    template = get_email_template(db, template_id, current_user.organization_id, current_user.id)
-    if not template:
-        raise HTTPException(status_code=404, detail="Template not found")
-    
-    # Get contact and company data for variable replacement
-    contact_data = None
-    company_data = None
-    
-    if contact_id:
-        contact = get_contact(db, contact_id, current_user.organization_id)
-        if contact:
-            contact_data = {
-                "first_name": contact.first_name,
-                "last_name": contact.last_name,
-                "email": contact.email,
-                "phone": contact.phone,
-                "title": contact.title,
-                "company_name": contact.company_name
-            }
-    
-    if company_id:
-        company = get_company(db, company_id, current_user.organization_id)
-        if company:
-            company_data = {
-                "name": company.name,
-                "industry": company.industry,
-                "website": company.website,
-                "address": company.address
-            }
-    
-    # User data for variable replacement
-    user_data = {
-        "first_name": current_user.first_name,
-        "last_name": current_user.last_name,
-        "email": current_user.email
-    }
-    
-    # Replace variables in subject and body
-    processed_subject = replace_template_variables(template.subject, contact_data, company_data, user_data)
-    processed_body = replace_template_variables(template.body, contact_data, company_data, user_data)
-    
-    # Increment usage count
-    increment_template_usage(db, template_id, current_user.organization_id, current_user.id)
-    
-    return {
-        "id": template.id,
-        "name": template.name,
-        "subject": processed_subject,
-        "body": processed_body,
-        "category": template.category
-    }
 
 # Bulk upload endpoints
 @app.post("/api/companies/bulk", response_model=BulkUploadResult)
@@ -5675,13 +5511,13 @@ async def bulk_email_get_contacts(
 
 # ==================== Email Templates ====================
 
-class EmailTemplateCreate(BaseModel):
+class BulkEmailTemplateCreate(BaseModel):
     name: str
     subject: Optional[str] = None
     html_content: str
     description: Optional[str] = None
 
-class EmailTemplateUpdate(BaseModel):
+class BulkEmailTemplateUpdate(BaseModel):
     name: Optional[str] = None
     subject: Optional[str] = None
     html_content: Optional[str] = None
@@ -5711,8 +5547,8 @@ async def list_email_templates(
     ]
 
 @app.post("/api/email-templates")
-async def create_email_template(
-    request: EmailTemplateCreate,
+async def create_email_template_endpoint(
+    request: BulkEmailTemplateCreate,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
@@ -5740,7 +5576,7 @@ async def create_email_template(
     }
 
 @app.get("/api/email-templates/{template_id}")
-async def get_email_template(
+async def get_email_template_endpoint(
     template_id: int,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
@@ -5765,9 +5601,9 @@ async def get_email_template(
     }
 
 @app.put("/api/email-templates/{template_id}")
-async def update_email_template(
+async def update_email_template_endpoint(
     template_id: int,
-    request: EmailTemplateUpdate,
+    request: BulkEmailTemplateUpdate,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
@@ -5803,7 +5639,7 @@ async def update_email_template(
     }
 
 @app.delete("/api/email-templates/{template_id}")
-async def delete_email_template(
+async def delete_email_template_endpoint(
     template_id: int,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
