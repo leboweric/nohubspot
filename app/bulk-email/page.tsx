@@ -5,7 +5,7 @@ import MainLayout from "@/components/MainLayout"
 import { 
   Send, Search, Users, Eye, Code, CheckSquare, Square,
   AlertCircle, CheckCircle, Loader2, ChevronDown, ChevronUp,
-  Mail, X, Filter, Clock, Calendar, Trash2, Pencil
+  Mail, X, Filter, Clock, Calendar, Trash2, Pencil, Save, BookOpen, FileText
 } from "lucide-react"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
@@ -52,6 +52,16 @@ interface ScheduledEmail {
   created_at: string
 }
 
+interface EmailTemplate {
+  id: number
+  name: string
+  subject: string | null
+  description: string | null
+  html_content: string
+  created_at: string
+  updated_at: string
+}
+
 export default function BulkEmailPage() {
   // Form state
   const [fromName, setFromName] = useState("")
@@ -82,6 +92,14 @@ export default function BulkEmailPage() {
   const [editingScheduledId, setEditingScheduledId] = useState<number | null>(null)
   const [savingEdit, setSavingEdit] = useState(false)
 
+  // Template state
+  const [templates, setTemplates] = useState<EmailTemplate[]>([])
+  const [showTemplateMenu, setShowTemplateMenu] = useState(false)
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false)
+  const [templateName, setTemplateName] = useState("")
+  const [templateDescription, setTemplateDescription] = useState("")
+  const [savingTemplate, setSavingTemplate] = useState(false)
+
   // UI state
   const [activeTab, setActiveTab] = useState<"compose" | "preview" | "scheduled">("compose")
   const [sending, setSending] = useState(false)
@@ -93,6 +111,7 @@ export default function BulkEmailPage() {
   useEffect(() => {
     fetchContacts()
     fetchScheduledEmails()
+    fetchTemplates()
   }, [])
 
   const fetchContacts = async () => {
@@ -127,6 +146,79 @@ export default function BulkEmailPage() {
       console.error('Failed to fetch scheduled emails:', err)
     } finally {
       setLoadingScheduled(false)
+    }
+  }
+
+  const fetchTemplates = async () => {
+    try {
+      const token = localStorage.getItem('auth_token')
+      const res = await fetch(`${API_BASE_URL}/api/email-templates`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (!res.ok) throw new Error('Failed to fetch templates')
+      const data = await res.json()
+      setTemplates(data)
+    } catch (err) {
+      console.error('Failed to fetch templates:', err)
+    }
+  }
+
+  const saveAsTemplate = async () => {
+    if (!templateName.trim()) {
+      setError('Please enter a template name')
+      return
+    }
+    if (!htmlContent.trim()) {
+      setError('No HTML content to save as template')
+      return
+    }
+    setSavingTemplate(true)
+    try {
+      const token = localStorage.getItem('auth_token')
+      const res = await fetch(`${API_BASE_URL}/api/email-templates`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: templateName.trim(),
+          subject: subject.trim() || null,
+          html_content: htmlContent,
+          description: templateDescription.trim() || null,
+        })
+      })
+      if (!res.ok) throw new Error('Failed to save template')
+      await fetchTemplates()
+      setShowSaveTemplate(false)
+      setTemplateName('')
+      setTemplateDescription('')
+      setError('')
+    } catch (err: any) {
+      setError(err.message || 'Failed to save template')
+    } finally {
+      setSavingTemplate(false)
+    }
+  }
+
+  const loadTemplate = (template: EmailTemplate) => {
+    setHtmlContent(template.html_content)
+    if (template.subject) setSubject(template.subject)
+    setShowTemplateMenu(false)
+  }
+
+  const deleteTemplate = async (id: number) => {
+    if (!confirm('Delete this template?')) return
+    try {
+      const token = localStorage.getItem('auth_token')
+      const res = await fetch(`${API_BASE_URL}/api/email-templates/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (!res.ok) throw new Error('Failed to delete template')
+      await fetchTemplates()
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete template')
     }
   }
 
@@ -887,11 +979,101 @@ export default function BulkEmailPage() {
                       </p>
                     </div>
 
-                    {/* HTML Content */}
+                    {/* HTML Content with Template Controls */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        HTML Email Content
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-sm font-medium text-gray-700">
+                          HTML Email Content
+                        </label>
+                        <div className="flex items-center gap-2">
+                          {/* Load Template */}
+                          <div className="relative">
+                            <button
+                              onClick={() => { setShowTemplateMenu(!showTemplateMenu); setShowSaveTemplate(false); }}
+                              className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded border hover:bg-gray-50 transition-colors text-gray-600"
+                            >
+                              <BookOpen className="w-3.5 h-3.5" />
+                              Templates {templates.length > 0 && `(${templates.length})`}
+                            </button>
+                            {showTemplateMenu && (
+                              <div className="absolute right-0 top-full mt-1 w-72 bg-white rounded-lg border shadow-lg z-50 max-h-64 overflow-y-auto">
+                                {templates.length === 0 ? (
+                                  <div className="p-4 text-center text-sm text-gray-500">
+                                    <FileText className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                                    No saved templates yet
+                                  </div>
+                                ) : (
+                                  templates.map(t => (
+                                    <div key={t.id} className="flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 border-b last:border-b-0">
+                                      <button
+                                        onClick={() => loadTemplate(t)}
+                                        className="flex-1 text-left min-w-0"
+                                      >
+                                        <p className="text-sm font-medium truncate">{t.name}</p>
+                                        {t.subject && <p className="text-xs text-gray-400 truncate">Subject: {t.subject}</p>}
+                                        {t.description && <p className="text-xs text-gray-400 truncate">{t.description}</p>}
+                                      </button>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); deleteTemplate(t.id); }}
+                                        className="ml-2 p-1 text-gray-300 hover:text-red-500 flex-shrink-0"
+                                        title="Delete template"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          {/* Save as Template */}
+                          <div className="relative">
+                            <button
+                              onClick={() => { setShowSaveTemplate(!showSaveTemplate); setShowTemplateMenu(false); }}
+                              disabled={!htmlContent.trim()}
+                              className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded border hover:bg-gray-50 transition-colors text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              <Save className="w-3.5 h-3.5" />
+                              Save as Template
+                            </button>
+                            {showSaveTemplate && (
+                              <div className="absolute right-0 top-full mt-1 w-72 bg-white rounded-lg border shadow-lg z-50 p-3">
+                                <p className="text-sm font-medium mb-2">Save Current Email as Template</p>
+                                <input
+                                  type="text"
+                                  value={templateName}
+                                  onChange={(e) => setTemplateName(e.target.value)}
+                                  placeholder="Template name (e.g. Welcome Email)"
+                                  className="w-full px-2.5 py-1.5 text-sm border rounded-md mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  autoFocus
+                                />
+                                <input
+                                  type="text"
+                                  value={templateDescription}
+                                  onChange={(e) => setTemplateDescription(e.target.value)}
+                                  placeholder="Description (optional)"
+                                  className="w-full px-2.5 py-1.5 text-sm border rounded-md mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                <div className="flex items-center gap-2 justify-end">
+                                  <button
+                                    onClick={() => { setShowSaveTemplate(false); setTemplateName(''); setTemplateDescription(''); }}
+                                    className="text-xs px-3 py-1.5 rounded border hover:bg-gray-50"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    onClick={saveAsTemplate}
+                                    disabled={savingTemplate || !templateName.trim()}
+                                    className="text-xs px-3 py-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                                  >
+                                    {savingTemplate ? 'Saving...' : 'Save Template'}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                       <textarea
                         value={htmlContent}
                         onChange={(e) => setHtmlContent(e.target.value)}

@@ -48,7 +48,7 @@ def rate_limit_check(client_ip: str, endpoint: str, max_requests: int = 30, wind
 
 from database import get_db, SessionLocal, engine
 import models
-from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, GoogleOrganizationConfig, GoogleUserConnection, PipelineStage, Deal, EmailTracking, EmailEvent, EmailSharingPermission, ProjectStage, Project, ProjectType, ProjectUpdate, DealUpdate, ScheduledEmail
+from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, GoogleOrganizationConfig, GoogleUserConnection, PipelineStage, Deal, EmailTracking, EmailEvent, EmailSharingPermission, ProjectStage, Project, ProjectType, ProjectUpdate, DealUpdate, ScheduledEmail, EmailTemplate
 from schemas import (
     CompanyCreate, CompanyResponse, CompanyUpdate, CompanyPaginatedResponse,
     ContactCreate, ContactResponse, ContactUpdate,
@@ -5671,6 +5671,156 @@ async def bulk_email_get_contacts(
         }
         for c in contacts
     ]
+
+
+# ==================== Email Templates ====================
+
+class EmailTemplateCreate(BaseModel):
+    name: str
+    subject: Optional[str] = None
+    html_content: str
+    description: Optional[str] = None
+
+class EmailTemplateUpdate(BaseModel):
+    name: Optional[str] = None
+    subject: Optional[str] = None
+    html_content: Optional[str] = None
+    description: Optional[str] = None
+
+@app.get("/api/email-templates")
+async def list_email_templates(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """List all email templates for the organization."""
+    templates = db.query(EmailTemplate).filter(
+        EmailTemplate.organization_id == current_user.organization_id
+    ).order_by(EmailTemplate.updated_at.desc()).all()
+    
+    return [
+        {
+            "id": t.id,
+            "name": t.name,
+            "subject": t.subject,
+            "description": t.description,
+            "html_content": t.html_content,
+            "created_at": t.created_at.isoformat() if t.created_at else None,
+            "updated_at": t.updated_at.isoformat() if t.updated_at else None,
+        }
+        for t in templates
+    ]
+
+@app.post("/api/email-templates")
+async def create_email_template(
+    request: EmailTemplateCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new email template."""
+    template = EmailTemplate(
+        organization_id=current_user.organization_id,
+        created_by=current_user.id,
+        name=request.name,
+        subject=request.subject,
+        html_content=request.html_content,
+        description=request.description,
+    )
+    db.add(template)
+    db.commit()
+    db.refresh(template)
+    
+    return {
+        "id": template.id,
+        "name": template.name,
+        "subject": template.subject,
+        "description": template.description,
+        "html_content": template.html_content,
+        "created_at": template.created_at.isoformat() if template.created_at else None,
+        "updated_at": template.updated_at.isoformat() if template.updated_at else None,
+    }
+
+@app.get("/api/email-templates/{template_id}")
+async def get_email_template(
+    template_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get a single email template."""
+    template = db.query(EmailTemplate).filter(
+        EmailTemplate.id == template_id,
+        EmailTemplate.organization_id == current_user.organization_id
+    ).first()
+    
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    
+    return {
+        "id": template.id,
+        "name": template.name,
+        "subject": template.subject,
+        "description": template.description,
+        "html_content": template.html_content,
+        "created_at": template.created_at.isoformat() if template.created_at else None,
+        "updated_at": template.updated_at.isoformat() if template.updated_at else None,
+    }
+
+@app.put("/api/email-templates/{template_id}")
+async def update_email_template(
+    template_id: int,
+    request: EmailTemplateUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update an email template."""
+    template = db.query(EmailTemplate).filter(
+        EmailTemplate.id == template_id,
+        EmailTemplate.organization_id == current_user.organization_id
+    ).first()
+    
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    
+    if request.name is not None:
+        template.name = request.name
+    if request.subject is not None:
+        template.subject = request.subject
+    if request.html_content is not None:
+        template.html_content = request.html_content
+    if request.description is not None:
+        template.description = request.description
+    
+    db.commit()
+    db.refresh(template)
+    
+    return {
+        "id": template.id,
+        "name": template.name,
+        "subject": template.subject,
+        "description": template.description,
+        "html_content": template.html_content,
+        "created_at": template.created_at.isoformat() if template.created_at else None,
+        "updated_at": template.updated_at.isoformat() if template.updated_at else None,
+    }
+
+@app.delete("/api/email-templates/{template_id}")
+async def delete_email_template(
+    template_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete an email template."""
+    template = db.query(EmailTemplate).filter(
+        EmailTemplate.id == template_id,
+        EmailTemplate.organization_id == current_user.organization_id
+    ).first()
+    
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    
+    db.delete(template)
+    db.commit()
+    
+    return {"message": "Template deleted", "id": template_id}
 
 
 # ==================== Unsubscribe Endpoint (Public) ====================
