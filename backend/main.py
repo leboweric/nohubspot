@@ -299,6 +299,49 @@ try:
                 except Exception as e:
                     logging.info(f"  ⚠️ Failed to add schedule_timezone: {e}")
 
+    # Migrate email_templates table: rename 'body' to 'html_content', add 'description' if missing
+    if 'email_templates' in inspector.get_table_names():
+        et_columns = [col['name'] for col in inspector.get_columns('email_templates')]
+        with engine.connect() as conn:
+            # Rename 'body' column to 'html_content' if needed
+            if 'body' in et_columns and 'html_content' not in et_columns:
+                try:
+                    conn.execute(text("ALTER TABLE email_templates RENAME COLUMN body TO html_content"))
+                    conn.commit()
+                    logging.info("  ✓ Renamed email_templates.body to html_content")
+                except Exception as e:
+                    logging.info(f"  ⚠️ Failed to rename body to html_content: {e}")
+            # Add html_content column if neither body nor html_content exists
+            elif 'html_content' not in et_columns and 'body' not in et_columns:
+                try:
+                    conn.execute(text("ALTER TABLE email_templates ADD COLUMN html_content TEXT"))
+                    conn.commit()
+                    logging.info("  ✓ Added html_content column to email_templates")
+                except Exception as e:
+                    logging.info(f"  ⚠️ Failed to add html_content: {e}")
+            # Add description column if missing
+            if 'description' not in et_columns:
+                try:
+                    conn.execute(text("ALTER TABLE email_templates ADD COLUMN description TEXT"))
+                    conn.commit()
+                    logging.info("  ✓ Added description column to email_templates")
+                except Exception as e:
+                    logging.info(f"  ⚠️ Failed to add description: {e}")
+            # Make subject nullable (model allows Optional)
+            try:
+                conn.execute(text("ALTER TABLE email_templates ALTER COLUMN subject DROP NOT NULL"))
+                conn.commit()
+                logging.info("  ✓ Made email_templates.subject nullable")
+            except Exception as e:
+                logging.info(f"  ⚠️ subject nullable change: {e}")
+            # Make html_content nullable (in case body was NOT NULL)
+            try:
+                conn.execute(text("ALTER TABLE email_templates ALTER COLUMN html_content DROP NOT NULL"))
+                conn.commit()
+                logging.info("  ✓ Made email_templates.html_content nullable")
+            except Exception as e:
+                logging.info(f"  ⚠️ html_content nullable change: {e}")
+
     # Check if we need to seed data
     db = next(get_db())
     try:
