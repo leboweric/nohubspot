@@ -75,7 +75,7 @@ class CompanyPaginatedResponse(BaseModel):
 class ContactBase(BaseModel):
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: str = Field(..., min_length=1, max_length=100)
-    email: EmailStr
+    email: Optional[EmailStr] = None
     phone: Optional[str] = Field(None, max_length=50)
     title: Optional[str] = Field(None, max_length=100)
     company_id: Optional[int] = None

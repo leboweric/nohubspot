@@ -185,7 +185,7 @@ class Contact(Base):
     organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
-    email = Column(String(255), nullable=False, index=True)
+    email = Column(String(255), nullable=True, index=True)
     phone = Column(String(50))
     title = Column(String(100))
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)

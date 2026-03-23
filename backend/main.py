@@ -342,6 +342,14 @@ try:
             except Exception as e:
                 logging.info(f"  ⚠️ html_content nullable change: {e}")
 
+            # Make contacts.email nullable so contacts without emails can be imported
+            try:
+                conn.execute(text("ALTER TABLE contacts ALTER COLUMN email DROP NOT NULL"))
+                conn.commit()
+                logging.info("  ✓ Made contacts.email nullable")
+            except Exception as e:
+                logging.info(f"  ⚠️ contacts.email nullable change: {e}")
+
     # Check if we need to seed data
     db = next(get_db())
     try:
