@@ -2497,20 +2497,71 @@ async def cleanup_all_data(confirm: str = None, db: Session = Depends(get_db)):
 
 @app.get("/api/admin/tenants")
 async def list_all_tenants(db: Session = Depends(get_db)):
-    """List all tenants for admin purposes"""
-    tenants = db.query(Tenant).all()
+    """List all organizations for admin purposes"""
+    orgs = db.query(Organization).all()
     return [
         {
-            "id": t.id,
-            "slug": t.slug,
-            "name": t.name,
-            "created_at": t.created_at,
-            "user_count": db.query(User).filter(User.tenant_id == t.id).count(),
-            "company_count": db.query(Company).filter(Company.tenant_id == t.id).count(),
-            "contact_count": db.query(Contact).filter(Contact.tenant_id == t.id).count(),
+            "id": o.id,
+            "slug": o.slug,
+            "name": o.name,
+            "created_at": o.created_at,
+            "user_count": db.query(User).filter(User.organization_id == o.id).count(),
+            "company_count": db.query(Company).filter(Company.organization_id == o.id).count(),
+            "contact_count": db.query(Contact).filter(Contact.organization_id == o.id).count(),
         }
-        for t in tenants
+        for o in orgs
     ]
+
+@app.post("/api/admin/add-user-to-org")
+async def admin_add_user_to_org(
+    request: dict,
+    db: Session = Depends(get_db)
+):
+    """Admin endpoint to add a user to any organization by org_id"""
+    from password_utils import generate_temporary_password
+    from auth import get_password_hash
+    
+    org_id = request.get("organization_id")
+    email = request.get("email")
+    first_name = request.get("first_name", "Admin")
+    last_name = request.get("last_name", "User")
+    role = request.get("role", "admin")
+    
+    if not org_id or not email:
+        raise HTTPException(status_code=400, detail="organization_id and email are required")
+    
+    # Check org exists
+    org = db.query(Organization).filter(Organization.id == org_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    
+    # Check if user already exists
+    existing = db.query(User).filter(User.email == email, User.organization_id == org_id).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="User already exists in this organization")
+    
+    temp_password = generate_temporary_password()
+    
+    new_user = User(
+        email=email,
+        first_name=first_name,
+        last_name=last_name,
+        password_hash=get_password_hash(temp_password),
+        role=role,
+        organization_id=org_id,
+        is_active=True
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    return {
+        "message": f"User {email} added to {org.name}",
+        "user_id": new_user.id,
+        "email": email,
+        "temporary_password": temp_password,
+        "organization": org.name
+    }
 
 # Pipeline Stage endpoints
 @app.get("/api/pipeline/stages", response_model=List[PipelineStageResponse])

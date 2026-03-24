@@ -1,0 +1,4 @@
+Preview confirmed:
+- "Your Dedicated Contact" section shows the follow-up note: "We'll be following up shortly with your username and password so you can log in and start exploring your dashboards."
+- Contact card shows: Eric LeBow, Founder AI First Operations, eric.lebow@aiop.one, 763-328-7032
+- Both changes look good and properly styled

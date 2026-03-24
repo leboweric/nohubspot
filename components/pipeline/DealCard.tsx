@@ -38,7 +38,9 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
     const daysSinceUpdate = Math.floor((now.getTime() - updatedDate.getTime()) / (1000 * 60 * 60 * 24))
     
     // Health logic - all using subtle gray
-    if (closeDate && closeDate < now && deal.stage_name !== 'Closed Won') {
+    // Skip overdue check for any closed stage (Won or Lost)
+    const isClosed = deal.stage_name?.includes('Closed')
+    if (closeDate && closeDate < now && !isClosed) {
       return { status: 'overdue', color: 'text-gray-600 bg-gray-100', icon: AlertTriangle, label: 'Overdue' }
     } else if (daysSinceUpdate > 14) {
       return { status: 'stalled', color: 'text-gray-600 bg-gray-100', icon: AlertCircle, label: 'Stalled' }
@@ -65,7 +67,10 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
     const diffTime = closeDate.getTime() - today.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     
-    if (diffDays < 0) {
+    // Don't show overdue for closed deals
+    if (diffDays < 0 && deal.stage_name?.includes('Closed')) {
+      return { text: `Closed ${closeDate.toLocaleDateString()}`, color: 'text-gray-600 bg-gray-100' }
+    } else if (diffDays < 0) {
       return { text: `Overdue ${Math.abs(diffDays)} ${Math.abs(diffDays) === 1 ? 'day' : 'days'}`, color: 'text-gray-600 bg-gray-100' }
     } else if (diffDays === 0) {
       return { text: 'Closes today', color: 'text-gray-600 bg-gray-100' }
