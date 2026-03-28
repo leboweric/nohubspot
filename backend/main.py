@@ -771,6 +771,45 @@ async def reset_password(request: PasswordResetConfirm, db: Session = Depends(ge
             detail="Failed to reset password"
         )
 
+
+# Change password endpoint (authenticated)
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+@app.post("/api/auth/change-password")
+async def change_password(
+    request: ChangePasswordRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Change password for the currently authenticated user"""
+    # Verify current password
+    if not verify_password(request.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect"
+        )
+    
+    # Validate new password
+    if len(request.new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be at least 8 characters long"
+        )
+    
+    if request.current_password == request.new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be different from current password"
+        )
+    
+    # Update password
+    current_user.password_hash = get_password_hash(request.new_password)
+    db.commit()
+    
+    return {"message": "Password changed successfully"}
+
 # User invitation endpoints
 @app.post("/api/invites", response_model=UserInviteResponse)
 async def create_invite(

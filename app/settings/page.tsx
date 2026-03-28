@@ -21,7 +21,7 @@ import { o365API, o365IntegrationAPI, O365OrganizationConfig, O365UserConnection
 import { 
   User, Users, Mail, Building2, Shield, Calendar, Settings, 
   Zap, Database, HelpCircle, Plus, Download, Search,
-  Phone, Trash2, FileText, Palette, Globe
+  Phone, Trash2, FileText, Palette, Globe, Eye, EyeOff, Lock
 } from "lucide-react"
 
 // Force dynamic rendering to prevent static generation issues with auth
@@ -50,6 +50,14 @@ export default function SettingsPage() {
   const [inviteLastName, setInviteLastName] = useState("")
   const [inviteRole, setInviteRole] = useState<"user" | "admin">("user")
   const [tempPassword, setTempPassword] = useState("")
+  
+  // Change password states
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmNewPassword, setConfirmNewPassword] = useState("")
+  const [passwordChanging, setPasswordChanging] = useState(false)
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
   
   // General states
   const [loading, setLoading] = useState(false)
@@ -448,6 +456,137 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Change Password */}
+        <div className="bg-white border rounded-lg p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <Lock className="w-5 h-5" />
+            <div>
+              <h2 className="text-lg font-semibold">Change Password</h2>
+              <p className="text-sm text-gray-600">Update your account password</p>
+            </div>
+          </div>
+          
+          <form onSubmit={async (e) => {
+            e.preventDefault()
+            setError('')
+            setSuccess('')
+            
+            if (newPassword.length < 8) {
+              setError('New password must be at least 8 characters long')
+              return
+            }
+            if (newPassword !== confirmNewPassword) {
+              setError('New passwords do not match')
+              return
+            }
+            
+            setPasswordChanging(true)
+            try {
+              const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nothubspot-production.up.railway.app'
+              const token = localStorage.getItem('auth_token')
+              const response = await fetch(`${baseUrl}/api/auth/change-password`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                  current_password: currentPassword,
+                  new_password: newPassword
+                })
+              })
+              
+              if (response.ok) {
+                setSuccess('Password changed successfully!')
+                setCurrentPassword('')
+                setNewPassword('')
+                setConfirmNewPassword('')
+              } else {
+                const data = await response.json()
+                setError(data.detail || 'Failed to change password')
+              }
+            } catch (err) {
+              setError('Failed to change password. Please try again.')
+            } finally {
+              setPasswordChanging(false)
+            }
+          }} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Current Password</label>
+              <div className="relative">
+                <input
+                  type={showCurrentPassword ? 'text' : 'password'}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                  placeholder="Enter current password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">New Password</label>
+              <div className="relative">
+                <input
+                  type={showNewPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                  placeholder="Minimum 8 characters"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Confirm New Password</label>
+              <input
+                type="password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                required
+                minLength={8}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Confirm new password"
+              />
+            </div>
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={passwordChanging || !currentPassword || !newPassword || !confirmNewPassword}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: 'var(--color-primary)' }}
+              >
+                {passwordChanging ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Changing...
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4" />
+                    Change Password
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
         </div>
 
         {/* Email Signature */}
