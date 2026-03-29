@@ -9,7 +9,7 @@ pydantic[email]==2.5.0
 python-jose[cryptography]==3.3.0
 bcrypt==4.1.2
 passlib[bcrypt]==1.7.4
-cryptography==45.0.5
+cryptography==46.0.6
 httpx==0.25.2
 requests==2.31.0
 sendgrid==6.11.0
