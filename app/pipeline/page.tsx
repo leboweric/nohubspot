@@ -49,13 +49,20 @@ function PipelineContent() {
       setError("")
       
       // Load stages first
-      const stagesData = await pipelineAPI.getStages()
+      let stagesData = await pipelineAPI.getStages()
       setStages(stagesData)
       
-      // If no stages exist, offer to create defaults
+      // If no stages exist, auto-initialize defaults
       if (stagesData.length === 0) {
-        setError("No pipeline stages found. Would you like to create default stages?")
-        return
+        try {
+          const result = await pipelineAPI.initializeDefaultStages()
+          const newStages = await pipelineAPI.getStages()
+          setStages(newStages)
+          stagesData = newStages
+        } catch (initErr) {
+          setError("No pipeline stages found. Please contact support.")
+          return
+        }
       }
       
       // Load all deals
@@ -122,8 +129,12 @@ function PipelineContent() {
   }
 
   const handleCreateDeal = (stageId?: number) => {
+    if (stages.length === 0) {
+      setError("Cannot create a deal — no pipeline stages are configured. Please reload the page.")
+      return
+    }
     setSelectedDeal(null)
-    setDefaultStageId(stageId)
+    if (stageId) setDefaultStageId(stageId)
     setShowDealModal(true)
   }
 

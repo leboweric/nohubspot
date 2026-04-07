@@ -653,6 +653,13 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
         # Create user and organization
         user, organization = register_user_with_organization(db, user_data)
         
+        # Auto-initialize default pipeline stages for the new organization
+        try:
+            create_default_pipeline_stages(db, organization.id)
+            logging.info(f"Auto-initialized pipeline stages for org {organization.id}")
+        except Exception as stage_err:
+            logging.warning(f"Failed to auto-initialize pipeline stages for org {organization.id}: {stage_err}")
+        
         # Create access token
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
@@ -2609,8 +2616,16 @@ async def get_stages(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    """Get all pipeline stages for the organization"""
+    """Get all pipeline stages for the organization. Auto-initializes defaults if none exist."""
     stages = get_pipeline_stages(db, current_user.organization_id, include_inactive)
+    
+    # Auto-initialize default stages if none exist for this org
+    if not stages:
+        try:
+            stages = create_default_pipeline_stages(db, current_user.organization_id)
+            logging.info(f"Auto-initialized pipeline stages for org {current_user.organization_id}")
+        except Exception as e:
+            logging.warning(f"Failed to auto-initialize pipeline stages: {e}")
     
     # Add deal counts
     for stage in stages:
