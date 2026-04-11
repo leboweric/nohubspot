@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, status, R
 from fastapi.responses import RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import text, or_
 from sqlalchemy.exc import OperationalError
@@ -4644,8 +4645,6 @@ async def get_o365_auth_url(
     
     return {"auth_url": auth_url}
 
-
-from pydantic import BaseModel
 
 class O365CallbackRequest(BaseModel):
     code: str
