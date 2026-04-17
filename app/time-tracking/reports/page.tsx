@@ -195,7 +195,7 @@ export default function TimeTrackingReportsPage() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Time Tracking Reports</h1>
+              <h1 className="text-xl font-bold text-gray-900">Time Tracking Reports</h1>
               <p className="text-sm text-gray-500 mt-1">
                 {startDate} to {endDate}
               </p>
@@ -281,28 +281,28 @@ export default function TimeTrackingReportsPage() {
                     <Clock className="w-4 h-4" />
                     Total Hours
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">{summary.total_hours}h</p>
+                  <p className="text-xl font-bold text-gray-900 tabular-nums">{summary.total_hours}h</p>
                 </div>
                 <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
                   <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
                     <DollarSign className="w-4 h-4" />
                     Billable Hours
                   </div>
-                  <p className="text-2xl font-bold text-green-600">{summary.billable_hours}h</p>
+                  <p className="text-xl font-bold text-green-600 tabular-nums">{summary.billable_hours}h</p>
                 </div>
                 <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
                   <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
                     <FileText className="w-4 h-4" />
                     Entries
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">{summary.entry_count}</p>
+                  <p className="text-xl font-bold text-gray-900 tabular-nums">{summary.entry_count}</p>
                 </div>
                 <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
                   <div className="flex items-center gap-2 text-gray-500 text-sm mb-2">
                     <BarChart3 className="w-4 h-4" />
                     Billable %
                   </div>
-                  <p className="text-2xl font-bold text-blue-600">
+                  <p className="text-xl font-bold text-blue-600 tabular-nums">
                     {summary.total_hours > 0 ? Math.round((summary.billable_hours / summary.total_hours) * 100) : 0}%
                   </p>
                 </div>
@@ -441,7 +441,7 @@ export default function TimeTrackingReportsPage() {
                       <span className="text-gray-500">
                         {formatHours(consultantData.reduce((sum, c) => sum + c.total_hours, 0))}
                       </span>
-                      <span className="text-lg font-bold text-green-600">
+                      <span className="text-base font-bold text-green-600">
                         {formatCurrency(consultantData.reduce((sum, c) => sum + c.total_amount, 0))}
                       </span>
                     </div>
@@ -538,7 +538,7 @@ export default function TimeTrackingReportsPage() {
                       <span className="text-gray-500">
                         {formatHours(clientData.reduce((sum, p) => sum + p.total_hours, 0))}
                       </span>
-                      <span className="text-lg font-bold text-green-600">
+                      <span className="text-base font-bold text-green-600">
                         {formatCurrency(clientData.reduce((sum, p) => sum + p.total_client_amount, 0))}
                       </span>
                     </div>

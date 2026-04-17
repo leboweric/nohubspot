@@ -268,7 +268,7 @@ export default function EventFormModal({ isOpen, onClose, onSave, onDelete, even
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-card border rounded-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-lg font-semibold">
+          <h2 className="text-base font-semibold">
             {event ? 'Edit Event' : 'New Event'}
           </h2>
           <button

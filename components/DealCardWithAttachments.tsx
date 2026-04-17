@@ -300,7 +300,7 @@ export default function DealCardWithAttachments({ deal, isDragging = false, onEd
             {deal.title}
           </h4>
           <div className="flex items-center justify-between mt-1">
-            <div className="text-lg font-bold text-blue-600">
+            <div className="text-base font-bold text-blue-600">
               {formatCurrency(deal.value || 0, deal.currency)}
             </div>
             {deal.probability !== undefined && (

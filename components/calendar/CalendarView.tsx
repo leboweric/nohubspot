@@ -184,7 +184,7 @@ export default function CalendarView({ events = [], currentDate, onDateClick, on
                         e.stopPropagation()
                         onEventClick(event)
                       }}
-                      className={`text-xs px-2 py-1 rounded-md text-white hover:shadow-sm transition-all cursor-pointer border ${getEventTypeColor(event.event_type)} group-hover:scale-105`}
+                      className={`text-xs px-2 py-1 rounded-md text-white hover:shadow-sm transition-all cursor-pointer border ${getEventTypeColor(event.event_type)}`}
                       title={`${event.title} - ${formatTime(event.start_time)}${event.end_time ? ` to ${formatTime(event.end_time)}` : ''}${event.location ? ` at ${event.location}` : ''}`}
                     >
                       {event.is_all_day ? (

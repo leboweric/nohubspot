@@ -110,7 +110,7 @@ export default function NewContactPage() {
       <MainLayout>
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold">Add New Contact</h1>
+        <h1 className="text-xl font-semibold">Add New Contact</h1>
         <p className="text-muted-foreground mt-1">Enter contact information below</p>
       </div>
 

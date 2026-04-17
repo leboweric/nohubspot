@@ -122,7 +122,7 @@ export default function TemplatesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-2xl font-semibold">Email Templates</h1>
+              <h1 className="text-xl font-semibold">Email Templates</h1>
               <p className="text-muted-foreground mt-1">Create and manage reusable email templates</p>
             </div>
             <button
@@ -192,7 +192,7 @@ export default function TemplatesPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-medium">{template.name}</h3>
+                          <h3 className="text-base font-medium">{template.name}</h3>
                           {template.category && (
                             <span className={`px-2 py-1 text-xs rounded-full ${getCategoryColor(template.category)}`}>
                               {template.category}
@@ -248,7 +248,7 @@ export default function TemplatesPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No templates found</h3>
+                <h3 className="text-base font-medium text-gray-900 mb-2">No templates found</h3>
                 <p className="text-muted-foreground mb-4">
                   {searchTerm || selectedCategory ? 
                     'No templates match your search criteria.' : 
@@ -272,7 +272,7 @@ export default function TemplatesPage() {
           {deleteConfirm && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                <h3 className="text-lg font-semibold mb-4">Delete Template</h3>
+                <h3 className="text-base font-semibold mb-4">Delete Template</h3>
                 <p className="text-sm text-muted-foreground mb-6">
                   Are you sure you want to delete this template? This action cannot be undone.
                 </p>

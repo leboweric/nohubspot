@@ -430,7 +430,7 @@ export default function SettingsPage() {
         <div className="bg-white border rounded-lg p-6">
           <div className="flex items-center gap-3 mb-6">
             <User className="w-5 h-5" />
-            <h2 className="text-lg font-semibold">Profile Settings</h2>
+            <h2 className="text-base font-semibold">Profile Settings</h2>
           </div>
           
           <div className="space-y-4">
@@ -463,7 +463,7 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3 mb-6">
             <Lock className="w-5 h-5" />
             <div>
-              <h2 className="text-lg font-semibold">Change Password</h2>
+              <h2 className="text-base font-semibold">Change Password</h2>
               <p className="text-sm text-gray-600">Update your account password</p>
             </div>
           </div>
@@ -595,7 +595,7 @@ export default function SettingsPage() {
             <div className="flex items-center gap-3">
               <Mail className="w-5 h-5" />
               <div>
-                <h2 className="text-lg font-semibold">Email Signature</h2>
+                <h2 className="text-base font-semibold">Email Signature</h2>
                 <p className="text-sm text-gray-600">Configure your automatic email signature</p>
               </div>
             </div>
@@ -651,7 +651,7 @@ export default function SettingsPage() {
             <div className="flex items-center gap-3">
               <Users className="w-5 h-5" />
               <div>
-                <h2 className="text-lg font-semibold">Team Management</h2>
+                <h2 className="text-base font-semibold">Team Management</h2>
                 <p className="text-sm text-gray-600">Manage users in your organization</p>
               </div>
             </div>
@@ -704,7 +704,7 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3 mb-4">
             <Zap className="w-5 h-5" />
             <div>
-              <h2 className="text-lg font-semibold">Integrations</h2>
+              <h2 className="text-base font-semibold">Integrations</h2>
               <p className="text-sm text-gray-600">Connect with third-party services</p>
             </div>
           </div>
@@ -769,7 +769,7 @@ export default function SettingsPage() {
         <div className="bg-white border rounded-lg p-6">
           <div className="flex items-center gap-3 mb-6">
             <Building2 className="w-5 h-5" />
-            <h2 className="text-lg font-semibold">Organization Information</h2>
+            <h2 className="text-base font-semibold">Organization Information</h2>
           </div>
           
           <div className="space-y-4">
@@ -801,7 +801,7 @@ export default function SettingsPage() {
               <div className="flex items-center gap-3">
                 <FileText className="w-5 h-5" />
                 <div>
-                  <h2 className="text-lg font-semibold">Project Types</h2>
+                  <h2 className="text-base font-semibold">Project Types</h2>
                   <p className="text-sm text-gray-600">Customize project types for your organization</p>
                 </div>
               </div>
@@ -983,7 +983,7 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3 mb-4">
             <Database className="w-5 h-5" />
             <div>
-              <h2 className="text-lg font-semibold">Data Management</h2>
+              <h2 className="text-base font-semibold">Data Management</h2>
               <p className="text-sm text-gray-600">Clean and standardize your organization's data</p>
             </div>
           </div>
@@ -994,7 +994,7 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3 mb-4">
             <Phone className="w-5 h-5" />
             <div>
-              <h3 className="text-lg font-semibold">Phone Number Standardization</h3>
+              <h3 className="text-base font-semibold">Phone Number Standardization</h3>
               <p className="text-sm text-gray-600">Standardize all phone numbers to format: (XXX) XXX-XXXX</p>
             </div>
           </div>
@@ -1070,7 +1070,7 @@ export default function SettingsPage() {
           <div className="flex items-center gap-3 mb-4">
             <Trash2 className="w-5 h-5" />
             <div>
-              <h3 className="text-lg font-semibold">Duplicate Detection</h3>
+              <h3 className="text-base font-semibold">Duplicate Detection</h3>
               <p className="text-sm text-gray-600">Find and remove duplicate records from your database</p>
             </div>
           </div>
@@ -1151,7 +1151,7 @@ export default function SettingsPage() {
             <div className="flex items-center gap-3">
               <HelpCircle className="w-5 h-5" />
               <div>
-                <h2 className="text-lg font-semibold">Support & Help</h2>
+                <h2 className="text-base font-semibold">Support & Help</h2>
                 <p className="text-sm text-gray-600">Get help and contact our support team</p>
               </div>
             </div>
@@ -1208,7 +1208,7 @@ export default function SettingsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-2xl font-semibold flex items-center gap-3">
+            <h1 className="text-xl font-semibold flex items-center gap-3">
               <Settings className="w-6 h-6" />
               Settings
             </h1>
@@ -1254,7 +1254,7 @@ export default function SettingsPage() {
         {showInviteForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h3 className="text-lg font-semibold mb-4">Add User to {organization?.name}</h3>
+              <h3 className="text-base font-semibold mb-4">Add User to {organization?.name}</h3>
               <form onSubmit={handleSendInvite}>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -1346,7 +1346,7 @@ export default function SettingsPage() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold">Office 365 Configuration</h3>
+                <h3 className="text-base font-semibold">Office 365 Configuration</h3>
                 <button
                   onClick={() => setShowO365Config(false)}
                   className="text-gray-500 hover:text-gray-700"
@@ -1605,7 +1605,7 @@ export default function SettingsPage() {
         {showPasswordModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h3 className="text-lg font-semibold mb-4">User Created Successfully!</h3>
+              <h3 className="text-base font-semibold mb-4">User Created Successfully!</h3>
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                 <p className="text-sm text-green-800 mb-2">
                   The user has been added and a welcome email has been sent with their login credentials.

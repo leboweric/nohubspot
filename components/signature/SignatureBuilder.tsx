@@ -102,7 +102,7 @@ export default function SignatureBuilder({ isOpen, onClose, onSave, initialSigna
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-card border rounded-lg w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">Email Signature Builder</h2>
+          <h2 className="text-base font-semibold">Email Signature Builder</h2>
           <button
             onClick={onClose}
             className="text-muted-foreground hover:text-foreground transition-colors"
@@ -230,7 +230,7 @@ export default function SignatureBuilder({ isOpen, onClose, onSave, initialSigna
 
           {/* Preview */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Preview</h3>
+            <h3 className="text-base font-semibold mb-4">Preview</h3>
             <div className="bg-muted p-4 rounded-md min-h-[300px]">
               {signature.enabled ? (
                 <pre className="text-sm whitespace-pre-wrap font-mono">

@@ -53,7 +53,7 @@ export default function EmailTrackingStatus({ contactId, className = "" }: Email
   if (isLoading) {
     return (
       <div className={`bg-card border rounded-lg p-6 ${className}`}>
-        <h3 className="text-lg font-semibold mb-4">Email Engagement</h3>
+        <h3 className="text-base font-semibold mb-4">Email Engagement</h3>
         <div className="animate-pulse">
           <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
           <div className="h-4 bg-gray-200 rounded w-1/2"></div>
@@ -65,7 +65,7 @@ export default function EmailTrackingStatus({ contactId, className = "" }: Email
   if (error) {
     return (
       <div className={`bg-card border rounded-lg p-6 ${className}`}>
-        <h3 className="text-lg font-semibold mb-4">Email Engagement</h3>
+        <h3 className="text-base font-semibold mb-4">Email Engagement</h3>
         <p className="text-sm text-muted-foreground">{error}</p>
       </div>
     )
@@ -74,7 +74,7 @@ export default function EmailTrackingStatus({ contactId, className = "" }: Email
   if (trackingRecords.length === 0) {
     return (
       <div className={`bg-card border rounded-lg p-6 ${className}`}>
-        <h3 className="text-lg font-semibold mb-4">Email Engagement</h3>
+        <h3 className="text-base font-semibold mb-4">Email Engagement</h3>
         <p className="text-sm text-muted-foreground">No emails sent yet</p>
       </div>
     )
@@ -82,24 +82,24 @@ export default function EmailTrackingStatus({ contactId, className = "" }: Email
 
   return (
     <div className={`bg-card border rounded-lg p-6 ${className}`}>
-      <h3 className="text-lg font-semibold mb-4">Email Engagement</h3>
+      <h3 className="text-base font-semibold mb-4">Email Engagement</h3>
       
       {/* Summary Stats */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="text-center">
-          <div className="text-2xl font-bold text-primary">
+          <div className="text-xl font-bold text-primary tabular-nums">
             {trackingRecords.length}
           </div>
           <div className="text-xs text-muted-foreground">Emails Sent</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-gray-700">
+          <div className="text-xl font-bold text-gray-700 tabular-nums">
             {trackingRecords.filter(r => r.open_count > 0).length}
           </div>
           <div className="text-xs text-muted-foreground">Opened</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-gray-700">
+          <div className="text-xl font-bold text-gray-700 tabular-nums">
             {trackingRecords.filter(r => r.click_count > 0).length}
           </div>
           <div className="text-xs text-muted-foreground">Clicked</div>

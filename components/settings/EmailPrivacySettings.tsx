@@ -111,7 +111,7 @@ export default function EmailPrivacySettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-4">Email Privacy Settings</h3>
+        <h3 className="text-base font-semibold mb-4">Email Privacy Settings</h3>
         <p className="text-sm text-muted-foreground mb-4">
           Control which emails are synced from Office 365 to NotHubSpot
         </p>

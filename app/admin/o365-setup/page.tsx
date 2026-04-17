@@ -64,13 +64,13 @@ export default function O365SetupPage() {
       <MainLayout>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8">
-            <h1 className="text-2xl font-semibold">Office 365 Setup</h1>
+            <h1 className="text-xl font-semibold">Office 365 Setup</h1>
             <p className="text-muted-foreground mt-1">Configure Office 365 integration for your organization</p>
           </div>
 
           <div className="bg-card border rounded-lg p-6">
             <div className="mb-6">
-              <h2 className="text-lg font-semibold mb-2">Azure AD App Registration</h2>
+              <h2 className="text-base font-semibold mb-2">Azure AD App Registration</h2>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800 mb-3">
                   Before configuring, you need to register an application in Azure Active Directory:

@@ -88,7 +88,7 @@ export default function O365Connection() {
   if (loading) {
     return (
       <div className="bg-card border rounded-lg p-6">
-        <h3 className="text-lg font-semibold mb-4">Office 365 Integration</h3>
+        <h3 className="text-base font-semibold mb-4">Office 365 Integration</h3>
         <div className="animate-pulse">
           <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
           <div className="h-4 bg-gray-200 rounded w-1/2"></div>
@@ -99,7 +99,7 @@ export default function O365Connection() {
 
   return (
     <div className="bg-card border rounded-lg p-6">
-      <h3 className="text-lg font-semibold mb-4">Office 365 Integration</h3>
+      <h3 className="text-base font-semibold mb-4">Office 365 Integration</h3>
       
       {status?.connected ? (
         <div className="space-y-4">

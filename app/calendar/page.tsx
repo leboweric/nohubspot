@@ -165,7 +165,7 @@ export default function CalendarPage() {
           <div className="mb-8">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h1 className="text-2xl font-semibold flex items-center gap-3">
+                <h1 className="text-xl font-semibold flex items-center gap-3">
                   <Calendar className="w-6 h-6" />
                   Calendar
                 </h1>

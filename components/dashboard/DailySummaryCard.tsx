@@ -140,7 +140,7 @@ export default function DailySummaryCard() {
     return (
       <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-blue-900">Daily Summary</h2>
+          <h2 className="text-base font-semibold text-blue-900">Daily Summary</h2>
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
         </div>
         <div className="text-blue-700">
@@ -155,7 +155,7 @@ export default function DailySummaryCard() {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-red-900">Daily Summary</h2>
+          <h2 className="text-base font-semibold text-red-900">Daily Summary</h2>
           <button
             onClick={loadDailySummary}
             className="text-sm text-red-600 hover:text-red-800 underline"
@@ -176,7 +176,7 @@ export default function DailySummaryCard() {
     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <h2 className="text-lg font-semibold text-blue-900">🤖 AI Daily Summary</h2>
+          <h2 className="text-base font-semibold text-blue-900">🤖 AI Daily Summary</h2>
           <p className="text-xs text-blue-600">
             Last updated: {formatTime(summary.generated_at)}
           </p>
@@ -203,23 +203,23 @@ export default function DailySummaryCard() {
       {/* Compact Quick Stats Row */}
       <div className="grid grid-cols-5 gap-2 mb-3">
         <div className="text-center">
-          <div className="text-lg font-bold text-red-600">{summary.quick_stats.overdue_tasks}</div>
+          <div className="text-base font-bold text-red-600">{summary.quick_stats.overdue_tasks}</div>
           <div className="text-xs text-gray-600">Overdue</div>
         </div>
         <div className="text-center">
-          <div className="text-lg font-bold text-orange-600">{summary.quick_stats.today_tasks}</div>
+          <div className="text-base font-bold text-orange-600">{summary.quick_stats.today_tasks}</div>
           <div className="text-xs text-gray-600">Today</div>
         </div>
         <div className="text-center">
-          <div className="text-lg font-bold text-gray-700">{summary.quick_stats.total_contacts}</div>
+          <div className="text-base font-bold text-gray-700">{summary.quick_stats.total_contacts}</div>
           <div className="text-xs text-gray-600">Contacts</div>
         </div>
         <div className="text-center">
-          <div className="text-lg font-bold text-gray-700">{summary.quick_stats.active_deals}</div>
+          <div className="text-base font-bold text-gray-700">{summary.quick_stats.active_deals}</div>
           <div className="text-xs text-gray-600">Deals</div>
         </div>
         <div className="text-center">
-          <div className="text-lg font-bold text-gray-700">{summary.quick_stats.active_companies}</div>
+          <div className="text-base font-bold text-gray-700">{summary.quick_stats.active_companies}</div>
           <div className="text-xs text-gray-600">Customers</div>
         </div>
       </div>

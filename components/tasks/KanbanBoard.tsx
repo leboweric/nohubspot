@@ -202,7 +202,7 @@ export default function KanbanBoard({
               {/* Empty state */}
               {columnTasks.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
-                  <div className="text-2xl mb-2">📋</div>
+                  <div className="text-xl mb-2">📋</div>
                   <p className="text-sm">
                     {column.status === 'pending' ? 'No tasks to do' :
                      column.status === 'in_progress' ? 'No tasks in progress' :

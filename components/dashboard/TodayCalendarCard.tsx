@@ -87,7 +87,7 @@ export default function TodayCalendarCard() {
   return (
     <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold flex items-center">
+        <h2 className="text-base font-semibold flex items-center">
           <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
           Today's Schedule
         </h2>
@@ -159,7 +159,7 @@ export default function TodayCalendarCard() {
         </div>
       ) : (
         <div className="text-center py-6">
-          <div className="text-2xl mb-2">📅</div>
+          <div className="text-xl mb-2">📅</div>
           <p className="text-sm text-muted-foreground mb-2">No events scheduled for today</p>
           <Link 
             href="/calendar" 

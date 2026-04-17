@@ -212,7 +212,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
         <MainLayout>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="text-center">
-              <h1 className="text-2xl font-semibold mb-4">Company Not Found</h1>
+              <h1 className="text-xl font-semibold mb-4">Company Not Found</h1>
               <p className="text-muted-foreground mb-4">
                 {error || "The company you're looking for doesn't exist."}
               </p>
@@ -239,7 +239,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
             <div className="flex justify-between items-start mb-4">
               <div>
                 <div className="flex items-center gap-3">
-                  <h1 className="text-3xl font-semibold">{company.name}</h1>
+                  <h1 className="text-xl font-semibold">{company.name}</h1>
                   <span className={`inline-flex px-3 py-1 text-sm rounded-full ${
                     company.status === "Active" 
                       ? "bg-gray-100 text-gray-700" 
@@ -358,7 +358,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
                   <div className="bg-card border rounded-lg p-6">
-                    <h2 className="text-lg font-semibold mb-4">Company Details</h2>
+                    <h2 className="text-base font-semibold mb-4">Company Details</h2>
                     <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <dt className="text-sm font-medium text-muted-foreground">Industry</dt>
@@ -459,7 +459,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                   {/* Recent Contacts */}
                   <div className="bg-card border rounded-lg p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-lg font-semibold">Recent Contacts</h2>
+                      <h2 className="text-base font-semibold">Recent Contacts</h2>
                       <button 
                         onClick={() => setActiveTab("contacts")}
                         className="text-sm hover:underline"
@@ -495,7 +495,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                 {/* Stats Sidebar */}
                 <div className="space-y-6">
                   <div className="bg-card border rounded-lg p-6">
-                    <h2 className="text-lg font-semibold mb-4">Quick Stats</h2>
+                    <h2 className="text-base font-semibold mb-4">Quick Stats</h2>
                     <dl className="space-y-3">
                       <div className="flex justify-between">
                         <dt className="text-sm text-muted-foreground">Total Contacts</dt>
@@ -513,7 +513,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                   </div>
 
                   <div className="bg-card border rounded-lg p-6">
-                    <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+                    <h2 className="text-base font-semibold mb-4">Quick Actions</h2>
                     <div className="space-y-2">
                       <Link 
                         href={`/contacts/new?companyId=${company.id}&company=${encodeURIComponent(company.name)}`}
@@ -565,7 +565,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                         <div className="flex justify-between items-start mb-2">
                           <Link 
                             href={`/contacts/${contact.id}`}
-                            className="font-medium text-lg hover:opacity-80 transition-opacity"
+                            className="font-medium text-base hover:opacity-80 transition-opacity"
                           >
                             {contact.first_name} {contact.last_name}
                           </Link>
@@ -635,7 +635,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                       <div key={deal.id} className="border rounded-lg p-4">
                         <div className="flex justify-between items-start">
                           <div>
-                            <h3 className="font-medium text-lg">{deal.title}</h3>
+                            <h3 className="font-medium text-base">{deal.title}</h3>
                             <p className="text-sm text-muted-foreground">
                               Stage: {deal.stage} • Value: ${deal.value?.toLocaleString() || 0}
                             </p>

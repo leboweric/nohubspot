@@ -62,7 +62,7 @@ export default function HotLists({ hotDeals, atRiskDeals, recentWins, loading }:
       {/* Hot Deals */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Hot Deals</h3>
+          <h3 className="text-base font-semibold text-gray-900">Hot Deals</h3>
           <TrendingUp className="w-5 h-5 text-gray-400" />
         </div>
         
@@ -112,7 +112,7 @@ export default function HotLists({ hotDeals, atRiskDeals, recentWins, loading }:
       {/* At Risk Deals */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">At Risk</h3>
+          <h3 className="text-base font-semibold text-gray-900">At Risk</h3>
           <AlertTriangle className="w-5 h-5 text-gray-400" />
         </div>
         
@@ -161,7 +161,7 @@ export default function HotLists({ hotDeals, atRiskDeals, recentWins, loading }:
       {/* Recent Wins */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Recent Wins</h3>
+          <h3 className="text-base font-semibold text-gray-900">Recent Wins</h3>
           <Trophy className="w-5 h-5 text-gray-400" />
         </div>
         

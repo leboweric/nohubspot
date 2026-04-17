@@ -89,7 +89,7 @@ Date: ${new Date().toISOString()}
             <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
               <span className="text-green-600 text-xl">✓</span>
             </div>
-            <h3 className="text-lg font-semibold mb-2">Support Request Sent!</h3>
+            <h3 className="text-base font-semibold mb-2">Support Request Sent!</h3>
             <p className="text-gray-600 text-sm">
               Your support request has been sent successfully. We'll get back to you as soon as possible.
             </p>
@@ -103,7 +103,7 @@ Date: ${new Date().toISOString()}
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-semibold">Contact Support</h3>
+          <h3 className="text-base font-semibold">Contact Support</h3>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"

@@ -843,7 +843,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
           {/* Header */}
           <div className="p-4 border-b">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
+              <h2 className="text-base font-semibold">
                 {selectedFolder ? selectedFolder.name : 'All Documents'}
               </h2>
               
@@ -910,7 +910,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
             ) : filteredAttachments.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-500 pointer-events-none">
                 <Upload className="w-16 h-16 mb-4 text-gray-300" />
-                <p className="text-lg font-medium">Drop files here to upload</p>
+                <p className="text-base font-medium">Drop files here to upload</p>
                 <p className="text-sm mt-1">or use the Upload button above</p>
                 <p className="text-xs mt-2 text-gray-400">Files will be automatically categorized into folders</p>
               </div>
@@ -940,7 +940,7 @@ export default function DocumentManager({ companyId }: DocumentManagerProps) {
       {showNewFolderDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96">
-            <h3 className="text-lg font-semibold mb-4">Create New Folder</h3>
+            <h3 className="text-base font-semibold mb-4">Create New Folder</h3>
             <input
               type="text"
               value={newFolderName}

@@ -39,7 +39,7 @@ export default function ActionItemsBar({ items }: ActionItemsBarProps) {
                 <Icon className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-lg font-bold text-gray-900">
+                <p className="text-base font-bold text-gray-900">
                   {item.count}
                 </p>
                 <p className="text-xs text-gray-600 group-hover:text-gray-900">

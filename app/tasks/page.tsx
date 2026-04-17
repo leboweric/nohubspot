@@ -244,7 +244,7 @@ export default function TasksPage() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div>
-              <h1 className="text-2xl font-semibold">Tasks</h1>
+              <h1 className="text-xl font-semibold">Tasks</h1>
               <p className="text-muted-foreground mt-1">Manage your sales activities and follow-ups</p>
             </div>
             
@@ -430,7 +430,7 @@ export default function TasksPage() {
               {viewMode === 'calendar' && (
                 <div className="bg-card border rounded-lg p-12 text-center">
                   <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Calendar View</h3>
+                  <h3 className="text-base font-semibold mb-2">Calendar View</h3>
                   <p className="text-muted-foreground">Calendar view coming soon! View tasks organized by due dates.</p>
                   <button
                     onClick={() => setViewMode('list')}

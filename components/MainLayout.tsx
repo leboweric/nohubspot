@@ -365,7 +365,7 @@ function MainLayoutInner({ children }: MainLayoutProps) {
               className="h-7 object-contain"
             />
           ) : (
-            <span className="text-lg font-bold" style={{ color: 'var(--color-primary)' }}>NHS</span>
+            <span className="text-base font-bold" style={{ color: 'var(--color-primary)' }}>NHS</span>
           )}
           <div className="flex-1" />
         </header>

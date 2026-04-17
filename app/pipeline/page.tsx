@@ -320,7 +320,7 @@ function PipelineContent() {
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-semibold">Sales Pipeline</h1>
+                <h1 className="text-xl font-semibold">Sales Pipeline</h1>
                 <p className="text-muted-foreground mt-1">
                   Track your deals through each stage of the sales process
                 </p>
@@ -492,7 +492,7 @@ function PipelineContent() {
                           >
                             <div className="flex items-center justify-between">
                               <div>
-                                <h3 className="text-lg font-semibold">{stage.name}</h3>
+                                <h3 className="text-base font-semibold">{stage.name}</h3>
                                 <p className="text-sm text-muted-foreground">
                                   {stageDeals.length} deals • {formatCurrency(
                                     stageDeals.reduce((sum, deal) => sum + deal.value, 0)
@@ -533,7 +533,7 @@ function PipelineContent() {
                                     <div className="flex items-start justify-between">
                                       <div className="flex-1">
                                         <h4 className="font-semibold text-sm">{deal.title}</h4>
-                                        <div className="text-2xl font-bold text-primary mt-1">
+                                        <div className="text-xl font-bold text-primary mt-1 tabular-nums">
                                           {formatCurrency(deal.value, deal.currency)}
                                         </div>
                                         <div className="text-sm text-muted-foreground mt-1">

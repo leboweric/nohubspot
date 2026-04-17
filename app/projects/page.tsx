@@ -315,7 +315,7 @@ export default function ProjectsPage() {
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-semibold">Project Tracking</h1>
+                <h1 className="text-xl font-semibold">Project Tracking</h1>
                 <p className="text-muted-foreground mt-1">
                   Track your projects through each stage from planning to completion
                 </p>
@@ -475,7 +475,7 @@ export default function ProjectsPage() {
                           >
                             <div className="flex items-center justify-between">
                               <div>
-                                <h3 className="text-lg font-semibold text-gray-900">{stage.name}</h3>
+                                <h3 className="text-base font-semibold text-gray-900">{stage.name}</h3>
                                 <div className="flex items-center gap-3 mt-1">
                                   <span className="text-sm text-gray-500">
                                     {stageProjects.length}

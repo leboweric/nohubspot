@@ -68,13 +68,13 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/auth/register"
-              className="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors"
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg text-base font-semibold hover:bg-blue-700 transition-colors"
             >
               Start Free Trial
             </Link>
             <Link
               href="#features"
-              className="border border-gray-300 text-gray-700 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-50 transition-colors"
+              className="border border-gray-300 text-gray-700 px-8 py-3 rounded-lg text-base font-semibold hover:bg-gray-50 transition-colors"
             >
               Learn More
             </Link>
@@ -129,7 +129,7 @@ export default function HomePage() {
             ].map((feature, index) => (
               <div key={index} className="text-center p-6 rounded-lg border border-gray-200 hover:shadow-lg transition-shadow">
                 <div className="text-4xl mb-4">{feature.icon}</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                <h3 className="text-base font-semibold text-gray-900 mb-2">{feature.title}</h3>
                 <p className="text-gray-600">{feature.description}</p>
               </div>
             ))}
@@ -148,7 +148,7 @@ export default function HomePage() {
           </p>
           <Link
             href="/auth/register"
-            className="bg-white text-blue-600 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-colors inline-block"
+            className="bg-white text-blue-600 px-8 py-3 rounded-lg text-base font-semibold hover:bg-gray-100 transition-colors inline-block"
           >
             Create Your Organization
           </Link>

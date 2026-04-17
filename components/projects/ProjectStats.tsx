@@ -201,7 +201,7 @@ export default function ProjectStats({ projects, stages, showOnlyTopRow = false 
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900 mb-2">{stat.value}</p>
+                  <p className="text-xl font-bold text-gray-900 mb-2 tabular-nums">{stat.value}</p>
                   <p className="text-sm text-gray-500">{stat.subtitle}</p>
                 </div>
                 <div className="mt-1">
@@ -235,7 +235,7 @@ export default function ProjectStats({ projects, stages, showOnlyTopRow = false 
                       <p className="text-sm text-gray-600">{stat.subtitle}</p>
                     </div>
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+                  <div className="text-xl font-bold text-gray-900 tabular-nums">{stat.value}</div>
                 </div>
               </div>
             )
@@ -321,7 +321,7 @@ export default function ProjectStats({ projects, stages, showOnlyTopRow = false 
             
             return (
               <div className="text-center">
-                <div className={`text-5xl font-bold mb-2 ${health.color}`}>
+                <div className={`text-3xl font-bold mb-2 tabular-nums ${health.color}`}>
                   {healthScore}%
                 </div>
                 <div className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${health.color} ${health.bg} mb-4`}>

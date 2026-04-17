@@ -139,7 +139,7 @@ export default function TasksCard() {
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg hover:border-gray-300 transition-all">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Tasks</h2>
+        <h2 className="text-base font-semibold text-gray-900">Tasks</h2>
         <Link 
           href="/tasks" 
           className="text-sm hover:opacity-80 transition-colors"
@@ -261,7 +261,7 @@ export default function TasksCard() {
         </div>
       ) : (
         <div className="text-center py-6">
-          <div className="text-2xl mb-2">✓</div>
+          <div className="text-xl mb-2">✓</div>
           <p className="text-sm text-muted-foreground mb-2">No overdue or pending tasks</p>
           <Link 
             href="/tasks" 

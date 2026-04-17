@@ -83,7 +83,7 @@ export default function DealCard({ deal, isDragging = false, onEdit }: DealCardP
           {deal.title}
         </h4>
         <div className="flex items-center justify-between mt-1">
-          <div className="text-lg font-bold text-blue-600">
+          <div className="text-base font-bold text-blue-600">
             {formatCurrency(deal.value, deal.currency)}
           </div>
           <div className={`px-2 py-1 rounded text-xs font-medium border ${getPriorityColor(deal.probability)}`}>

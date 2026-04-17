@@ -29,7 +29,7 @@ export default function TestDocumentCategories() {
 
   return (
     <div className="p-4 bg-white rounded-lg shadow">
-      <h2 className="text-lg font-semibold mb-4">Document Categories Test</h2>
+      <h2 className="text-base font-semibold mb-4">Document Categories Test</h2>
       
       <button
         onClick={runTest}

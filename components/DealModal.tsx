@@ -234,7 +234,7 @@ export default function DealModal({
           </h2>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl"
+            className="text-gray-400 hover:text-gray-600 text-xl"
           >
             ×
           </button>
@@ -471,7 +471,7 @@ export default function DealModal({
       {showDeleteConfirm && (
         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 rounded-lg">
           <div className="bg-white rounded-lg p-6 max-w-sm w-full">
-            <h3 className="text-lg font-semibold mb-2">Delete Deal?</h3>
+            <h3 className="text-base font-semibold mb-2">Delete Deal?</h3>
             <p className="text-gray-600 mb-4">
               Are you sure you want to delete "{deal?.title}"? This action cannot be undone.
             </p>

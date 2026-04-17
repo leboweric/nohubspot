@@ -315,7 +315,7 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
           </h4>
           <div className="flex items-center justify-between mt-1">
             <div 
-              className="text-lg font-bold"
+              className="text-base font-bold"
               style={{ color: 'var(--color-primary)' }}
             >
               {calculateProjectValue() > 0 

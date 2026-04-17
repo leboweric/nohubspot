@@ -128,7 +128,7 @@ export default function TaskCreate({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-card border rounded-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">{existingTask ? 'Edit Task' : 'Create New Task'}</h2>
+          <h2 className="text-base font-semibold">{existingTask ? 'Edit Task' : 'Create New Task'}</h2>
           <button
             onClick={onClose}
             className="text-muted-foreground hover:text-foreground transition-colors"

@@ -319,7 +319,7 @@ export default function ContactsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-semibold">Contacts</h1>
+          <h1 className="text-xl font-semibold">Contacts</h1>
           <p className="text-muted-foreground mt-1">Manage your professional network</p>
         </div>
         <div className="flex gap-3">

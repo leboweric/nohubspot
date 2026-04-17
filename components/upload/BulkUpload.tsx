@@ -288,7 +288,7 @@ export default function BulkUpload({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-card border rounded-lg w-full max-w-6xl mx-4 max-h-[90vh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">
+          <h2 className="text-base font-semibold">
             Bulk Upload {type === 'contacts' ? 'Contacts' : 'Companies'}
           </h2>
           <button
@@ -303,7 +303,7 @@ export default function BulkUpload({
           {step === 'upload' && (
             <div className="p-6">
               <div className="mb-6">
-                <h3 className="text-lg font-medium mb-2">Upload Spreadsheet</h3>
+                <h3 className="text-base font-medium mb-2">Upload Spreadsheet</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   Upload a CSV or Excel file containing your {type}. The first row should contain column headers.
                 </p>
@@ -326,12 +326,12 @@ export default function BulkUpload({
                 onClick={handleFileUpload}
                 className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all ${
                   isDragging 
-                    ? 'border-primary bg-primary/5 scale-105' 
+                    ? 'border-primary bg-primary/5' 
                     : 'border-muted-foreground/30 hover:border-primary hover:bg-accent/50'
                 }`}
               >
                 <div className="text-4xl mb-4">📁</div>
-                <div className="text-lg font-medium mb-2">
+                <div className="text-base font-medium mb-2">
                   {isDragging ? 'Drop file here' : 'Upload Spreadsheet'}
                 </div>
                 <div className="text-sm text-muted-foreground mb-2">
@@ -355,7 +355,7 @@ export default function BulkUpload({
           {step === 'mapping' && csvData && (
             <div className="p-6">
               <div className="mb-6">
-                <h3 className="text-lg font-medium mb-2">Map CSV Columns</h3>
+                <h3 className="text-base font-medium mb-2">Map CSV Columns</h3>
                 <p className="text-sm text-muted-foreground">
                   Map your CSV columns to the appropriate fields. Required fields are marked with *.
                 </p>
@@ -393,7 +393,7 @@ export default function BulkUpload({
           {step === 'preview' && csvData && (
             <div className="p-6">
               <div className="mb-6">
-                <h3 className="text-lg font-medium mb-2">Preview Import</h3>
+                <h3 className="text-base font-medium mb-2">Preview Import</h3>
                 <p className="text-sm text-muted-foreground">
                   Review the first 5 records before importing {csvData.rows.length} total records.
                 </p>

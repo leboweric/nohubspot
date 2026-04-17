@@ -63,7 +63,7 @@ function GoogleCallbackContent() {
         {status === 'processing' && (
           <>
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderBottomColor: 'var(--color-primary)' }}></div>
-            <h2 className="text-lg font-semibold mb-2">Connecting to Google Workspace...</h2>
+            <h2 className="text-base font-semibold mb-2">Connecting to Google Workspace...</h2>
             <p className="text-sm text-muted-foreground">Please wait while we complete the connection</p>
           </>
         )}
@@ -75,7 +75,7 @@ function GoogleCallbackContent() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-lg font-semibold mb-2">Successfully Connected!</h2>
+            <h2 className="text-base font-semibold mb-2">Successfully Connected!</h2>
             <p className="text-sm text-muted-foreground mb-4">{message}</p>
             <p className="text-xs text-muted-foreground">This window will close automatically...</p>
           </>
@@ -88,7 +88,7 @@ function GoogleCallbackContent() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
-            <h2 className="text-lg font-semibold mb-2">Connection Failed</h2>
+            <h2 className="text-base font-semibold mb-2">Connection Failed</h2>
             <p className="text-sm text-muted-foreground mb-4">{message}</p>
             <button
               onClick={() => window.close()}
@@ -109,7 +109,7 @@ export default function GoogleCallbackPage() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-card border rounded-lg p-6 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderBottomColor: 'var(--color-primary)' }}></div>
-          <h2 className="text-lg font-semibold mb-2">Loading...</h2>
+          <h2 className="text-base font-semibold mb-2">Loading...</h2>
           <p className="text-sm text-muted-foreground">Please wait while we process your request</p>
         </div>
       </div>

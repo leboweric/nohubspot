@@ -296,7 +296,7 @@ export default function ProjectModal({
           </h2>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl"
+            className="text-gray-400 hover:text-gray-600 text-xl"
           >
             ×
           </button>
@@ -620,7 +620,7 @@ export default function ProjectModal({
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-60">
             <div className="bg-white rounded-lg max-w-md w-full p-6">
-              <h3 className="text-lg font-semibold mb-4">Delete Project</h3>
+              <h3 className="text-base font-semibold mb-4">Delete Project</h3>
               <p className="text-gray-600 mb-6">
                 Are you sure you want to delete this project? This action cannot be undone.
               </p>

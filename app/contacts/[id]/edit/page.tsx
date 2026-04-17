@@ -84,7 +84,7 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-semibold mb-4">Contact Not Found</h1>
+          <h1 className="text-xl font-semibold mb-4">Contact Not Found</h1>
           <p className="text-muted-foreground mb-4">
             {error || "The contact you're looking for doesn't exist."}
           </p>
@@ -137,7 +137,7 @@ export default function EditContactPage({ params }: { params: { id: string } }) 
         <Link href={`/contacts/${params.id}`} className="text-sm text-muted-foreground hover:text-foreground mb-4 inline-block">
           ← Back to Contact
         </Link>
-        <h1 className="text-2xl font-semibold">Edit Contact</h1>
+        <h1 className="text-xl font-semibold">Edit Contact</h1>
         <p className="text-muted-foreground mt-1">Update contact information</p>
       </div>
 

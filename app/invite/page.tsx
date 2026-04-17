@@ -108,7 +108,7 @@ export default function InviteAcceptPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Invalid Invitation</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Invalid Invitation</h2>
             <p className="text-gray-600 mb-6">{error}</p>
             <button
               onClick={() => router.push("/auth/register")}

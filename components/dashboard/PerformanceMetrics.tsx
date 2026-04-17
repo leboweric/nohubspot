@@ -98,7 +98,7 @@ export default function PerformanceMetrics({ metrics, loading }: PerformanceMetr
             </div>
             
             <div className="mb-2">
-              <p className="text-2xl font-bold">{metric.value}</p>
+              <p className="text-xl font-bold tabular-nums">{metric.value}</p>
             </div>
             
             <div className="flex items-center gap-1">
