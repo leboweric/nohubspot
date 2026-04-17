@@ -10,41 +10,93 @@ import {
 } from "@/lib/api"
 import { 
   Play, Square, Clock, Plus, Trash2, Edit2, Check, X,
-  Calendar, Filter, ChevronDown, DollarSign, Tag
+  ChevronDown, ChevronRight, DollarSign, MoreVertical, Search
 } from "lucide-react"
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+// Project colors (Toggl-style palette)
+const PROJECT_COLORS = [
+  '#E74C3C', '#E67E22', '#F1C40F', '#2ECC71', '#1ABC9C',
+  '#3498DB', '#9B59B6', '#E91E63', '#00BCD4', '#8BC34A',
+  '#FF9800', '#795548', '#607D8B', '#FF5722', '#673AB7',
+  '#009688', '#CDDC39', '#FFC107', '#03A9F4', '#4CAF50',
+]
+
+function getProjectColor(projectId: number): string {
+  return PROJECT_COLORS[projectId % PROJECT_COLORS.length]
+}
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   const s = seconds % 60
-  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+  return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
-function formatHours(seconds: number): string {
-  const hours = seconds / 3600
-  return `${hours.toFixed(2)}h`
+function formatDurationHM(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
+  return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
-function formatDate(dateStr: string): string {
+function formatTime12(dateStr: string): string {
   const d = new Date(dateStr)
+  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+}
+
+function getDateLabel(dateStr: string): string {
+  const d = new Date(dateStr)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const entryDate = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  const diffDays = Math.floor((today.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24))
+  
+  if (diffDays === 0) return 'Today'
+  if (diffDays === 1) return 'Yesterday'
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
-function formatTime(dateStr: string): string {
+function getDateKey(dateStr: string): string {
   const d = new Date(dateStr)
-  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')}`
 }
 
-function groupEntriesByDate(entries: TimeEntry[]): Record<string, TimeEntry[]> {
-  const groups: Record<string, TimeEntry[]> = {}
+function groupEntriesByDate(entries: TimeEntry[]): { label: string; key: string; entries: TimeEntry[]; totalSeconds: number }[] {
+  const groups: Record<string, { label: string; entries: TimeEntry[] }> = {}
   for (const entry of entries) {
-    const dateKey = new Date(entry.start_time).toLocaleDateString('en-US', { 
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-    })
-    if (!groups[dateKey]) groups[dateKey] = []
-    groups[dateKey].push(entry)
+    const key = getDateKey(entry.start_time)
+    if (!groups[key]) {
+      groups[key] = { label: getDateLabel(entry.start_time), entries: [] }
+    }
+    groups[key].entries.push(entry)
   }
-  return groups
+  // Sort by date descending
+  return Object.entries(groups)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([key, group]) => ({
+      key,
+      label: group.label,
+      entries: group.entries,
+      totalSeconds: group.entries.reduce((sum, e) => sum + (e.duration_seconds || 0), 0),
+    }))
+}
+
+// Calculate week total (Mon-Sun containing today)
+function getWeekTotal(entries: TimeEntry[]): number {
+  const now = new Date()
+  const dayOfWeek = now.getDay()
+  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset)
+  const sunday = new Date(monday.getTime() + 6 * 24 * 60 * 60 * 1000)
+  
+  return entries
+    .filter(e => {
+      const d = new Date(e.start_time)
+      return d >= monday && d <= new Date(sunday.getTime() + 24 * 60 * 60 * 1000)
+    })
+    .reduce((sum, e) => sum + (e.duration_seconds || 0), 0)
 }
 
 // Time Tracking beta access - restricted to specific users
@@ -55,6 +107,134 @@ const TIME_TRACKING_ALLOWED_EMAILS = [
   'eric.lebow@aiop.one',
   'leboweric@gmail.com',
 ]
+
+// ── Project Selector Dropdown (Toggl-style) ─────────────────────────────────
+
+function ProjectSelector({ 
+  projects, 
+  selectedProjectId, 
+  onSelect,
+  compact = false 
+}: { 
+  projects: Project[]
+  selectedProjectId?: number
+  onSelect: (projectId?: number) => void
+  compact?: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
+  const ref = useRef<HTMLDivElement>(null)
+  const selectedProject = projects.find(p => p.id === selectedProjectId)
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const filtered = projects.filter(p => {
+    const q = search.toLowerCase()
+    return p.title.toLowerCase().includes(q) || (p.company_name || '').toLowerCase().includes(q)
+  })
+
+  // Group by client
+  const byClient: Record<string, Project[]> = {}
+  for (const p of filtered) {
+    const client = p.company_name || 'No Client'
+    if (!byClient[client]) byClient[client] = []
+    byClient[client].push(p)
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className={`flex items-center gap-2 rounded-lg transition-colors text-left ${
+          compact 
+            ? 'px-2 py-1 text-xs hover:bg-gray-700/50 max-w-[280px]' 
+            : 'px-3 py-2.5 bg-gray-800/50 border border-gray-700 hover:border-gray-600 text-sm min-w-[200px]'
+        }`}
+      >
+        {selectedProject ? (
+          <>
+            <span 
+              className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
+              style={{ backgroundColor: getProjectColor(selectedProject.id) }}
+            />
+            <span className={`truncate ${compact ? 'text-gray-200' : 'text-white'}`}>
+              {selectedProject.title}
+            </span>
+            {!compact && selectedProject.company_name && (
+              <span className="text-gray-500 text-xs truncate ml-1">
+                {selectedProject.company_name}
+              </span>
+            )}
+          </>
+        ) : (
+          <span className="text-gray-500">{compact ? '+ Project' : 'Add a project'}</span>
+        )}
+        <ChevronDown className={`w-3 h-3 text-gray-500 flex-shrink-0 ml-auto transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute z-50 top-full left-0 mt-1 w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-80 overflow-hidden">
+          {/* Search */}
+          <div className="p-2 border-b border-gray-700">
+            <div className="flex items-center gap-2 bg-gray-900 rounded px-2 py-1.5">
+              <Search className="w-3.5 h-3.5 text-gray-500" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Find project..."
+                className="bg-transparent text-white text-sm flex-1 outline-none placeholder-gray-500"
+                autoFocus
+              />
+            </div>
+          </div>
+          {/* Options */}
+          <div className="overflow-y-auto max-h-60">
+            {/* No project option */}
+            <button
+              onClick={() => { onSelect(undefined); setOpen(false); setSearch("") }}
+              className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:bg-gray-700/50 transition-colors"
+            >
+              No project
+            </button>
+            {Object.entries(byClient).sort(([a], [b]) => a.localeCompare(b)).map(([client, clientProjects]) => (
+              <div key={client}>
+                <div className="px-3 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-800/80 sticky top-0">
+                  {client}
+                </div>
+                {clientProjects.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => { onSelect(p.id); setOpen(false); setSearch("") }}
+                    className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-gray-700/50 transition-colors ${
+                      p.id === selectedProjectId ? 'bg-gray-700/30' : ''
+                    }`}
+                  >
+                    <span 
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
+                      style={{ backgroundColor: getProjectColor(p.id) }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm text-white truncate">{p.title}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Main Component ───────────────────────────────────────────────────────────
 
 export default function TimeTrackingPage() {
   const router = useRouter()
@@ -98,23 +278,19 @@ export default function TimeTrackingPage() {
   const [timerProjectId, setTimerProjectId] = useState<number | undefined>(undefined)
   const [timerBillable, setTimerBillable] = useState(true)
 
-  // Manual entry form
-  const [showManualEntry, setShowManualEntry] = useState(false)
+  // Manual mode toggle
+  const [manualMode, setManualMode] = useState(false)
   const [manualDate, setManualDate] = useState(new Date().toISOString().split('T')[0])
   const [manualStartTime, setManualStartTime] = useState("09:00")
   const [manualEndTime, setManualEndTime] = useState("10:00")
-  const [manualDescription, setManualDescription] = useState("")
-  const [manualProjectId, setManualProjectId] = useState<number | undefined>(undefined)
-  const [manualBillable, setManualBillable] = useState(true)
 
   // Edit state
   const [editingEntry, setEditingEntry] = useState<number | null>(null)
   const [editDescription, setEditDescription] = useState("")
   const [editProjectId, setEditProjectId] = useState<number | undefined>(undefined)
 
-  // Filter state
-  const [filterProjectId, setFilterProjectId] = useState<number | undefined>(undefined)
-  const [showFilters, setShowFilters] = useState(false)
+  // Expanded day groups
+  const [collapsedDays, setCollapsedDays] = useState<Set<string>>(new Set())
 
   // Load data on mount
   useEffect(() => {
@@ -140,13 +316,19 @@ export default function TimeTrackingPage() {
     }
   }, [currentTimer])
 
-  // Auto-clear success messages
+  // Auto-clear messages
   useEffect(() => {
     if (success) {
       const t = setTimeout(() => setSuccess(""), 3000)
       return () => clearTimeout(t)
     }
   }, [success])
+  useEffect(() => {
+    if (error) {
+      const t = setTimeout(() => setError(""), 5000)
+      return () => clearTimeout(t)
+    }
+  }, [error])
 
   const loadData = async () => {
     try {
@@ -154,14 +336,13 @@ export default function TimeTrackingPage() {
       setError("")
       const [timerData, entriesData, projectsData] = await Promise.all([
         timeTrackingAPI.getCurrentTimer(),
-        timeTrackingAPI.getEntries({ limit: 50 }),
-        projectAPI.getProjects({ limit: 200 })
+        timeTrackingAPI.getEntries({ limit: 200 }),
+        projectAPI.getProjects({ limit: 500 })
       ])
       setCurrentTimer(timerData)
       setEntries(entriesData.filter(e => !e.is_running))
       setProjects(projectsData)
       
-      // Pre-fill timer form from running timer
       if (timerData) {
         setTimerDescription(timerData.description || "")
         setTimerProjectId(timerData.project_id || undefined)
@@ -174,17 +355,19 @@ export default function TimeTrackingPage() {
     }
   }
 
-  const handleStartTimer = async () => {
+  const handleStartTimer = async (desc?: string, projId?: number, billable?: boolean) => {
     try {
       setError("")
       const data: TimerStartRequest = {
-        project_id: timerProjectId || undefined,
-        description: timerDescription || undefined,
-        is_billable: timerBillable,
+        project_id: projId !== undefined ? projId : timerProjectId,
+        description: desc !== undefined ? desc : timerDescription || undefined,
+        is_billable: billable !== undefined ? billable : timerBillable,
       }
       const entry = await timeTrackingAPI.startTimer(data)
       setCurrentTimer(entry)
-      setSuccess("Timer started")
+      if (desc !== undefined) setTimerDescription(desc)
+      if (projId !== undefined) setTimerProjectId(projId)
+      if (billable !== undefined) setTimerBillable(billable)
     } catch (err) {
       setError(handleAPIError(err))
     }
@@ -199,7 +382,6 @@ export default function TimeTrackingPage() {
       setTimerProjectId(undefined)
       setTimerBillable(true)
       setEntries(prev => [entry, ...prev])
-      setSuccess(`Timer stopped — ${formatHours(entry.duration_seconds || 0)} logged`)
     } catch (err) {
       setError(handleAPIError(err))
     }
@@ -214,15 +396,14 @@ export default function TimeTrackingPage() {
       const entry = await timeTrackingAPI.createEntry({
         start_time: new Date(startDateTime).toISOString(),
         end_time: new Date(endDateTime).toISOString(),
-        project_id: manualProjectId || undefined,
-        description: manualDescription || undefined,
-        is_billable: manualBillable,
+        project_id: timerProjectId || undefined,
+        description: timerDescription || undefined,
+        is_billable: timerBillable,
       })
       setEntries(prev => [entry, ...prev])
-      setShowManualEntry(false)
-      setManualDescription("")
-      setManualProjectId(undefined)
-      setSuccess("Time entry created")
+      setTimerDescription("")
+      setTimerProjectId(undefined)
+      setSuccess("Time entry added")
     } catch (err) {
       setError(handleAPIError(err))
     }
@@ -233,7 +414,6 @@ export default function TimeTrackingPage() {
     try {
       await timeTrackingAPI.deleteEntry(entryId)
       setEntries(prev => prev.filter(e => e.id !== entryId))
-      setSuccess("Entry deleted")
     } catch (err) {
       setError(handleAPIError(err))
     }
@@ -247,410 +427,364 @@ export default function TimeTrackingPage() {
       })
       setEntries(prev => prev.map(e => e.id === entryId ? updated : e))
       setEditingEntry(null)
-      setSuccess("Entry updated")
     } catch (err) {
       setError(handleAPIError(err))
     }
   }
 
-  const startEditing = (entry: TimeEntry) => {
-    setEditingEntry(entry.id)
-    setEditDescription(entry.description || "")
-    setEditProjectId(entry.project_id || undefined)
+  const handleResumeEntry = async (entry: TimeEntry) => {
+    await handleStartTimer(entry.description || "", entry.project_id || undefined, entry.is_billable)
   }
 
-  const filteredEntries = filterProjectId 
-    ? entries.filter(e => e.project_id === filterProjectId)
-    : entries
+  const toggleDayCollapse = (key: string) => {
+    setCollapsedDays(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
 
-  const groupedEntries = groupEntriesByDate(filteredEntries)
+  const groupedDays = groupEntriesByDate(entries)
+  const todayKey = getDateKey(new Date().toISOString())
+  const todayTotal = (groupedDays.find(g => g.key === todayKey)?.totalSeconds || 0) 
+    + (currentTimer?.is_running ? elapsedSeconds : 0)
+  const weekTotal = getWeekTotal(entries) + (currentTimer?.is_running ? elapsedSeconds : 0)
 
-  // Calculate today's total
-  const today = new Date().toLocaleDateString('en-US', { 
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-  })
-  const todayTotal = (groupedEntries[today] || []).reduce(
-    (sum, e) => sum + (e.duration_seconds || 0), 0
-  ) + (currentTimer?.is_running ? elapsedSeconds : 0)
+  const getProjectForEntry = (entry: TimeEntry) => projects.find(p => p.id === entry.project_id)
 
   return (
     <AuthGuard>
       <MainLayout>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-white">Time Tracking</h1>
-              <p className="text-sm text-gray-400 mt-1">
-                Today: {formatDuration(todayTotal)}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowManualEntry(!showManualEntry)}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                Manual Entry
-              </button>
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors"
-              >
-                <Filter className="w-4 h-4" />
-                Filter
-              </button>
-            </div>
-          </div>
-
-          {/* Messages */}
-          {error && (
-            <div className="mb-4 p-3 bg-red-900/50 border border-red-700 rounded-lg text-red-300 text-sm">
-              {error}
-            </div>
-          )}
-          {success && (
-            <div className="mb-4 p-3 bg-green-900/50 border border-green-700 rounded-lg text-green-300 text-sm">
-              {success}
-            </div>
-          )}
-
-          {/* Timer Bar */}
-          <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 mb-6">
-            <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-              {/* Description input */}
-              <input
-                type="text"
-                value={timerDescription}
-                onChange={(e) => {
-                  setTimerDescription(e.target.value)
-                  // Update running timer description
-                  if (currentTimer?.is_running) {
-                    timeTrackingAPI.updateEntry(currentTimer.id, { description: e.target.value })
-                  }
-                }}
-                placeholder="What are you working on?"
-                className="flex-1 bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm"
-              />
-              
-              {/* Project selector */}
-              <select
-                value={timerProjectId || ""}
-                onChange={(e) => {
-                  const val = e.target.value ? parseInt(e.target.value) : undefined
-                  setTimerProjectId(val)
-                  if (currentTimer?.is_running) {
-                    timeTrackingAPI.updateEntry(currentTimer.id, { project_id: val || null } as any)
-                  }
-                }}
-                className="bg-gray-900 border border-gray-600 rounded-lg px-3 py-3 text-white text-sm min-w-[200px] focus:outline-none focus:border-blue-500"
-              >
-                <option value="">No Project</option>
-                {projects.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.company_name ? `${p.company_name} — ` : ""}{p.title}
-                  </option>
-                ))}
-              </select>
-
-              {/* Billable toggle */}
-              <button
-                onClick={() => setTimerBillable(!timerBillable)}
-                className={`flex items-center gap-1 px-3 py-3 rounded-lg text-sm transition-colors ${
-                  timerBillable 
-                    ? 'bg-green-900/50 text-green-400 border border-green-700' 
-                    : 'bg-gray-900 text-gray-500 border border-gray-600'
-                }`}
-                title={timerBillable ? "Billable" : "Non-billable"}
-              >
-                <DollarSign className="w-4 h-4" />
-              </button>
-
-              {/* Timer display + start/stop */}
-              <div className="flex items-center gap-3">
-                <span className={`font-mono text-2xl tabular-nums ${
-                  currentTimer?.is_running ? 'text-green-400' : 'text-gray-400'
-                }`}>
-                  {currentTimer?.is_running ? formatDuration(elapsedSeconds) : '00:00:00'}
-                </span>
+        <div className="min-h-screen bg-gray-950">
+          {/* ── Timer Bar (Toggl-style, fixed at top of content) ── */}
+          <div className="sticky top-0 z-30 bg-gray-900 border-b border-gray-800 shadow-lg">
+            <div className="max-w-full px-4 sm:px-6">
+              <div className="flex items-center gap-3 h-16">
+                {/* Description input */}
+                <input
+                  type="text"
+                  value={timerDescription}
+                  onChange={(e) => {
+                    setTimerDescription(e.target.value)
+                    if (currentTimer?.is_running) {
+                      timeTrackingAPI.updateEntry(currentTimer.id, { description: e.target.value })
+                    }
+                  }}
+                  placeholder="What are you working on?"
+                  className="flex-1 bg-transparent text-white text-base placeholder-gray-500 focus:outline-none border-none min-w-0"
+                />
                 
+                {/* Project selector */}
+                <ProjectSelector
+                  projects={projects}
+                  selectedProjectId={timerProjectId}
+                  onSelect={(id) => {
+                    setTimerProjectId(id)
+                    if (currentTimer?.is_running) {
+                      timeTrackingAPI.updateEntry(currentTimer.id, { project_id: id || null } as any)
+                    }
+                  }}
+                />
+
+                {/* Billable toggle */}
+                <button
+                  onClick={() => {
+                    const next = !timerBillable
+                    setTimerBillable(next)
+                    if (currentTimer?.is_running) {
+                      timeTrackingAPI.updateEntry(currentTimer.id, { is_billable: next } as any)
+                    }
+                  }}
+                  className={`flex items-center justify-center w-8 h-8 rounded transition-colors flex-shrink-0 ${
+                    timerBillable 
+                      ? 'text-green-400 hover:text-green-300' 
+                      : 'text-gray-600 hover:text-gray-400'
+                  }`}
+                  title={timerBillable ? "Billable" : "Non-billable"}
+                >
+                  <DollarSign className="w-4 h-4" />
+                </button>
+
+                {/* Divider */}
+                <div className="w-px h-8 bg-gray-700 flex-shrink-0" />
+
+                {/* Timer display */}
+                <span className={`font-mono text-xl tabular-nums flex-shrink-0 min-w-[90px] text-right ${
+                  currentTimer?.is_running ? 'text-red-400' : 'text-gray-500'
+                }`}>
+                  {currentTimer?.is_running ? formatDuration(elapsedSeconds) : '0:00:00'}
+                </span>
+
+                {/* Start/Stop button */}
                 {currentTimer?.is_running ? (
                   <button
                     onClick={handleStopTimer}
-                    className="flex items-center justify-center w-12 h-12 bg-red-600 hover:bg-red-500 rounded-full transition-colors"
+                    className="flex items-center justify-center w-10 h-10 bg-red-500 hover:bg-red-400 rounded-full transition-colors flex-shrink-0"
                     title="Stop timer"
                   >
-                    <Square className="w-5 h-5 text-white fill-white" />
+                    <Square className="w-4 h-4 text-white fill-white" />
+                  </button>
+                ) : manualMode ? (
+                  <button
+                    onClick={handleCreateManualEntry}
+                    className="flex items-center justify-center w-10 h-10 bg-blue-500 hover:bg-blue-400 rounded-full transition-colors flex-shrink-0"
+                    title="Add manual entry"
+                  >
+                    <Plus className="w-5 h-5 text-white" />
                   </button>
                 ) : (
                   <button
-                    onClick={handleStartTimer}
-                    className="flex items-center justify-center w-12 h-12 bg-green-600 hover:bg-green-500 rounded-full transition-colors"
+                    onClick={() => handleStartTimer()}
+                    className="flex items-center justify-center w-10 h-10 bg-green-500 hover:bg-green-400 rounded-full transition-colors flex-shrink-0"
                     title="Start timer"
                   >
-                    <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                    <Play className="w-4 h-4 text-white fill-white ml-0.5" />
                   </button>
                 )}
-              </div>
-            </div>
-          </div>
 
-          {/* Filter Bar */}
-          {showFilters && (
-            <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 mb-6">
-              <div className="flex flex-wrap items-center gap-4">
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">Project</label>
-                  <select
-                    value={filterProjectId || ""}
-                    onChange={(e) => setFilterProjectId(e.target.value ? parseInt(e.target.value) : undefined)}
-                    className="bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm min-w-[200px]"
-                  >
-                    <option value="">All Projects</option>
-                    {projects.map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.company_name ? `${p.company_name} — ` : ""}{p.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {filterProjectId && (
-                  <button
-                    onClick={() => setFilterProjectId(undefined)}
-                    className="text-sm text-blue-400 hover:text-blue-300 mt-5"
-                  >
-                    Clear filters
-                  </button>
-                )}
+                {/* Manual mode toggle */}
+                <button
+                  onClick={() => setManualMode(!manualMode)}
+                  className={`p-1.5 rounded transition-colors flex-shrink-0 ${
+                    manualMode ? 'text-blue-400 bg-blue-900/30' : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                  title={manualMode ? "Switch to timer mode" : "Switch to manual mode"}
+                >
+                  <Clock className="w-4 h-4" />
+                </button>
               </div>
-            </div>
-          )}
 
-          {/* Manual Entry Form */}
-          {showManualEntry && (
-            <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 mb-6">
-              <h3 className="text-white font-medium mb-4">Add Manual Time Entry</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">Date</label>
+              {/* Manual mode: date/time inputs */}
+              {manualMode && (
+                <div className="flex items-center gap-3 pb-3 pt-1 border-t border-gray-800">
+                  <label className="text-xs text-gray-500">Date:</label>
                   <input
                     type="date"
                     value={manualDate}
                     onChange={(e) => setManualDate(e.target.value)}
-                    className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
+                    className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm"
                   />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">Start Time</label>
+                  <label className="text-xs text-gray-500">Start:</label>
                   <input
                     type="time"
                     value={manualStartTime}
                     onChange={(e) => setManualStartTime(e.target.value)}
-                    className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
+                    className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm"
                   />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">End Time</label>
+                  <span className="text-gray-600">–</span>
+                  <label className="text-xs text-gray-500">End:</label>
                   <input
                     type="time"
                     value={manualEndTime}
                     onChange={(e) => setManualEndTime(e.target.value)}
-                    className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
+                    className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">Project</label>
-                  <select
-                    value={manualProjectId || ""}
-                    onChange={(e) => setManualProjectId(e.target.value ? parseInt(e.target.value) : undefined)}
-                    className="w-full bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
-                  >
-                    <option value="">No Project</option>
-                    {projects.map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.company_name ? `${p.company_name} — ` : ""}{p.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Stats Bar (Today Total / Week Total) ── */}
+          <div className="border-b border-gray-800 bg-gray-900/50">
+            <div className="max-w-full px-4 sm:px-6 flex items-center justify-between h-10">
+              <div className="flex items-center gap-6 text-xs">
+                <span className="text-gray-500">
+                  TODAY TOTAL <span className="text-white font-mono ml-1">{formatDuration(todayTotal)}</span>
+                </span>
+                <span className="text-gray-500">
+                  WEEK TOTAL <span className="text-white font-mono ml-1">{formatDuration(weekTotal)}</span>
+                </span>
               </div>
-              <div className="flex flex-col sm:flex-row gap-4 mb-4">
-                <input
-                  type="text"
-                  value={manualDescription}
-                  onChange={(e) => setManualDescription(e.target.value)}
-                  placeholder="Description"
-                  className="flex-1 bg-gray-900 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500"
-                />
-                <button
-                  onClick={() => setManualBillable(!manualBillable)}
-                  className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm ${
-                    manualBillable 
-                      ? 'bg-green-900/50 text-green-400 border border-green-700' 
-                      : 'bg-gray-900 text-gray-500 border border-gray-600'
-                  }`}
-                >
-                  <DollarSign className="w-4 h-4" />
-                  {manualBillable ? "Billable" : "Non-billable"}
-                </button>
+              <div className="flex items-center gap-1">
+                {/* Could add Calendar/List/Timesheet toggle here later */}
               </div>
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setShowManualEntry(false)}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreateManualEntry}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm"
-                >
-                  Add Entry
-                </button>
-              </div>
+            </div>
+          </div>
+
+          {/* ── Messages ── */}
+          {error && (
+            <div className="mx-4 sm:mx-6 mt-3 p-2.5 bg-red-900/40 border border-red-800 rounded-lg text-red-300 text-sm">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="mx-4 sm:mx-6 mt-3 p-2.5 bg-green-900/40 border border-green-800 rounded-lg text-green-300 text-sm">
+              {success}
             </div>
           )}
 
-          {/* Time Entries List */}
-          {loading ? (
-            <div className="text-center py-12 text-gray-400">Loading time entries...</div>
-          ) : filteredEntries.length === 0 ? (
-            <div className="text-center py-12">
-              <Clock className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-400 mb-2">No time entries yet</h3>
-              <p className="text-gray-500 text-sm">Start the timer or add a manual entry to begin tracking time.</p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {Object.entries(groupedEntries).map(([dateLabel, dayEntries]) => {
-                const dayTotal = dayEntries.reduce((sum, e) => sum + (e.duration_seconds || 0), 0)
-                return (
-                  <div key={dateLabel}>
-                    {/* Day header */}
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-medium text-gray-400">{dateLabel}</h3>
-                      <span className="text-sm font-mono text-gray-400">
-                        Total: {formatHours(dayTotal)}
-                      </span>
-                    </div>
-                    
-                    {/* Entries for this day */}
-                    <div className="space-y-2">
-                      {dayEntries.map(entry => (
-                        <div 
-                          key={entry.id} 
-                          className="bg-gray-800 border border-gray-700 rounded-lg p-3 hover:border-gray-600 transition-colors"
-                        >
-                          {editingEntry === entry.id ? (
-                            /* Edit mode */
-                            <div className="flex flex-col sm:flex-row gap-3">
-                              <input
-                                type="text"
-                                value={editDescription}
-                                onChange={(e) => setEditDescription(e.target.value)}
-                                className="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white text-sm"
-                                placeholder="Description"
-                              />
-                              <select
-                                value={editProjectId || ""}
-                                onChange={(e) => setEditProjectId(e.target.value ? parseInt(e.target.value) : undefined)}
-                                className="bg-gray-900 border border-gray-600 rounded px-3 py-2 text-white text-sm min-w-[180px]"
-                              >
-                                <option value="">No Project</option>
-                                {projects.map(p => (
-                                  <option key={p.id} value={p.id}>{p.title}</option>
-                                ))}
-                              </select>
-                              <div className="flex gap-1">
-                                <button
-                                  onClick={() => handleUpdateEntry(entry.id)}
-                                  className="p-2 bg-green-600 hover:bg-green-500 rounded text-white"
-                                >
-                                  <Check className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => setEditingEntry(null)}
-                                  className="p-2 bg-gray-600 hover:bg-gray-500 rounded text-white"
-                                >
-                                  <X className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            /* View mode */
-                            <div className="flex items-center gap-3">
-                              {/* Description */}
-                              <div className="flex-1 min-w-0">
-                                <p className="text-white text-sm truncate">
-                                  {entry.description || <span className="text-gray-500 italic">No description</span>}
-                                </p>
-                                <div className="flex items-center gap-2 mt-1">
-                                  {entry.project_title && (
-                                    <span className="text-xs px-2 py-0.5 rounded bg-blue-900/50 text-blue-400 border border-blue-800">
-                                      {entry.project_title}
-                                    </span>
-                                  )}
-                                  {entry.company_name && (
-                                    <span className="text-xs text-gray-500">
-                                      {entry.company_name}
-                                    </span>
-                                  )}
-                                  {entry.is_billable && (
-                                    <DollarSign className="w-3 h-3 text-green-500" />
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Time range */}
-                              <div className="text-right text-sm text-gray-400 whitespace-nowrap">
-                                {formatTime(entry.start_time)} — {entry.end_time ? formatTime(entry.end_time) : '...'}
-                              </div>
-
-                              {/* Duration */}
-                              <div className="text-right font-mono text-sm text-white min-w-[70px]">
-                                {formatHours(entry.duration_seconds || 0)}
-                              </div>
-
-                              {/* Actions */}
-                              <div className="flex items-center gap-1">
-                                <button
-                                  onClick={() => startEditing(entry)}
-                                  className="p-1.5 text-gray-500 hover:text-white rounded transition-colors"
-                                  title="Edit"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteEntry(entry.id)}
-                                  className="p-1.5 text-gray-500 hover:text-red-400 rounded transition-colors"
-                                  title="Delete"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                                {/* Resume timer with same settings */}
-                                <button
-                                  onClick={() => {
-                                    setTimerDescription(entry.description || "")
-                                    setTimerProjectId(entry.project_id || undefined)
-                                    setTimerBillable(entry.is_billable)
-                                    handleStartTimer()
-                                  }}
-                                  className="p-1.5 text-gray-500 hover:text-green-400 rounded transition-colors"
-                                  title="Resume"
-                                >
-                                  <Play className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-                          )}
+          {/* ── Time Entries List (grouped by day, Toggl-style) ── */}
+          <div className="max-w-full px-4 sm:px-6 py-4">
+            {loading ? (
+              <div className="text-center py-16 text-gray-500">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-500 mx-auto mb-3"></div>
+                Loading time entries...
+              </div>
+            ) : entries.length === 0 ? (
+              <div className="text-center py-16">
+                <Clock className="w-12 h-12 text-gray-700 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-500 mb-2">No time entries yet</h3>
+                <p className="text-gray-600 text-sm">Start the timer or switch to manual mode to begin tracking time.</p>
+              </div>
+            ) : (
+              <div className="space-y-0">
+                {groupedDays.map((dayGroup) => {
+                  const isCollapsed = collapsedDays.has(dayGroup.key)
+                  return (
+                    <div key={dayGroup.key}>
+                      {/* ── Day Header ── */}
+                      <button
+                        onClick={() => toggleDayCollapse(dayGroup.key)}
+                        className="w-full flex items-center justify-between py-3 px-1 group hover:bg-gray-900/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <ChevronRight className={`w-4 h-4 text-gray-600 transition-transform ${!isCollapsed ? 'rotate-90' : ''}`} />
+                          <span className="text-sm font-medium text-gray-400">{dayGroup.label}</span>
                         </div>
-                      ))}
+                        <span className="text-sm font-mono text-gray-300">{formatDurationHM(dayGroup.totalSeconds)}</span>
+                      </button>
+
+                      {/* ── Day Entries ── */}
+                      {!isCollapsed && (
+                        <div className="border-l-2 border-gray-800 ml-2 mb-4">
+                          {dayGroup.entries.map(entry => {
+                            const project = getProjectForEntry(entry)
+                            const isEditing = editingEntry === entry.id
+
+                            return (
+                              <div 
+                                key={entry.id}
+                                className="group flex items-center gap-2 py-2 pl-4 pr-2 hover:bg-gray-900/40 transition-colors border-b border-gray-800/50 last:border-b-0"
+                              >
+                                {isEditing ? (
+                                  /* ── Edit Mode ── */
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <input
+                                      type="text"
+                                      value={editDescription}
+                                      onChange={(e) => setEditDescription(e.target.value)}
+                                      className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm min-w-0"
+                                      placeholder="Description"
+                                      autoFocus
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleUpdateEntry(entry.id)
+                                        if (e.key === 'Escape') setEditingEntry(null)
+                                      }}
+                                    />
+                                    <ProjectSelector
+                                      projects={projects}
+                                      selectedProjectId={editProjectId}
+                                      onSelect={setEditProjectId}
+                                      compact
+                                    />
+                                    <button
+                                      onClick={() => handleUpdateEntry(entry.id)}
+                                      className="p-1 text-green-400 hover:text-green-300"
+                                    >
+                                      <Check className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => setEditingEntry(null)}
+                                      className="p-1 text-gray-500 hover:text-gray-300"
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  /* ── View Mode ── */
+                                  <>
+                                    {/* Description */}
+                                    <div 
+                                      className="flex-1 min-w-0 cursor-pointer"
+                                      onClick={() => {
+                                        setEditingEntry(entry.id)
+                                        setEditDescription(entry.description || "")
+                                        setEditProjectId(entry.project_id || undefined)
+                                      }}
+                                    >
+                                      <span className="text-sm text-white truncate block">
+                                        {entry.description || <span className="text-gray-600 italic">Add description</span>}
+                                      </span>
+                                    </div>
+
+                                    {/* Project badge */}
+                                    {project && (
+                                      <div className="flex items-center gap-1.5 flex-shrink-0 max-w-[250px]">
+                                        <span 
+                                          className="w-2 h-2 rounded-full flex-shrink-0" 
+                                          style={{ backgroundColor: getProjectColor(project.id) }}
+                                        />
+                                        <span 
+                                          className="text-xs truncate"
+                                          style={{ color: getProjectColor(project.id) }}
+                                        >
+                                          {project.title}
+                                        </span>
+                                        {project.company_name && (
+                                          <span className="text-xs text-gray-600 truncate hidden lg:inline">
+                                            {project.company_name}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Billable indicator */}
+                                    <DollarSign className={`w-3.5 h-3.5 flex-shrink-0 ${
+                                      entry.is_billable ? 'text-green-500' : 'text-gray-700'
+                                    }`} />
+
+                                    {/* Time range */}
+                                    <span className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0 hidden sm:inline">
+                                      {formatTime12(entry.start_time)} - {entry.end_time ? formatTime12(entry.end_time) : '...'}
+                                    </span>
+
+                                    {/* Duration */}
+                                    <span className="text-sm font-mono text-gray-300 min-w-[65px] text-right flex-shrink-0">
+                                      {formatDurationHM(entry.duration_seconds || 0)}
+                                    </span>
+
+                                    {/* Actions (visible on hover) */}
+                                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                                      <button
+                                        onClick={() => handleResumeEntry(entry)}
+                                        className="p-1 text-gray-600 hover:text-green-400 transition-colors"
+                                        title="Continue this entry"
+                                      >
+                                        <Play className="w-3.5 h-3.5 fill-current" />
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setEditingEntry(entry.id)
+                                          setEditDescription(entry.description || "")
+                                          setEditProjectId(entry.project_id || undefined)
+                                        }}
+                                        className="p-1 text-gray-600 hover:text-blue-400 transition-colors"
+                                        title="Edit"
+                                      >
+                                        <Edit2 className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteEntry(entry.id)}
+                                        className="p-1 text-gray-600 hover:text-red-400 transition-colors"
+                                        title="Delete"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </MainLayout>
     </AuthGuard>
