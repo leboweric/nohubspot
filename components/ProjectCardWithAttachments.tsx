@@ -276,7 +276,7 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
   }
 
   const cardClasses = `
-    bg-white border rounded-lg p-3 cursor-grab active:cursor-grabbing
+    bg-white border border-l-[3px] rounded-lg p-3 cursor-grab active:cursor-grabbing
     hover:shadow-md transition-shadow relative group
     ${isDragging || isSortableDragging ? 'shadow-lg opacity-90' : ''}
     ${isSortableDragging ? 'z-50' : ''}
@@ -291,7 +291,7 @@ export default function ProjectCardWithAttachments({ project, isDragging = false
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={{ ...style, borderLeftColor: 'var(--color-primary)' }}
       className={cardClasses}
     >
       <div {...attributes} {...listeners}>
