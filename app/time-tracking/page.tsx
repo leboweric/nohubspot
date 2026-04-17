@@ -72,7 +72,6 @@ function groupEntriesByDate(entries: TimeEntry[]): { label: string; key: string;
     }
     groups[key].entries.push(entry)
   }
-  // Sort by date descending
   return Object.entries(groups)
     .sort(([a], [b]) => b.localeCompare(a))
     .map(([key, group]) => ({
@@ -83,7 +82,6 @@ function groupEntriesByDate(entries: TimeEntry[]): { label: string; key: string;
     }))
 }
 
-// Calculate week total (Mon-Sun containing today)
 function getWeekTotal(entries: TimeEntry[]): number {
   const now = new Date()
   const dayOfWeek = now.getDay()
@@ -109,7 +107,7 @@ const TIME_TRACKING_ALLOWED_EMAILS = [
   'leboweric@gmail.com',
 ]
 
-// ── Project Selector Dropdown (Toggl-style) ─────────────────────────────────
+// ── Project Selector Dropdown (Toggl-style, light theme) ────────────────────
 
 function ProjectSelector({ 
   projects, 
@@ -154,8 +152,8 @@ function ProjectSelector({
         onClick={() => setOpen(!open)}
         className={`flex items-center gap-2 rounded-lg transition-colors text-left ${
           compact 
-            ? 'px-2 py-1 text-xs hover:bg-gray-700/50 max-w-[280px]' 
-            : 'px-3 py-2.5 bg-gray-800/50 border border-gray-700 hover:border-gray-600 text-sm min-w-[200px]'
+            ? 'px-2 py-1 text-xs hover:bg-gray-100 max-w-[280px]' 
+            : 'px-3 py-2 bg-white border border-gray-300 hover:border-gray-400 text-sm min-w-[200px] rounded-lg shadow-sm'
         }`}
       >
         {selectedProject ? (
@@ -164,57 +162,56 @@ function ProjectSelector({
               className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
               style={{ backgroundColor: getProjectColor(selectedProject.id) }}
             />
-            <span className={`truncate ${compact ? 'text-gray-200' : 'text-white'}`}>
+            <span className={`truncate ${compact ? 'text-gray-700' : 'text-gray-900'}`}>
               {selectedProject.title}
             </span>
             {!compact && selectedProject.company_name && (
-              <span className="text-gray-500 text-xs truncate ml-1">
+              <span className="text-gray-400 text-xs truncate ml-1">
                 {selectedProject.company_name}
               </span>
             )}
           </>
         ) : (
-          <span className="text-gray-500">{compact ? '+ Project' : 'Add a project'}</span>
+          <span className="text-gray-400">{compact ? '+ Project' : 'Add a project'}</span>
         )}
-        <ChevronDown className={`w-3 h-3 text-gray-500 flex-shrink-0 ml-auto transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3 h-3 text-gray-400 flex-shrink-0 ml-auto transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
-        <div className="absolute z-50 top-full left-0 mt-1 w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-80 overflow-hidden">
+        <div className="absolute z-50 top-full left-0 mt-1 w-80 bg-white border border-gray-200 rounded-lg shadow-xl max-h-80 overflow-hidden">
           {/* Search */}
-          <div className="p-2 border-b border-gray-700">
-            <div className="flex items-center gap-2 bg-gray-900 rounded px-2 py-1.5">
-              <Search className="w-3.5 h-3.5 text-gray-500" />
+          <div className="p-2 border-b border-gray-100">
+            <div className="flex items-center gap-2 bg-gray-50 rounded px-2 py-1.5">
+              <Search className="w-3.5 h-3.5 text-gray-400" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Find project..."
-                className="bg-transparent text-white text-sm flex-1 outline-none placeholder-gray-500"
+                className="bg-transparent text-gray-900 text-sm flex-1 outline-none placeholder-gray-400"
                 autoFocus
               />
             </div>
           </div>
           {/* Options */}
           <div className="overflow-y-auto max-h-60">
-            {/* No project option */}
             <button
               onClick={() => { onSelect(undefined); setOpen(false); setSearch("") }}
-              className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:bg-gray-700/50 transition-colors"
+              className="w-full text-left px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 transition-colors"
             >
               No project
             </button>
             {Object.entries(byClient).sort(([a], [b]) => a.localeCompare(b)).map(([client, clientProjects]) => (
               <div key={client}>
-                <div className="px-3 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-800/80 sticky top-0">
+                <div className="px-3 py-1.5 text-xs font-medium text-gray-400 uppercase tracking-wider bg-gray-50 sticky top-0">
                   {client}
                 </div>
                 {clientProjects.map(p => (
                   <button
                     key={p.id}
                     onClick={() => { onSelect(p.id); setOpen(false); setSearch("") }}
-                    className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-gray-700/50 transition-colors ${
-                      p.id === selectedProjectId ? 'bg-gray-700/30' : ''
+                    className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-gray-50 transition-colors ${
+                      p.id === selectedProjectId ? 'bg-blue-50' : ''
                     }`}
                   >
                     <span 
@@ -222,7 +219,7 @@ function ProjectSelector({
                       style={{ backgroundColor: getProjectColor(p.id) }}
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm text-white truncate">{p.title}</div>
+                      <div className="text-sm text-gray-900 truncate">{p.title}</div>
                     </div>
                   </button>
                 ))}
@@ -452,16 +449,34 @@ export default function TimeTrackingPage() {
     + (currentTimer?.is_running ? elapsedSeconds : 0)
   const weekTotal = getWeekTotal(entries) + (currentTimer?.is_running ? elapsedSeconds : 0)
 
-  const getProjectForEntry = (entry: TimeEntry) => projects.find(p => p.id === entry.project_id)
+  // Use enriched project_title/company_name from API, fall back to project list lookup
+  const getProjectDisplay = (entry: TimeEntry) => {
+    if (entry.project_title) {
+      return {
+        id: entry.project_id || 0,
+        title: entry.project_title,
+        company_name: entry.company_name || undefined,
+      }
+    }
+    const project = projects.find(p => p.id === entry.project_id)
+    if (project) {
+      return {
+        id: project.id,
+        title: project.title,
+        company_name: project.company_name || undefined,
+      }
+    }
+    return null
+  }
 
   return (
     <AuthGuard>
       <MainLayout>
-        <div className="min-h-screen bg-gray-950">
-          {/* ── Timer Bar (Toggl-style, fixed at top of content) ── */}
-          <div className="sticky top-0 z-30 bg-gray-900 border-b border-gray-800 shadow-lg">
+        <div className="min-h-screen">
+          {/* ── Timer Bar (sticky at top, white background) ── */}
+          <div className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
             <div className="max-w-full px-4 sm:px-6">
-              <div className="flex items-center gap-3 h-16">
+              <div className="flex items-center gap-3 h-14">
                 {/* Description input */}
                 <input
                   type="text"
@@ -473,7 +488,7 @@ export default function TimeTrackingPage() {
                     }
                   }}
                   placeholder="What are you working on?"
-                  className="flex-1 bg-transparent text-white text-base placeholder-gray-500 focus:outline-none border-none min-w-0"
+                  className="flex-1 bg-transparent text-gray-900 text-base placeholder-gray-400 focus:outline-none border-none min-w-0"
                 />
                 
                 {/* Project selector */}
@@ -499,8 +514,8 @@ export default function TimeTrackingPage() {
                   }}
                   className={`flex items-center justify-center w-8 h-8 rounded transition-colors flex-shrink-0 ${
                     timerBillable 
-                      ? 'text-green-400 hover:text-green-300' 
-                      : 'text-gray-600 hover:text-gray-400'
+                      ? 'text-green-600 hover:text-green-700' 
+                      : 'text-gray-300 hover:text-gray-400'
                   }`}
                   title={timerBillable ? "Billable" : "Non-billable"}
                 >
@@ -508,11 +523,11 @@ export default function TimeTrackingPage() {
                 </button>
 
                 {/* Divider */}
-                <div className="w-px h-8 bg-gray-700 flex-shrink-0" />
+                <div className="w-px h-8 bg-gray-200 flex-shrink-0" />
 
                 {/* Timer display */}
-                <span className={`font-mono text-xl tabular-nums flex-shrink-0 min-w-[90px] text-right ${
-                  currentTimer?.is_running ? 'text-red-400' : 'text-gray-500'
+                <span className={`font-mono text-lg tabular-nums flex-shrink-0 min-w-[85px] text-right ${
+                  currentTimer?.is_running ? 'text-red-500 font-semibold' : 'text-gray-400'
                 }`}>
                   {currentTimer?.is_running ? formatDuration(elapsedSeconds) : '0:00:00'}
                 </span>
@@ -521,7 +536,7 @@ export default function TimeTrackingPage() {
                 {currentTimer?.is_running ? (
                   <button
                     onClick={handleStopTimer}
-                    className="flex items-center justify-center w-10 h-10 bg-red-500 hover:bg-red-400 rounded-full transition-colors flex-shrink-0"
+                    className="flex items-center justify-center w-10 h-10 bg-red-500 hover:bg-red-600 rounded-full transition-colors flex-shrink-0"
                     title="Stop timer"
                   >
                     <Square className="w-4 h-4 text-white fill-white" />
@@ -529,7 +544,7 @@ export default function TimeTrackingPage() {
                 ) : manualMode ? (
                   <button
                     onClick={handleCreateManualEntry}
-                    className="flex items-center justify-center w-10 h-10 bg-blue-500 hover:bg-blue-400 rounded-full transition-colors flex-shrink-0"
+                    className="flex items-center justify-center w-10 h-10 bg-blue-500 hover:bg-blue-600 rounded-full transition-colors flex-shrink-0"
                     title="Add manual entry"
                   >
                     <Plus className="w-5 h-5 text-white" />
@@ -537,7 +552,7 @@ export default function TimeTrackingPage() {
                 ) : (
                   <button
                     onClick={() => handleStartTimer()}
-                    className="flex items-center justify-center w-10 h-10 bg-green-500 hover:bg-green-400 rounded-full transition-colors flex-shrink-0"
+                    className="flex items-center justify-center w-10 h-10 bg-green-500 hover:bg-green-600 rounded-full transition-colors flex-shrink-0"
                     title="Start timer"
                   >
                     <Play className="w-4 h-4 text-white fill-white ml-0.5" />
@@ -548,7 +563,7 @@ export default function TimeTrackingPage() {
                 <button
                   onClick={() => setManualMode(!manualMode)}
                   className={`p-1.5 rounded transition-colors flex-shrink-0 ${
-                    manualMode ? 'text-blue-400 bg-blue-900/30' : 'text-gray-500 hover:text-gray-300'
+                    manualMode ? 'text-blue-600 bg-blue-50' : 'text-gray-400 hover:text-gray-600'
                   }`}
                   title={manualMode ? "Switch to timer mode" : "Switch to manual mode"}
                 >
@@ -558,28 +573,28 @@ export default function TimeTrackingPage() {
 
               {/* Manual mode: date/time inputs */}
               {manualMode && (
-                <div className="flex items-center gap-3 pb-3 pt-1 border-t border-gray-800">
+                <div className="flex items-center gap-3 pb-3 pt-1 border-t border-gray-100">
                   <label className="text-xs text-gray-500">Date:</label>
                   <input
                     type="date"
                     value={manualDate}
                     onChange={(e) => setManualDate(e.target.value)}
-                    className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm"
+                    className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-900 text-sm"
                   />
                   <label className="text-xs text-gray-500">Start:</label>
                   <input
                     type="time"
                     value={manualStartTime}
                     onChange={(e) => setManualStartTime(e.target.value)}
-                    className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm"
+                    className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-900 text-sm"
                   />
-                  <span className="text-gray-600">–</span>
+                  <span className="text-gray-400">–</span>
                   <label className="text-xs text-gray-500">End:</label>
                   <input
                     type="time"
                     value={manualEndTime}
                     onChange={(e) => setManualEndTime(e.target.value)}
-                    className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm"
+                    className="bg-white border border-gray-300 rounded px-2 py-1 text-gray-900 text-sm"
                   />
                 </div>
               )}
@@ -587,46 +602,43 @@ export default function TimeTrackingPage() {
           </div>
 
           {/* ── Stats Bar (Today Total / Week Total) ── */}
-          <div className="border-b border-gray-800 bg-gray-900/50">
-            <div className="max-w-full px-4 sm:px-6 flex items-center justify-between h-10">
+          <div className="border-b border-gray-200 bg-white">
+            <div className="max-w-full px-4 sm:px-6 flex items-center justify-between h-9">
               <div className="flex items-center gap-6 text-xs">
                 <span className="text-gray-500">
-                  TODAY TOTAL <span className="text-white font-mono ml-1">{formatDuration(todayTotal)}</span>
+                  TODAY TOTAL <span className="text-gray-900 font-mono font-medium ml-1">{formatDuration(todayTotal)}</span>
                 </span>
                 <span className="text-gray-500">
-                  WEEK TOTAL <span className="text-white font-mono ml-1">{formatDuration(weekTotal)}</span>
+                  WEEK TOTAL <span className="text-gray-900 font-mono font-medium ml-1">{formatDuration(weekTotal)}</span>
                 </span>
-              </div>
-              <div className="flex items-center gap-1">
-                {/* Could add Calendar/List/Timesheet toggle here later */}
               </div>
             </div>
           </div>
 
           {/* ── Messages ── */}
           {error && (
-            <div className="mx-4 sm:mx-6 mt-3 p-2.5 bg-red-900/40 border border-red-800 rounded-lg text-red-300 text-sm">
+            <div className="mx-4 sm:mx-6 mt-3 p-2.5 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
               {error}
             </div>
           )}
           {success && (
-            <div className="mx-4 sm:mx-6 mt-3 p-2.5 bg-green-900/40 border border-green-800 rounded-lg text-green-300 text-sm">
+            <div className="mx-4 sm:mx-6 mt-3 p-2.5 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
               {success}
             </div>
           )}
 
           {/* ── Time Entries List (grouped by day, Toggl-style) ── */}
-          <div className="max-w-full px-4 sm:px-6 py-4">
+          <div className="max-w-full px-4 sm:px-6 py-3">
             {loading ? (
-              <div className="text-center py-16 text-gray-500">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-500 mx-auto mb-3"></div>
+              <div className="text-center py-16 text-gray-400">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-400 mx-auto mb-3"></div>
                 Loading time entries...
               </div>
             ) : entries.length === 0 ? (
               <div className="text-center py-16">
-                <Clock className="w-12 h-12 text-gray-700 mx-auto mb-4" />
+                <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-500 mb-2">No time entries yet</h3>
-                <p className="text-gray-600 text-sm">Start the timer or switch to manual mode to begin tracking time.</p>
+                <p className="text-gray-400 text-sm">Start the timer or switch to manual mode to begin tracking time.</p>
               </div>
             ) : (
               <div className="space-y-0">
@@ -637,26 +649,26 @@ export default function TimeTrackingPage() {
                       {/* ── Day Header ── */}
                       <button
                         onClick={() => toggleDayCollapse(dayGroup.key)}
-                        className="w-full flex items-center justify-between py-3 px-1 group hover:bg-gray-900/30 transition-colors"
+                        className="w-full flex items-center justify-between py-2.5 px-1 group hover:bg-gray-100 rounded transition-colors"
                       >
                         <div className="flex items-center gap-2">
-                          <ChevronRight className={`w-4 h-4 text-gray-600 transition-transform ${!isCollapsed ? 'rotate-90' : ''}`} />
-                          <span className="text-sm font-medium text-gray-400">{dayGroup.label}</span>
+                          <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${!isCollapsed ? 'rotate-90' : ''}`} />
+                          <span className="text-sm font-semibold text-gray-700">{dayGroup.label}</span>
                         </div>
-                        <span className="text-sm font-mono text-gray-300">{formatDurationHM(dayGroup.totalSeconds)}</span>
+                        <span className="text-sm font-mono text-gray-600 font-medium">{formatDurationHM(dayGroup.totalSeconds)}</span>
                       </button>
 
                       {/* ── Day Entries ── */}
                       {!isCollapsed && (
-                        <div className="border-l-2 border-gray-800 ml-2 mb-4">
+                        <div className="mb-2">
                           {dayGroup.entries.map(entry => {
-                            const project = getProjectForEntry(entry)
+                            const projectDisplay = getProjectDisplay(entry)
                             const isEditing = editingEntry === entry.id
 
                             return (
                               <div 
                                 key={entry.id}
-                                className="group flex items-center gap-2 py-2 pl-4 pr-2 hover:bg-gray-900/40 transition-colors border-b border-gray-800/50 last:border-b-0"
+                                className="group flex items-center gap-2 py-1.5 pl-7 pr-2 hover:bg-gray-100 transition-colors rounded border-b border-gray-100 last:border-b-0"
                               >
                                 {isEditing ? (
                                   /* ── Edit Mode ── */
@@ -665,7 +677,7 @@ export default function TimeTrackingPage() {
                                       type="text"
                                       value={editDescription}
                                       onChange={(e) => setEditDescription(e.target.value)}
-                                      className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm min-w-0"
+                                      className="flex-1 bg-white border border-gray-300 rounded px-2 py-1 text-gray-900 text-sm min-w-0 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
                                       placeholder="Description"
                                       autoFocus
                                       onKeyDown={(e) => {
@@ -681,13 +693,13 @@ export default function TimeTrackingPage() {
                                     />
                                     <button
                                       onClick={() => handleUpdateEntry(entry.id)}
-                                      className="p-1 text-green-400 hover:text-green-300"
+                                      className="p-1 text-green-600 hover:text-green-700"
                                     >
                                       <Check className="w-4 h-4" />
                                     </button>
                                     <button
                                       onClick={() => setEditingEntry(null)}
-                                      className="p-1 text-gray-500 hover:text-gray-300"
+                                      className="p-1 text-gray-400 hover:text-gray-600"
                                     >
                                       <X className="w-4 h-4" />
                                     </button>
@@ -704,27 +716,27 @@ export default function TimeTrackingPage() {
                                         setEditProjectId(entry.project_id || undefined)
                                       }}
                                     >
-                                      <span className="text-sm text-white truncate block">
-                                        {entry.description || <span className="text-gray-600 italic">Add description</span>}
+                                      <span className="text-sm text-gray-900 truncate block">
+                                        {entry.description || <span className="text-gray-400 italic">Add description</span>}
                                       </span>
                                     </div>
 
-                                    {/* Project badge */}
-                                    {project && (
-                                      <div className="flex items-center gap-1.5 flex-shrink-0 max-w-[250px]">
+                                    {/* Project badge - uses enriched data from API */}
+                                    {projectDisplay && (
+                                      <div className="flex items-center gap-1.5 flex-shrink-0 max-w-[350px]">
                                         <span 
                                           className="w-2 h-2 rounded-full flex-shrink-0" 
-                                          style={{ backgroundColor: getProjectColor(project.id) }}
+                                          style={{ backgroundColor: getProjectColor(projectDisplay.id) }}
                                         />
                                         <span 
-                                          className="text-xs truncate"
-                                          style={{ color: getProjectColor(project.id) }}
+                                          className="text-xs font-medium truncate"
+                                          style={{ color: getProjectColor(projectDisplay.id) }}
                                         >
-                                          {project.title}
+                                          {projectDisplay.title}
                                         </span>
-                                        {project.company_name && (
-                                          <span className="text-xs text-gray-600 truncate hidden lg:inline">
-                                            {project.company_name}
+                                        {projectDisplay.company_name && (
+                                          <span className="text-xs text-gray-400 truncate hidden lg:inline">
+                                            · {projectDisplay.company_name}
                                           </span>
                                         )}
                                       </div>
@@ -732,16 +744,16 @@ export default function TimeTrackingPage() {
 
                                     {/* Billable indicator */}
                                     <DollarSign className={`w-3.5 h-3.5 flex-shrink-0 ${
-                                      entry.is_billable ? 'text-green-500' : 'text-gray-700'
+                                      entry.is_billable ? 'text-green-500' : 'text-gray-200'
                                     }`} />
 
                                     {/* Time range */}
-                                    <span className="text-xs text-gray-500 whitespace-nowrap flex-shrink-0 hidden sm:inline">
+                                    <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0 hidden sm:inline tabular-nums">
                                       {formatTime12(entry.start_time)} - {entry.end_time ? formatTime12(entry.end_time) : '...'}
                                     </span>
 
                                     {/* Duration */}
-                                    <span className="text-sm font-mono text-gray-300 min-w-[65px] text-right flex-shrink-0">
+                                    <span className="text-sm font-mono text-gray-700 min-w-[65px] text-right flex-shrink-0 tabular-nums font-medium">
                                       {formatDurationHM(entry.duration_seconds || 0)}
                                     </span>
 
@@ -749,7 +761,7 @@ export default function TimeTrackingPage() {
                                     <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                                       <button
                                         onClick={() => handleResumeEntry(entry)}
-                                        className="p-1 text-gray-600 hover:text-green-400 transition-colors"
+                                        className="p-1 text-gray-300 hover:text-green-500 transition-colors"
                                         title="Continue this entry"
                                       >
                                         <Play className="w-3.5 h-3.5 fill-current" />
@@ -760,14 +772,14 @@ export default function TimeTrackingPage() {
                                           setEditDescription(entry.description || "")
                                           setEditProjectId(entry.project_id || undefined)
                                         }}
-                                        className="p-1 text-gray-600 hover:text-blue-400 transition-colors"
+                                        className="p-1 text-gray-300 hover:text-blue-500 transition-colors"
                                         title="Edit"
                                       >
                                         <Edit2 className="w-3.5 h-3.5" />
                                       </button>
                                       <button
                                         onClick={() => handleDeleteEntry(entry.id)}
-                                        className="p-1 text-gray-600 hover:text-red-400 transition-colors"
+                                        className="p-1 text-gray-300 hover:text-red-500 transition-colors"
                                         title="Delete"
                                       >
                                         <Trash2 className="w-3.5 h-3.5" />
