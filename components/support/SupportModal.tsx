@@ -84,7 +84,7 @@ Date: ${new Date().toISOString()}
   if (success) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="bg-white rounded-lg p-4 w-full max-w-md mx-4">
           <div className="text-center">
             <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
               <span className="text-green-600 text-xl">✓</span>
@@ -101,7 +101,7 @@ Date: ${new Date().toISOString()}
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg p-4 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-base font-semibold">Contact Support</h3>
           <button

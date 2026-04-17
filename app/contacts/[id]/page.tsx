@@ -626,7 +626,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
                   {/* Contact Details */}
-                  <div className="bg-card border rounded-lg p-6">
+                  <div className="bg-card border rounded-lg p-4">
                     <h2 className="text-base font-semibold mb-4">Contact Details</h2>
                     <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -744,7 +744,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                   </div>
 
                   {/* Recent Activity */}
-                  <div className="bg-card border rounded-lg p-6">
+                  <div className="bg-card border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-base font-semibold">Recent Activity</h2>
                       <button 
@@ -776,7 +776,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
 
                   {/* Recent Deals */}
                   {deals.length > 0 && (
-                    <div className="bg-card border rounded-lg p-6">
+                    <div className="bg-card border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-4">
                         <h2 className="text-base font-semibold">Active Deals</h2>
                         <button 
@@ -812,7 +812,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                 {/* Sidebar */}
                 <div className="space-y-6">
                   {/* Quick Actions */}
-                  <div className="bg-card border rounded-lg p-6">
+                  <div className="bg-card border rounded-lg p-4">
                     <h2 className="text-base font-semibold mb-4">Quick Actions</h2>
                     <div className="space-y-2">
                       <button 
@@ -840,7 +840,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
                   </div>
 
                   {/* Meta Information */}
-                  <div className="bg-card border rounded-lg p-6">
+                  <div className="bg-card border rounded-lg p-4">
                     <h2 className="text-base font-semibold mb-4">Meta Information</h2>
                     <dl className="space-y-2 text-sm">
                       <div>
@@ -870,7 +870,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
 
             {/* Deals Tab */}
             {activeTab === "deals" && (
-              <div className="bg-card border rounded-lg p-6">
+              <div className="bg-card border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold">Related Deals</h2>
                   <Link 
@@ -930,7 +930,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
 
             {/* Tasks Tab */}
             {activeTab === "tasks" && (
-              <div className="bg-card border rounded-lg p-6">
+              <div className="bg-card border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold">Tasks</h2>
                   <button 
@@ -994,7 +994,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
 
             {/* Activity Tab */}
             {activeTab === "activity" && (
-              <div className="bg-card border rounded-lg p-6">
+              <div className="bg-card border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold">Activity Timeline</h2>
                   <button
@@ -1034,7 +1034,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
 
             {/* Notes Tab */}
             {activeTab === "notes" && (
-              <div className="bg-card border rounded-lg p-6">
+              <div className="bg-card border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold">Internal Notes</h2>
                   {!editingNotes && (
@@ -1147,7 +1147,7 @@ export default function ContactDetailPage({ params }: { params: { id: string } }
       {/* Add Note Modal */}
       {showNoteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-card border rounded-lg p-6 w-full max-w-md mx-4">
+          <div className="bg-card border rounded-lg p-4 w-full max-w-md mx-4">
             <h3 className="text-base font-semibold mb-4">Add Note</h3>
             <textarea
               value={newNote}

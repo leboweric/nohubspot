@@ -111,7 +111,7 @@ export default function SignatureBuilder({ isOpen, onClose, onSave, initialSigna
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4">
           {/* Form */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-4">

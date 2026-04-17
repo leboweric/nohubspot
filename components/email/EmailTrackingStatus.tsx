@@ -52,7 +52,7 @@ export default function EmailTrackingStatus({ contactId, className = "" }: Email
 
   if (isLoading) {
     return (
-      <div className={`bg-card border rounded-lg p-6 ${className}`}>
+      <div className={`bg-card border rounded-lg p-4 ${className}`}>
         <h3 className="text-base font-semibold mb-4">Email Engagement</h3>
         <div className="animate-pulse">
           <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
@@ -64,7 +64,7 @@ export default function EmailTrackingStatus({ contactId, className = "" }: Email
 
   if (error) {
     return (
-      <div className={`bg-card border rounded-lg p-6 ${className}`}>
+      <div className={`bg-card border rounded-lg p-4 ${className}`}>
         <h3 className="text-base font-semibold mb-4">Email Engagement</h3>
         <p className="text-sm text-muted-foreground">{error}</p>
       </div>
@@ -73,7 +73,7 @@ export default function EmailTrackingStatus({ contactId, className = "" }: Email
 
   if (trackingRecords.length === 0) {
     return (
-      <div className={`bg-card border rounded-lg p-6 ${className}`}>
+      <div className={`bg-card border rounded-lg p-4 ${className}`}>
         <h3 className="text-base font-semibold mb-4">Email Engagement</h3>
         <p className="text-sm text-muted-foreground">No emails sent yet</p>
       </div>
@@ -81,7 +81,7 @@ export default function EmailTrackingStatus({ contactId, className = "" }: Email
   }
 
   return (
-    <div className={`bg-card border rounded-lg p-6 ${className}`}>
+    <div className={`bg-card border rounded-lg p-4 ${className}`}>
       <h3 className="text-base font-semibold mb-4">Email Engagement</h3>
       
       {/* Summary Stats */}

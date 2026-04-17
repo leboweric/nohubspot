@@ -36,7 +36,7 @@ export default function CompanyCard({ company, onDelete }: CompanyCardProps) {
   }
   
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-lg hover:border-gray-300 transition-all duration-200 relative group">
+    <div className="bg-white border border-gray-200 border-l-[3px] rounded-lg p-4 hover:shadow-md hover:border-gray-300 transition-all duration-200 relative group" style={{ borderLeftColor: 'var(--color-primary)' }}>
       {/* Star Button */}
       <div className="absolute top-3 right-3">
         <button

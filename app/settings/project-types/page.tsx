@@ -200,7 +200,7 @@ export default function ProjectTypesSettings() {
     return (
       <AuthGuard>
         <MainLayout>
-          <div className="container mx-auto p-6 max-w-4xl">
+          <div className="container mx-auto p-4 max-w-4xl">
             <Alert className="border-red-200 bg-red-50">
               <AlertCircle className="h-4 w-4 text-red-600" />
               <AlertDescription className="text-red-800">
@@ -228,7 +228,7 @@ export default function ProjectTypesSettings() {
   return (
     <AuthGuard>
       <MainLayout>
-        <div className="container mx-auto p-6 max-w-4xl">
+        <div className="container mx-auto p-4 max-w-4xl">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Manage Project Types</CardTitle>

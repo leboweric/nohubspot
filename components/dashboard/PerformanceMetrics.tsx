@@ -57,7 +57,7 @@ export default function PerformanceMetrics({ metrics, loading }: PerformanceMetr
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="bg-card border rounded-lg p-6">
+          <div key={i} className="bg-card border rounded-lg p-4">
             <div className="animate-pulse">
               <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
               <div className="h-8 bg-gray-200 rounded w-32 mb-2"></div>
@@ -78,7 +78,7 @@ export default function PerformanceMetrics({ metrics, loading }: PerformanceMetr
         
         return (
           <div key={index} 
-            className="bg-white border rounded-lg p-6 hover:shadow-lg transition-all"
+            className="bg-white border rounded-lg p-4 hover:shadow-lg transition-all"
             style={{ 
               borderColor: index === 0 ? 'var(--color-primary-light)' : index === 1 ? 'var(--color-secondary-light)' : index === 2 ? 'var(--color-accent)' : 'var(--color-neutral-200)',
               borderWidth: '1px'

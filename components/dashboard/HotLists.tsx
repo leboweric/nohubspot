@@ -42,7 +42,7 @@ export default function HotLists({ hotDeals, atRiskDeals, recentWins, loading }:
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {[1, 2, 3].map(i => (
-          <div key={i} className="bg-card border rounded-lg p-6">
+          <div key={i} className="bg-card border rounded-lg p-4">
             <div className="animate-pulse">
               <div className="h-5 bg-gray-200 rounded w-32 mb-4"></div>
               <div className="space-y-3">
@@ -60,7 +60,7 @@ export default function HotLists({ hotDeals, atRiskDeals, recentWins, loading }:
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
       {/* Hot Deals */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-semibold text-gray-900">Hot Deals</h3>
           <TrendingUp className="w-5 h-5 text-gray-400" />
@@ -110,7 +110,7 @@ export default function HotLists({ hotDeals, atRiskDeals, recentWins, loading }:
       </div>
       
       {/* At Risk Deals */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-semibold text-gray-900">At Risk</h3>
           <AlertTriangle className="w-5 h-5 text-gray-400" />
@@ -159,7 +159,7 @@ export default function HotLists({ hotDeals, atRiskDeals, recentWins, loading }:
       </div>
       
       {/* Recent Wins */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-semibold text-gray-900">Recent Wins</h3>
           <Trophy className="w-5 h-5 text-gray-400" />

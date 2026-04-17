@@ -111,7 +111,7 @@ export default function PhoneStandardizationModal({
               </button>
             </div>
 
-            <div className="flex-1 overflow-auto p-6 bg-white">
+            <div className="flex-1 overflow-auto p-4 bg-white">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">

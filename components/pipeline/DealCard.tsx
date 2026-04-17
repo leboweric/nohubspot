@@ -101,17 +101,20 @@ export default function DealCard({ deal, onEdit, onDelete, onMove, isDragging }:
   const HealthIcon = healthStatus.icon
   
   return (
-    <div className={`bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-all duration-200 ${
+    <div className={`bg-white border border-gray-200 border-l-[3px] rounded-lg p-3 hover:shadow-md transition-all duration-200 ${
       isDragging ? 'opacity-50 rotate-2 scale-105' : ''
     }`}
       style={{
+        borderLeftColor: 'var(--color-primary)',
         borderColor: isDragging ? 'var(--color-secondary)' : undefined,
       } as React.CSSProperties}
       onMouseEnter={!isDragging ? (e) => {
         e.currentTarget.style.borderColor = 'var(--color-primary)';
+        e.currentTarget.style.borderLeftColor = 'var(--color-primary)';
       } : undefined}
       onMouseLeave={!isDragging ? (e) => {
         e.currentTarget.style.borderColor = '';
+        e.currentTarget.style.borderLeftColor = 'var(--color-primary)';
       } : undefined}
     >
       {/* Header */}

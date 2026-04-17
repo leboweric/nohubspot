@@ -87,7 +87,7 @@ export default function GoogleConnection() {
 
   if (loading) {
     return (
-      <div className="bg-card border rounded-lg p-6">
+      <div className="bg-card border rounded-lg p-4">
         <h3 className="text-base font-semibold mb-4">Google Workspace Integration</h3>
         <div className="animate-pulse">
           <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
@@ -98,7 +98,7 @@ export default function GoogleConnection() {
   }
 
   return (
-    <div className="bg-card border rounded-lg p-6">
+    <div className="bg-card border rounded-lg p-4">
       <h3 className="text-base font-semibold mb-4">Google Workspace Integration</h3>
       
       {status?.connected ? (

@@ -693,7 +693,7 @@ export default function CompaniesPage() {
                 <thead>
                   <tr className="border-b">
                     <th 
-                      className="text-left px-6 py-3 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground"
+                      className="text-left px-4 py-3 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground"
                       onClick={() => {
                         if (sortBy === 'name') {
                           setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
@@ -706,11 +706,11 @@ export default function CompaniesPage() {
                     >
                       Company {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
                     </th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Account Owner</th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Phone</th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">City, State</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Account Owner</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Phone</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">City, State</th>
                     <th 
-                      className="text-left px-6 py-3 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground"
+                      className="text-left px-4 py-3 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground"
                       onClick={() => {
                         if (sortBy === 'postal_code') {
                           setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
@@ -723,23 +723,23 @@ export default function CompaniesPage() {
                     >
                       Zip Code {sortBy === 'postal_code' && (sortOrder === 'asc' ? '↑' : '↓')}
                     </th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Industry</th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Status</th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Actions</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Industry</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Status</th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {(Array.isArray(filteredCompanies) ? filteredCompanies : []).map((company) => (
                     <tr key={company.id} className="hover:bg-accent/50 transition-colors">
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <div>
                           <div className="font-medium">{company.name}</div>
                           <div className="text-sm text-muted-foreground">{company.website || 'No website'}</div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm">{company.primary_account_owner_name || '-'}</td>
-                      <td className="px-6 py-4 text-sm">{company.phone || '-'}</td>
-                      <td className="px-6 py-4 text-sm">
+                      <td className="px-4 py-3 text-sm">{company.primary_account_owner_name || '-'}</td>
+                      <td className="px-4 py-3 text-sm">{company.phone || '-'}</td>
+                      <td className="px-4 py-3 text-sm">
                         {company.city || company.state ? (
                           <span>
                             {company.city}
@@ -748,9 +748,9 @@ export default function CompaniesPage() {
                           </span>
                         ) : '-'}
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium">{company.postal_code || '-'}</td>
-                      <td className="px-6 py-4 text-sm">{company.industry || '-'}</td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3 text-sm font-medium">{company.postal_code || '-'}</td>
+                      <td className="px-4 py-3 text-sm">{company.industry || '-'}</td>
+                      <td className="px-4 py-3">
                         <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
                           company.status === "Active" 
                             ? "bg-gray-100 text-gray-700" 
@@ -759,7 +759,7 @@ export default function CompaniesPage() {
                           {company.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm">
+                      <td className="px-4 py-3 text-sm">
                         <div className="flex gap-3">
                           <a href={`/companies/${company.id}`} className="hover:underline" style={{ color: 'var(--color-primary)' }}>
                             View
@@ -792,7 +792,7 @@ export default function CompaniesPage() {
           
           {/* Pagination Controls */}
           {totalCompanies > 0 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t bg-card rounded-b-lg mt-4">
+            <div className="flex items-center justify-between px-4 py-3 border-t bg-card rounded-b-lg mt-4">
               <div className="text-sm text-muted-foreground">
                 Showing {((currentPage - 1) * recordsPerPage) + 1} to {Math.min(currentPage * recordsPerPage, totalCompanies)} of {totalCompanies} companies
               </div>

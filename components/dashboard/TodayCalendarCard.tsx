@@ -85,7 +85,7 @@ export default function TodayCalendarCard() {
   )
 
   return (
-    <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-card border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-base font-semibold flex items-center">
           <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>

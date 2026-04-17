@@ -357,7 +357,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
             {activeTab === "overview" && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
-                  <div className="bg-card border rounded-lg p-6">
+                  <div className="bg-card border rounded-lg p-4">
                     <h2 className="text-base font-semibold mb-4">Company Details</h2>
                     <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -457,7 +457,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                   </div>
 
                   {/* Recent Contacts */}
-                  <div className="bg-card border rounded-lg p-6">
+                  <div className="bg-card border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-base font-semibold">Recent Contacts</h2>
                       <button 
@@ -494,7 +494,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
 
                 {/* Stats Sidebar */}
                 <div className="space-y-6">
-                  <div className="bg-card border rounded-lg p-6">
+                  <div className="bg-card border rounded-lg p-4">
                     <h2 className="text-base font-semibold mb-4">Quick Stats</h2>
                     <dl className="space-y-3">
                       <div className="flex justify-between">
@@ -512,7 +512,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                     </dl>
                   </div>
 
-                  <div className="bg-card border rounded-lg p-6">
+                  <div className="bg-card border rounded-lg p-4">
                     <h2 className="text-base font-semibold mb-4">Quick Actions</h2>
                     <div className="space-y-2">
                       <Link 
@@ -545,7 +545,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
 
             {/* Contacts Tab */}
             {activeTab === "contacts" && (
-              <div className="bg-card border rounded-lg p-6">
+              <div className="bg-card border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold">Contacts</h2>
                   <Link 
@@ -609,14 +609,14 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
 
             {/* Documents Tab */}
             {activeTab === "documents" && (
-              <div className="bg-card border rounded-lg p-6">
+              <div className="bg-card border rounded-lg p-4">
                 <DocumentManager companyId={company.id} />
               </div>
             )}
 
             {/* Deals Tab */}
             {activeTab === "deals" && (
-              <div className="bg-card border rounded-lg p-6">
+              <div className="bg-card border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold">Deals</h2>
                   <Link 
@@ -667,7 +667,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
 
             {/* Activity Tab */}
             {activeTab === "activity" && (
-              <div className="bg-card border rounded-lg p-6">
+              <div className="bg-card border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold">Activity Timeline</h2>
                   <button
@@ -707,7 +707,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
 
             {/* Notes Tab */}
             {activeTab === "notes" && (
-              <div className="bg-card border rounded-lg p-6">
+              <div className="bg-card border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold">Internal Notes</h2>
                   {!editingNotes && (

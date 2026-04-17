@@ -21,7 +21,7 @@ function SkeletonCard({
   return (
     <div
       className={cn(
-        "animate-pulse rounded-lg bg-gray-200 p-6 border border-gray-200 shadow-sm",
+        "animate-pulse rounded-lg bg-gray-200 p-4 border border-gray-200 shadow-sm",
         className
       )}
       {...props}

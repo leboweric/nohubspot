@@ -427,7 +427,7 @@ export default function SettingsPage() {
     return (
       <div className="space-y-6">
         {/* Profile Settings */}
-        <div className="bg-white border rounded-lg p-6">
+        <div className="bg-white border rounded-lg p-4">
           <div className="flex items-center gap-3 mb-6">
             <User className="w-5 h-5" />
             <h2 className="text-base font-semibold">Profile Settings</h2>
@@ -459,7 +459,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Change Password */}
-        <div className="bg-white border rounded-lg p-6">
+        <div className="bg-white border rounded-lg p-4">
           <div className="flex items-center gap-3 mb-6">
             <Lock className="w-5 h-5" />
             <div>
@@ -590,7 +590,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Email Signature */}
-        <div className="bg-white border rounded-lg p-6">
+        <div className="bg-white border rounded-lg p-4">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Mail className="w-5 h-5" />
@@ -646,7 +646,7 @@ export default function SettingsPage() {
     return (
       <div className="space-y-6">
         {/* Team Header */}
-        <div className="bg-white border rounded-lg p-6">
+        <div className="bg-white border rounded-lg p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <Users className="w-5 h-5" />
@@ -700,7 +700,7 @@ export default function SettingsPage() {
     return (
       <div className="space-y-6">
         {/* Integrations Header */}
-        <div className="bg-white border rounded-lg p-6">
+        <div className="bg-white border rounded-lg p-4">
           <div className="flex items-center gap-3 mb-4">
             <Zap className="w-5 h-5" />
             <div>
@@ -766,7 +766,7 @@ export default function SettingsPage() {
     return (
       <div className="space-y-6">
         {/* Organization Info */}
-        <div className="bg-white border rounded-lg p-6">
+        <div className="bg-white border rounded-lg p-4">
           <div className="flex items-center gap-3 mb-6">
             <Building2 className="w-5 h-5" />
             <h2 className="text-base font-semibold">Organization Information</h2>
@@ -796,7 +796,7 @@ export default function SettingsPage() {
 
         {/* Project Types Management */}
         {(user?.role === 'owner' || user?.role === 'admin') && (
-          <div className="bg-white border rounded-lg p-6">
+          <div className="bg-white border rounded-lg p-4">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <FileText className="w-5 h-5" />
@@ -979,7 +979,7 @@ export default function SettingsPage() {
     return (
       <div className="space-y-6">
         {/* Data Management Header */}
-        <div className="bg-white border rounded-lg p-6">
+        <div className="bg-white border rounded-lg p-4">
           <div className="flex items-center gap-3 mb-4">
             <Database className="w-5 h-5" />
             <div>
@@ -990,7 +990,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Phone Standardization */}
-        <div className="bg-white border rounded-lg p-6">
+        <div className="bg-white border rounded-lg p-4">
           <div className="flex items-center gap-3 mb-4">
             <Phone className="w-5 h-5" />
             <div>
@@ -1066,7 +1066,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Duplicate Detection */}
-        <div className="bg-white border rounded-lg p-6">
+        <div className="bg-white border rounded-lg p-4">
           <div className="flex items-center gap-3 mb-4">
             <Trash2 className="w-5 h-5" />
             <div>
@@ -1146,7 +1146,7 @@ export default function SettingsPage() {
     return (
       <div className="space-y-6">
         {/* Support Header */}
-        <div className="bg-white border rounded-lg p-6">
+        <div className="bg-white border rounded-lg p-4">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <HelpCircle className="w-5 h-5" />
@@ -1168,7 +1168,7 @@ export default function SettingsPage() {
 
         {/* Support Options */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white border rounded-lg p-6 hover:shadow-md transition-all duration-200">
+          <div className="bg-white border rounded-lg p-4 hover:shadow-md transition-all duration-200">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
                 <Settings className="w-5 h-5 text-gray-600" />
@@ -1183,7 +1183,7 @@ export default function SettingsPage() {
             </p>
           </div>
 
-          <div className="bg-white border rounded-lg p-6 hover:shadow-md transition-all duration-200">
+          <div className="bg-white border rounded-lg p-4 hover:shadow-md transition-all duration-200">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
                 <HelpCircle className="w-5 h-5 text-gray-600" />
@@ -1253,7 +1253,7 @@ export default function SettingsPage() {
         {/* Invite User Modal */}
         {showInviteForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="bg-white rounded-lg p-4 w-full max-w-md">
               <h3 className="text-base font-semibold mb-4">Add User to {organization?.name}</h3>
               <form onSubmit={handleSendInvite}>
                 <div className="space-y-4">
@@ -1344,7 +1344,7 @@ export default function SettingsPage() {
         {/* Office 365 Configuration Modal */}
         {isO365Enabled && showO365Config && isOwner && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-lg p-4 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-base font-semibold">Office 365 Configuration</h3>
                 <button
@@ -1604,7 +1604,7 @@ export default function SettingsPage() {
         {/* Password Display Modal */}
         {showPasswordModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="bg-white rounded-lg p-4 w-full max-w-md">
               <h3 className="text-base font-semibold mb-4">User Created Successfully!</h3>
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                 <p className="text-sm text-green-800 mb-2">

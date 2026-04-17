@@ -68,7 +68,7 @@ export default function O365SetupPage() {
             <p className="text-muted-foreground mt-1">Configure Office 365 integration for your organization</p>
           </div>
 
-          <div className="bg-card border rounded-lg p-6">
+          <div className="bg-card border rounded-lg p-4">
             <div className="mb-6">
               <h2 className="text-base font-semibold mb-2">Azure AD App Registration</h2>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

@@ -271,7 +271,7 @@ export default function TemplatesPage() {
           {/* Delete Confirmation Modal */}
           {deleteConfirm && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+              <div className="bg-white rounded-lg p-4 w-full max-w-md">
                 <h3 className="text-base font-semibold mb-4">Delete Template</h3>
                 <p className="text-sm text-muted-foreground mb-6">
                   Are you sure you want to delete this template? This action cannot be undone.

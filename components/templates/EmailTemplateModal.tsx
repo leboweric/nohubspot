@@ -117,7 +117,7 @@ export default function EmailTemplateModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
-        <div className="flex items-center justify-between p-6 border-b">
+        <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-xl font-semibold">
             {template ? 'Edit Template' : 'Create New Template'}
           </h2>
@@ -133,7 +133,7 @@ export default function EmailTemplateModal({
 
         <form onSubmit={handleSubmit} className="flex h-[70vh]">
           {/* Left Column - Form */}
-          <div className="flex-1 p-6 overflow-y-auto">
+          <div className="flex-1 p-4 overflow-y-auto">
             {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
                 <p className="text-sm text-red-700">{error}</p>

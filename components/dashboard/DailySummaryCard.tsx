@@ -138,7 +138,7 @@ export default function DailySummaryCard() {
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-blue-900">Daily Summary</h2>
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
@@ -153,7 +153,7 @@ export default function DailySummaryCard() {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-red-900">Daily Summary</h2>
           <button

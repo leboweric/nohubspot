@@ -71,9 +71,11 @@ export default function TaskCard({ task, onUpdate, onDelete, onEdit, isDragging 
   }
   
   return (
-    <div className={`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-200 ${
+    <div className={`bg-white border border-gray-200 border-l-[3px] rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-200 ${
       isDragging ? 'opacity-50 rotate-3 scale-105' : ''
-    }`}>
+    }`}
+      style={{ borderLeftColor: 'var(--color-primary)' }}
+    >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2 flex-1 min-w-0">

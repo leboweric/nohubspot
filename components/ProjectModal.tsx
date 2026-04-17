@@ -290,7 +290,7 @@ export default function ProjectModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+        <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-xl font-semibold">
             {project ? 'Edit Project' : 'Create New Project'}
           </h2>
@@ -619,7 +619,7 @@ export default function ProjectModal({
         {/* Delete Confirmation Modal */}
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-60">
-            <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="bg-white rounded-lg max-w-md w-full p-4">
               <h3 className="text-base font-semibold mb-4">Delete Project</h3>
               <p className="text-gray-600 mb-6">
                 Are you sure you want to delete this project? This action cannot be undone.

@@ -482,22 +482,22 @@ export default function ContactsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('name')}>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('name')}>
                     <span className="flex items-center">Name<SortIcon column="name" /></span>
                   </th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Email</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Phone</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('company')}>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Email</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Phone</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('company')}>
                     <span className="flex items-center">Company<SortIcon column="company" /></span>
                   </th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Status</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Actions</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Status</th>
+                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {(Array.isArray(filteredContacts) ? filteredContacts : []).map((contact) => (
                   <tr key={contact.id} className="hover:bg-accent/50 transition-colors">
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3">
                       <div>
                         <div className="font-medium flex items-center space-x-2">
                           <span>{contact.first_name} {contact.last_name}</span>
@@ -510,10 +510,10 @@ export default function ContactsPage() {
                         <div className="text-sm text-muted-foreground">{contact.title || 'No title'}</div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm">{contact.email}</td>
-                    <td className="px-6 py-4 text-sm">{contact.phone || "-"}</td>
-                    <td className="px-6 py-4 text-sm">{contact.company_name || 'N/A'}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3 text-sm">{contact.email}</td>
+                    <td className="px-4 py-3 text-sm">{contact.phone || "-"}</td>
+                    <td className="px-4 py-3 text-sm">{contact.company_name || 'N/A'}</td>
+                    <td className="px-4 py-3">
                       <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
                         contact.status === "Active" 
                           ? "bg-gray-100 text-gray-700" 
@@ -522,7 +522,7 @@ export default function ContactsPage() {
                         {contact.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm">
+                    <td className="px-4 py-3 text-sm">
                       <div className="flex gap-3">
                         <a href={`/contacts/${contact.id}`} className="hover:underline" style={{ color: 'var(--color-primary)' }}>
                           View

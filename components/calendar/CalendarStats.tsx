@@ -171,7 +171,7 @@ export default function CalendarStats({ events = [], currentDate }: CalendarStat
       {/* Event Type Distribution & Upcoming Events */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Event Type Breakdown */}
-        <div className="bg-white border rounded-lg p-6">
+        <div className="bg-white border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-4">
             <Zap className="w-5 h-5 text-gray-600" />
             <h3 className="font-semibold">Event Types This Month</h3>
@@ -217,7 +217,7 @@ export default function CalendarStats({ events = [], currentDate }: CalendarStat
         </div>
 
         {/* Upcoming Events */}
-        <div className="bg-white border rounded-lg p-6">
+        <div className="bg-white border rounded-lg p-4">
           <div className="flex items-center gap-2 mb-4">
             <Clock className="w-5 h-5 text-gray-600" />
             <h3 className="font-semibold">Upcoming Events</h3>

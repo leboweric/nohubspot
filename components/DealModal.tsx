@@ -228,7 +228,7 @@ export default function DealModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+        <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-xl font-semibold">
             {deal ? 'Edit Deal' : 'Create New Deal'}
           </h2>
@@ -470,7 +470,7 @@ export default function DealModal({
       {/* Delete Confirmation Dialog */}
       {showDeleteConfirm && (
         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 rounded-lg">
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+          <div className="bg-white rounded-lg p-4 max-w-sm w-full">
             <h3 className="text-base font-semibold mb-2">Delete Deal?</h3>
             <p className="text-gray-600 mb-4">
               Are you sure you want to delete "{deal?.title}"? This action cannot be undone.

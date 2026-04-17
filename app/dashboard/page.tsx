@@ -418,7 +418,7 @@ export default function DashboardPage() {
       {/* Key Metrics - Keeping as secondary metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8" style={{ display: 'none' }}>
         {/* Active Deals */}
-        <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-card border border-l-[3px] rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'var(--color-primary)' }}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Active Deals</p>
@@ -440,7 +440,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Pipeline Value */}
-        <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-card border border-l-[3px] rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'var(--color-primary)' }}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Pipeline Value</p>
@@ -460,7 +460,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Active Projects */}
-        <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-card border border-l-[3px] rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'var(--color-primary)' }}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Active Projects</p>
@@ -482,7 +482,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Total Project Value */}
-        <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-card border border-l-[3px] rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'var(--color-primary)' }}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Project Value</p>
@@ -502,7 +502,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Projected Hours */}
-        <div className="bg-card border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-card border border-l-[3px] rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow" style={{ borderLeftColor: 'var(--color-primary)' }}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Projected Hours</p>
@@ -523,7 +523,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all">
+        <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-all">
           <div className="flex items-start justify-between mb-6">
             <h2 className="text-base font-semibold text-gray-900">Quick Actions</h2>
             <svg className="w-5 h-5 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: themeColors.primary }}>
@@ -563,7 +563,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all">
+        <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-all">
           <div className="flex items-start justify-between mb-6">
             <h2 className="text-base font-semibold text-gray-900">Recent Activity</h2>
             <svg className="w-5 h-5 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: themeColors.accent }}>
