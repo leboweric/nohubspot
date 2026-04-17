@@ -1,0 +1,468 @@
+2026-04-17 15:40:28,481 [INFO] ============================================================
+2026-04-17 15:40:28,481 [INFO] TOGGL → NOTHUBSPOT MIGRATION
+2026-04-17 15:40:28,481 [INFO] Started at: 2026-04-17T15:40:28.481354
+2026-04-17 15:40:28,481 [INFO] Target org: 7 (Strategic Consulting & Coaching)
+2026-04-17 15:40:28,481 [INFO] Date range: 2020-01-01 to today
+2026-04-17 15:40:28,481 [INFO] ============================================================
+2026-04-17 15:40:32,160 [INFO] ============================================================
+2026-04-17 15:40:32,160 [INFO] PHASE 1: USER MATCHING/CREATION
+2026-04-17 15:40:32,160 [INFO] ============================================================
+2026-04-17 15:40:35,350 [INFO] Found 17 Toggl members
+2026-04-17 15:40:36,194 [INFO] Found 17 existing NHS users in org 7
+2026-04-17 15:40:36,616 [INFO]   CREATED: Toggl [21455076] Ellen Gibson Freelance (ellen.gibson.freelance@gmail.com) → NHS [121] (needs password reset)
+2026-04-17 15:40:36,616 [INFO]   MATCHED: Toggl [20364434] Mbasham → NHS [31] Michelle Basham
+2026-04-17 15:40:36,617 [INFO]   MATCHED: Toggl [20246496] Dmarty → NHS [32] Dori Marty
+2026-04-17 15:40:36,617 [INFO]   MATCHED: Toggl [12173734] Akishbailey → NHS [35] Andréa Kish-Bailey
+2026-04-17 15:40:36,617 [INFO]   MATCHED: Toggl [11761750] Dbartholomay → NHS [26] Dan Bartholomay
+2026-04-17 15:40:36,617 [INFO]   MATCHED: Toggl [10941410] Cecily Harris → NHS [29] Cecily Harris
+2026-04-17 15:40:36,617 [INFO]   MATCHED: Toggl [10439789] Ctaykalo → NHS [15] Christopher Taykalo
+2026-04-17 15:40:37,037 [INFO]   CREATED: Toggl [9208683] Ezimmon (ezimmon@strategic-cc.com) → NHS [122] (needs password reset)
+2026-04-17 15:40:37,459 [INFO]   CREATED: Toggl [9168234] Mwilliams (mwilliams@strategic-cc.com) → NHS [123] (needs password reset)
+2026-04-17 15:40:37,460 [INFO]   MATCHED: Toggl [9108519] Smarschalk → NHS [16] Susan Marschalk
+2026-04-17 15:40:37,460 [INFO]   MATCHED: Toggl [6277292] Srostkoski → NHS [28] Susan Rostkoski
+2026-04-17 15:40:37,460 [INFO]   MATCHED: Toggl [5445890] Jhipple → NHS [30] Jennifer Hipple
+2026-04-17 15:40:37,460 [INFO]   MATCHED: Toggl [5410631] Roanderson → NHS [13] Renae Oswald-Anderson
+2026-04-17 15:40:37,460 [INFO]   MATCHED: Toggl [5315073] Idavis → NHS [14] Imogen Davis
+2026-04-17 15:40:37,460 [INFO]   MATCHED: Toggl [5267902] Cjensen → NHS [12] Cheryl Jensen
+2026-04-17 15:40:37,460 [INFO]   MATCHED: Toggl [5267899] Kharding → NHS [8] Krista  Harding
+2026-04-17 15:40:37,460 [INFO]   MATCHED: Toggl [5445899] Molly Schwartz → NHS [27] Molly Schwartz
+2026-04-17 15:40:37,917 [INFO] User mapping complete: 17 users mapped
+2026-04-17 15:40:37,917 [INFO] ============================================================
+2026-04-17 15:40:37,917 [INFO] PHASE 2: COMPANY/CLIENT MATCHING
+2026-04-17 15:40:37,917 [INFO] ============================================================
+2026-04-17 15:40:41,093 [INFO] Found 169 Toggl clients
+2026-04-17 15:40:42,207 [INFO] Found 235 existing NHS companies in org 7
+2026-04-17 15:40:42,208 [INFO]   MATCHED: Toggl [59345270] Agate Housing and Services → NHS [2350]
+2026-04-17 15:40:42,630 [INFO]   CREATED: Toggl [55727877] AIOIC → NHS [2450] (status: Active)
+2026-04-17 15:40:43,051 [INFO]   CREATED: Toggl [58396765] Alliance Housing Inc. → NHS [2451] (status: Active)
+2026-04-17 15:40:43,051 [INFO]   MATCHED: Toggl [66159202] American Association of Woodturners → NHS [2206]
+2026-04-17 15:40:43,051 [INFO]   MATCHED: Toggl [46891730] Amery Area Community Center → NHS [2436]
+2026-04-17 15:40:43,051 [INFO]   FUZZY MATCHED: Toggl [64576051] 'Ampersand' → NHS [2208] 'ampersand families'
+2026-04-17 15:40:43,474 [INFO]   CREATED: Toggl [46559649] Ann Plans → NHS [2452] (status: Active)
+2026-04-17 15:40:43,895 [INFO]   CREATED: Toggl [52267383] Anoka County → NHS [2453] (status: Active)
+2026-04-17 15:40:44,325 [INFO]   CREATED: Toggl [65814455] Anoka-Ramsey Community College → NHS [2454] (status: Active)
+2026-04-17 15:40:44,745 [INFO]   CREATED: Toggl [65814461] Anoka Technical College → NHS [2455] (status: Active)
+2026-04-17 15:40:44,745 [INFO]   MATCHED: Toggl [63910203] Aqwalife → NHS [2210]
+2026-04-17 15:40:44,745 [INFO]   MATCHED: Toggl [46454013] Arcola Mills → NHS [2211]
+2026-04-17 15:40:45,165 [INFO]   CREATED: Toggl [66852214] Asian Women United of MN → NHS [2456] (status: Active)
+2026-04-17 15:40:45,165 [INFO]   MATCHED: Toggl [56409550] Ausherman Family Foundation → NHS [2212]
+2026-04-17 15:40:45,584 [INFO]   CREATED: Toggl [63657197] AZ Friendly Language → NHS [2457] (status: Active)
+2026-04-17 15:40:45,584 [INFO]   MATCHED: Toggl [65076492] Bakken Museum → NHS [2375]
+2026-04-17 15:40:45,584 [INFO]   FUZZY MATCHED: Toggl [67664618] 'Banyan Community' → NHS [2426] 'banyan community center '
+2026-04-17 15:40:46,005 [INFO]   CREATED: Toggl [65874614] Baywood Home Care → NHS [2458] (status: Active)
+2026-04-17 15:40:46,424 [INFO]   CREATED: Toggl [50274576] Blue Cross Blue Sheild → NHS [2459] (status: Active)
+2026-04-17 15:40:46,845 [INFO]   CREATED: Toggl [64400106] Breakthrough Minnesota → NHS [2460] (status: Active)
+2026-04-17 15:40:46,846 [INFO]   MATCHED: Toggl [67858303] Bush Foundation → NHS [2438]
+2026-04-17 15:40:46,846 [INFO]   FUZZY MATCHED: Toggl [53991049] 'CADA' → NHS [2222] 'cada- committee against domestic abuse '
+2026-04-17 15:40:46,846 [INFO]   MATCHED: Toggl [52592902] CAER FOOD SHELF → NHS [2223]
+2026-04-17 15:40:46,846 [INFO]   MATCHED: Toggl [53184166] Camp Omega → NHS [2224]
+2026-04-17 15:40:47,270 [INFO]   CREATED: Toggl [57301981] CCHS → NHS [2461] (status: Active)
+2026-04-17 15:40:47,270 [INFO]   MATCHED: Toggl [63979206] Center for Coaching in Organizations → NHS [2228]
+2026-04-17 15:40:47,270 [INFO]   MATCHED: Toggl [64400119] Central Minnesota Mental Health Center → NHS [2229]
+2026-04-17 15:40:47,270 [INFO]   FUZZY MATCHED: Toggl [45056961] 'Christian Cupboard Emergency Food Shelf' → NHS [2245] 'emerge'
+2026-04-17 15:40:47,696 [INFO]   CREATED: Toggl [45304904] City of Bloomington → NHS [2462] (status: Active)
+2026-04-17 15:40:47,696 [INFO]   MATCHED: Toggl [68566634] City of New Brighton → NHS [2443]
+2026-04-17 15:40:48,126 [INFO]   CREATED: Toggl [64974284] City of Omaha → NHS [2463] (status: Active)
+2026-04-17 15:40:48,548 [INFO]   CREATED: Toggl [46589946] Clare Housing → NHS [2464] (status: Active)
+2026-04-17 15:40:48,548 [INFO]   MATCHED: Toggl [64250444] College Possible → NHS [2233]
+2026-04-17 15:40:48,967 [INFO]   CREATED: Toggl [45057061] Conservation Corps of Minnesota Iowa → NHS [2465] (status: Active)
+2026-04-17 15:40:49,384 [INFO]   CREATED: Toggl [64131148] CornerHouse → NHS [2466] (status: Active)
+2026-04-17 15:40:49,385 [INFO]   MATCHED: Toggl [68170748] Crescent Cove → NHS [2435]
+2026-04-17 15:40:49,385 [INFO]   MATCHED: Toggl [45671669] Customized Options → NHS [2239]
+2026-04-17 15:40:49,808 [INFO]   CREATED: Toggl [63990462] Dakota Child and Family Clinic → NHS [2467] (status: Active)
+2026-04-17 15:40:49,808 [INFO]   MATCHED: Toggl [57826809] Dakota Woodlands → NHS [2240]
+2026-04-17 15:40:50,234 [INFO]   CREATED: Toggl [46559651] Davis Communications → NHS [2468] (status: Active)
+2026-04-17 15:40:50,667 [INFO]   CREATED: Toggl [46559704] Dendros → NHS [2469] (status: Active)
+2026-04-17 15:40:51,086 [INFO]   CREATED: Toggl [63056477] DHS Crisis Response → NHS [2470] (status: Active)
+2026-04-17 15:40:51,505 [INFO]   CREATED: Toggl [61184513] DHS-MN → NHS [2471] (status: Active)
+2026-04-17 15:40:51,926 [INFO]   CREATED: Toggl [67322708] Disabled American Veterans of Minnesota → NHS [2472] (status: Active)
+2026-04-17 15:40:51,926 [INFO]   MATCHED: Toggl [48093654] Dispute Resolution Center → NHS [2243]
+2026-04-17 15:40:51,926 [INFO]   MATCHED: Toggl [68550466] Dodge Nature Center → NHS [2447]
+2026-04-17 15:40:52,345 [INFO]   CREATED: Toggl [58014091] Downtown Youth Center-Ausherman → NHS [2473] (status: Active)
+2026-04-17 15:40:52,345 [INFO]   FUZZY MATCHED: Toggl [45057076] 'EMERGE Community Development' → NHS [2245] 'emerge'
+2026-04-17 15:40:52,345 [INFO]   MATCHED: Toggl [51827204] Family Child Development Center → NHS [2249]
+2026-04-17 15:40:52,345 [INFO]   MATCHED: Toggl [66471382] Family Promise → NHS [2427]
+2026-04-17 15:40:52,765 [INFO]   CREATED: Toggl [45057077] Family Wise → NHS [2474] (status: Active)
+2026-04-17 15:40:52,765 [INFO]   MATCHED: Toggl [61073371] Feed Iowa First → NHS [2250]
+2026-04-17 15:40:52,765 [INFO]   FUZZY MATCHED: Toggl [46560159] 'Feline Rescue' → NHS [2251] 'feline rescue, inc.'
+2026-04-17 15:40:52,765 [INFO]   MATCHED: Toggl [67760571] FiftyNorth → NHS [2449]
+2026-04-17 15:40:52,765 [INFO]   FUZZY MATCHED: Toggl [67494373] 'Financial Planning Association' → NHS [2384] 'financial planning association of mn'
+2026-04-17 15:40:53,186 [INFO]   CREATED: Toggl [64011984] First Lutheran Child Care → NHS [2475] (status: Active)
+2026-04-17 15:40:53,615 [INFO]   CREATED: Toggl [65778933] First Witness Child Advocacy Center → NHS [2476] (status: Active)
+2026-04-17 15:40:53,615 [INFO]   MATCHED: Toggl [48093724] Foundations for Essential Needs → NHS [2253]
+2026-04-17 15:40:53,615 [INFO]   MATCHED: Toggl [68178099] Freedom Park Center → NHS [2428]
+2026-04-17 15:40:53,615 [INFO]   FUZZY MATCHED: Toggl [48885523] 'Friends of St. Paul College' → NHS [2255] 'friends of st. paul college foundation'
+2026-04-17 15:40:54,040 [INFO]   CREATED: Toggl [67544871] Generation 2 Generation → NHS [2477] (status: Active)
+2026-04-17 15:40:54,040 [INFO]   MATCHED: Toggl [67765266] Girl Scouts River Valleys → NHS [2429]
+2026-04-17 15:40:54,040 [INFO]   MATCHED: Toggl [68622949] Great Northern Railway Historical Society → NHS [2448]
+2026-04-17 15:40:54,464 [INFO]   CREATED: Toggl [67536868] Great River Passage Conservancy → NHS [2478] (status: Active)
+2026-04-17 15:40:54,464 [INFO]   MATCHED: Toggl [63819743] Green Card Voices → NHS [2258]
+2026-04-17 15:40:54,464 [INFO]   MATCHED: Toggl [51191339] H2O for Life → NHS [2259]
+2026-04-17 15:40:54,884 [INFO]   CREATED: Toggl [45897095] Hallie Q Brown Community Center → NHS [2479] (status: Active)
+2026-04-17 15:40:54,884 [INFO]   MATCHED: Toggl [64630069] Handy Help LLC → NHS [2260]
+2026-04-17 15:40:55,307 [INFO]   CREATED: Toggl [62411440] History Theater → NHS [2480] (status: Active)
+2026-04-17 15:40:55,307 [INFO]   MATCHED: Toggl [45056964] Hope 4 Youth → NHS [2266]
+2026-04-17 15:40:55,307 [INFO]   MATCHED: Toggl [46874220] HOPE Coalition → NHS [2267]
+2026-04-17 15:40:55,731 [INFO]   CREATED: Toggl [48093765] House of Charity → NHS [2481] (status: Active)
+2026-04-17 15:40:55,731 [INFO]   FUZZY MATCHED: Toggl [52059328] 'ICA' → NHS [2448] 'great northern railway historical society'
+2026-04-17 15:40:56,153 [INFO]   CREATED: Toggl [57918578] IOCP → NHS [2482] (status: Active)
+2026-04-17 15:40:56,574 [INFO]   CREATED: Toggl [57862650] Jewish Family & Children's Services → NHS [2483] (status: Active)
+2026-04-17 15:40:56,574 [INFO]   FUZZY MATCHED: Toggl [57468553] 'J-HAP' → NHS [2273] 'jewish programming and housing (j-hap)'
+2026-04-17 15:40:56,993 [INFO]   CREATED: Toggl [45057041] Joint Religious Legislation Coalition → NHS [2484] (status: Active)
+2026-04-17 15:40:56,993 [INFO]   MATCHED: Toggl [56746131] Joyce Uptown Food Shelf → NHS [2275]
+2026-04-17 15:40:57,413 [INFO]   CREATED: Toggl [51209965] Judicare → NHS [2485] (status: Active)
+2026-04-17 15:40:57,413 [INFO]   MATCHED: Toggl [46933739] LDA Minnesota → NHS [2277]
+2026-04-17 15:40:57,836 [INFO]   CREATED: Toggl [63621818] Legal Service of ND → NHS [2486] (status: Active)
+2026-04-17 15:40:58,255 [INFO]   CREATED: Toggl [58356775] Listen Up! Youth Radio → NHS [2487] (status: Active)
+2026-04-17 15:40:58,675 [INFO]   CREATED: Toggl [57988922] Literacy MN Executive Transition → NHS [2488] (status: Active)
+2026-04-17 15:40:58,675 [INFO]   MATCHED: Toggl [49489629] Little Free Library → NHS [2283]
+2026-04-17 15:40:58,675 [INFO]   MATCHED: Toggl [45808363] Lutheran Island Camp → NHS [2285]
+2026-04-17 15:40:58,675 [INFO]   MATCHED: Toggl [60306731] Manna Market → NHS [2287]
+2026-04-17 15:40:58,675 [INFO]   MATCHED: Toggl [64889852] MELSA → NHS [2292]
+2026-04-17 15:40:58,675 [INFO]   MATCHED: Toggl [64341673] Merrick Community Services → NHS [2293]
+2026-04-17 15:40:58,675 [INFO]   FUZZY MATCHED: Toggl [54437240] 'Metropolitan Center for Independent Living' → NHS [2288] 'metropolitan center for independent living (mcil)'
+2026-04-17 15:40:58,675 [INFO]   MATCHED: Toggl [65076495] Midwest Reliability Organization → NHS [2294]
+2026-04-17 15:40:58,675 [INFO]   MATCHED: Toggl [62066207] Minneapolis Farmers Market → NHS [2297]
+2026-04-17 15:40:59,095 [INFO]   CREATED: Toggl [66103522] Minneapolis Highrise Representative Council → NHS [2489] (status: Active)
+2026-04-17 15:40:59,095 [INFO]   FUZZY MATCHED: Toggl [49457679] 'Minnesota Housing Partnership' → NHS [2298] 'minnesota housing partnership (mhp)'
+2026-04-17 15:40:59,516 [INFO]   CREATED: Toggl [64254755] Minnesota Metro North Tourism dba Twin Cities Gateway Visitors Bureau → NHS [2490] (status: Active)
+2026-04-17 15:40:59,516 [INFO]   MATCHED: Toggl [62020693] MN China Friendship Garden Society → NHS [2301]
+2026-04-17 15:40:59,516 [INFO]   MATCHED: Toggl [45269618] MN Community Health Workers Alliance → NHS [2303]
+2026-04-17 15:40:59,935 [INFO]   CREATED: Toggl [65274713] MN Parks and Rec Foundation → NHS [2491] (status: Active)
+2026-04-17 15:41:00,356 [INFO]   CREATED: Toggl [51191804] MN River Area Agency on Aging → NHS [2492] (status: Active)
+2026-04-17 15:41:00,357 [INFO]   FUZZY MATCHED: Toggl [64337278] 'MN State Community and Technical College' → NHS [2307] 'mn state community and technical college foundation'
+2026-04-17 15:41:00,357 [INFO]   MATCHED: Toggl [54248327] MN Youth Ski League → NHS [2309]
+2026-04-17 15:41:00,357 [INFO]   MATCHED: Toggl [59798272] NAEHCY → NHS [2314]
+2026-04-17 15:41:00,776 [INFO]   CREATED: Toggl [46474410] NASW  Supervisor's Series → NHS [2493] (status: Active)
+2026-04-17 15:41:00,776 [INFO]   MATCHED: Toggl [68537264] New Richmond Area Centre → NHS [2437]
+2026-04-17 15:41:00,776 [INFO]   MATCHED: Toggl [49382170] Northeast Youth and Family Services → NHS [2430]
+2026-04-17 15:41:00,777 [INFO]   MATCHED: Toggl [56327706] Onward Eden Prairie → NHS [2320]
+2026-04-17 15:41:00,777 [INFO]   MATCHED: Toggl [61590391] Open Cupboard → NHS [2321]
+2026-04-17 15:41:01,198 [INFO]   CREATED: Toggl [56631270] Opening Doors for Youth → NHS [2494] (status: Active)
+2026-04-17 15:41:01,617 [INFO]   CREATED: Toggl [60215527] Orfield Labs → NHS [2495] (status: Active)
+2026-04-17 15:41:02,039 [INFO]   CREATED: Toggl [63650252] Osseo School District 279 → NHS [2496] (status: Active)
+2026-04-17 15:41:02,458 [INFO]   CREATED: Toggl [49133110] Our Neighbors' Place → NHS [2497] (status: Active)
+2026-04-17 15:41:02,459 [INFO]   MATCHED: Toggl [63562214] paleBLUEdot → NHS [2439]
+2026-04-17 15:41:02,879 [INFO]   CREATED: Toggl [68500253] Parent Company → NHS [2498] (status: Active)
+2026-04-17 15:41:02,879 [INFO]   FUZZY MATCHED: Toggl [46559437] 'Partnership Resource' → NHS [2325] 'partnership resources, inc.'
+2026-04-17 15:41:03,299 [INFO]   CREATED: Toggl [61631507] Peace House Community → NHS [2499] (status: Active)
+2026-04-17 15:41:03,719 [INFO]   CREATED: Toggl [63653557] Placeholder Client → NHS [2500] (status: Active)
+2026-04-17 15:41:03,719 [INFO]   FUZZY MATCHED: Toggl [61177667] 'Project Pathfinders' → NHS [2331] 'project pathfinder'
+2026-04-17 15:41:04,141 [INFO]   CREATED: Toggl [62519374] PSAI → NHS [2501] (status: Active)
+2026-04-17 15:41:04,563 [INFO]   CREATED: Toggl [45304902] Public Art Saint Paul → NHS [2502] (status: Active)
+2026-04-17 15:41:04,563 [INFO]   FUZZY MATCHED: Toggl [64125206] 'Ramsey County' → NHS [2333] 'ramsey county workforce solutions'
+2026-04-17 15:41:04,983 [INFO]   CREATED: Toggl [46933752] Reading and Math, Inc → NHS [2503] (status: Active)
+2026-04-17 15:41:04,984 [INFO]   MATCHED: Toggl [60341356] Relate Counseling Center → NHS [2335]
+2026-04-17 15:41:04,984 [INFO]   MATCHED: Toggl [66567512] Repowered → NHS [2399]
+2026-04-17 15:41:04,984 [INFO]   MATCHED: Toggl [63758725] Ridgeview Senior Apartments → NHS [2338]
+2026-04-17 15:41:04,984 [INFO]   FUZZY MATCHED: Toggl [67188511] 'River Valley Charities' → NHS [2400] 'river valley charities (rvc)'
+2026-04-17 15:41:04,984 [INFO]   FUZZY MATCHED: Toggl [46473834] 'Rural Renewable Energy Alliance' → NHS [2339] 'rural renewable energy alliance (rreal)'
+2026-04-17 15:41:05,404 [INFO]   CREATED: Toggl [63723252] Saint Paul Community Literacy Consortium → NHS [2504] (status: Active)
+2026-04-17 15:41:05,824 [INFO]   CREATED: Toggl [65063261] Saint Paul Music Conservatory → NHS [2505] (status: Active)
+2026-04-17 15:41:05,824 [INFO]   MATCHED: Toggl [58341505] Sanneh Foundation → NHS [2431]
+2026-04-17 15:41:06,249 [INFO]   CREATED: Toggl [50862281] SCC → NHS [2506] (status: Active)
+2026-04-17 15:41:06,671 [INFO]   CREATED: Toggl [56135182] SEMAAA → NHS [2507] (status: Active)
+2026-04-17 15:41:07,090 [INFO]   CREATED: Toggl [66152916] Shoreview Community Foundation → NHS [2508] (status: Active)
+2026-04-17 15:41:07,509 [INFO]   CREATED: Toggl [57301565] Sibley County Food Share → NHS [2509] (status: Active)
+2026-04-17 15:41:07,929 [INFO]   CREATED: Toggl [61597234] S Kirkland → NHS [2510] (status: Active)
+2026-04-17 15:41:07,929 [INFO]   MATCHED: Toggl [57333010] Solid Ground → NHS [2343]
+2026-04-17 15:41:08,347 [INFO]   CREATED: Toggl [50054036] Somerset Area Food Pantry → NHS [2511] (status: Active)
+2026-04-17 15:41:08,347 [INFO]   MATCHED: Toggl [59682312] Som Gum Cooperative → NHS [2344]
+2026-04-17 15:41:08,347 [INFO]   FUZZY MATCHED: Toggl [67303054] 'Southern Anoka Community Assistance' → NHS [2402] 'southern anoka community assistance (saca)'
+2026-04-17 15:41:08,347 [INFO]   MATCHED: Toggl [58873382] Start Early Funders Coalition → NHS [2351]
+2026-04-17 15:41:08,347 [INFO]   MATCHED: Toggl [65777998] START Senior Solutions → NHS [2352]
+2026-04-17 15:41:08,768 [INFO]   CREATED: Toggl [67521154] St. Croix Valley Foundation → NHS [2512] (status: Active)
+2026-04-17 15:41:09,186 [INFO]   CREATED: Toggl [59450692] Stepping Stone → NHS [2513] (status: Active)
+2026-04-17 15:41:09,186 [INFO]   MATCHED: Toggl [46590006] Steve Rummler Hope Network → NHS [2353]
+2026-04-17 15:41:09,186 [INFO]   MATCHED: Toggl [63058818] St. Paul parks Conservancy → NHS [2440]
+2026-04-17 15:41:09,607 [INFO]   CREATED: Toggl [45269615] Strategic Consulting & Coaching → NHS [2514] (status: Active)
+2026-04-17 15:41:10,026 [INFO]   CREATED: Toggl [47155837] St. Stephen's → NHS [2515] (status: Active)
+2026-04-17 15:41:10,027 [INFO]   MATCHED: Toggl [67536873] Talmud Torah of Minneapolis → NHS [2405]
+2026-04-17 15:41:10,027 [INFO]   FUZZY MATCHED: Toggl [61796963] 'Tanager' → NHS [2355] 'tanager place'
+2026-04-17 15:41:10,027 [INFO]   MATCHED: Toggl [64256053] TEST → NHS [2203]
+2026-04-17 15:41:10,027 [INFO]   MATCHED: Toggl [64037420] The Beacon → NHS [2214]
+2026-04-17 15:41:10,027 [INFO]   MATCHED: Toggl [56246716] The Food Group → NHS [2407]
+2026-04-17 15:41:10,448 [INFO]   CREATED: Toggl [59417744] The Isthmus  Foundation → NHS [2516] (status: Active)
+2026-04-17 15:41:10,449 [INFO]   MATCHED: Toggl [63661887] The Lift Garage → NHS [2360]
+2026-04-17 15:41:10,868 [INFO]   CREATED: Toggl [67335005] Touchstone Mental Health → NHS [2517] (status: Active)
+2026-04-17 15:41:11,287 [INFO]   CREATED: Toggl [46559626] TPT Amplify → NHS [2518] (status: Active)
+2026-04-17 15:41:11,288 [INFO]   FUZZY MATCHED: Toggl [53696069] 'Trellis Interim Director' → NHS [2356] 'trellis'
+2026-04-17 15:41:11,288 [INFO]   FUZZY MATCHED: Toggl [68493459] 'University of Wisconsin Eau Claire Foundation' → NHS [2434] 'university of wisconsin eau claire foundation.'
+2026-04-17 15:41:11,288 [INFO]   MATCHED: Toggl [59434976] US Math Recovery Council → NHS [2366]
+2026-04-17 15:41:11,288 [INFO]   MATCHED: Toggl [68569249] Valley Outreach → NHS [2442]
+2026-04-17 15:41:11,288 [INFO]   MATCHED: Toggl [60072461] Veteran Resilience Project → NHS [2367]
+2026-04-17 15:41:11,715 [INFO]   CREATED: Toggl [62349329] Washburn Center for Children → NHS [2519] (status: Active)
+2026-04-17 15:41:12,134 [INFO]   CREATED: Toggl [61455336] Wayside Recovery Center → NHS [2520] (status: Active)
+2026-04-17 15:41:12,567 [INFO]   CREATED: Toggl [49711568] WCHS → NHS [2521] (status: Active)
+2026-04-17 15:41:12,987 [INFO]   CREATED: Toggl [57224390] West Broadway Coalition → NHS [2522] (status: Active)
+2026-04-17 15:41:13,405 [INFO]   CREATED: Toggl [56000784] West Central Initiative → NHS [2523] (status: Active)
+2026-04-17 15:41:13,825 [INFO]   CREATED: Toggl [64464724] Western Wisconsin Health → NHS [2524] (status: Active)
+2026-04-17 15:41:13,825 [INFO]   MATCHED: Toggl [65166668] White Bear Lake Area Historical Society → NHS [2368]
+2026-04-17 15:41:13,825 [INFO]   FUZZY MATCHED: Toggl [54457568] 'Willow River' → NHS [2256] 'friends of willow river and kinnickinnic state parks'
+2026-04-17 15:41:14,247 [INFO]   CREATED: Toggl [63744563] Youth Link → NHS [2525] (status: Active)
+2026-04-17 15:41:14,669 [INFO]   CREATED: Toggl [48807769] YWCA of Minneapolis → NHS [2526] (status: Active)
+2026-04-17 15:41:15,212 [INFO] Company mapping complete: 169 companies mapped
+2026-04-17 15:41:15,213 [INFO] ============================================================
+2026-04-17 15:41:15,213 [INFO] PHASE 3: PROJECT MATCHING/CREATION
+2026-04-17 15:41:15,213 [INFO] ============================================================
+2026-04-17 15:41:18,400 [INFO] Found 200 Toggl projects
+2026-04-17 15:41:19,439 [INFO] Found 77 existing NHS projects in org 7
+2026-04-17 15:41:19,861 [INFO]   CREATED: Toggl [197628255] SCC Internal Work (team meetings, proposal/contract work, etc.) → NHS [91] (rate: None, active: True)
+2026-04-17 15:41:19,862 [INFO]   SKIPPED: Toggl [203319183] ',/'.' (junk)
+2026-04-17 15:41:20,284 [INFO]   CREATED: Toggl [191973207] Additional Meetings as approved Billable - $150/hr → NHS [92] (rate: 75, active: True)
+2026-04-17 15:41:20,705 [INFO]   CREATED: Toggl [161173649] Admin → NHS [93] (rate: None, active: False)
+2026-04-17 15:41:21,126 [INFO]   CREATED: Toggl [181883026] Administrative support → NHS [94] (rate: 60, active: False)
+2026-04-17 15:41:21,554 [INFO]   MATCHED: Toggl [165691649] Administrative Support → NHS [94]
+2026-04-17 15:41:21,554 [INFO]   MATCHED: Toggl [166047651] Administrative Support → NHS [94]
+2026-04-17 15:41:21,554 [INFO]   MATCHED: Toggl [167504805] Administrative Support → NHS [94]
+2026-04-17 15:41:21,982 [INFO]   MATCHED: Toggl [169701527] Administrative Support → NHS [94]
+2026-04-17 15:41:22,402 [INFO]   MATCHED: Toggl [172490144] Administrative Support → NHS [94]
+2026-04-17 15:41:22,829 [INFO]   MATCHED: Toggl [173681944] Administrative Support → NHS [94]
+2026-04-17 15:41:23,258 [INFO]   MATCHED: Toggl [173822444] Administrative Support → NHS [94]
+2026-04-17 15:41:23,689 [INFO]   MATCHED: Toggl [175982769] Administrative Support → NHS [94]
+2026-04-17 15:41:24,108 [INFO]   MATCHED: Toggl [176329835] Administrative Support → NHS [94]
+2026-04-17 15:41:24,529 [INFO]   MATCHED: Toggl [177330309] Administrative Support → NHS [94]
+2026-04-17 15:41:24,947 [INFO]   MATCHED: Toggl [177625272] Administrative Support → NHS [94]
+2026-04-17 15:41:25,367 [INFO]   MATCHED: Toggl [178473708] Administrative Support → NHS [94]
+2026-04-17 15:41:25,786 [INFO]   MATCHED: Toggl [178856888] Administrative Support → NHS [94]
+2026-04-17 15:41:26,206 [INFO]   CREATED: Toggl [172443890] Admin Support → NHS [95] (rate: 60, active: False)
+2026-04-17 15:41:26,626 [INFO]   CREATED: Toggl [175126606] AIOIC → NHS [96] (rate: 60, active: False)
+2026-04-17 15:41:27,055 [INFO]   CREATED: Toggl [156695503] Alliance work → NHS [97] (rate: None, active: False)
+2026-04-17 15:41:27,476 [INFO]   CREATED: Toggl [188327299] Amery Area Community Center → NHS [98] (rate: 75, active: False)
+2026-04-17 15:41:27,897 [INFO]   CREATED: Toggl [170374137] Anoka County → NHS [99] (rate: 75, active: False)
+2026-04-17 15:41:28,317 [INFO]   CREATED: Toggl [198815997] APA Award Submission Support - $125/hr → NHS [100] (rate: None, active: False)
+2026-04-17 15:41:28,737 [INFO]   CREATED: Toggl [193544780] APi Group → NHS [101] (rate: 45, active: False)
+2026-04-17 15:41:29,156 [INFO]   CREATED: Toggl [194387494] Appeal Letter - $150/hr → NHS [102] (rate: None, active: False)
+2026-04-17 15:41:29,575 [INFO]   CREATED: Toggl [156989702] applying client updates to FCKB proposal; edits, updates, formatting, organizing materials for in person delivery → NHS [103] (rate: 50, active: False)
+2026-04-17 15:41:29,994 [INFO]   CREATED: Toggl [159569597] Appreciative Inquiry curriculum → NHS [104] (rate: 50, active: False)
+2026-04-17 15:41:30,422 [INFO]   CREATED: Toggl [198321656] Approved additional meetings → NHS [105] (rate: None, active: False)
+2026-04-17 15:41:30,840 [INFO]   CREATED: Toggl [169096538] Attorney General Annual Fee → NHS [106] (rate: 200, active: False)
+2026-04-17 15:41:31,266 [INFO]   CREATED: Toggl [181778346] Ausherman Family Foundation → NHS [107] (rate: 75, active: False)
+2026-04-17 15:41:31,686 [INFO]   CREATED: Toggl [156156515] Bigelow Foundation Grant → NHS [108] (rate: 50, active: False)
+2026-04-17 15:41:32,106 [INFO]   CREATED: Toggl [163231414] Blog → NHS [109] (rate: 100, active: False)
+2026-04-17 15:41:32,526 [INFO]   CREATED: Toggl [158079481] Blog post → NHS [110] (rate: 50, active: False)
+2026-04-17 15:41:32,946 [INFO]   MATCHED: Toggl [161318596] Blog Post → NHS [110]
+2026-04-17 15:41:33,366 [INFO]   CREATED: Toggl [164100628] Blue Cross Blue Shield → NHS [111] (rate: 75, active: False)
+2026-04-17 15:41:33,786 [INFO]   CREATED: Toggl [156302020] Blue Cross revisions → NHS [112] (rate: None, active: False)
+2026-04-17 15:41:34,205 [INFO]   CREATED: Toggl [154969942] blue ribbon application → NHS [113] (rate: None, active: False)
+2026-04-17 15:41:34,625 [INFO]   CREATED: Toggl [195618779] Board Bylaw Review - $150/hr → NHS [114] (rate: None, active: True)
+2026-04-17 15:41:35,044 [INFO]   CREATED: Toggl [196194277] Board Development - $150/hr → NHS [115] (rate: None, active: True)
+2026-04-17 15:41:35,464 [INFO]   MATCHED: Toggl [216109669] Board Development - $150/hr → NHS [115]
+2026-04-17 15:41:35,885 [INFO]   CREATED: Toggl [196959403] Board Development Services - $150/hr → NHS [116] (rate: None, active: False)
+2026-04-17 15:41:36,322 [INFO]   CREATED: Toggl [217171832] Board Development, Staff Capacity & Leadership Assessment - $150/hr → NHS [117] (rate: 85, active: True)
+2026-04-17 15:41:36,742 [INFO]   CREATED: Toggl [181865710] Board Retreat → NHS [118] (rate: None, active: False)
+2026-04-17 15:41:36,743 [INFO]   MATCHED: Toggl [186398245] Board Retreat → NHS [118]
+2026-04-17 15:41:37,162 [INFO]   CREATED: Toggl [214666671] Board Retreat Facilitation - $150/hr → NHS [119] (rate: None, active: True)
+2026-04-17 15:41:37,582 [INFO]   CREATED: Toggl [182706920] Board Retreat - H2O for Life → NHS [120] (rate: None, active: False)
+2026-04-17 15:41:38,002 [INFO]   CREATED: Toggl [160348956] Board Training → NHS [121] (rate: None, active: False)
+2026-04-17 15:41:38,422 [INFO]   CREATED: Toggl [193990950] Board Training and Development → NHS [122] (rate: None, active: False)
+2026-04-17 15:41:38,844 [INFO]   CREATED: Toggl [196959451] Board Training and Development - $150/hr → NHS [123] (rate: None, active: True)
+2026-04-17 15:41:39,264 [INFO]   MATCHED: Toggl [213193972] Board Training and Development - $150/hr → NHS [123]
+2026-04-17 15:41:39,684 [INFO]   CREATED: Toggl [193844349] Board Training & Development → NHS [124] (rate: None, active: False)
+2026-04-17 15:41:40,104 [INFO]   CREATED: Toggl [206742112] Board Workshop - $150/hr → NHS [125] (rate: 85, active: True)
+2026-04-17 15:41:40,523 [INFO]   CREATED: Toggl [209703705] Brand Strategy - $150/hr → NHS [126] (rate: 85, active: True)
+2026-04-17 15:41:40,943 [INFO]   CREATED: Toggl [193412227] Buildings Up Prize Application Billable to PBD - $125/hr → NHS [127] (rate: 75, active: True)
+2026-04-17 15:41:41,364 [INFO]   CREATED: Toggl [155368407] Business Development → NHS [128] (rate: None, active: False)
+2026-04-17 15:41:41,782 [INFO]   MATCHED: Toggl [162186758] Business Development → NHS [128]
+2026-04-17 15:41:42,200 [INFO]   CREATED: Toggl [157057326] BUSINESS DEVELOPMENT - NON BILLABLE → NHS [129] (rate: None, active: False)
+2026-04-17 15:41:42,619 [INFO]   CREATED: Toggl [202255127] Business Modeling - $150/hr → NHS [130] (rate: None, active: True)
+2026-04-17 15:41:43,038 [INFO]   CREATED: Toggl [203323224] Bylaws and Governance Consulting Services - $150/hr → NHS [131] (rate: None, active: True)
+2026-04-17 15:41:43,459 [INFO]   CREATED: Toggl [169391446] CADA → NHS [132] (rate: 75, active: False)
+2026-04-17 15:41:43,877 [INFO]   MATCHED: Toggl [175126737] CADA → NHS [132]
+2026-04-17 15:41:44,297 [INFO]   CREATED: Toggl [169549761] CAER → NHS [133] (rate: 60, active: False)
+2026-04-17 15:41:44,746 [INFO]   CREATED: Toggl [170355425] CAER Strategic Planning → NHS [134] (rate: None, active: False)
+2026-04-17 15:41:45,171 [INFO]   MATCHED: Toggl [174254391] CAER Strategic Planning → NHS [134]
+2026-04-17 15:41:45,591 [INFO]   CREATED: Toggl [178475356] campaign → NHS [135] (rate: 85, active: False)
+2026-04-17 15:41:46,012 [INFO]   MATCHED: Toggl [162962906] Campaign → NHS [135]
+2026-04-17 15:41:46,434 [INFO]   CREATED: Toggl [167874441] Camp Omega → NHS [136] (rate: 60, active: False)
+2026-04-17 15:41:46,854 [INFO]   CREATED: Toggl [166382169] Camp Omega Organizational Assessment → NHS [137] (rate: None, active: False)
+2026-04-17 15:41:47,273 [INFO]   CREATED: Toggl [169580169] Capital Campaign → NHS [138] (rate: None, active: False)
+2026-04-17 15:41:47,692 [INFO]   CREATED: Toggl [157496236] CEAP and Dinner at your Door Merger → NHS [139] (rate: None, active: False)
+2026-04-17 15:41:48,113 [INFO]   CREATED: Toggl [193770849] Center for Coaching in Organizations → NHS [140] (rate: 75, active: False)
+2026-04-17 15:41:48,113 [INFO]   MATCHED: Toggl [197274607] Center for Coaching in Organizations → NHS [140]
+2026-04-17 15:41:48,536 [INFO]   CREATED: Toggl [200340554] Central MN Mental Health Center → NHS [141] (rate: 60, active: False)
+2026-04-17 15:41:48,958 [INFO]   CREATED: Toggl [201684482] City of Omaha EPA proposal → NHS [142] (rate: 60, active: False)
+2026-04-17 15:41:49,390 [INFO]   CREATED: Toggl [165559581] Clare Housing → NHS [143] (rate: 45, active: False)
+2026-04-17 15:41:49,809 [INFO]   MATCHED: Toggl [169549925] Clare Housing → NHS [143]
+2026-04-17 15:41:50,228 [INFO]   CREATED: Toggl [212862750] Client Meetings - $125/hr → NHS [144] (rate: 71, active: True)
+2026-04-17 15:41:50,648 [INFO]   CREATED: Toggl [161284480] Client Proposal Development → NHS [145] (rate: 45, active: False)
+2026-04-17 15:41:51,067 [INFO]   CREATED: Toggl [181955035] Client Relations → NHS [146] (rate: 60, active: False)
+2026-04-17 15:41:51,487 [INFO]   CREATED: Toggl [172418736] Coaching → NHS [147] (rate: None, active: False)
+2026-04-17 15:41:51,920 [INFO]   CREATED: Toggl [157178506] Coaching meeting w/Dawn Selle → NHS [148] (rate: None, active: False)
+2026-04-17 15:41:52,340 [INFO]   CREATED: Toggl [214189474] Collaboration Exploration - $150/hr → NHS [149] (rate: None, active: True)
+2026-04-17 15:41:52,759 [INFO]   CREATED: Toggl [197081989] College Possible → NHS [150] (rate: 75, active: False)
+2026-04-17 15:41:53,179 [INFO]   CREATED: Toggl [194668278] College Possible capacity building - 125/hr → NHS [151] (rate: None, active: False)
+2026-04-17 15:41:53,599 [INFO]   CREATED: Toggl [170322088] Comms Mgr Search → NHS [152] (rate: 60, active: False)
+2026-04-17 15:41:54,018 [INFO]   CREATED: Toggl [164004988] Community Engagement-Fast Track → NHS [153] (rate: None, active: False)
+2026-04-17 15:41:54,437 [INFO]   CREATED: Toggl [193371326] Community Thread Board Training → NHS [154] (rate: None, active: False)
+2026-04-17 15:41:54,858 [INFO]   CREATED: Toggl [156300423] Conference call with ED → NHS [155] (rate: None, active: False)
+2026-04-17 15:41:55,277 [INFO]   CREATED: Toggl [185019920] Consult on grants → NHS [156] (rate: 45, active: False)
+2026-04-17 15:41:55,695 [INFO]   CREATED: Toggl [195502540] CornerHouse → NHS [157] (rate: 60, active: False)
+2026-04-17 15:41:56,126 [INFO]   CREATED: Toggl [210512480] Corporate and Foundation Grant Writing - $75/hr → NHS [158] (rate: 50, active: True)
+2026-04-17 15:41:56,546 [INFO]   CREATED: Toggl [212862726] Corporate/Foundation Grant Writing - $75/hr → NHS [159] (rate: 50, active: True)
+2026-04-17 15:41:56,966 [INFO]   CREATED: Toggl [156362160] Creation of grant template; reviewing, writing, editing, revising → NHS [160] (rate: 50, active: False)
+2026-04-17 15:41:57,386 [INFO]   CREATED: Toggl [160411873] curriculum:  Recruitment, Retention & Organizational Culture → NHS [161] (rate: 50, active: False)
+2026-04-17 15:41:57,807 [INFO]   CREATED: Toggl [154861047] Customized Options → NHS [162] (rate: 75, active: False)
+2026-04-17 15:41:58,226 [INFO]   MATCHED: Toggl [168752484] Customized Options → NHS [162]
+2026-04-17 15:41:58,645 [INFO]   CREATED: Toggl [203802998] Dairyland Power Parcel Enviro Assess - $125/hr → NHS [163] (rate: None, active: False)
+2026-04-17 15:41:59,065 [INFO]   CREATED: Toggl [183847080] Dakota Woodlands → NHS [164] (rate: 75, active: False)
+2026-04-17 15:41:59,486 [INFO]   CREATED: Toggl [194717997] DCFC → NHS [165] (rate: 60, active: False)
+2026-04-17 15:41:59,906 [INFO]   CREATED: Toggl [212535990] Development and Assessment Strategy - $150/hr → NHS [166] (rate: 85, active: True)
+2026-04-17 15:42:00,339 [INFO]   CREATED: Toggl [184843419] Development Campaign $150/hr → NHS [167] (rate: None, active: False)
+2026-04-17 15:42:00,760 [INFO]   CREATED: Toggl [217090436] Development Coaching - $125/hr → NHS [168] (rate: 71, active: True)
+2026-04-17 15:42:01,179 [INFO]   CREATED: Toggl [213193965] Development Consulting - $125/hr → NHS [169] (rate: 71, active: True)
+2026-04-17 15:42:01,598 [INFO]   CREATED: Toggl [185019884] Development plan → NHS [170] (rate: 110, active: False)
+2026-04-17 15:42:02,018 [INFO]   CREATED: Toggl [183695489] Development Plan $150/hr → NHS [171] (rate: 75, active: False)
+2026-04-17 15:42:02,440 [INFO]   CREATED: Toggl [197795844] Development Work - $150/hr → NHS [172] (rate: None, active: True)
+2026-04-17 15:42:02,860 [INFO]   CREATED: Toggl [191100343] DHS Crisis Response → NHS [173] (rate: 60, active: False)
+2026-04-17 15:42:03,279 [INFO]   CREATED: Toggl [186420030] DHS Crisis Response: Deliverable 1 → NHS [174] (rate: 75, active: False)
+2026-04-17 15:42:03,698 [INFO]   CREATED: Toggl [187857400] DHS Crisis Response: Deliverable 2 Admin → NHS [175] (rate: 45, active: False)
+2026-04-17 15:42:04,118 [INFO]   CREATED: Toggl [187856699] DHS Crisis Response: Deliverable 2 Consultant → NHS [176] (rate: 75, active: False)
+2026-04-17 15:42:04,538 [INFO]   CREATED: Toggl [189468911] DHS Crisis Response: Deliverable 3 Consultant → NHS [177] (rate: 75, active: False)
+2026-04-17 15:42:04,958 [INFO]   CREATED: Toggl [190186853] DHS Crisis Response: Deliverable 4 consultant → NHS [178] (rate: None, active: False)
+2026-04-17 15:42:05,377 [INFO]   CREATED: Toggl [187104791] DHS Crisis Response Project → NHS [179] (rate: 75, active: False)
+2026-04-17 15:42:05,798 [INFO]   CREATED: Toggl [187310097] DHS: Deliverable 1: Admin → NHS [180] (rate: 45, active: False)
+2026-04-17 15:42:06,217 [INFO]   CREATED: Toggl [189473027] DHS Deliverable 3: Admin → NHS [181] (rate: 45, active: False)
+2026-04-17 15:42:06,646 [INFO]   CREATED: Toggl [198017065] DiSC Evaluation Reimbursement → NHS [182] (rate: None, active: True)
+2026-04-17 15:42:07,067 [INFO]   CREATED: Toggl [161080366] Dispute Resolution Center → NHS [183] (rate: 60, active: False)
+2026-04-17 15:42:07,485 [INFO]   MATCHED: Toggl [162582813] Dispute Resolution Center → NHS [183]
+2026-04-17 15:42:07,904 [INFO]   CREATED: Toggl [161147986] Dispute Resolution Center Admin → NHS [184] (rate: None, active: False)
+2026-04-17 15:42:08,323 [INFO]   CREATED: Toggl [166761866] Document review → NHS [185] (rate: None, active: False)
+2026-04-17 15:42:08,744 [INFO]   CREATED: Toggl [194328358] Donor Letter → NHS [186] (rate: None, active: False)
+2026-04-17 15:42:09,163 [INFO]   CREATED: Toggl [184645876] Donor Prospecting $150/hr → NHS [187] (rate: 75, active: False)
+2026-04-17 15:42:09,583 [INFO]   CREATED: Toggl [184842788] Donor Prospectus $125/hr → NHS [188] (rate: None, active: False)
+2026-04-17 15:42:10,004 [INFO]   CREATED: Toggl [154144908] Donor Relations/Development → NHS [189] (rate: 75, active: False)
+2026-04-17 15:42:10,424 [INFO]   CREATED: Toggl [206244811] DO NOT USE Strategic Planning - $150/hr → NHS [190] (rate: None, active: True)
+2026-04-17 15:42:10,844 [INFO]   CREATED: Toggl [175126530] Downtown Youth Center → NHS [191] (rate: 60, active: False)
+2026-04-17 15:42:11,263 [INFO]   CREATED: Toggl [180970237] Downtown Youth Center-Ausherman → NHS [192] (rate: 60, active: False)
+2026-04-17 15:42:11,682 [INFO]   CREATED: Toggl [174454316] Downtown Youth Center, Frederick MD → NHS [193] (rate: None, active: False)
+2026-04-17 15:42:12,100 [INFO]   CREATED: Toggl [182794163] Du Nord Foundation → NHS [194] (rate: 85, active: False)
+2026-04-17 15:42:12,520 [INFO]   CREATED: Toggl [154463340] Emerge → NHS [195] (rate: None, active: False)
+2026-04-17 15:42:12,939 [INFO]   CREATED: Toggl [173801184] Environmental Scan → NHS [196] (rate: None, active: False)
+2026-04-17 15:42:13,375 [INFO]   CREATED: Toggl [168867676] Evaluation → NHS [197] (rate: None, active: False)
+2026-04-17 15:42:13,794 [INFO]   CREATED: Toggl [171569977] Evaluation 2021 → NHS [198] (rate: 75, active: False)
+2026-04-17 15:42:14,214 [INFO]   CREATED: Toggl [181843636] Evaluation, Program, Development Consulting → NHS [199] (rate: 75, active: False)
+2026-04-17 15:42:14,635 [INFO]   CREATED: Toggl [195379188] Evaluation Services - $150/hr → NHS [200] (rate: None, active: True)
+2026-04-17 15:42:15,055 [INFO]   CREATED: Toggl [163194643] Event planning → NHS [201] (rate: None, active: False)
+2026-04-17 15:42:15,055 [INFO]   MATCHED: Toggl [157588896] Executive Coaching → NHS [64]
+2026-04-17 15:42:15,055 [INFO]   MATCHED: Toggl [160349335] Executive Coaching → NHS [64]
+2026-04-17 15:42:15,055 [INFO]   MATCHED: Toggl [163979512] Executive Coaching → NHS [64]
+2026-04-17 15:42:15,474 [INFO]   MATCHED: Toggl [191807290] Executive Coaching → NHS [64]
+2026-04-17 15:42:15,892 [INFO]   MATCHED: Toggl [192740429] Executive Coaching → NHS [64]
+2026-04-17 15:42:16,332 [INFO]   CREATED: Toggl [202359236] Executive Coaching - $150/hr → NHS [202] (rate: None, active: True)
+2026-04-17 15:42:16,332 [INFO]   MATCHED: Toggl [204400555] Executive Coaching - $150/hr → NHS [202]
+2026-04-17 15:42:16,332 [INFO]   MATCHED: Toggl [205962767] Executive Coaching - $150/hr → NHS [202]
+2026-04-17 15:42:16,332 [INFO]   MATCHED: Toggl [209470218] Executive Coaching - $150/hr → NHS [202]
+2026-04-17 15:42:16,762 [INFO]   MATCHED: Toggl [210287756] Executive Coaching - $150/hr → NHS [202]
+2026-04-17 15:42:17,181 [INFO]   MATCHED: Toggl [213225906] Executive Coaching - $150/hr → NHS [202]
+2026-04-17 15:42:17,182 [INFO]   MATCHED: Toggl [214707235] Executive Coaching - $150/hr → NHS [202]
+2026-04-17 15:42:17,603 [INFO]   CREATED: Toggl [205098397] Executive Coaching Services - $150/hr → NHS [203] (rate: 85, active: True)
+2026-04-17 15:42:18,028 [INFO]   MATCHED: Toggl [184012232] Executive Director Search → NHS [89]
+2026-04-17 15:42:18,475 [INFO]   CREATED: Toggl [187077156] Executive Search → NHS [204] (rate: None, active: False)
+2026-04-17 15:42:18,894 [INFO]   MATCHED: Toggl [191292922] Executive Search → NHS [204]
+2026-04-17 15:42:19,315 [INFO]   CREATED: Toggl [209327053] Executive Search - $125/hr → NHS [205] (rate: 71, active: True)
+2026-04-17 15:42:19,734 [INFO]   CREATED: Toggl [200933800] Executive Search - $150/hr → NHS [206] (rate: None, active: True)
+2026-04-17 15:42:20,153 [INFO]   MATCHED: Toggl [212843754] Executive Search - $150/hr → NHS [206]
+2026-04-17 15:42:20,572 [INFO]   MATCHED: Toggl [217171821] Executive Search - $150/hr → NHS [206]
+2026-04-17 15:42:20,994 [INFO]   CREATED: Toggl [153730262] Executive Transition → NHS [207] (rate: None, active: False)
+2026-04-17 15:42:20,995 [INFO]   MATCHED: Toggl [153735464] Executive Transition → NHS [207]
+2026-04-17 15:42:20,995 [INFO]   MATCHED: Toggl [156406120] Executive Transition → NHS [207]
+2026-04-17 15:42:20,995 [INFO]   MATCHED: Toggl [156406208] Executive Transition → NHS [207]
+2026-04-17 15:42:21,414 [INFO]   MATCHED: Toggl [172140653] Executive Transition → NHS [207]
+2026-04-17 15:42:21,414 [INFO]   MATCHED: Toggl [178168116] Executive Transition → NHS [207]
+2026-04-17 15:42:21,834 [INFO]   MATCHED: Toggl [183618319] Executive Transition → NHS [207]
+2026-04-17 15:42:22,252 [INFO]   MATCHED: Toggl [184253870] Executive Transition → NHS [207]
+2026-04-17 15:42:22,678 [INFO]   MATCHED: Toggl [184996509] Executive Transition → NHS [207]
+2026-04-17 15:42:23,101 [INFO]   MATCHED: Toggl [184996535] Executive Transition → NHS [207]
+2026-04-17 15:42:23,521 [INFO]   CREATED: Toggl [156406201] Executive Transition (1) → NHS [208] (rate: None, active: False)
+2026-04-17 15:42:23,942 [INFO]   CREATED: Toggl [157383468] Facilitated training for Group 1 → NHS [209] (rate: None, active: False)
+2026-04-17 15:42:24,362 [INFO]   CREATED: Toggl [216930505] Facilitation - $150/hr → NHS [210] (rate: 85, active: True)
+2026-04-17 15:42:24,782 [INFO]   CREATED: Toggl [211148686] Facilitation - $2000 total project → NHS [211] (rate: 85, active: True)
+2026-04-17 15:42:25,201 [INFO]   CREATED: Toggl [166956771] Family Child Development Center → NHS [212] (rate: None, active: False)
+2026-04-17 15:42:25,622 [INFO]   CREATED: Toggl [204504353] Familywise → NHS [213] (rate: None, active: True)
+2026-04-17 15:42:26,042 [INFO]   CREATED: Toggl [155807380] Family Wise → NHS [214] (rate: 140, active: False)
+2026-04-17 15:42:26,461 [INFO]   MATCHED: Toggl [156753484] Family Wise → NHS [214]
+2026-04-17 15:42:26,880 [INFO]   MATCHED: Toggl [170322211] FamilyWise → NHS [213]
+2026-04-17 15:42:27,301 [INFO]   MATCHED: Toggl [175126773] FamilyWise → NHS [213]
+2026-04-17 15:42:27,720 [INFO]   CREATED: Toggl [156342386] FamilyWise Merger → NHS [215] (rate: None, active: False)
+2026-04-17 15:42:28,140 [INFO]   CREATED: Toggl [191403212] Family Wise Strategic Planning → NHS [216] (rate: None, active: False)
+2026-04-17 15:42:28,559 [INFO]   CREATED: Toggl [167078865] FCDC → NHS [217] (rate: 60, active: False)
+2026-04-17 15:42:28,979 [INFO]   CREATED: Toggl [166174671] FCDC Interim ED → NHS [218] (rate: None, active: False)
+2026-04-17 15:42:29,400 [INFO]   CREATED: Toggl [177227892] Feline Rescue → NHS [219] (rate: 60, active: False)
+2026-04-17 15:42:29,821 [INFO]   CREATED: Toggl [191403036] Feline Rescue Executive Search → NHS [220] (rate: None, active: False)
+2026-04-17 15:42:30,239 [INFO]   CREATED: Toggl [156364358] Feline Rescue, Inc. → NHS [221] (rate: 75, active: False)
+2026-04-17 15:42:30,665 [INFO]   CREATED: Toggl [176211405] Feline Rescue Strategic Planning → NHS [222] (rate: 75, active: False)
+2026-04-17 15:42:31,086 [INFO]   CREATED: Toggl [193844375] First Lutheran Child Care Board Training - $150/hr → NHS [223] (rate: None, active: False)
+2026-04-17 15:42:31,506 [INFO]   CREATED: Toggl [219078246] Foundation & Corporation Grant Writing - $75/hr → NHS [224] (rate: 50, active: True)
+2026-04-17 15:42:31,926 [INFO]   CREATED: Toggl [190282545] Foundation Grant Proposal Writing Billable @ $75 hourly → NHS [225] (rate: 50, active: False)
+2026-04-17 15:42:32,344 [INFO]   CREATED: Toggl [195935366] Foundation Grants - $75/hour → NHS [226] (rate: 60, active: True)
+2026-04-17 15:42:32,764 [INFO]   CREATED: Toggl [183954163] Foundation Grants - $75/hr → NHS [227] (rate: 60, active: True)
+2026-04-17 15:42:33,183 [INFO]   MATCHED: Toggl [190715495] Foundation Grants - $75/hr → NHS [227]
+2026-04-17 15:42:33,601 [INFO]   MATCHED: Toggl [212015661] Foundation Grants - $75/hr → NHS [227]
+2026-04-17 15:42:34,020 [INFO]   MATCHED: Toggl [214257319] Foundation Grants - $75/hr → NHS [227]
+2026-04-17 15:42:34,439 [INFO]   MATCHED: Toggl [193828932] FOUNDATION GRANTS - $75/hr → NHS [227]
+2026-04-17 15:42:34,859 [INFO]   CREATED: Toggl [187831188] Foundation Grants and Research - $75/hr → NHS [228] (rate: 50, active: True)
+2026-04-17 15:42:35,278 [INFO]   CREATED: Toggl [183955487] Foundation Grants - Billable @$75 → NHS [229] (rate: 60, active: False)
+2026-04-17 15:42:35,697 [INFO]   CREATED: Toggl [192553605] Foundation Grants Billable @ $75/hour → NHS [230] (rate: 60, active: False)
+2026-04-17 15:42:36,117 [INFO]   MATCHED: Toggl [193324116] Foundation Grants Billable @ $75/hour → NHS [230]
+2026-04-17 15:42:36,536 [INFO]   CREATED: Toggl [184983078] Foundation Grants Billable @ $75/ Hour → NHS [231] (rate: 60, active: False)
+2026-04-17 15:42:36,955 [INFO]   MATCHED: Toggl [186145168] Foundation Grants Billable @ $75/ Hour → NHS [231]
+2026-04-17 15:42:37,394 [INFO] Project mapping complete: 199 projects mapped
+2026-04-17 15:42:37,394 [INFO] ============================================================
+2026-04-17 15:42:37,394 [INFO] PHASE 4: CONSULTANT RATES IMPORT
+2026-04-17 15:42:37,394 [INFO] ============================================================
+2026-04-17 15:42:40,075 [INFO]   Fetched project users batch 1: 76 records
+2026-04-17 15:42:42,704 [INFO]   Fetched project users batch 2: 66 records
+2026-04-17 15:42:45,309 [INFO]   Fetched project users batch 3: 87 records
+2026-04-17 15:42:47,990 [INFO]   Fetched project users batch 4: 85 records
+2026-04-17 15:42:47,990 [INFO] Total project-user rate records from Toggl: 314
+2026-04-17 15:42:48,832 [INFO] Cleared existing rates for org 7
+2026-04-17 15:42:49,254 [INFO] Rates import complete: 0 imported, 314 skipped
+2026-04-17 15:42:49,255 [INFO] ============================================================
+2026-04-17 15:42:49,255 [INFO] PHASE 5: TIME ENTRIES IMPORT
+2026-04-17 15:42:49,255 [INFO] ============================================================
+2026-04-17 15:42:50,519 [INFO] Cleared existing time entries for org 7
+2026-04-17 15:42:53,667 [INFO] 
+--- Processing window: 2020-01-01 to 2020-12-31 ---
+2026-04-17 15:43:31,069 [INFO]   Page 10: 500 entries in window, 0 total imported (quota: 214)
+2026-04-17 15:43:33,536 [INFO]   No more entries in this window (fetched 500 total)
+2026-04-17 15:43:33,536 [INFO] 
+--- Processing window: 2020-12-31 to 2021-12-31 ---
+2026-04-17 15:44:12,552 [INFO]   Page 10: 500 entries in window, 0 total imported (quota: 203)
+2026-04-17 15:44:18,769 [INFO]   No more entries in this window (fetched 550 total)
+2026-04-17 15:44:18,769 [INFO] 
+--- Processing window: 2021-12-31 to 2022-12-31 ---
+2026-04-17 15:44:54,226 [INFO]   Page 10: 500 entries in window, 0 total imported (quota: 191)
+2026-04-17 15:44:59,518 [INFO]   No more entries in this window (fetched 550 total)
+2026-04-17 15:44:59,519 [INFO] 
+--- Processing window: 2022-12-31 to 2023-12-31 ---
+2026-04-17 15:45:35,393 [INFO]   Page 10: 500 entries in window, 0 total imported (quota: 179)
+2026-04-17 15:45:40,457 [INFO]   No more entries in this window (fetched 550 total)
+2026-04-17 15:45:40,458 [INFO] 
+--- Processing window: 2023-12-31 to 2024-12-30 ---
+2026-04-17 15:46:11,662 [INFO]   Page 10: 500 entries in window, 0 total imported (quota: 167)
+2026-04-17 15:46:14,164 [INFO]   No more entries in this window (fetched 500 total)
+2026-04-17 15:46:14,165 [INFO] 
+--- Processing window: 2024-12-30 to 2025-12-30 ---
+2026-04-17 15:46:49,746 [INFO]   Page 10: 500 entries in window, 0 total imported (quota: 156)
+2026-04-17 15:46:57,564 [INFO]   No more entries in this window (fetched 600 total)
+2026-04-17 15:46:57,564 [INFO] 
+--- Processing window: 2025-12-30 to 2026-04-17 ---
+2026-04-17 15:47:13,910 [INFO]   No more entries in this window (fetched 250 total)
+2026-04-17 15:47:13,910 [INFO] 
+Time entries import complete!
+2026-04-17 15:47:13,910 [INFO]   Total fetched from Toggl: 3500
+2026-04-17 15:47:13,910 [INFO]   Total imported to NHS: 0
+2026-04-17 15:47:13,910 [INFO]   Total skipped (no user match): 3500
+2026-04-17 15:47:13,910 [INFO]   Total API requests made: 85
+2026-04-17 15:47:13,910 [INFO] 
+============================================================
+2026-04-17 15:47:13,910 [INFO] MIGRATION COMPLETE!
+2026-04-17 15:47:13,911 [INFO]   Users mapped: 17
+2026-04-17 15:47:13,911 [INFO]   Companies mapped: 169
+2026-04-17 15:47:13,911 [INFO]   Projects mapped: 199
+2026-04-17 15:47:13,911 [INFO]   Rates imported: 0
+2026-04-17 15:47:13,911 [INFO]   Time entries imported: 0
+2026-04-17 15:47:13,911 [INFO]   Total API requests: 85
+2026-04-17 15:47:13,911 [INFO]   Elapsed time: 6.8 minutes
+2026-04-17 15:47:13,911 [INFO] ============================================================
