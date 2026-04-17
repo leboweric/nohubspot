@@ -530,59 +530,66 @@ export default function TimeTrackingPage() {
 
                             return (
                               <div key={entry.id}
-                                className="group flex items-center gap-2 h-[34px] pl-7 pr-2 hover:bg-gray-50 transition-colors">
-                                {/* Description */}
-                                <div className="flex-1 min-w-0 cursor-pointer truncate"
-                                  onClick={() => { setEditingEntry(entry.id); setEditDescription(entry.description || ""); setEditProjectId(entry.project_id || undefined) }}>
-                                  {entry.description ? (
-                                    <span className="text-[13px] text-gray-900">{entry.description}</span>
-                                  ) : (
-                                    <span className="text-[13px] text-gray-400 italic">Add description</span>
+                                className="group flex items-center h-[34px] pl-7 pr-2 hover:bg-gray-50 transition-colors">
+                                {/* ── LEFT SECTION: description + project (adjacent, no flex-1 gap) ── */}
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                  {/* Description */}
+                                  <span className="cursor-pointer shrink-0"
+                                    style={{ maxWidth: '45%' }}
+                                    onClick={() => { setEditingEntry(entry.id); setEditDescription(entry.description || ""); setEditProjectId(entry.project_id || undefined) }}>
+                                    {entry.description ? (
+                                      <span className="text-[13px] text-gray-900 truncate block">{entry.description}</span>
+                                    ) : (
+                                      <span className="text-[13px] text-gray-400 italic">Add description</span>
+                                    )}
+                                  </span>
+
+                                  {/* Project pill — immediately after description */}
+                                  {proj && (
+                                    <div className="flex items-center gap-1.5 min-w-0 shrink truncate">
+                                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: getProjectColor(proj.id) }} />
+                                      <span className="text-[12px] font-medium truncate" style={{ color: getProjectColor(proj.id) }}>
+                                        {proj.title}
+                                      </span>
+                                      {proj.company && (
+                                        <span className="text-[11px] text-gray-400 truncate">
+                                          {proj.company}
+                                        </span>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
 
-                                {/* Project pill */}
-                                {proj && (
-                                  <div className="flex items-center gap-1.5 flex-shrink-0 max-w-[400px] min-w-0">
-                                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: getProjectColor(proj.id) }} />
-                                    <span className="text-[12px] font-medium truncate" style={{ color: getProjectColor(proj.id) }}>
-                                      {proj.title}
-                                    </span>
-                                    {proj.company && (
-                                      <span className="text-[11px] text-gray-400 truncate flex-shrink-0">
-                                        {proj.company}
-                                      </span>
-                                    )}
+                                {/* ── RIGHT SECTION: billable, time range, duration, actions ── */}
+                                <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                                  {/* Billable */}
+                                  <DollarSign className={`w-3 h-3 ${entry.is_billable ? 'text-green-500' : 'text-gray-200'}`} />
+
+                                  {/* Time range */}
+                                  <span className="text-[11px] text-gray-400 whitespace-nowrap tabular-nums w-[130px] text-right hidden md:inline">
+                                    {formatTime12(entry.start_time)} - {entry.end_time ? formatTime12(entry.end_time) : '...'}
+                                  </span>
+
+                                  {/* Duration */}
+                                  <span className="text-[13px] font-mono text-gray-600 w-[60px] text-right tabular-nums">
+                                    {fmt(entry.duration_seconds || 0)}
+                                  </span>
+
+                                  {/* Hover actions */}
+                                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity w-[68px]">
+                                    <button onClick={() => handleResumeEntry(entry)}
+                                      className="p-1 text-gray-300 hover:text-green-500 transition-colors" title="Continue">
+                                      <Play className="w-3 h-3 fill-current" />
+                                    </button>
+                                    <button onClick={() => { setEditingEntry(entry.id); setEditDescription(entry.description || ""); setEditProjectId(entry.project_id || undefined) }}
+                                      className="p-1 text-gray-300 hover:text-blue-500 transition-colors" title="Edit">
+                                      <Edit2 className="w-3 h-3" />
+                                    </button>
+                                    <button onClick={() => handleDeleteEntry(entry.id)}
+                                      className="p-1 text-gray-300 hover:text-red-500 transition-colors" title="Delete">
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
                                   </div>
-                                )}
-
-                                {/* Billable */}
-                                <DollarSign className={`w-3 h-3 flex-shrink-0 ${entry.is_billable ? 'text-green-500' : 'text-gray-200'}`} />
-
-                                {/* Time range */}
-                                <span className="text-[11px] text-gray-400 whitespace-nowrap flex-shrink-0 tabular-nums hidden md:inline">
-                                  {formatTime12(entry.start_time)} - {entry.end_time ? formatTime12(entry.end_time) : '...'}
-                                </span>
-
-                                {/* Duration */}
-                                <span className="text-[13px] font-mono text-gray-600 min-w-[60px] text-right flex-shrink-0 tabular-nums">
-                                  {fmt(entry.duration_seconds || 0)}
-                                </span>
-
-                                {/* Hover actions */}
-                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-1">
-                                  <button onClick={() => handleResumeEntry(entry)}
-                                    className="p-1 text-gray-300 hover:text-green-500 transition-colors" title="Continue">
-                                    <Play className="w-3 h-3 fill-current" />
-                                  </button>
-                                  <button onClick={() => { setEditingEntry(entry.id); setEditDescription(entry.description || ""); setEditProjectId(entry.project_id || undefined) }}
-                                    className="p-1 text-gray-300 hover:text-blue-500 transition-colors" title="Edit">
-                                    <Edit2 className="w-3 h-3" />
-                                  </button>
-                                  <button onClick={() => handleDeleteEntry(entry.id)}
-                                    className="p-1 text-gray-300 hover:text-red-500 transition-colors" title="Delete">
-                                    <Trash2 className="w-3 h-3" />
-                                  </button>
                                 </div>
                               </div>
                             )
