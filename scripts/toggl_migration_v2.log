@@ -1,0 +1,86 @@
+2026-04-17 15:53:18,000 [INFO] ============================================================
+2026-04-17 15:53:18,000 [INFO] TOGGL → NHS MIGRATION v2
+2026-04-17 15:53:18,000 [INFO] Started: 2026-04-17T15:53:18.000595
+2026-04-17 15:53:18,000 [INFO] ============================================================
+2026-04-17 15:53:21,719 [INFO] ============================================================
+2026-04-17 15:53:21,719 [INFO] PHASE 1: USER MAPPING
+2026-04-17 15:53:21,719 [INFO] ============================================================
+2026-04-17 15:53:24,895 [INFO] Workspace users: 17 with name→email
+2026-04-17 15:53:25,700 [INFO] NHS users in org 7: 20
+2026-04-17 15:53:51,660 [INFO] Report user IDs found: 17
+2026-04-17 15:53:51,661 [INFO]   MAPPED: Toggl report_uid=11493373 (Akishbailey) → email=akishbailey@strategic-cc.com → NHS [35]
+2026-04-17 15:53:51,661 [INFO]   MAPPED: Toggl report_uid=10054895 (Cecily Harris) → email=charris@strategic-cc.com → NHS [29]
+2026-04-17 15:53:51,661 [INFO]   MAPPED: Toggl report_uid=5104172 (Idavis) → email=idavis@strategic-cc.com → NHS [14]
+2026-04-17 15:53:51,661 [INFO]   MAPPED: Toggl report_uid=5064990 (Kharding) → email=kharding@strategic-cc.com → NHS [8]
+2026-04-17 15:53:51,661 [INFO]   MAPPED: Toggl report_uid=11119029 (Dbartholomay) → email=dbartholomay@strategic-cc.com → NHS [26]
+2026-04-17 15:53:51,661 [INFO]   MAPPED: Toggl report_uid=9517780 (Ctaykalo) → email=ctaykalo@strategic-cc.com → NHS [15]
+2026-04-17 15:53:51,661 [INFO]   MAPPED: Toggl report_uid=5064993 (Cjensen) → email=cjensen@strategic-cc.com → NHS [12]
+2026-04-17 15:53:51,661 [INFO]   MAPPED: Toggl report_uid=5184151 (Roanderson) → email=roanderson@strategic-cc.com → NHS [13]
+2026-04-17 15:53:51,661 [INFO]   MAPPED: Toggl report_uid=5213608 (Jhipple) → email=jhipple@strategic-cc.com → NHS [30]
+2026-04-17 15:53:51,661 [INFO]   MAPPED: Toggl report_uid=8365724 (Smarschalk) → email=smarschalk@strategic-cc.com → NHS [16]
+2026-04-17 15:53:51,661 [INFO]   MAPPED: Toggl report_uid=329981 (Molly Schwartz) → email=mollycschwartz@comcast.net → NHS [27]
+2026-04-17 15:53:51,661 [INFO]   MAPPED: Toggl report_uid=8454753 (Ezimmon) → email=ezimmon@strategic-cc.com → NHS [122]
+2026-04-17 15:53:51,661 [INFO]   MAPPED: Toggl report_uid=5931074 (Srostkoski) → email=srostkoski@strategic-cc.com → NHS [28]
+2026-04-17 15:53:51,661 [WARNING]   No email for Toggl user 6960661 (Cscherer)
+2026-04-17 15:53:51,661 [WARNING]   No email for Toggl user 5213611 (Hherron)
+2026-04-17 15:53:51,661 [WARNING]   No email for Toggl user 5213614 (Ewebernelson)
+2026-04-17 15:53:51,662 [INFO]   MAPPED: Toggl report_uid=5213612 (Srostkoski) → email=srostkoski@strategic-cc.com → NHS [28]
+2026-04-17 15:53:52,063 [INFO] User mapping complete: 14 users
+2026-04-17 15:53:52,063 [INFO] ============================================================
+2026-04-17 15:53:52,063 [INFO] PHASE 2: COMPANIES
+2026-04-17 15:53:52,063 [INFO] ============================================================
+2026-04-17 15:53:54,685 [INFO] Toggl clients: 169
+2026-04-17 15:53:56,077 [INFO] Companies: 169 mapped, 0 created
+2026-04-17 15:53:56,077 [INFO] ============================================================
+2026-04-17 15:53:56,078 [INFO] PHASE 3: PROJECTS
+2026-04-17 15:53:56,078 [INFO] ============================================================
+2026-04-17 15:53:58,701 [INFO] Toggl projects: 200
+2026-04-17 15:54:49,001 [INFO] Projects: 199 mapped, 0 created
+2026-04-17 15:54:49,001 [INFO] ============================================================
+2026-04-17 15:54:49,001 [INFO] PHASE 4: CONSULTANT RATES
+2026-04-17 15:54:49,001 [INFO] ============================================================
+2026-04-17 15:55:01,336 [INFO] Project-user records: 314
+2026-04-17 15:55:36,610 [INFO] Rates imported: 85
+2026-04-17 15:55:36,611 [INFO] ============================================================
+2026-04-17 15:55:36,611 [INFO] PHASE 5: TIME ENTRIES
+2026-04-17 15:55:36,611 [INFO] ============================================================
+2026-04-17 15:55:40,832 [INFO] 
+--- Window: 2020-01-01 to 2020-12-31 ---
+2026-04-17 15:56:22,435 [INFO]   Page 10: 500 entries, 437 total imported
+2026-04-17 15:56:25,380 [INFO]   Window done: 500 entries fetched
+2026-04-17 15:56:25,380 [INFO] 
+--- Window: 2020-12-31 to 2021-12-31 ---
+2026-04-17 15:57:11,370 [INFO]   Page 10: 500 entries, 819 total imported
+2026-04-17 15:57:19,107 [INFO]   Window done: 550 entries fetched
+2026-04-17 15:57:19,108 [INFO] 
+--- Window: 2021-12-31 to 2022-12-31 ---
+2026-04-17 15:58:00,521 [INFO]   Page 10: 500 entries, 1203 total imported
+2026-04-17 15:58:08,241 [INFO]   Window done: 550 entries fetched
+2026-04-17 15:58:08,242 [INFO] 
+--- Window: 2022-12-31 to 2023-12-31 ---
+2026-04-17 15:58:52,758 [INFO]   Page 10: 500 entries, 1721 total imported
+2026-04-17 15:59:00,526 [INFO]   Window done: 550 entries fetched
+2026-04-17 15:59:00,527 [INFO] 
+--- Window: 2023-12-31 to 2024-12-30 ---
+2026-04-17 15:59:40,306 [INFO]   Page 10: 500 entries, 2264 total imported
+2026-04-17 15:59:43,272 [INFO]   Window done: 500 entries fetched
+2026-04-17 15:59:43,273 [INFO] 
+--- Window: 2024-12-30 to 2025-12-30 ---
+2026-04-17 16:00:29,144 [INFO]   Page 10: 500 entries, 2763 total imported
+2026-04-17 16:00:39,263 [INFO]   Window done: 600 entries fetched
+2026-04-17 16:00:39,263 [INFO] 
+--- Window: 2025-12-30 to 2026-04-17 ---
+2026-04-17 16:01:01,087 [INFO]   Window done: 250 entries fetched
+2026-04-17 16:01:01,088 [INFO] 
+Time entries: 3092 imported, 408 skipped
+2026-04-17 16:01:01,088 [INFO] 
+============================================================
+2026-04-17 16:01:01,088 [INFO] MIGRATION COMPLETE!
+2026-04-17 16:01:01,088 [INFO]   Users: 14
+2026-04-17 16:01:01,088 [INFO]   Companies: 169
+2026-04-17 16:01:01,088 [INFO]   Projects: 199
+2026-04-17 16:01:01,088 [INFO]   Rates: 85
+2026-04-17 16:01:01,088 [INFO]   Time entries: 3092
+2026-04-17 16:01:01,089 [INFO]   API requests: 92
+2026-04-17 16:01:01,089 [INFO]   Elapsed: 7.7 min
+2026-04-17 16:01:01,089 [INFO] ============================================================
