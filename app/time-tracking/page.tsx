@@ -103,6 +103,7 @@ function getWeekTotal(entries: TimeEntry[]): number {
 const TIME_TRACKING_ALLOWED_EMAILS = [
   'kharding@strategic-cc.com',
   'elebow@bmhmn.com',
+  'elebow@strategic-cc.com',
   'eric@profitbuildernetwork.com',
   'eric.lebow@aiop.one',
   'leboweric@gmail.com',
