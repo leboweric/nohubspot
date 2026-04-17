@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
+import { getAuthState } from "@/lib/auth"
+import { useRouter } from "next/navigation"
 import { 
   timeTrackingAPI, handleAPIError, 
   ConsultantBillingEntry, ClientInvoiceEntry, TimeSummary 
@@ -10,6 +12,15 @@ import {
   FileText, Download, Calendar, Users, Building2, 
   DollarSign, Clock, BarChart3, ChevronDown, ChevronRight
 } from "lucide-react"
+
+// Time Tracking beta access - restricted to specific users
+const TIME_TRACKING_ALLOWED_EMAILS = [
+  'kharding@strategic-cc.com',
+  'elebow@bmhmn.com',
+  'eric@profitbuildernetwork.com',
+  'eric.lebow@aiop.one',
+  'leboweric@gmail.com',
+]
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
@@ -30,6 +41,27 @@ function getMonthRange(offset: number = 0): { start: string; end: string; label:
 }
 
 export default function TimeTrackingReportsPage() {
+  const router = useRouter()
+  const { user } = getAuthState()
+
+  useEffect(() => {
+    if (user && !TIME_TRACKING_ALLOWED_EMAILS.includes(user.email?.toLowerCase())) {
+      router.push('/dashboard')
+    }
+  }, [user, router])
+
+  if (!user || !TIME_TRACKING_ALLOWED_EMAILS.includes(user.email?.toLowerCase())) {
+    return (
+      <AuthGuard>
+        <MainLayout>
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        </MainLayout>
+      </AuthGuard>
+    )
+  }
+
   const [activeTab, setActiveTab] = useState<'summary' | 'consultant' | 'client'>('summary')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")

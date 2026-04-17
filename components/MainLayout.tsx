@@ -111,6 +111,16 @@ export default function MainLayout({ children }: MainLayoutProps) {
     return () => clearInterval(interval)
   }, [isAuthenticated, logoSize, logoUrl])
 
+  // Time Tracking is restricted to specific users during beta
+  const timeTrackingAllowedEmails = [
+    'kharding@strategic-cc.com',
+    'elebow@bmhmn.com',
+    'eric@profitbuildernetwork.com',
+    'eric.lebow@aiop.one',
+    'leboweric@gmail.com',
+  ]
+  const canSeeTimeTracking = user && timeTrackingAllowedEmails.includes(user.email?.toLowerCase())
+
   const navigation = [
     { name: "Dashboard", href: "/dashboard" },
     { name: "Companies", href: "/companies" },
@@ -119,7 +129,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     { name: "Tasks", href: "/tasks" },
     { name: "Pipeline", href: "/pipeline" },
     { name: "Projects", href: "/projects" },
-    { name: "Time Tracking", href: "/time-tracking" },
+    ...(canSeeTimeTracking ? [{ name: "Time Tracking", href: "/time-tracking" }] : []),
     { name: "Bulk Email", href: "/bulk-email" },
     ...(o365Connected ? [{ name: "Templates", href: "/templates" }] : []),
     { name: "Settings", href: "/settings" },

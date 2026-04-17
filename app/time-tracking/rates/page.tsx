@@ -6,11 +6,21 @@ import {
   timeTrackingAPI, projectAPI, handleAPIError,
   ProjectMemberRate, Project
 } from "@/lib/api"
-import { useAuth } from "@/lib/auth"
+import { getAuthState } from "@/lib/auth"
+import { useRouter } from "next/navigation"
 import { 
   DollarSign, Plus, Trash2, Edit2, Check, X, Users, 
   AlertCircle, Settings
 } from "lucide-react"
+
+// Time Tracking beta access - restricted to specific users
+const TIME_TRACKING_ALLOWED_EMAILS = [
+  'kharding@strategic-cc.com',
+  'elebow@bmhmn.com',
+  'eric@profitbuildernetwork.com',
+  'eric.lebow@aiop.one',
+  'leboweric@gmail.com',
+]
 
 interface OrgUser {
   id: number
@@ -25,7 +35,26 @@ function formatCurrency(amount: number): string {
 }
 
 export default function RatesPage() {
-  const { user } = useAuth()
+  const router = useRouter()
+  const { user } = getAuthState()
+
+  useEffect(() => {
+    if (user && !TIME_TRACKING_ALLOWED_EMAILS.includes(user.email?.toLowerCase())) {
+      router.push('/dashboard')
+    }
+  }, [user, router])
+
+  if (!user || !TIME_TRACKING_ALLOWED_EMAILS.includes(user.email?.toLowerCase())) {
+    return (
+      <AuthGuard>
+        <MainLayout>
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        </MainLayout>
+      </AuthGuard>
+    )
+  }
   const [rates, setRates] = useState<ProjectMemberRate[]>([])
   const [projects, setProjects] = useState<Project[]>([])
   const [orgUsers, setOrgUsers] = useState<OrgUser[]>([])

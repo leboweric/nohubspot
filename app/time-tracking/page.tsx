@@ -2,6 +2,8 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import AuthGuard from "@/components/AuthGuard"
 import MainLayout from "@/components/MainLayout"
+import { getAuthState } from "@/lib/auth"
+import { useRouter } from "next/navigation"
 import { 
   timeTrackingAPI, projectAPI, handleAPIError, 
   TimeEntry, Project, TimerStartRequest 
@@ -45,7 +47,38 @@ function groupEntriesByDate(entries: TimeEntry[]): Record<string, TimeEntry[]> {
   return groups
 }
 
+// Time Tracking beta access - restricted to specific users
+const TIME_TRACKING_ALLOWED_EMAILS = [
+  'kharding@strategic-cc.com',
+  'elebow@bmhmn.com',
+  'eric@profitbuildernetwork.com',
+  'eric.lebow@aiop.one',
+  'leboweric@gmail.com',
+]
+
 export default function TimeTrackingPage() {
+  const router = useRouter()
+  const { user } = getAuthState()
+
+  // Redirect unauthorized users
+  useEffect(() => {
+    if (user && !TIME_TRACKING_ALLOWED_EMAILS.includes(user.email?.toLowerCase())) {
+      router.push('/dashboard')
+    }
+  }, [user, router])
+
+  if (!user || !TIME_TRACKING_ALLOWED_EMAILS.includes(user.email?.toLowerCase())) {
+    return (
+      <AuthGuard>
+        <MainLayout>
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        </MainLayout>
+      </AuthGuard>
+    )
+  }
+
   // Timer state
   const [currentTimer, setCurrentTimer] = useState<TimeEntry | null>(null)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
