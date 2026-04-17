@@ -1148,3 +1148,137 @@ class EmailSharingPermissionResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+# ============================================================
+# Time Tracking Schemas (Toggl Replacement)
+# ============================================================
+
+# Time Entry schemas
+class TimeEntryBase(BaseModel):
+    project_id: Optional[int] = None
+    description: Optional[str] = None
+    is_billable: bool = True
+    tags: Optional[List[str]] = Field(default_factory=list)
+
+class TimeEntryCreate(TimeEntryBase):
+    start_time: datetime
+    end_time: Optional[datetime] = None
+    duration_seconds: Optional[int] = None
+
+class TimeEntryUpdate(BaseModel):
+    project_id: Optional[int] = None
+    description: Optional[str] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    duration_seconds: Optional[int] = None
+    is_billable: Optional[bool] = None
+    tags: Optional[List[str]] = None
+
+class TimeEntryResponse(TimeEntryBase, TimestampMixin):
+    id: int
+    organization_id: int
+    user_id: int
+    start_time: datetime
+    end_time: Optional[datetime] = None
+    duration_seconds: Optional[int] = None
+    is_running: bool = False
+    
+    # Populated by API
+    user_name: Optional[str] = None
+    project_title: Optional[str] = None
+    company_name: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+class TimerStartRequest(BaseModel):
+    project_id: Optional[int] = None
+    description: Optional[str] = None
+    is_billable: bool = True
+    tags: Optional[List[str]] = Field(default_factory=list)
+
+class TimerStopResponse(BaseModel):
+    time_entry: TimeEntryResponse
+    duration_seconds: int
+
+# Project Member Rate schemas
+class ProjectMemberRateBase(BaseModel):
+    project_id: int
+    user_id: int
+    consultant_rate: float = Field(..., ge=0)
+    effective_date: Optional[datetime] = None
+
+class ProjectMemberRateCreate(ProjectMemberRateBase):
+    pass
+
+class ProjectMemberRateUpdate(BaseModel):
+    consultant_rate: Optional[float] = Field(None, ge=0)
+    effective_date: Optional[datetime] = None
+
+class ProjectMemberRateResponse(ProjectMemberRateBase, TimestampMixin):
+    id: int
+    organization_id: int
+    
+    # Populated by API
+    user_name: Optional[str] = None
+    project_title: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+# Invoice Rule schemas
+class InvoiceRuleBase(BaseModel):
+    company_id: int
+    rule_type: str = Field(default="combined", pattern="^(separate|combined|custom)$")
+    notes: Optional[str] = None
+
+class InvoiceRuleCreate(InvoiceRuleBase):
+    pass
+
+class InvoiceRuleUpdate(BaseModel):
+    rule_type: Optional[str] = Field(None, pattern="^(separate|combined|custom)$")
+    notes: Optional[str] = None
+
+class InvoiceRuleResponse(InvoiceRuleBase, TimestampMixin):
+    id: int
+    organization_id: int
+    
+    # Populated by API
+    company_name: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+# Report schemas
+class TimeTrackingReportParams(BaseModel):
+    start_date: datetime
+    end_date: datetime
+    project_id: Optional[int] = None
+    user_id: Optional[int] = None
+    company_id: Optional[int] = None
+    is_billable: Optional[bool] = None
+
+class ConsultantBillingSummary(BaseModel):
+    user_id: int
+    user_name: str
+    total_hours: float
+    total_amount: float
+    entries: List[dict]  # Detailed breakdown
+
+class ClientInvoiceSummary(BaseModel):
+    project_id: int
+    project_title: str
+    company_id: Optional[int] = None
+    company_name: Optional[str] = None
+    client_rate: float
+    total_hours: float
+    total_client_amount: float
+    line_items: List[dict]  # Grouped by consultant + week
+
+class InvoicePrepLineItem(BaseModel):
+    consultant_name: str
+    week_label: str  # e.g., "Week of March 1"
+    description: str  # Concatenated descriptions
+    hours: float
+    rate: float
+    amount: float

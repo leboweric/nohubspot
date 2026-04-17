@@ -49,7 +49,7 @@ def rate_limit_check(client_ip: str, endpoint: str, max_requests: int = 30, wind
 
 from database import get_db, SessionLocal, engine
 import models
-from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, GoogleOrganizationConfig, GoogleUserConnection, PipelineStage, Deal, EmailTracking, EmailEvent, EmailSharingPermission, ProjectStage, Project, ProjectType, ProjectUpdate, DealUpdate, ScheduledEmail, EmailTemplate
+from models import Base, Company, Contact, Task, EmailThread, EmailMessage, Attachment, Activity, EmailSignature, Organization, User, UserInvite, PasswordResetToken, CalendarEvent, EventAttendee, O365OrganizationConfig, O365UserConnection, GoogleOrganizationConfig, GoogleUserConnection, PipelineStage, Deal, EmailTracking, EmailEvent, EmailSharingPermission, ProjectStage, Project, ProjectType, ProjectUpdate, DealUpdate, ScheduledEmail, EmailTemplate, TimeEntry, ProjectMemberRate, InvoiceRule
 from schemas import (
     CompanyCreate, CompanyResponse, CompanyUpdate, CompanyPaginatedResponse,
     ContactCreate, ContactResponse, ContactUpdate,
@@ -82,7 +82,11 @@ from schemas import (
     ContactPrivacyUpdate, EmailThreadSharingUpdate, EmailSharingPermissionCreate, EmailSharingPermissionResponse,
     EmailPrivacySettings, EmailPrivacySettingsUpdate,
     DocumentFolderCreate, DocumentFolderUpdate, DocumentFolderResponse,
-    DocumentCategoryResponse, MoveAttachmentRequest, AttachmentUpdate
+    DocumentCategoryResponse, MoveAttachmentRequest, AttachmentUpdate,
+    TimeEntryCreate, TimeEntryUpdate, TimeEntryResponse, TimerStartRequest, TimerStopResponse,
+    ProjectMemberRateCreate, ProjectMemberRateUpdate, ProjectMemberRateResponse,
+    InvoiceRuleCreate, InvoiceRuleUpdate, InvoiceRuleResponse,
+    TimeTrackingReportParams
 )
 from crud import (
     create_company, get_companies, get_company, update_company, delete_company,
@@ -108,7 +112,12 @@ from crud import (
     recalculate_all_contact_counts, sync_contact_company_names,
     create_document_folder, get_document_folders, get_document_folder, update_document_folder, delete_document_folder,
     move_attachment_to_folder, get_folder_attachments, get_document_categories, create_default_folders_for_company,
-    auto_categorize_attachment
+    auto_categorize_attachment,
+    create_time_entry, get_time_entries, get_time_entry, update_time_entry, delete_time_entry,
+    start_timer, stop_timer, get_running_timer,
+    create_project_member_rate, get_project_member_rates, get_project_member_rate, update_project_member_rate, delete_project_member_rate,
+    create_invoice_rule, get_invoice_rules, get_invoice_rule, update_invoice_rule, delete_invoice_rule,
+    get_consultant_billing_report, get_client_invoicing_report
 )
 from auth_crud import (
     create_organization, get_organization_by_slug, get_organization_by_id,
@@ -5873,6 +5882,497 @@ async def unsubscribe_contact(
         </div></body></html>
         """
     )
+
+
+# ============================================================
+# Time Tracking API Endpoints (Toggl Replacement)
+# ============================================================
+
+# --- Timer Endpoints ---
+
+@app.post("/api/time-tracking/timer/start", response_model=TimeEntryResponse)
+async def api_start_timer(
+    request: TimerStartRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Start a new timer. Automatically stops any running timer."""
+    entry = start_timer(
+        db, 
+        organization_id=current_user.organization_id,
+        user_id=current_user.id,
+        project_id=request.project_id,
+        description=request.description,
+        is_billable=request.is_billable,
+        tags=request.tags
+    )
+    return _enrich_time_entry(db, entry)
+
+
+@app.post("/api/time-tracking/timer/stop", response_model=TimeEntryResponse)
+async def api_stop_timer(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Stop the currently running timer."""
+    entry = stop_timer(
+        db,
+        organization_id=current_user.organization_id,
+        user_id=current_user.id
+    )
+    if not entry:
+        raise HTTPException(status_code=404, detail="No running timer found")
+    return _enrich_time_entry(db, entry)
+
+
+@app.get("/api/time-tracking/timer/current", response_model=Optional[TimeEntryResponse])
+async def api_get_current_timer(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get the currently running timer for the authenticated user."""
+    entry = get_running_timer(
+        db,
+        organization_id=current_user.organization_id,
+        user_id=current_user.id
+    )
+    if not entry:
+        return None
+    return _enrich_time_entry(db, entry)
+
+
+# --- Time Entry CRUD Endpoints ---
+
+@app.post("/api/time-tracking/entries", response_model=TimeEntryResponse)
+async def api_create_time_entry(
+    entry: TimeEntryCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create a manual time entry."""
+    db_entry = create_time_entry(
+        db, entry,
+        organization_id=current_user.organization_id,
+        user_id=current_user.id
+    )
+    return _enrich_time_entry(db, db_entry)
+
+
+@app.get("/api/time-tracking/entries", response_model=List[TimeEntryResponse])
+async def api_get_time_entries(
+    user_id: Optional[int] = None,
+    project_id: Optional[int] = None,
+    company_id: Optional[int] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    is_billable: Optional[bool] = None,
+    skip: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get time entries with optional filters.
+    Admins/owners can see all entries. Regular users see only their own.
+    """
+    # Role-based access: regular users can only see their own entries
+    effective_user_id = user_id
+    if current_user.role not in ["admin", "owner"]:
+        effective_user_id = current_user.id
+    
+    parsed_start = datetime.fromisoformat(start_date) if start_date else None
+    parsed_end = datetime.fromisoformat(end_date) if end_date else None
+    
+    entries = get_time_entries(
+        db,
+        organization_id=current_user.organization_id,
+        user_id=effective_user_id,
+        project_id=project_id,
+        company_id=company_id,
+        start_date=parsed_start,
+        end_date=parsed_end,
+        is_billable=is_billable,
+        skip=skip,
+        limit=limit
+    )
+    return [_enrich_time_entry(db, e) for e in entries]
+
+
+@app.get("/api/time-tracking/entries/{entry_id}", response_model=TimeEntryResponse)
+async def api_get_time_entry(
+    entry_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get a single time entry."""
+    entry = get_time_entry(db, entry_id, current_user.organization_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Time entry not found")
+    # Regular users can only see their own entries
+    if current_user.role not in ["admin", "owner"] and entry.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    return _enrich_time_entry(db, entry)
+
+
+@app.put("/api/time-tracking/entries/{entry_id}", response_model=TimeEntryResponse)
+async def api_update_time_entry(
+    entry_id: int,
+    entry_update: TimeEntryUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update a time entry. Users can only update their own entries."""
+    existing = get_time_entry(db, entry_id, current_user.organization_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Time entry not found")
+    if current_user.role not in ["admin", "owner"] and existing.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    updated = update_time_entry(db, entry_id, entry_update, current_user.organization_id)
+    return _enrich_time_entry(db, updated)
+
+
+@app.delete("/api/time-tracking/entries/{entry_id}")
+async def api_delete_time_entry(
+    entry_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a time entry. Users can only delete their own entries."""
+    existing = get_time_entry(db, entry_id, current_user.organization_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Time entry not found")
+    if current_user.role not in ["admin", "owner"] and existing.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    delete_time_entry(db, entry_id, current_user.organization_id)
+    return {"message": "Time entry deleted"}
+
+
+# --- Project Member Rate Endpoints ---
+
+@app.post("/api/time-tracking/rates", response_model=ProjectMemberRateResponse)
+async def api_create_member_rate(
+    rate: ProjectMemberRateCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create a consultant rate for a project-member combination. Admin/Owner only."""
+    if current_user.role not in ["admin", "owner"]:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    db_rate = create_project_member_rate(db, rate, current_user.organization_id)
+    return _enrich_member_rate(db, db_rate)
+
+
+@app.get("/api/time-tracking/rates", response_model=List[ProjectMemberRateResponse])
+async def api_get_member_rates(
+    project_id: Optional[int] = None,
+    user_id: Optional[int] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get consultant rates. Admin/Owner only."""
+    if current_user.role not in ["admin", "owner"]:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    rates = get_project_member_rates(db, current_user.organization_id, project_id, user_id)
+    return [_enrich_member_rate(db, r) for r in rates]
+
+
+@app.put("/api/time-tracking/rates/{rate_id}", response_model=ProjectMemberRateResponse)
+async def api_update_member_rate(
+    rate_id: int,
+    rate_update: ProjectMemberRateUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update a consultant rate. Admin/Owner only."""
+    if current_user.role not in ["admin", "owner"]:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    updated = update_project_member_rate(db, rate_id, rate_update, current_user.organization_id)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Rate not found")
+    return _enrich_member_rate(db, updated)
+
+
+@app.delete("/api/time-tracking/rates/{rate_id}")
+async def api_delete_member_rate(
+    rate_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a consultant rate. Admin/Owner only."""
+    if current_user.role not in ["admin", "owner"]:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    if not delete_project_member_rate(db, rate_id, current_user.organization_id):
+        raise HTTPException(status_code=404, detail="Rate not found")
+    return {"message": "Rate deleted"}
+
+
+# --- Invoice Rule Endpoints ---
+
+@app.post("/api/time-tracking/invoice-rules", response_model=InvoiceRuleResponse)
+async def api_create_invoice_rule(
+    rule: InvoiceRuleCreate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Create an invoice rule for a client company. Admin/Owner only."""
+    if current_user.role not in ["admin", "owner"]:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    db_rule = create_invoice_rule(db, rule, current_user.organization_id)
+    return _enrich_invoice_rule(db, db_rule)
+
+
+@app.get("/api/time-tracking/invoice-rules", response_model=List[InvoiceRuleResponse])
+async def api_get_invoice_rules(
+    company_id: Optional[int] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get invoice rules. Admin/Owner only."""
+    if current_user.role not in ["admin", "owner"]:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    rules = get_invoice_rules(db, current_user.organization_id, company_id)
+    return [_enrich_invoice_rule(db, r) for r in rules]
+
+
+@app.put("/api/time-tracking/invoice-rules/{rule_id}", response_model=InvoiceRuleResponse)
+async def api_update_invoice_rule(
+    rule_id: int,
+    rule_update: InvoiceRuleUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Update an invoice rule. Admin/Owner only."""
+    if current_user.role not in ["admin", "owner"]:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    updated = update_invoice_rule(db, rule_id, rule_update, current_user.organization_id)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Invoice rule not found")
+    return _enrich_invoice_rule(db, updated)
+
+
+@app.delete("/api/time-tracking/invoice-rules/{rule_id}")
+async def api_delete_invoice_rule(
+    rule_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Delete an invoice rule. Admin/Owner only."""
+    if current_user.role not in ["admin", "owner"]:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    if not delete_invoice_rule(db, rule_id, current_user.organization_id):
+        raise HTTPException(status_code=404, detail="Invoice rule not found")
+    return {"message": "Invoice rule deleted"}
+
+
+# --- Report Endpoints ---
+
+@app.get("/api/time-tracking/reports/consultant-billing")
+async def api_consultant_billing_report(
+    start_date: str,
+    end_date: str,
+    user_id: Optional[int] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Generate consultant billing report. Admin/Owner only."""
+    if current_user.role not in ["admin", "owner"]:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    parsed_start = datetime.fromisoformat(start_date)
+    parsed_end = datetime.fromisoformat(end_date)
+    
+    return get_consultant_billing_report(
+        db,
+        organization_id=current_user.organization_id,
+        start_date=parsed_start,
+        end_date=parsed_end,
+        user_id=user_id
+    )
+
+
+@app.get("/api/time-tracking/reports/client-invoicing")
+async def api_client_invoicing_report(
+    start_date: str,
+    end_date: str,
+    company_id: Optional[int] = None,
+    project_id: Optional[int] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Generate client invoicing report. Admin/Owner only."""
+    if current_user.role not in ["admin", "owner"]:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    parsed_start = datetime.fromisoformat(start_date)
+    parsed_end = datetime.fromisoformat(end_date)
+    
+    return get_client_invoicing_report(
+        db,
+        organization_id=current_user.organization_id,
+        start_date=parsed_start,
+        end_date=parsed_end,
+        company_id=company_id,
+        project_id=project_id
+    )
+
+
+@app.get("/api/time-tracking/reports/summary")
+async def api_time_tracking_summary(
+    start_date: str,
+    end_date: str,
+    user_id: Optional[int] = None,
+    project_id: Optional[int] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get a summary of time tracked in a period."""
+    parsed_start = datetime.fromisoformat(start_date)
+    parsed_end = datetime.fromisoformat(end_date)
+    
+    # Role-based: regular users see only their own
+    effective_user_id = user_id
+    if current_user.role not in ["admin", "owner"]:
+        effective_user_id = current_user.id
+    
+    entries = get_time_entries(
+        db,
+        organization_id=current_user.organization_id,
+        user_id=effective_user_id,
+        project_id=project_id,
+        start_date=parsed_start,
+        end_date=parsed_end
+    )
+    
+    total_seconds = sum(e.duration_seconds or 0 for e in entries if not e.is_running)
+    billable_seconds = sum(e.duration_seconds or 0 for e in entries if not e.is_running and e.is_billable)
+    
+    # Group by project
+    project_breakdown = {}
+    for entry in entries:
+        if entry.is_running:
+            continue
+        pid = entry.project_id or 0
+        if pid not in project_breakdown:
+            project_title = "No Project"
+            if entry.project_id:
+                proj = db.query(Project).filter(Project.id == entry.project_id).first()
+                if proj:
+                    project_title = proj.title
+            project_breakdown[pid] = {
+                "project_id": entry.project_id,
+                "project_title": project_title,
+                "total_seconds": 0,
+                "entry_count": 0
+            }
+        project_breakdown[pid]["total_seconds"] += entry.duration_seconds or 0
+        project_breakdown[pid]["entry_count"] += 1
+    
+    # Group by day
+    daily_breakdown = {}
+    for entry in entries:
+        if entry.is_running:
+            continue
+        day_key = entry.start_time.strftime("%Y-%m-%d")
+        if day_key not in daily_breakdown:
+            daily_breakdown[day_key] = {"date": day_key, "total_seconds": 0, "entry_count": 0}
+        daily_breakdown[day_key]["total_seconds"] += entry.duration_seconds or 0
+        daily_breakdown[day_key]["entry_count"] += 1
+    
+    return {
+        "total_seconds": total_seconds,
+        "total_hours": round(total_seconds / 3600, 2),
+        "billable_seconds": billable_seconds,
+        "billable_hours": round(billable_seconds / 3600, 2),
+        "entry_count": len([e for e in entries if not e.is_running]),
+        "project_breakdown": list(project_breakdown.values()),
+        "daily_breakdown": sorted(daily_breakdown.values(), key=lambda x: x["date"])
+    }
+
+
+# --- Helper functions for enriching time tracking responses ---
+
+def _enrich_time_entry(db: Session, entry: TimeEntry) -> dict:
+    """Add user_name, project_title, company_name to a time entry."""
+    result = {
+        "id": entry.id,
+        "organization_id": entry.organization_id,
+        "user_id": entry.user_id,
+        "project_id": entry.project_id,
+        "description": entry.description,
+        "start_time": entry.start_time,
+        "end_time": entry.end_time,
+        "duration_seconds": entry.duration_seconds,
+        "is_billable": entry.is_billable,
+        "is_running": entry.is_running,
+        "tags": entry.tags or [],
+        "created_at": entry.created_at,
+        "updated_at": entry.updated_at,
+        "user_name": None,
+        "project_title": None,
+        "company_name": None
+    }
+    
+    user = db.query(User).filter(User.id == entry.user_id).first()
+    if user:
+        result["user_name"] = f"{user.first_name} {user.last_name}"
+    
+    if entry.project_id:
+        project = db.query(Project).filter(Project.id == entry.project_id).first()
+        if project:
+            result["project_title"] = project.title
+            if project.company_id:
+                company = db.query(Company).filter(Company.id == project.company_id).first()
+                if company:
+                    result["company_name"] = company.name
+    
+    return result
+
+
+def _enrich_member_rate(db: Session, rate: ProjectMemberRate) -> dict:
+    """Add user_name, project_title to a member rate."""
+    result = {
+        "id": rate.id,
+        "organization_id": rate.organization_id,
+        "project_id": rate.project_id,
+        "user_id": rate.user_id,
+        "consultant_rate": rate.consultant_rate,
+        "effective_date": rate.effective_date,
+        "created_at": rate.created_at,
+        "updated_at": rate.updated_at,
+        "user_name": None,
+        "project_title": None
+    }
+    
+    user = db.query(User).filter(User.id == rate.user_id).first()
+    if user:
+        result["user_name"] = f"{user.first_name} {user.last_name}"
+    
+    project = db.query(Project).filter(Project.id == rate.project_id).first()
+    if project:
+        result["project_title"] = project.title
+    
+    return result
+
+
+def _enrich_invoice_rule(db: Session, rule: InvoiceRule) -> dict:
+    """Add company_name to an invoice rule."""
+    result = {
+        "id": rule.id,
+        "organization_id": rule.organization_id,
+        "company_id": rule.company_id,
+        "rule_type": rule.rule_type,
+        "notes": rule.notes,
+        "created_at": rule.created_at,
+        "updated_at": rule.updated_at,
+        "company_name": None
+    }
+    
+    company = db.query(Company).filter(Company.id == rule.company_id).first()
+    if company:
+        result["company_name"] = company.name
+    
+    return result
 
 
 if __name__ == "__main__":

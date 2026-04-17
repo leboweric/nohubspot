@@ -1505,3 +1505,305 @@ export const googleIntegrationAPI = {
       method: 'DELETE'
     })
 }
+
+// ============================================================
+// Time Tracking Interfaces & API (Toggl Replacement)
+// ============================================================
+
+export interface TimeEntry {
+  id: number
+  organization_id: number
+  user_id: number
+  project_id?: number
+  description?: string
+  start_time: string
+  end_time?: string
+  duration_seconds?: number
+  is_billable: boolean
+  is_running: boolean
+  tags?: string[]
+  created_at: string
+  updated_at: string
+  // Populated by API
+  user_name?: string
+  project_title?: string
+  company_name?: string
+}
+
+export interface TimeEntryCreate {
+  project_id?: number
+  description?: string
+  start_time: string
+  end_time?: string
+  duration_seconds?: number
+  is_billable?: boolean
+  tags?: string[]
+}
+
+export interface TimeEntryUpdate {
+  project_id?: number
+  description?: string
+  start_time?: string
+  end_time?: string
+  duration_seconds?: number
+  is_billable?: boolean
+  tags?: string[]
+}
+
+export interface TimerStartRequest {
+  project_id?: number
+  description?: string
+  is_billable?: boolean
+  tags?: string[]
+}
+
+export interface ProjectMemberRate {
+  id: number
+  organization_id: number
+  project_id: number
+  user_id: number
+  consultant_rate: number
+  effective_date?: string
+  created_at: string
+  updated_at: string
+  user_name?: string
+  project_title?: string
+}
+
+export interface ProjectMemberRateCreate {
+  project_id: number
+  user_id: number
+  consultant_rate: number
+  effective_date?: string
+}
+
+export interface ProjectMemberRateUpdate {
+  consultant_rate?: number
+  effective_date?: string
+}
+
+export interface InvoiceRuleType {
+  id: number
+  organization_id: number
+  company_id: number
+  rule_type: string
+  notes?: string
+  created_at: string
+  updated_at: string
+  company_name?: string
+}
+
+export interface InvoiceRuleCreate {
+  company_id: number
+  rule_type: string
+  notes?: string
+}
+
+export interface InvoiceRuleUpdate {
+  rule_type?: string
+  notes?: string
+}
+
+export interface TimeSummary {
+  total_seconds: number
+  total_hours: number
+  billable_seconds: number
+  billable_hours: number
+  entry_count: number
+  project_breakdown: Array<{
+    project_id: number | null
+    project_title: string
+    total_seconds: number
+    entry_count: number
+  }>
+  daily_breakdown: Array<{
+    date: string
+    total_seconds: number
+    entry_count: number
+  }>
+}
+
+export interface ConsultantBillingEntry {
+  user_id: number
+  user_name: string
+  total_hours: number
+  total_amount: number
+  entries: Array<{
+    id: number
+    date: string
+    project: string
+    description: string
+    hours: number
+    rate: number
+    amount: number
+  }>
+}
+
+export interface ClientInvoiceEntry {
+  project_id: number
+  project_title: string
+  company_id?: number
+  company_name?: string
+  client_rate: number
+  total_hours: number
+  total_client_amount: number
+  line_items: Array<{
+    consultant_name: string
+    week_label: string
+    description: string
+    hours: number
+    rate: number
+    amount: number
+  }>
+}
+
+// Time Tracking API functions
+export const timeTrackingAPI = {
+  // Timer operations
+  startTimer: (data: TimerStartRequest): Promise<TimeEntry> =>
+    apiRequest('/api/time-tracking/timer/start', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  stopTimer: (): Promise<TimeEntry> =>
+    apiRequest('/api/time-tracking/timer/stop', {
+      method: 'POST',
+    }),
+
+  getCurrentTimer: (): Promise<TimeEntry | null> =>
+    apiRequest('/api/time-tracking/timer/current'),
+
+  // Time Entry CRUD
+  createEntry: (entry: TimeEntryCreate): Promise<TimeEntry> =>
+    apiRequest('/api/time-tracking/entries', {
+      method: 'POST',
+      body: JSON.stringify(entry),
+    }),
+
+  getEntries: (params?: {
+    user_id?: number
+    project_id?: number
+    company_id?: number
+    start_date?: string
+    end_date?: string
+    is_billable?: boolean
+    skip?: number
+    limit?: number
+  }): Promise<TimeEntry[]> => {
+    const searchParams = new URLSearchParams()
+    if (params?.user_id) searchParams.append('user_id', params.user_id.toString())
+    if (params?.project_id) searchParams.append('project_id', params.project_id.toString())
+    if (params?.company_id) searchParams.append('company_id', params.company_id.toString())
+    if (params?.start_date) searchParams.append('start_date', params.start_date)
+    if (params?.end_date) searchParams.append('end_date', params.end_date)
+    if (params?.is_billable !== undefined) searchParams.append('is_billable', params.is_billable.toString())
+    if (params?.skip) searchParams.append('skip', params.skip.toString())
+    if (params?.limit) searchParams.append('limit', params.limit.toString())
+    return apiRequest(`/api/time-tracking/entries?${searchParams.toString()}`)
+  },
+
+  getEntry: (entryId: number): Promise<TimeEntry> =>
+    apiRequest(`/api/time-tracking/entries/${entryId}`),
+
+  updateEntry: (entryId: number, entry: TimeEntryUpdate): Promise<TimeEntry> =>
+    apiRequest(`/api/time-tracking/entries/${entryId}`, {
+      method: 'PUT',
+      body: JSON.stringify(entry),
+    }),
+
+  deleteEntry: (entryId: number): Promise<{ message: string }> =>
+    apiRequest(`/api/time-tracking/entries/${entryId}`, {
+      method: 'DELETE',
+    }),
+
+  // Rates
+  getRates: (params?: { project_id?: number; user_id?: number }): Promise<ProjectMemberRate[]> => {
+    const searchParams = new URLSearchParams()
+    if (params?.project_id) searchParams.append('project_id', params.project_id.toString())
+    if (params?.user_id) searchParams.append('user_id', params.user_id.toString())
+    return apiRequest(`/api/time-tracking/rates?${searchParams.toString()}`)
+  },
+
+  createRate: (rate: ProjectMemberRateCreate): Promise<ProjectMemberRate> =>
+    apiRequest('/api/time-tracking/rates', {
+      method: 'POST',
+      body: JSON.stringify(rate),
+    }),
+
+  updateRate: (rateId: number, rate: ProjectMemberRateUpdate): Promise<ProjectMemberRate> =>
+    apiRequest(`/api/time-tracking/rates/${rateId}`, {
+      method: 'PUT',
+      body: JSON.stringify(rate),
+    }),
+
+  deleteRate: (rateId: number): Promise<{ message: string }> =>
+    apiRequest(`/api/time-tracking/rates/${rateId}`, {
+      method: 'DELETE',
+    }),
+
+  // Invoice Rules
+  getInvoiceRules: (companyId?: number): Promise<InvoiceRuleType[]> => {
+    const searchParams = new URLSearchParams()
+    if (companyId) searchParams.append('company_id', companyId.toString())
+    return apiRequest(`/api/time-tracking/invoice-rules?${searchParams.toString()}`)
+  },
+
+  createInvoiceRule: (rule: InvoiceRuleCreate): Promise<InvoiceRuleType> =>
+    apiRequest('/api/time-tracking/invoice-rules', {
+      method: 'POST',
+      body: JSON.stringify(rule),
+    }),
+
+  updateInvoiceRule: (ruleId: number, rule: InvoiceRuleUpdate): Promise<InvoiceRuleType> =>
+    apiRequest(`/api/time-tracking/invoice-rules/${ruleId}`, {
+      method: 'PUT',
+      body: JSON.stringify(rule),
+    }),
+
+  deleteInvoiceRule: (ruleId: number): Promise<{ message: string }> =>
+    apiRequest(`/api/time-tracking/invoice-rules/${ruleId}`, {
+      method: 'DELETE',
+    }),
+
+  // Reports
+  getSummary: (params: {
+    start_date: string
+    end_date: string
+    user_id?: number
+    project_id?: number
+  }): Promise<TimeSummary> => {
+    const searchParams = new URLSearchParams()
+    searchParams.append('start_date', params.start_date)
+    searchParams.append('end_date', params.end_date)
+    if (params.user_id) searchParams.append('user_id', params.user_id.toString())
+    if (params.project_id) searchParams.append('project_id', params.project_id.toString())
+    return apiRequest(`/api/time-tracking/reports/summary?${searchParams.toString()}`)
+  },
+
+  getConsultantBillingReport: (params: {
+    start_date: string
+    end_date: string
+    user_id?: number
+  }): Promise<ConsultantBillingEntry[]> => {
+    const searchParams = new URLSearchParams()
+    searchParams.append('start_date', params.start_date)
+    searchParams.append('end_date', params.end_date)
+    if (params.user_id) searchParams.append('user_id', params.user_id.toString())
+    return apiRequest(`/api/time-tracking/reports/consultant-billing?${searchParams.toString()}`)
+  },
+
+  getClientInvoicingReport: (params: {
+    start_date: string
+    end_date: string
+    company_id?: number
+    project_id?: number
+  }): Promise<ClientInvoiceEntry[]> => {
+    const searchParams = new URLSearchParams()
+    searchParams.append('start_date', params.start_date)
+    searchParams.append('end_date', params.end_date)
+    if (params.company_id) searchParams.append('company_id', params.company_id.toString())
+    if (params.project_id) searchParams.append('project_id', params.project_id.toString())
+    return apiRequest(`/api/time-tracking/reports/client-invoicing?${searchParams.toString()}`)
+  },
+}

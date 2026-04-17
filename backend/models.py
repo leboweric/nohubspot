@@ -943,3 +943,105 @@ class DocumentCategory(Base):
     
     # Relationships
     organization = relationship("Organization")
+
+# ============================================================
+# Time Tracking Models (Toggl Replacement)
+# ============================================================
+
+class TimeEntry(Base):
+    __tablename__ = "time_entries"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True, index=True)
+    
+    # Time entry details
+    description = Column(Text, nullable=True)
+    start_time = Column(DateTime(timezone=True), nullable=False)
+    end_time = Column(DateTime(timezone=True), nullable=True)  # Null if timer is running
+    duration_seconds = Column(Integer, nullable=True)  # Computed from start/end, null if running
+    
+    # Billing
+    is_billable = Column(Boolean, default=True)
+    
+    # Tags
+    tags = Column(JSON, nullable=True)  # Array of tag strings
+    
+    # Timer state
+    is_running = Column(Boolean, default=False)  # True if timer is actively running
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    organization = relationship("Organization")
+    user = relationship("User")
+    project = relationship("Project")
+
+
+class ProjectMemberRate(Base):
+    """Stores the consultant pay rate per project-member combination.
+    This is the rate the consultant bills SCC, NOT the client rate.
+    The client rate is stored on the Project itself (hourly_rate field).
+    """
+    __tablename__ = "project_member_rates"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    
+    # The rate the consultant bills the organization for this project
+    consultant_rate = Column(Float, nullable=False, default=0.0)
+    
+    # Optional: effective date for rate changes
+    effective_date = Column(DateTime(timezone=True), nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    organization = relationship("Organization")
+    project = relationship("Project")
+    user = relationship("User")
+    
+    # Unique constraint: one rate per user per project (at a time)
+    __table_args__ = (
+        UniqueConstraint('project_id', 'user_id', name='_project_member_rate_uc'),
+    )
+
+
+class InvoiceRule(Base):
+    """Client-specific invoicing rules.
+    Determines how invoices are generated for each client company.
+    """
+    __tablename__ = "invoice_rules"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
+    
+    # Rule type: how to group projects on invoices
+    # "separate" = one invoice per project
+    # "combined" = all projects on one invoice
+    # "custom" = specific grouping rules in notes
+    rule_type = Column(String(50), default="combined")
+    
+    # Special instructions
+    notes = Column(Text, nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    organization = relationship("Organization")
+    company = relationship("Company")
+    
+    # One rule per company per org
+    __table_args__ = (
+        UniqueConstraint('organization_id', 'company_id', name='_org_company_invoice_rule_uc'),
+    )

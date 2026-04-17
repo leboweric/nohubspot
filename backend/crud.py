@@ -1809,3 +1809,452 @@ def auto_categorize_attachment(db: Session, attachment: Attachment, organization
                     return folder
     
     return None
+
+# ============================================================
+# Time Tracking CRUD (Toggl Replacement)
+# ============================================================
+
+from models import TimeEntry, ProjectMemberRate, InvoiceRule
+from schemas import (
+    TimeEntryCreate, TimeEntryUpdate,
+    ProjectMemberRateCreate, ProjectMemberRateUpdate,
+    InvoiceRuleCreate, InvoiceRuleUpdate
+)
+
+# --- Time Entry CRUD ---
+
+def create_time_entry(db: Session, entry: TimeEntryCreate, organization_id: int, user_id: int) -> TimeEntry:
+    entry_data = entry.dict()
+    # Calculate duration if both start and end provided
+    if entry_data.get('end_time') and entry_data.get('start_time'):
+        delta = entry_data['end_time'] - entry_data['start_time']
+        entry_data['duration_seconds'] = int(delta.total_seconds())
+        entry_data['is_running'] = False
+    else:
+        entry_data['is_running'] = entry_data.get('end_time') is None
+    
+    db_entry = TimeEntry(**entry_data, organization_id=organization_id, user_id=user_id)
+    db.add(db_entry)
+    db.commit()
+    db.refresh(db_entry)
+    return db_entry
+
+
+def start_timer(db: Session, organization_id: int, user_id: int, project_id: int = None, description: str = None, is_billable: bool = True, tags: list = None) -> TimeEntry:
+    """Start a new timer. Stops any running timer first."""
+    from datetime import datetime, timezone
+    
+    # Stop any running timer for this user
+    running = db.query(TimeEntry).filter(
+        TimeEntry.organization_id == organization_id,
+        TimeEntry.user_id == user_id,
+        TimeEntry.is_running == True
+    ).first()
+    
+    if running:
+        now = datetime.now(timezone.utc)
+        running.end_time = now
+        running.duration_seconds = int((now - running.start_time).total_seconds())
+        running.is_running = False
+    
+    # Create new running timer
+    db_entry = TimeEntry(
+        organization_id=organization_id,
+        user_id=user_id,
+        project_id=project_id,
+        description=description,
+        start_time=datetime.now(timezone.utc),
+        is_billable=is_billable,
+        is_running=True,
+        tags=tags or []
+    )
+    db.add(db_entry)
+    db.commit()
+    db.refresh(db_entry)
+    return db_entry
+
+
+def stop_timer(db: Session, organization_id: int, user_id: int) -> Optional[TimeEntry]:
+    """Stop the currently running timer for a user."""
+    from datetime import datetime, timezone
+    
+    running = db.query(TimeEntry).filter(
+        TimeEntry.organization_id == organization_id,
+        TimeEntry.user_id == user_id,
+        TimeEntry.is_running == True
+    ).first()
+    
+    if not running:
+        return None
+    
+    now = datetime.now(timezone.utc)
+    running.end_time = now
+    running.duration_seconds = int((now - running.start_time).total_seconds())
+    running.is_running = False
+    db.commit()
+    db.refresh(running)
+    return running
+
+
+def get_running_timer(db: Session, organization_id: int, user_id: int) -> Optional[TimeEntry]:
+    """Get the currently running timer for a user."""
+    return db.query(TimeEntry).filter(
+        TimeEntry.organization_id == organization_id,
+        TimeEntry.user_id == user_id,
+        TimeEntry.is_running == True
+    ).first()
+
+
+def get_time_entries(
+    db: Session,
+    organization_id: int,
+    user_id: int = None,
+    project_id: int = None,
+    company_id: int = None,
+    start_date: datetime = None,
+    end_date: datetime = None,
+    is_billable: bool = None,
+    skip: int = 0,
+    limit: int = 100
+) -> List[TimeEntry]:
+    query = db.query(TimeEntry).filter(
+        TimeEntry.organization_id == organization_id
+    )
+    
+    if user_id:
+        query = query.filter(TimeEntry.user_id == user_id)
+    
+    if project_id:
+        query = query.filter(TimeEntry.project_id == project_id)
+    
+    if company_id:
+        # Filter by entries whose project belongs to the given company
+        query = query.join(Project, TimeEntry.project_id == Project.id).filter(
+            Project.company_id == company_id
+        )
+    
+    if start_date:
+        query = query.filter(TimeEntry.start_time >= start_date)
+    
+    if end_date:
+        query = query.filter(TimeEntry.start_time <= end_date)
+    
+    if is_billable is not None:
+        query = query.filter(TimeEntry.is_billable == is_billable)
+    
+    return query.order_by(desc(TimeEntry.start_time)).offset(skip).limit(limit).all()
+
+
+def get_time_entry(db: Session, entry_id: int, organization_id: int) -> Optional[TimeEntry]:
+    return db.query(TimeEntry).filter(
+        TimeEntry.id == entry_id,
+        TimeEntry.organization_id == organization_id
+    ).first()
+
+
+def update_time_entry(db: Session, entry_id: int, entry_update: TimeEntryUpdate, organization_id: int) -> Optional[TimeEntry]:
+    db_entry = get_time_entry(db, entry_id, organization_id)
+    if not db_entry:
+        return None
+    
+    update_data = entry_update.dict(exclude_unset=True)
+    
+    for field, value in update_data.items():
+        setattr(db_entry, field, value)
+    
+    # Recalculate duration if start/end changed
+    if db_entry.start_time and db_entry.end_time:
+        db_entry.duration_seconds = int((db_entry.end_time - db_entry.start_time).total_seconds())
+        db_entry.is_running = False
+    
+    db.commit()
+    db.refresh(db_entry)
+    return db_entry
+
+
+def delete_time_entry(db: Session, entry_id: int, organization_id: int) -> bool:
+    db_entry = get_time_entry(db, entry_id, organization_id)
+    if not db_entry:
+        return False
+    db.delete(db_entry)
+    db.commit()
+    return True
+
+
+# --- Project Member Rate CRUD ---
+
+def create_project_member_rate(db: Session, rate: ProjectMemberRateCreate, organization_id: int) -> ProjectMemberRate:
+    rate_data = rate.dict()
+    db_rate = ProjectMemberRate(**rate_data, organization_id=organization_id)
+    db.add(db_rate)
+    db.commit()
+    db.refresh(db_rate)
+    return db_rate
+
+
+def get_project_member_rates(db: Session, organization_id: int, project_id: int = None, user_id: int = None) -> List[ProjectMemberRate]:
+    query = db.query(ProjectMemberRate).filter(
+        ProjectMemberRate.organization_id == organization_id
+    )
+    if project_id:
+        query = query.filter(ProjectMemberRate.project_id == project_id)
+    if user_id:
+        query = query.filter(ProjectMemberRate.user_id == user_id)
+    return query.all()
+
+
+def get_project_member_rate(db: Session, rate_id: int, organization_id: int) -> Optional[ProjectMemberRate]:
+    return db.query(ProjectMemberRate).filter(
+        ProjectMemberRate.id == rate_id,
+        ProjectMemberRate.organization_id == organization_id
+    ).first()
+
+
+def update_project_member_rate(db: Session, rate_id: int, rate_update: ProjectMemberRateUpdate, organization_id: int) -> Optional[ProjectMemberRate]:
+    db_rate = get_project_member_rate(db, rate_id, organization_id)
+    if not db_rate:
+        return None
+    update_data = rate_update.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_rate, field, value)
+    db.commit()
+    db.refresh(db_rate)
+    return db_rate
+
+
+def delete_project_member_rate(db: Session, rate_id: int, organization_id: int) -> bool:
+    db_rate = get_project_member_rate(db, rate_id, organization_id)
+    if not db_rate:
+        return False
+    db.delete(db_rate)
+    db.commit()
+    return True
+
+
+# --- Invoice Rule CRUD ---
+
+def create_invoice_rule(db: Session, rule: InvoiceRuleCreate, organization_id: int) -> InvoiceRule:
+    rule_data = rule.dict()
+    db_rule = InvoiceRule(**rule_data, organization_id=organization_id)
+    db.add(db_rule)
+    db.commit()
+    db.refresh(db_rule)
+    return db_rule
+
+
+def get_invoice_rules(db: Session, organization_id: int, company_id: int = None) -> List[InvoiceRule]:
+    query = db.query(InvoiceRule).filter(
+        InvoiceRule.organization_id == organization_id
+    )
+    if company_id:
+        query = query.filter(InvoiceRule.company_id == company_id)
+    return query.all()
+
+
+def get_invoice_rule(db: Session, rule_id: int, organization_id: int) -> Optional[InvoiceRule]:
+    return db.query(InvoiceRule).filter(
+        InvoiceRule.id == rule_id,
+        InvoiceRule.organization_id == organization_id
+    ).first()
+
+
+def update_invoice_rule(db: Session, rule_id: int, rule_update: InvoiceRuleUpdate, organization_id: int) -> Optional[InvoiceRule]:
+    db_rule = get_invoice_rule(db, rule_id, organization_id)
+    if not db_rule:
+        return None
+    update_data = rule_update.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_rule, field, value)
+    db.commit()
+    db.refresh(db_rule)
+    return db_rule
+
+
+def delete_invoice_rule(db: Session, rule_id: int, organization_id: int) -> bool:
+    db_rule = get_invoice_rule(db, rule_id, organization_id)
+    if not db_rule:
+        return False
+    db.delete(db_rule)
+    db.commit()
+    return True
+
+
+# --- Time Tracking Reports ---
+
+def get_consultant_billing_report(
+    db: Session,
+    organization_id: int,
+    start_date: datetime,
+    end_date: datetime,
+    user_id: int = None
+) -> List[dict]:
+    """Generate consultant billing report.
+    Groups time entries by consultant, calculates pay using consultant rates.
+    """
+    query = db.query(TimeEntry).filter(
+        TimeEntry.organization_id == organization_id,
+        TimeEntry.start_time >= start_date,
+        TimeEntry.start_time <= end_date,
+        TimeEntry.is_running == False
+    )
+    
+    if user_id:
+        query = query.filter(TimeEntry.user_id == user_id)
+    
+    entries = query.order_by(TimeEntry.user_id, TimeEntry.start_time).all()
+    
+    # Group by user
+    from collections import defaultdict
+    user_groups = defaultdict(list)
+    for entry in entries:
+        user_groups[entry.user_id].append(entry)
+    
+    results = []
+    for uid, user_entries in user_groups.items():
+        user = db.query(User).filter(User.id == uid).first()
+        user_name = f"{user.first_name} {user.last_name}" if user else "Unknown"
+        
+        total_hours = 0
+        total_amount = 0
+        entry_details = []
+        
+        for entry in user_entries:
+            hours = (entry.duration_seconds or 0) / 3600
+            total_hours += hours
+            
+            # Get consultant rate for this project/user combo
+            rate = 0
+            if entry.project_id:
+                member_rate = db.query(ProjectMemberRate).filter(
+                    ProjectMemberRate.project_id == entry.project_id,
+                    ProjectMemberRate.user_id == uid,
+                    ProjectMemberRate.organization_id == organization_id
+                ).first()
+                if member_rate:
+                    rate = member_rate.consultant_rate
+            
+            amount = hours * rate
+            total_amount += amount
+            
+            project_title = ""
+            if entry.project_id and entry.project:
+                project_title = entry.project.title
+            
+            entry_details.append({
+                "id": entry.id,
+                "date": entry.start_time.isoformat(),
+                "project": project_title,
+                "description": entry.description or "",
+                "hours": round(hours, 2),
+                "rate": rate,
+                "amount": round(amount, 2)
+            })
+        
+        results.append({
+            "user_id": uid,
+            "user_name": user_name,
+            "total_hours": round(total_hours, 2),
+            "total_amount": round(total_amount, 2),
+            "entries": entry_details
+        })
+    
+    return results
+
+
+def get_client_invoicing_report(
+    db: Session,
+    organization_id: int,
+    start_date: datetime,
+    end_date: datetime,
+    company_id: int = None,
+    project_id: int = None
+) -> List[dict]:
+    """Generate client invoicing report.
+    Groups time entries by project, calculates billing using client rates (project hourly_rate).
+    Then groups line items by consultant + week with concatenated descriptions.
+    """
+    query = db.query(TimeEntry).join(
+        Project, TimeEntry.project_id == Project.id
+    ).filter(
+        TimeEntry.organization_id == organization_id,
+        TimeEntry.start_time >= start_date,
+        TimeEntry.start_time <= end_date,
+        TimeEntry.is_running == False,
+        TimeEntry.is_billable == True
+    )
+    
+    if company_id:
+        query = query.filter(Project.company_id == company_id)
+    
+    if project_id:
+        query = query.filter(TimeEntry.project_id == project_id)
+    
+    entries = query.order_by(TimeEntry.project_id, TimeEntry.start_time).all()
+    
+    # Group by project
+    from collections import defaultdict
+    project_groups = defaultdict(list)
+    for entry in entries:
+        project_groups[entry.project_id].append(entry)
+    
+    results = []
+    for pid, proj_entries in project_groups.items():
+        project = db.query(Project).filter(Project.id == pid).first()
+        if not project:
+            continue
+        
+        client_rate = project.hourly_rate or 0
+        company_name = ""
+        comp_id = None
+        if project.company_id:
+            company = db.query(Company).filter(Company.id == project.company_id).first()
+            if company:
+                company_name = company.name
+                comp_id = company.id
+        
+        # Group entries by consultant + week
+        week_groups = defaultdict(lambda: {"hours": 0, "descriptions": set()})
+        total_hours = 0
+        
+        for entry in proj_entries:
+            hours = (entry.duration_seconds or 0) / 3600
+            total_hours += hours
+            
+            user = db.query(User).filter(User.id == entry.user_id).first()
+            user_name = f"{user.first_name} {user.last_name}" if user else "Unknown"
+            
+            # Get the Monday of the week for this entry
+            entry_date = entry.start_time.date()
+            week_start = entry_date - __import__('datetime').timedelta(days=entry_date.weekday())
+            week_label = f"Week of {week_start.strftime('%B %d, %Y')}"
+            
+            key = (entry.user_id, user_name, week_label)
+            week_groups[key]["hours"] += hours
+            if entry.description:
+                week_groups[key]["descriptions"].add(entry.description)
+        
+        line_items = []
+        for (uid, uname, wlabel), data in sorted(week_groups.items(), key=lambda x: x[0][2]):
+            desc = "; ".join(sorted(data["descriptions"])) if data["descriptions"] else ""
+            hrs = round(data["hours"], 2)
+            line_items.append({
+                "consultant_name": uname,
+                "week_label": wlabel,
+                "description": desc,
+                "hours": hrs,
+                "rate": client_rate,
+                "amount": round(hrs * client_rate, 2)
+            })
+        
+        results.append({
+            "project_id": pid,
+            "project_title": project.title,
+            "company_id": comp_id,
+            "company_name": company_name,
+            "client_rate": client_rate,
+            "total_hours": round(total_hours, 2),
+            "total_client_amount": round(total_hours * client_rate, 2),
+            "line_items": line_items
+        })
+    
+    return results
