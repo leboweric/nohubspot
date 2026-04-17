@@ -394,7 +394,7 @@ export default function DashboardPage() {
       <MainLayout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold">{organizationName} Dashboard</h1>
+        <h1 className="text-xl font-semibold">{organizationName} Dashboard</h1>
         <p className="text-muted-foreground mt-1">Welcome back{firstName ? `, ${firstName}` : ''}. Here's what needs your attention today.</p>
         
       </div>
@@ -422,7 +422,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Active Deals</p>
-              <p className="text-2xl font-bold mt-1">
+              <p className="text-xl font-bold mt-1 tabular-nums">
                 {metricsLoading ? (
                   <span className="animate-pulse bg-gray-200 h-8 w-16 block rounded"></span>
                 ) : (
@@ -444,7 +444,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Pipeline Value</p>
-              <p className="text-2xl font-bold mt-1 text-gray-700">
+              <p className="text-xl font-bold mt-1 text-gray-700 tabular-nums">
                 {metricsLoading ? (
                   <span className="animate-pulse bg-gray-200 h-8 w-24 block rounded"></span>
                 ) : (
@@ -464,7 +464,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Active Projects</p>
-              <p className="text-2xl font-bold mt-1">
+              <p className="text-xl font-bold mt-1 tabular-nums">
                 {metricsLoading ? (
                   <span className="animate-pulse bg-gray-200 h-8 w-16 block rounded"></span>
                 ) : (
@@ -486,7 +486,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Project Value</p>
-              <p className="text-2xl font-bold mt-1 text-green-600">
+              <p className="text-xl font-bold mt-1 text-green-600 tabular-nums">
                 {metricsLoading ? (
                   <span className="animate-pulse bg-gray-200 h-8 w-24 block rounded"></span>
                 ) : (
@@ -506,7 +506,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Projected Hours</p>
-              <p className="text-2xl font-bold mt-1" style={{ color: themeColors.primary }}>
+              <p className="text-xl font-bold mt-1 tabular-nums" style={{ color: themeColors.primary }}>
                 {metricsLoading ? (
                   <span className="animate-pulse bg-gray-200 h-8 w-16 block rounded"></span>
                 ) : (

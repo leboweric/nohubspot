@@ -180,7 +180,7 @@
   }
   
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased text-sm;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
   
@@ -188,10 +188,17 @@
     @apply font-semibold tracking-tight;
   }
   
-  h1 { @apply text-3xl; }
-  h2 { @apply text-2xl; }
-  h3 { @apply text-xl; }
-  h4 { @apply text-lg; }
+  /* Typography scale: 12px (xs) / 14px (sm) / 16px (base) / 20px (xl) */
+  h1 { @apply text-xl; }
+  h2 { @apply text-lg; }
+  h3 { @apply text-base; }
+  h4 { @apply text-sm font-semibold; }
+  
+  /* Tabular nums for all numeric content */
+  td, th, .tabular-nums,
+  [data-numeric], .stat-value {
+    font-variant-numeric: tabular-nums;
+  }
   
   a {
     @apply transition-colors duration-200;
