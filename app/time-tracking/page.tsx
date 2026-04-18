@@ -541,12 +541,12 @@ export default function TimeTrackingPage() {
                         <div key={group.key}>
                           {/* Group summary row */}
                           <div className="group"
-                            style={{ display:'flex', alignItems:'center', height:50, paddingLeft:20, paddingRight:12, borderTop:'1px solid #f9fafb', overflow:'hidden', width:'100%', boxSizing:'border-box' as const }}
+                            style={{ display:'grid', gridTemplateColumns:'32px minmax(0,1.2fr) minmax(0,1fr) 24px 160px 72px auto', alignItems:'center', height:50, paddingLeft:20, paddingRight:12, borderTop:'1px solid #f9fafb', width:'100%', boxSizing:'border-box' as const }}
                             onMouseEnter={e => (e.currentTarget.style.background = '#fafafa')}
                             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
 
                             {/* Count badge or spacer */}
-                            <div style={{ flex:'0 0 auto', width:32, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                            <div style={{ display:'flex', alignItems:'center', justifyContent:'center' }}>
                               {hasMultiple ? (
                                 <button onClick={() => toggleGroup(day.key, group.key)}
                                   style={{ width:24, height:24, borderRadius:6, border:'1px solid #e5e7eb', background: isGroupExpanded ? '#eff6ff' : '#fff', color: isGroupExpanded ? '#3b82f6' : '#6b7280', fontSize:11, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1 }}
@@ -557,8 +557,8 @@ export default function TimeTrackingPage() {
                               ) : null}
                             </div>
 
-                            {/* Description */}
-                            <div style={{ flex:'1 1 0', minWidth:0, overflow:'hidden', cursor:'pointer' }}
+                            {/* Description — fixed proportion, truncated */}
+                            <div style={{ overflow:'hidden', cursor:'pointer' }}
                               onClick={() => { setEditing(latestEntry.id); setEditDesc(latestEntry.description||""); setEditProj(latestEntry.project_id||undefined) }}>
                               {latestEntry.description ? (
                                 <div style={{ fontSize:14, color:'#111', whiteSpace:'nowrap' as const, overflow:'hidden', textOverflow:'ellipsis' }}>{latestEntry.description}</div>
@@ -567,8 +567,8 @@ export default function TimeTrackingPage() {
                               )}
                             </div>
 
-                            {/* Project */}
-                            <div style={{ flex:'0 1 auto', minWidth:0, overflow:'hidden', display:'flex', alignItems:'center', gap:6, marginLeft:12, maxWidth:'30%' }}>
+                            {/* Project — fixed proportion, truncated */}
+                            <div style={{ overflow:'hidden', display:'flex', alignItems:'center', gap:6, paddingLeft:12 }}>
                               {group.project_title && (<>
                                 <span style={{ width:8, height:8, borderRadius:'50%', flexShrink:0, background: color(group.project_id || 0) }} />
                                 <span style={{ fontSize:13, fontWeight:500, color: color(group.project_id || 0), whiteSpace:'nowrap' as const, overflow:'hidden', textOverflow:'ellipsis' }}>
@@ -582,22 +582,24 @@ export default function TimeTrackingPage() {
                               </>)}
                             </div>
 
-                            {/* Right-aligned fixed block: Billable + Time range + Duration */}
-                            <div style={{ flex:'0 0 270px', display:'flex', alignItems:'center', justifyContent:'flex-end', marginLeft:8 }}>
-                              <div style={{ width:24, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                                <DollarSign style={{ width:14, height:14, color: group.is_billable ? '#e8a82a' : '#e5e7eb' }} />
-                              </div>
-                              <span style={{ fontSize:12, color:'#9ca3af', whiteSpace:'nowrap' as const, fontVariantNumeric:'tabular-nums', width:160, textAlign:'right' as const }}>
-                                {!hasMultiple ? `${time12(latestEntry.start_time)} - ${latestEntry.end_time ? time12(latestEntry.end_time) : '...'}` : ''}
-                              </span>
-                              <span style={{ fontSize:14, fontFamily:'ui-monospace, SFMono-Regular, monospace', color:'#374151', fontWeight:500, fontVariantNumeric:'tabular-nums', width:72, textAlign:'right' as const }}>
-                                {fmt(group.totalSeconds)}
-                              </span>
+                            {/* Billable icon — fixed 24px */}
+                            <div style={{ display:'flex', alignItems:'center', justifyContent:'center' }}>
+                              <DollarSign style={{ width:14, height:14, color: group.is_billable ? '#e8a82a' : '#e5e7eb' }} />
                             </div>
+
+                            {/* Time range — fixed 160px */}
+                            <span style={{ fontSize:12, color:'#9ca3af', whiteSpace:'nowrap' as const, fontVariantNumeric:'tabular-nums', textAlign:'right' as const }}>
+                              {!hasMultiple ? `${time12(latestEntry.start_time)} - ${latestEntry.end_time ? time12(latestEntry.end_time) : '...'}` : ''}
+                            </span>
+
+                            {/* Duration — fixed 72px */}
+                            <span style={{ fontSize:14, fontFamily:'ui-monospace, SFMono-Regular, monospace', color:'#374151', fontWeight:500, fontVariantNumeric:'tabular-nums', textAlign:'right' as const }}>
+                              {fmt(group.totalSeconds)}
+                            </span>
 
                             {/* Hover actions */}
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity"
-                              style={{ flex:'0 0 auto', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:2, marginLeft:4 }}>
+                              style={{ display:'flex', alignItems:'center', justifyContent:'flex-end', gap:2, marginLeft:4 }}>
                               <button onClick={() => resume(latestEntry)} style={{ padding:4, color:'#d1d5db', background:'transparent', border:'none', cursor:'pointer' }} title="Continue"
                                 onMouseEnter={e => (e.currentTarget.style.color = '#22c55e')} onMouseLeave={e => (e.currentTarget.style.color = '#d1d5db')}>
                                 <Play style={{ width:14, height:14, fill:'currentColor' }} />
@@ -634,11 +636,13 @@ export default function TimeTrackingPage() {
                             }
                             return (
                               <div key={entry.id} className="group"
-                                style={{ display:'flex', alignItems:'center', height:44, paddingLeft:52, paddingRight:12, borderTop:'1px solid #f3f4f6', background:'#fafafa', overflow:'hidden', width:'100%', boxSizing:'border-box' as const }}
+                                style={{ display:'grid', gridTemplateColumns:'32px minmax(0,1.2fr) minmax(0,1fr) 24px 160px 72px auto', alignItems:'center', height:44, paddingLeft:52, paddingRight:12, borderTop:'1px solid #f3f4f6', background:'#fafafa', width:'100%', boxSizing:'border-box' as const }}
                                 onMouseEnter={e => (e.currentTarget.style.background = '#f3f4f6')}
                                 onMouseLeave={e => (e.currentTarget.style.background = '#fafafa')}>
+                                {/* Spacer (no badge for sub-entries) */}
+                                <div />
                                 {/* Description */}
-                                <div style={{ flex:'1 1 0', minWidth:0, overflow:'hidden', cursor:'pointer', maxWidth:'50%' }}
+                                <div style={{ overflow:'hidden', cursor:'pointer' }}
                                   onClick={() => { setEditing(entry.id); setEditDesc(entry.description||""); setEditProj(entry.project_id||undefined) }}>
                                   {entry.description ? (
                                     <div style={{ fontSize:13, color:'#374151', whiteSpace:'nowrap' as const, overflow:'hidden', textOverflow:'ellipsis' }}>{entry.description}</div>
@@ -646,23 +650,23 @@ export default function TimeTrackingPage() {
                                     <div style={{ fontSize:13, color:'#c9c9c9', fontStyle:'italic' }}>Add description</div>
                                   )}
                                 </div>
-                                {/* Spacer */}
-                                <div style={{ flex:'1 1 0' }} />
-                                {/* Right-aligned fixed block: Billable + Time range + Duration */}
-                                <div style={{ flex:'0 0 270px', display:'flex', alignItems:'center', justifyContent:'flex-end', marginLeft:8 }}>
-                                  <div style={{ width:24, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                                    <DollarSign style={{ width:12, height:12, color: entry.is_billable ? '#e8a82a' : '#e5e7eb' }} />
-                                  </div>
-                                  <span style={{ fontSize:12, color:'#9ca3af', whiteSpace:'nowrap' as const, fontVariantNumeric:'tabular-nums', width:160, textAlign:'right' as const }}>
-                                    {time12(entry.start_time)} - {entry.end_time ? time12(entry.end_time) : '...'}
-                                  </span>
-                                  <span style={{ fontSize:13, fontFamily:'ui-monospace, SFMono-Regular, monospace', color:'#6b7280', fontWeight:500, fontVariantNumeric:'tabular-nums', width:72, textAlign:'right' as const }}>
-                                    {fmt(entry.duration_seconds||0)}
-                                  </span>
+                                {/* Spacer (project shown at group level) */}
+                                <div />
+                                {/* Billable icon */}
+                                <div style={{ display:'flex', alignItems:'center', justifyContent:'center' }}>
+                                  <DollarSign style={{ width:12, height:12, color: entry.is_billable ? '#e8a82a' : '#e5e7eb' }} />
                                 </div>
+                                {/* Time range */}
+                                <span style={{ fontSize:12, color:'#9ca3af', whiteSpace:'nowrap' as const, fontVariantNumeric:'tabular-nums', textAlign:'right' as const }}>
+                                  {time12(entry.start_time)} - {entry.end_time ? time12(entry.end_time) : '...'}
+                                </span>
+                                {/* Duration */}
+                                <span style={{ fontSize:13, fontFamily:'ui-monospace, SFMono-Regular, monospace', color:'#6b7280', fontWeight:500, fontVariantNumeric:'tabular-nums', textAlign:'right' as const }}>
+                                  {fmt(entry.duration_seconds||0)}
+                                </span>
                                 {/* Hover actions */}
                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                  style={{ flex:'0 0 auto', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:2, marginLeft:4 }}>
+                                  style={{ display:'flex', alignItems:'center', justifyContent:'flex-end', gap:2, marginLeft:4 }}>
                                   <button onClick={() => resume(entry)} style={{ padding:3, color:'#d1d5db', background:'transparent', border:'none', cursor:'pointer' }} title="Continue"
                                     onMouseEnter={e => (e.currentTarget.style.color = '#22c55e')} onMouseLeave={e => (e.currentTarget.style.color = '#d1d5db')}>
                                     <Play style={{ width:12, height:12, fill:'currentColor' }} />
