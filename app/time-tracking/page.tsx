@@ -307,7 +307,7 @@ export default function TimeTrackingPage() {
   return (
     <AuthGuard>
       <MainLayout>
-        <div className="min-h-screen" style={{ background: '#fff' }}>
+        <div className="min-h-screen" style={{ background: '#fff', overflow: 'hidden', maxWidth: '100%' }}>
 
           {/* ═══════════ TIMER BAR ═══════════ */}
           <div className="sticky top-0 z-30 bg-white" style={{ borderBottom: '1px solid #e5e5e5' }}>
@@ -446,12 +446,12 @@ export default function TimeTrackingPage() {
                       */}
                       return (
                         <div key={entry.id} className="group"
-                          style={{ display:'flex', alignItems:'center', height:50, paddingLeft:20, paddingRight:12, borderTop:'1px solid #f9fafb' }}
+                          style={{ display:'flex', alignItems:'center', height:50, paddingLeft:20, paddingRight:12, borderTop:'1px solid #f9fafb', overflow:'hidden', width:'100%', boxSizing:'border-box' as const }}
                           onMouseEnter={e => (e.currentTarget.style.background = '#fafafa')}
                           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
 
-                          {/* 1. Description — flex: 0 1 auto (natural width, can shrink, does NOT grow) */}
-                          <div style={{ flex:'0 1 auto', minWidth:0, overflow:'hidden', cursor:'pointer' }}
+                          {/* 1. Description — flex: 1 1 0, takes ~40% of available space */}
+                          <div style={{ flex:'1 1 0', minWidth:0, overflow:'hidden', cursor:'pointer', maxWidth:'40%' }}
                             onClick={() => { setEditing(entry.id); setEditDesc(entry.description||""); setEditProj(entry.project_id||undefined) }}>
                             {entry.description ? (
                               <div style={{ fontSize:14, color:'#111', whiteSpace:'nowrap' as const, overflow:'hidden', textOverflow:'ellipsis' }}>{entry.description}</div>
@@ -460,39 +460,39 @@ export default function TimeTrackingPage() {
                             )}
                           </div>
 
-                          {/* 2. Project — flex: 1 1 auto (THIS IS THE FLEX GROWER — fills remaining space) */}
-                          <div style={{ flex:'1 1 auto', minWidth:0, overflow:'hidden', display:'flex', alignItems:'center', gap:6, marginLeft: p ? 12 : 0 }}>
+                          {/* 2. Project — flex: 1 1 0, takes remaining space, truncates */}
+                          <div style={{ flex:'1 1 0', minWidth:0, overflow:'hidden', display:'flex', alignItems:'center', gap:6, marginLeft: p ? 12 : 0 }}>
                             {p && (<>
                               <span style={{ width:8, height:8, borderRadius:'50%', flexShrink:0, background: color(p.id) }} />
-                              <span style={{ fontSize:14, fontWeight:500, color: color(p.id), whiteSpace:'nowrap' as const, overflow:'hidden', textOverflow:'ellipsis' }}>
+                              <span style={{ fontSize:13, fontWeight:500, color: color(p.id), whiteSpace:'nowrap' as const, overflow:'hidden', textOverflow:'ellipsis' }}>
                                 {p.title}
                               </span>
                               {p.client && (
-                                <span style={{ fontSize:13, color:'#9ca3af', whiteSpace:'nowrap' as const, overflow:'hidden', textOverflow:'ellipsis', flexShrink:1 }}>
+                                <span style={{ fontSize:12, color:'#9ca3af', whiteSpace:'nowrap' as const, overflow:'hidden', textOverflow:'ellipsis', flexShrink:1, marginLeft:4 }}>
                                   {p.client}
                                 </span>
                               )}
                             </>)}
                           </div>
 
-                          {/* 3. Billable — flex: 0 0 auto, 30px */}
-                          <div style={{ flex:'0 0 auto', width:30, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                          {/* 3. Billable — flex: 0 0 auto, 24px */}
+                          <div style={{ flex:'0 0 auto', width:24, display:'flex', alignItems:'center', justifyContent:'center' }}>
                             <DollarSign style={{ width:14, height:14, color: entry.is_billable ? '#16a34a' : '#e5e7eb' }} />
                           </div>
 
-                          {/* 4. Time range + Duration — flex: 0 0 auto, ~252px */}
-                          <div style={{ flex:'0 0 auto', width:252, display:'flex', alignItems:'center', justifyContent:'flex-end', gap:12 }}>
+                          {/* 4. Time range + Duration — flex: 0 0 auto, compact */}
+                          <div style={{ flex:'0 0 auto', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:8, marginLeft:8 }}>
                             <span style={{ fontSize:12, color:'#9ca3af', whiteSpace:'nowrap' as const, fontVariantNumeric:'tabular-nums' }}>
                               {time12(entry.start_time)} - {entry.end_time ? time12(entry.end_time) : '...'}
                             </span>
-                            <span style={{ fontSize:14, fontFamily:'ui-monospace, SFMono-Regular, monospace', color:'#374151', fontWeight:500, fontVariantNumeric:'tabular-nums', minWidth:60, textAlign:'right' as const }}>
+                            <span style={{ fontSize:14, fontFamily:'ui-monospace, SFMono-Regular, monospace', color:'#374151', fontWeight:500, fontVariantNumeric:'tabular-nums', minWidth:56, textAlign:'right' as const }}>
                               {fmt(entry.duration_seconds||0)}
                             </span>
                           </div>
 
-                          {/* 5. Hover actions — flex: 0 0 auto, ~70px */}
+                          {/* 5. Hover actions — flex: 0 0 auto */}
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            style={{ flex:'0 0 auto', width:70, display:'flex', alignItems:'center', justifyContent:'flex-end', gap:2 }}>
+                            style={{ flex:'0 0 auto', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:2, marginLeft:4 }}>
                             <button onClick={() => resume(entry)} style={{ padding:4, color:'#d1d5db', background:'transparent', border:'none', cursor:'pointer' }} title="Continue"
                               onMouseEnter={e => (e.currentTarget.style.color = '#22c55e')} onMouseLeave={e => (e.currentTarget.style.color = '#d1d5db')}>
                               <Play style={{ width:14, height:14, fill:'currentColor' }} />
