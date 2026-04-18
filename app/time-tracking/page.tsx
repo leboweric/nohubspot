@@ -588,13 +588,11 @@ export default function TimeTrackingPage() {
                             </div>
 
                             {/* Time range + Duration */}
-                            <div style={{ flex:'0 0 auto', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:12, marginLeft:8 }}>
-                              {!hasMultiple && (
-                                <span style={{ fontSize:12, color:'#9ca3af', whiteSpace:'nowrap' as const, fontVariantNumeric:'tabular-nums' }}>
-                                  {time12(latestEntry.start_time)} - {latestEntry.end_time ? time12(latestEntry.end_time) : '...'}
-                                </span>
-                              )}
-                              <span style={{ fontSize:14, fontFamily:'ui-monospace, SFMono-Regular, monospace', color:'#374151', fontWeight:500, fontVariantNumeric:'tabular-nums', minWidth:56, textAlign:'right' as const }}>
+                            <div style={{ flex:'0 0 auto', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:0, marginLeft:8 }}>
+                              <span style={{ fontSize:12, color:'#9ca3af', whiteSpace:'nowrap' as const, fontVariantNumeric:'tabular-nums', width:160, textAlign:'right' as const }}>
+                                {!hasMultiple ? `${time12(latestEntry.start_time)} - ${latestEntry.end_time ? time12(latestEntry.end_time) : '...'}` : ''}
+                              </span>
+                              <span style={{ fontSize:14, fontFamily:'ui-monospace, SFMono-Regular, monospace', color:'#374151', fontWeight:500, fontVariantNumeric:'tabular-nums', width:72, textAlign:'right' as const }}>
                                 {fmt(group.totalSeconds)}
                               </span>
                             </div>
@@ -657,11 +655,11 @@ export default function TimeTrackingPage() {
                                   <DollarSign style={{ width:12, height:12, color: entry.is_billable ? '#e8a82a' : '#e5e7eb' }} />
                                 </div>
                                 {/* Time + Duration */}
-                                <div style={{ flex:'0 0 auto', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:12, marginLeft:8 }}>
-                                  <span style={{ fontSize:12, color:'#9ca3af', whiteSpace:'nowrap' as const, fontVariantNumeric:'tabular-nums' }}>
+                                <div style={{ flex:'0 0 auto', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:0, marginLeft:8 }}>
+                                  <span style={{ fontSize:12, color:'#9ca3af', whiteSpace:'nowrap' as const, fontVariantNumeric:'tabular-nums', width:160, textAlign:'right' as const }}>
                                     {time12(entry.start_time)} - {entry.end_time ? time12(entry.end_time) : '...'}
                                   </span>
-                                  <span style={{ fontSize:13, fontFamily:'ui-monospace, SFMono-Regular, monospace', color:'#6b7280', fontWeight:500, fontVariantNumeric:'tabular-nums', minWidth:56, textAlign:'right' as const }}>
+                                  <span style={{ fontSize:13, fontFamily:'ui-monospace, SFMono-Regular, monospace', color:'#6b7280', fontWeight:500, fontVariantNumeric:'tabular-nums', width:72, textAlign:'right' as const }}>
                                     {fmt(entry.duration_seconds||0)}
                                   </span>
                                 </div>
