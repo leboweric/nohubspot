@@ -1933,16 +1933,25 @@ def get_time_entries(
             Project.company_id == company_id
         )
     
-    if start_date:
-        query = query.filter(TimeEntry.start_time >= start_date)
-    
-    if end_date:
-        # If end_date has no time component (midnight), extend to end of day
-        # so that filtering by date includes all entries on that day
+    if start_date or end_date:
+        # Interpret naive dates as Central Time (matching Toggl workspace timezone)
+        # then convert to UTC for database comparison
         from datetime import timedelta
-        if end_date.hour == 0 and end_date.minute == 0 and end_date.second == 0:
-            end_date = end_date + timedelta(days=1)
-        query = query.filter(TimeEntry.start_time < end_date)
+        from zoneinfo import ZoneInfo
+        ct = ZoneInfo("America/Chicago")
+        
+        if start_date:
+            if start_date.tzinfo is None:
+                start_date = start_date.replace(tzinfo=ct)
+            query = query.filter(TimeEntry.start_time >= start_date)
+        
+        if end_date:
+            if end_date.tzinfo is None:
+                end_date = end_date.replace(tzinfo=ct)
+            # If end_date has no time component (midnight), extend to end of day
+            if end_date.hour == 0 and end_date.minute == 0 and end_date.second == 0:
+                end_date = end_date + timedelta(days=1)
+            query = query.filter(TimeEntry.start_time < end_date)
     
     if is_billable is not None:
         query = query.filter(TimeEntry.is_billable == is_billable)
@@ -2094,10 +2103,16 @@ def get_consultant_billing_report(
     user_id: int = None
 ) -> List[dict]:
     """Generate consultant billing report.
-    Groups time entries by consultant, calculates pay using consultant rates.
+    Groups time entries by consultant, calculates pay using Toggl billable rates.
     """
-    # If end_date has no time component (midnight), extend to end of day
+    # Interpret naive dates as Central Time (matching Toggl workspace timezone)
     from datetime import timedelta
+    from zoneinfo import ZoneInfo
+    ct = ZoneInfo("America/Chicago")
+    if start_date.tzinfo is None:
+        start_date = start_date.replace(tzinfo=ct)
+    if end_date.tzinfo is None:
+        end_date = end_date.replace(tzinfo=ct)
     if end_date.hour == 0 and end_date.minute == 0 and end_date.second == 0:
         end_date = end_date + timedelta(days=1)
     
@@ -2174,8 +2189,14 @@ def get_client_invoicing_report(
     Groups time entries by project, calculates billing using client rates (project hourly_rate).
     Then groups line items by consultant + week with concatenated descriptions.
     """
-    # If end_date has no time component (midnight), extend to end of day
+    # Interpret naive dates as Central Time (matching Toggl workspace timezone)
     from datetime import timedelta
+    from zoneinfo import ZoneInfo
+    ct = ZoneInfo("America/Chicago")
+    if start_date.tzinfo is None:
+        start_date = start_date.replace(tzinfo=ct)
+    if end_date.tzinfo is None:
+        end_date = end_date.replace(tzinfo=ct)
     if end_date.hour == 0 and end_date.minute == 0 and end_date.second == 0:
         end_date = end_date + timedelta(days=1)
     
