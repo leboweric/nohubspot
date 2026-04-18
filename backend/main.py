@@ -6268,12 +6268,14 @@ async def api_time_tracking_summary(
         project_breakdown[pid]["total_seconds"] += entry.duration_seconds or 0
         project_breakdown[pid]["entry_count"] += 1
     
-    # Group by day
+    # Group by day (using Central Time to match Toggl workspace timezone)
+    from zoneinfo import ZoneInfo
+    ct = ZoneInfo("America/Chicago")
     daily_breakdown = {}
     for entry in entries:
         if entry.is_running:
             continue
-        day_key = entry.start_time.strftime("%Y-%m-%d")
+        day_key = entry.start_time.astimezone(ct).strftime("%Y-%m-%d")
         if day_key not in daily_breakdown:
             daily_breakdown[day_key] = {"date": day_key, "total_seconds": 0, "entry_count": 0}
         daily_breakdown[day_key]["total_seconds"] += entry.duration_seconds or 0

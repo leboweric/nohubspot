@@ -1937,7 +1937,12 @@ def get_time_entries(
         query = query.filter(TimeEntry.start_time >= start_date)
     
     if end_date:
-        query = query.filter(TimeEntry.start_time <= end_date)
+        # If end_date has no time component (midnight), extend to end of day
+        # so that filtering by date includes all entries on that day
+        from datetime import timedelta
+        if end_date.hour == 0 and end_date.minute == 0 and end_date.second == 0:
+            end_date = end_date + timedelta(days=1)
+        query = query.filter(TimeEntry.start_time < end_date)
     
     if is_billable is not None:
         query = query.filter(TimeEntry.is_billable == is_billable)
@@ -2091,10 +2096,15 @@ def get_consultant_billing_report(
     """Generate consultant billing report.
     Groups time entries by consultant, calculates pay using consultant rates.
     """
+    # If end_date has no time component (midnight), extend to end of day
+    from datetime import timedelta
+    if end_date.hour == 0 and end_date.minute == 0 and end_date.second == 0:
+        end_date = end_date + timedelta(days=1)
+    
     query = db.query(TimeEntry).filter(
         TimeEntry.organization_id == organization_id,
         TimeEntry.start_time >= start_date,
-        TimeEntry.start_time <= end_date,
+        TimeEntry.start_time < end_date,
         TimeEntry.is_running == False
     )
     
@@ -2173,12 +2183,17 @@ def get_client_invoicing_report(
     Groups time entries by project, calculates billing using client rates (project hourly_rate).
     Then groups line items by consultant + week with concatenated descriptions.
     """
+    # If end_date has no time component (midnight), extend to end of day
+    from datetime import timedelta
+    if end_date.hour == 0 and end_date.minute == 0 and end_date.second == 0:
+        end_date = end_date + timedelta(days=1)
+    
     query = db.query(TimeEntry).join(
         Project, TimeEntry.project_id == Project.id
     ).filter(
         TimeEntry.organization_id == organization_id,
         TimeEntry.start_time >= start_date,
-        TimeEntry.start_time <= end_date,
+        TimeEntry.start_time < end_date,
         TimeEntry.is_running == False,
         TimeEntry.is_billable == True
     )
