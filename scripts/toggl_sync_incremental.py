@@ -3,6 +3,10 @@ Toggl Track → NHS Incremental Sync
 ====================================
 Pulls time entries from Toggl after the most recent entry in NHS
 and appends them to the database.
+
+Dedup uses (epoch, user_id, duration_seconds, description) to avoid
+duplicates regardless of timestamp format differences.
+All timestamps are stored in UTC.
 """
 import psycopg2
 import psycopg2.extras
@@ -10,7 +14,8 @@ import requests
 import json
 import time
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from dateutil import parser as dateparser
 
 # ─── Configuration ───────────────────────────────────────────────────────────
 NHS_DB_URL = "postgresql://postgres:KXGPGFkLkkicZQoOVyixcuNNVtOlJvSo@switchback.proxy.rlwy.net:27597/railway"
@@ -28,36 +33,78 @@ auth = (TOGGL_EMAIL, TOGGL_PASSWORD)
 headers = {"Content-Type": "application/json"}
 request_count = 0
 
-def toggl_get(path, params=None):
+def toggl_get(path, params=None, retries=3):
     global request_count
     request_count += 1
     time.sleep(1.1)
     url = f"{TOGGL_API_BASE}{path}"
-    r = requests.get(url, auth=auth, headers=headers, params=params)
-    if r.status_code == 429:
-        wait = int(r.headers.get("Retry-After", 60))
-        log.warning(f"Rate limited, sleeping {wait}s...")
-        time.sleep(wait + 5)
-        return toggl_get(path, params)
-    r.raise_for_status()
-    return r.json()
+    for attempt in range(retries):
+        try:
+            r = requests.get(url, auth=auth, headers=headers, params=params, timeout=60)
+            if r.status_code == 429:
+                wait = int(r.headers.get("Retry-After", 60))
+                log.warning(f"Rate limited, sleeping {wait}s...")
+                time.sleep(wait + 5)
+                return toggl_get(path, params)
+            r.raise_for_status()
+            return r.json()
+        except (requests.exceptions.ConnectionError, requests.exceptions.SSLError, requests.exceptions.ReadTimeout) as e:
+            if attempt < retries - 1:
+                log.warning(f"Connection error (attempt {attempt+1}/{retries}), retrying in 10s...")
+                time.sleep(10)
+            else:
+                raise
 
-def toggl_reports_post(path, body):
+def toggl_reports_post(path, body, retries=3):
     global request_count
     request_count += 1
     time.sleep(1.1)
     url = f"{TOGGL_REPORTS_BASE}{path}"
-    r = requests.post(url, auth=auth, headers=headers, json=body)
-    if r.status_code == 429:
-        wait = int(r.headers.get("Retry-After", 60))
-        log.warning(f"Rate limited, sleeping {wait}s...")
-        time.sleep(wait + 5)
-        return toggl_reports_post(path, body)
-    r.raise_for_status()
-    return r.json(), dict(r.headers)
+    for attempt in range(retries):
+        try:
+            r = requests.post(url, auth=auth, headers=headers, json=body, timeout=60)
+            if r.status_code == 429:
+                wait = int(r.headers.get("Retry-After", 60))
+                log.warning(f"Rate limited, sleeping {wait}s...")
+                time.sleep(wait + 5)
+                return toggl_reports_post(path, body)
+            r.raise_for_status()
+            return r.json(), dict(r.headers)
+        except (requests.exceptions.ConnectionError, requests.exceptions.SSLError, requests.exceptions.ReadTimeout) as e:
+            if attempt < retries - 1:
+                log.warning(f"Connection error (attempt {attempt+1}/{retries}), retrying in 10s...")
+                time.sleep(10)
+            else:
+                raise
+
+def to_utc_epoch(ts_str):
+    """Parse any timestamp string to UTC epoch seconds (integer)."""
+    dt = dateparser.parse(str(ts_str))
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return int(dt.timestamp())
+
+def to_utc_iso(ts_str):
+    """Parse any timestamp string and return UTC ISO format for DB storage."""
+    dt = dateparser.parse(str(ts_str))
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    utc_dt = dt.astimezone(timezone.utc)
+    return utc_dt.strftime("%Y-%m-%d %H:%M:%S+00:00")
+
+def db_connect():
+    for attempt in range(5):
+        try:
+            return psycopg2.connect(NHS_DB_URL, connect_timeout=15)
+        except psycopg2.OperationalError:
+            if attempt < 4:
+                log.warning(f"DB connection failed (attempt {attempt+1}/5), retrying in 10s...")
+                time.sleep(10)
+            else:
+                raise
 
 def main():
-    conn = psycopg2.connect(NHS_DB_URL)
+    conn = db_connect()
     cur = conn.cursor()
 
     # 1. Find the most recent entry date in NHS
@@ -65,9 +112,10 @@ def main():
     max_date = cur.fetchone()[0]
     log.info(f"Most recent NHS entry: {max_date}")
 
-    # Start syncing from the day after the most recent entry
-    sync_start = (max_date.date() + timedelta(days=0)).strftime("%Y-%m-%d")  # Same day to catch any missed
-    sync_end = datetime.now().strftime("%Y-%m-%d")
+    # Start syncing from the same day to catch any missed entries
+    sync_start = max_date.date().strftime("%Y-%m-%d")
+    # Use tomorrow's date to ensure today's entries are included (Toggl excludes end_date)
+    sync_end = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
     log.info(f"Syncing from {sync_start} to {sync_end}")
 
     # 2. Build project map (toggl_id -> nhs_id)
@@ -87,8 +135,6 @@ def main():
     cur.execute("SELECT id, email FROM users")
     nhs_users_by_email = {row[1]: row[0] for row in cur.fetchall()}
     
-    # Use /users endpoint (not /workspace_users) to get ALL users including those
-    # whose IDs appear in time entries but not in the workspace_users list
     toggl_members = toggl_get(f"/workspaces/{TOGGL_WORKSPACE_ID}/users")
     user_map = {}
     for m in toggl_members:
@@ -102,13 +148,22 @@ def main():
     toggl_tags = toggl_get(f"/workspaces/{TOGGL_WORKSPACE_ID}/tags")
     tag_map = {t["id"]: t["name"] for t in toggl_tags}
 
-    # 5. Get existing entry start_times to avoid duplicates
+    # 5. Build epoch-based dedup set from existing entries
+    #    Uses (epoch, user_id, duration_seconds, description[:100]) as the key
     cur.execute(
-        "SELECT start_time FROM time_entries WHERE organization_id = %s AND start_time >= %s",
+        """SELECT start_time, user_id, duration_seconds, description 
+           FROM time_entries 
+           WHERE organization_id = %s AND start_time >= %s""",
         (NHS_ORG_ID, sync_start)
     )
-    existing_starts = set(str(row[0]) for row in cur.fetchall())
-    log.info(f"Found {len(existing_starts)} existing entries in sync range to skip")
+    existing_keys = set()
+    for row in cur.fetchall():
+        epoch = to_utc_epoch(row[0])
+        uid = row[1]
+        dur = row[2] or 0
+        desc = (row[3] or "")[:100]
+        existing_keys.add((epoch, uid, dur, desc))
+    log.info(f"Found {len(existing_keys)} existing entry keys in sync range for dedup")
 
     # 6. Fetch and import entries
     total_imported = 0
@@ -127,7 +182,7 @@ def main():
             "start_date": sync_start,
             "end_date": sync_end,
             "page_size": 50,
-            "enrich_response": True,
+            "enrich_response": False,
             "order_by": "date",
             "order_dir": "ASC",
         }
@@ -179,18 +234,24 @@ def main():
                 if not te_start:
                     continue
 
-                # Skip duplicates
-                if te_start in existing_starts:
+                # Epoch-based dedup: (epoch, user_id, duration, description)
+                epoch = to_utc_epoch(te_start)
+                key = (epoch, nhs_user_id, te_seconds, (description or "")[:100])
+                if key in existing_keys:
                     total_dupes += 1
                     continue
 
+                # Convert to UTC for consistent storage
+                start_utc = to_utc_iso(te_start)
+                stop_utc = to_utc_iso(te_stop) if te_stop else None
+
                 batch_values.append((
                     NHS_ORG_ID, nhs_user_id, nhs_project_id,
-                    description, te_start, te_stop, te_seconds,
+                    description, start_utc, stop_utc, te_seconds,
                     is_billable, json.dumps(entry_tags) if entry_tags else None,
                     False  # is_running
                 ))
-                existing_starts.add(te_start)
+                existing_keys.add(key)
 
         if batch_values:
             psycopg2.extras.execute_values(
@@ -205,6 +266,8 @@ def main():
             total_imported += len(batch_values)
             conn.commit()
             log.info(f"  Page {page_num}: imported {len(batch_values)} entries (total: {total_imported}, dupes skipped: {total_dupes})")
+        else:
+            log.info(f"  Page {page_num}: 0 new entries (dupes: {total_dupes})")
 
         # Check for next page
         next_row = resp_headers.get("X-Next-Row-Number")
