@@ -44,23 +44,26 @@ function fmt(s: number) {
 }
 
 function time12(iso: string) {
-  return new Date(iso).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true })
+  return new Date(iso).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true, timeZone:'America/Chicago' })
 }
 
 function dateLabel(iso: string) {
-  const d = new Date(iso)
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const entry = new Date(d.getFullYear(), d.getMonth(), d.getDate())
-  const diff = Math.floor((today.getTime() - entry.getTime()) / 86400000)
+  // Use Central Time for date grouping to match Toggl workspace timezone
+  const ct = new Date(iso).toLocaleDateString('en-US', { timeZone:'America/Chicago', year:'numeric', month:'2-digit', day:'2-digit' })
+  const [mm, dd, yyyy] = ct.split('/')
+  const entryDate = new Date(+yyyy, +mm - 1, +dd)
+  const nowCt = new Date(new Date().toLocaleDateString('en-US', { timeZone:'America/Chicago', year:'numeric', month:'2-digit', day:'2-digit' }))
+  const diff = Math.floor((nowCt.getTime() - entryDate.getTime()) / 86400000)
   if (diff === 0) return 'Today'
   if (diff === 1) return 'Yesterday'
-  return d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' })
+  return new Date(iso).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', timeZone:'America/Chicago' })
 }
 
 function dateKey(iso: string) {
-  const d = new Date(iso)
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  // Use Central Time for date grouping to match Toggl workspace timezone
+  const ct = new Date(iso).toLocaleDateString('en-US', { timeZone:'America/Chicago', year:'numeric', month:'2-digit', day:'2-digit' })
+  const [mm, dd, yyyy] = ct.split('/')
+  return `${yyyy}-${mm}-${dd}`
 }
 
 // ── Entry Grouping (Toggl-style) ────────────────────────────────────────────
