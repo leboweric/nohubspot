@@ -24,7 +24,7 @@ export default function CompaniesPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCompanies, setTotalCompanies] = useState(0)
   const [recordsPerPage, setRecordsPerPage] = useState(100)
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid')
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [isSearching, setIsSearching] = useState(false)
 
@@ -688,12 +688,12 @@ export default function CompaniesPage() {
             </>
           ) : (
             // List View (existing table)
-            <div className="bg-card border rounded-lg overflow-hidden shadow-sm">
+            <div className="bg-card border border-l-[3px] rounded-lg overflow-hidden shadow-sm" style={{ borderLeftColor: 'var(--color-primary)' }}>
               <table className="w-full">
                 <thead>
-                  <tr className="border-b">
+                  <tr className="border-b bg-gray-50/50">
                     <th 
-                      className="text-left px-4 py-3 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground"
+                      className="text-left px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground"
                       onClick={() => {
                         if (sortBy === 'name') {
                           setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
@@ -706,11 +706,12 @@ export default function CompaniesPage() {
                     >
                       Company {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
                     </th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Account Owner</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Phone</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">City, State</th>
+                    <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Contacts</th>
+                    <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Owner</th>
+                    <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Phone</th>
+                    <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Location</th>
                     <th 
-                      className="text-left px-4 py-3 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground"
+                      className="text-left px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground"
                       onClick={() => {
                         if (sortBy === 'postal_code') {
                           setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
@@ -721,25 +722,25 @@ export default function CompaniesPage() {
                         setCurrentPage(1)
                       }}
                     >
-                      Zip Code {sortBy === 'postal_code' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      Zip {sortBy === 'postal_code' && (sortOrder === 'asc' ? '↑' : '↓')}
                     </th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Industry</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Status</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Actions</th>
+                    <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                    <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {(Array.isArray(filteredCompanies) ? filteredCompanies : []).map((company) => (
-                    <tr key={company.id} className="hover:bg-accent/50 transition-colors">
-                      <td className="px-4 py-3">
-                        <div>
-                          <div className="font-medium">{company.name}</div>
-                          <div className="text-sm text-muted-foreground">{company.website || 'No website'}</div>
-                        </div>
+                    <tr key={company.id} className="hover:bg-accent/50 transition-colors group">
+                      <td className="px-4 py-2">
+                        <a href={`/companies/${company.id}`} className="font-medium text-sm hover:underline" style={{ color: 'var(--color-primary)' }}>
+                          {company.name}
+                        </a>
+                        {company.industry && <div className="text-xs text-muted-foreground">{company.industry}</div>}
                       </td>
-                      <td className="px-4 py-3 text-sm">{company.primary_account_owner_name || '-'}</td>
-                      <td className="px-4 py-3 text-sm">{company.phone || '-'}</td>
-                      <td className="px-4 py-3 text-sm">
+                      <td className="px-4 py-2 text-sm tabular-nums text-center">{company.contact_count || 0}</td>
+                      <td className="px-4 py-2 text-sm text-muted-foreground">{company.primary_account_owner_name || '-'}</td>
+                      <td className="px-4 py-2 text-sm text-muted-foreground">{company.phone || '-'}</td>
+                      <td className="px-4 py-2 text-sm text-muted-foreground">
                         {company.city || company.state ? (
                           <span>
                             {company.city}
@@ -748,28 +749,24 @@ export default function CompaniesPage() {
                           </span>
                         ) : '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm font-medium">{company.postal_code || '-'}</td>
-                      <td className="px-4 py-3 text-sm">{company.industry || '-'}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                      <td className="px-4 py-2 text-sm tabular-nums text-muted-foreground">{company.postal_code || '-'}</td>
+                      <td className="px-4 py-2">
+                        <span className={`inline-flex px-2 py-0.5 text-xs rounded-full ${
                           company.status === "Active" 
-                            ? "bg-gray-100 text-gray-700" 
+                            ? "bg-green-50 text-green-700" 
                             : "bg-gray-50 text-gray-500"
                         }`}>
                           {company.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm">
-                        <div className="flex gap-3">
-                          <a href={`/companies/${company.id}`} className="hover:underline" style={{ color: 'var(--color-primary)' }}>
-                            View
-                          </a>
-                          <a href={`/companies/${company.id}/edit`} className="hover:underline" style={{ color: 'var(--color-primary)' }}>
+                      <td className="px-4 py-2 text-right">
+                        <div className="flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                          <a href={`/companies/${company.id}/edit`} className="text-xs hover:underline" style={{ color: 'var(--color-primary)' }}>
                             Edit
                           </a>
                           <button
                             onClick={() => handleDelete(company.id, company.name)}
-                            className="text-gray-600 hover:underline"
+                            className="text-xs text-gray-400 hover:text-red-600 hover:underline"
                           >
                             Delete
                           </button>

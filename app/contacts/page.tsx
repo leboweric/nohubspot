@@ -23,7 +23,7 @@ export default function ContactsPage() {
       const saved = localStorage.getItem('contacts_view_mode')
       if (saved === 'list' || saved === 'grid') return saved
     }
-    return 'grid'
+    return 'list'
   })
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [isSearching, setIsSearching] = useState(false)
@@ -477,62 +477,61 @@ export default function ContactsPage() {
         </>
       ) : (
         /* List View */
-        <div className="bg-card border rounded-lg overflow-hidden shadow-sm">
+        <div className="bg-card border border-l-[3px] rounded-lg overflow-hidden shadow-sm" style={{ borderLeftColor: 'var(--color-primary)' }}>
           <>
             <table className="w-full">
               <thead>
-                <tr className="border-b">
-                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('name')}>
+                <tr className="border-b bg-gray-50/50">
+                  <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('name')}>
                     <span className="flex items-center">Name<SortIcon column="name" /></span>
                   </th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Email</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Phone</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('company')}>
+                  <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</th>
+                  <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Phone</th>
+                  <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => handleSort('company')}>
                     <span className="flex items-center">Company<SortIcon column="company" /></span>
                   </th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Status</th>
-                  <th className="text-left px-4 py-3 text-sm font-medium text-muted-foreground">Actions</th>
+                  <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                  <th className="text-right px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {(Array.isArray(filteredContacts) ? filteredContacts : []).map((contact) => (
-                  <tr key={contact.id} className="hover:bg-accent/50 transition-colors">
-                    <td className="px-4 py-3">
+                  <tr key={contact.id} className="hover:bg-accent/50 transition-colors group">
+                    <td className="px-4 py-2">
                       <div>
-                        <div className="font-medium flex items-center space-x-2">
-                          <span>{contact.first_name} {contact.last_name}</span>
+                        <div className="flex items-center space-x-2">
+                          <a href={`/contacts/${contact.id}`} className="font-medium text-sm hover:underline" style={{ color: 'var(--color-primary)' }}>
+                            {contact.first_name} {contact.last_name}
+                          </a>
                           {contact.shared_with_team && (
-                            <span className="text-xs px-2 py-0.5 rounded-full" title="Shared with team" style={{ backgroundColor: 'var(--color-primary-light)', color: 'var(--color-primary-dark)' }}>
+                            <span className="text-xs px-1.5 py-0.5 rounded-full" title="Shared with team" style={{ backgroundColor: 'var(--color-primary-light)', color: 'var(--color-primary-dark)' }}>
                               Team
                             </span>
                           )}
                         </div>
-                        <div className="text-sm text-muted-foreground">{contact.title || 'No title'}</div>
+                        {contact.title && <div className="text-xs text-muted-foreground">{contact.title}</div>}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm">{contact.email}</td>
-                    <td className="px-4 py-3 text-sm">{contact.phone || "-"}</td>
-                    <td className="px-4 py-3 text-sm">{contact.company_name || 'N/A'}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                    <td className="px-4 py-2 text-sm text-muted-foreground">{contact.email}</td>
+                    <td className="px-4 py-2 text-sm text-muted-foreground">{contact.phone || "-"}</td>
+                    <td className="px-4 py-2 text-sm text-muted-foreground">{contact.company_name || 'N/A'}</td>
+                    <td className="px-4 py-2">
+                      <span className={`inline-flex px-2 py-0.5 text-xs rounded-full ${
                         contact.status === "Active" 
-                          ? "bg-gray-100 text-gray-700" 
+                          ? "bg-green-50 text-green-700" 
                           : "bg-gray-50 text-gray-500"
                       }`}>
                         {contact.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm">
-                      <div className="flex gap-3">
-                        <a href={`/contacts/${contact.id}`} className="hover:underline" style={{ color: 'var(--color-primary)' }}>
-                          View
-                        </a>
-                        <a href={`/contacts/${contact.id}/edit`} className="hover:underline" style={{ color: 'var(--color-primary)' }}>
+                    <td className="px-4 py-2 text-right">
+                      <div className="flex gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                        <a href={`/contacts/${contact.id}/edit`} className="text-xs hover:underline" style={{ color: 'var(--color-primary)' }}>
                           Edit
                         </a>
                         <button
                           onClick={() => handleDelete(contact.id, `${contact.first_name} ${contact.last_name}`)}
-                          className="text-gray-600 hover:underline"
+                          className="text-xs text-gray-400 hover:text-red-600 hover:underline"
                         >
                           Delete
                         </button>
