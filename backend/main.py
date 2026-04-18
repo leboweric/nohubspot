@@ -6307,6 +6307,8 @@ def _enrich_time_entry(db: Session, entry: TimeEntry) -> dict:
         "duration_seconds": entry.duration_seconds,
         "is_billable": entry.is_billable,
         "is_running": entry.is_running,
+        "hourly_rate_cents": entry.hourly_rate_cents or 0,
+        "billable_amount_cents": entry.billable_amount_cents or 0,
         "tags": entry.tags or [],
         "created_at": entry.created_at,
         "updated_at": entry.updated_at,

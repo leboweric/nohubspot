@@ -225,7 +225,13 @@ def main():
                     log.warning(f"  No NHS user for Toggl uid={toggl_uid}, desc='{description[:50]}'")
                 continue
 
+            # Get Toggl billable rate info
+            hourly_rate_cents = entry.get("hourly_rate_in_cents", 0) or 0
+            total_billable_cents = entry.get("billable_amount_in_cents", 0) or 0
+
             time_entries_list = entry.get("time_entries", [])
+            total_te_seconds = sum(t.get("seconds", 0) for t in time_entries_list)
+
             for te in time_entries_list:
                 te_start = te.get("start")
                 te_stop = te.get("stop")
@@ -233,6 +239,12 @@ def main():
 
                 if not te_start:
                     continue
+
+                # Calculate per-entry billable amount (proportional if grouped)
+                if total_te_seconds > 0 and len(time_entries_list) > 1:
+                    entry_billable_cents = int(total_billable_cents * te_seconds / total_te_seconds)
+                else:
+                    entry_billable_cents = total_billable_cents
 
                 # Epoch-based dedup: (epoch, user_id, duration, description)
                 epoch = to_utc_epoch(te_start)
@@ -249,7 +261,8 @@ def main():
                     NHS_ORG_ID, nhs_user_id, nhs_project_id,
                     description, start_utc, stop_utc, te_seconds,
                     is_billable, json.dumps(entry_tags) if entry_tags else None,
-                    False  # is_running
+                    False,  # is_running
+                    hourly_rate_cents, entry_billable_cents
                 ))
                 existing_keys.add(key)
 
@@ -258,10 +271,11 @@ def main():
                 cur,
                 """INSERT INTO time_entries 
                    (organization_id, user_id, project_id, description, start_time, end_time, 
-                    duration_seconds, is_billable, tags, is_running)
+                    duration_seconds, is_billable, tags, is_running,
+                    hourly_rate_cents, billable_amount_cents)
                    VALUES %s""",
                 batch_values,
-                template="(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                template="(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             )
             total_imported += len(batch_values)
             conn.commit()

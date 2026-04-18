@@ -2132,18 +2132,9 @@ def get_consultant_billing_report(
             hours = (entry.duration_seconds or 0) / 3600
             total_hours += hours
             
-            # Get consultant rate for this project/user combo
-            rate = 0
-            if entry.project_id:
-                member_rate = db.query(ProjectMemberRate).filter(
-                    ProjectMemberRate.project_id == entry.project_id,
-                    ProjectMemberRate.user_id == uid,
-                    ProjectMemberRate.organization_id == organization_id
-                ).first()
-                if member_rate:
-                    rate = member_rate.consultant_rate
-            
-            amount = hours * rate
+            # Use Toggl billable rate stored on the entry (in cents)
+            rate = (entry.hourly_rate_cents or 0) / 100
+            amount = (entry.billable_amount_cents or 0) / 100
             total_amount += amount
             
             project_title = ""

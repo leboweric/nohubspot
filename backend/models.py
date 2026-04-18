@@ -964,6 +964,8 @@ class TimeEntry(Base):
     
     # Billing
     is_billable = Column(Boolean, default=True)
+    hourly_rate_cents = Column(Integer, default=0)  # Toggl billable rate in cents
+    billable_amount_cents = Column(Integer, default=0)  # Toggl billable amount in cents
     
     # Tags
     tags = Column(JSON, nullable=True)  # Array of tag strings
