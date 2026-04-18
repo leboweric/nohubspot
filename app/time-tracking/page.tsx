@@ -10,7 +10,8 @@ import {
 } from "@/lib/api"
 import { 
   Play, Square, Clock, Plus, Trash2, Edit2, Check, X,
-  ChevronDown, ChevronRight, DollarSign, Search
+  ChevronDown, ChevronRight, ChevronLeft, DollarSign, Search,
+  BarChart3, List, CalendarDays
 } from "lucide-react"
 
 // ── Constants ───────────────────────────────────────────────────────────────
@@ -62,9 +63,54 @@ function dateKey(iso: string) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 }
 
-interface DayGroup { label: string; key: string; entries: TimeEntry[]; total: number }
+// ── Entry Grouping (Toggl-style) ────────────────────────────────────────────
 
-function groupByDate(entries: TimeEntry[]): DayGroup[] {
+interface EntryGroup {
+  key: string
+  project_id: number | null
+  project_title: string | null
+  company_name: string | null
+  entries: TimeEntry[]
+  totalSeconds: number
+  is_billable: boolean
+}
+
+function groupEntries(entries: TimeEntry[], projects: Project[]): EntryGroup[] {
+  const map: Record<string, EntryGroup> = {}
+  for (const e of entries) {
+    const pid = e.project_id || 0
+    const k = `${pid}`
+    if (!map[k]) {
+      const p = e.project_title ? { title: e.project_title, client: e.company_name }
+        : projects.find(p => p.id === e.project_id)
+          ? { title: projects.find(p => p.id === e.project_id)!.title, client: projects.find(p => p.id === e.project_id)!.company_name }
+          : null
+      map[k] = {
+        key: k,
+        project_id: e.project_id,
+        project_title: p?.title || null,
+        company_name: p?.client || null,
+        entries: [],
+        totalSeconds: 0,
+        is_billable: false,
+      }
+    }
+    map[k].entries.push(e)
+    map[k].totalSeconds += (e.duration_seconds || 0)
+    if (e.is_billable) map[k].is_billable = true
+  }
+  return Object.values(map).sort((a, b) => {
+    const aTime = Math.max(...a.entries.map(e => new Date(e.start_time).getTime()))
+    const bTime = Math.max(...b.entries.map(e => new Date(e.start_time).getTime()))
+    return bTime - aTime
+  })
+}
+
+// ── Day Groups ──────────────────────────────────────────────────────────────
+
+interface DayGroup { label: string; key: string; entries: TimeEntry[]; total: number; entryGroups: EntryGroup[] }
+
+function groupByDate(entries: TimeEntry[], projects: Project[]): DayGroup[] {
   const map: Record<string, { label: string; entries: TimeEntry[] }> = {}
   for (const e of entries) {
     const k = dateKey(e.start_time)
@@ -77,6 +123,10 @@ function groupByDate(entries: TimeEntry[]): DayGroup[] {
       key: k, label: g.label,
       entries: g.entries.sort((a,b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime()),
       total: g.entries.reduce((s,e) => s + (e.duration_seconds||0), 0),
+      entryGroups: groupEntries(
+        g.entries.sort((a,b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime()),
+        projects
+      ),
     }))
     .filter(g => g.total > 0 || g.entries.length > 0)
 }
@@ -89,6 +139,22 @@ function weekTotal(entries: TimeEntry[]) {
   const sun = new Date(mon.getTime() + 7*86400000)
   return entries.filter(e => { const d = new Date(e.start_time); return d >= mon && d < sun })
     .reduce((s,e) => s + (e.duration_seconds||0), 0)
+}
+
+function getWeekRange(offset: number) {
+  const now = new Date()
+  const dow = now.getDay()
+  const off = dow === 0 ? 6 : dow - 1
+  const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() - off + (offset * 7))
+  const sun = new Date(mon.getTime() + 6*86400000)
+  return { start: mon, end: sun }
+}
+
+function formatWeekLabel(offset: number) {
+  if (offset === 0) return 'This week'
+  const { start, end } = getWeekRange(offset)
+  const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
+  return `${start.toLocaleDateString('en-US', opts)} – ${end.toLocaleDateString('en-US', opts)}`
 }
 
 // ── Project Selector ────────────────────────────────────────────────────────
@@ -191,7 +257,10 @@ export default function TimeTrackingPage() {
   const [editDesc, setEditDesc] = useState("")
   const [editProj, setEditProj] = useState<number|undefined>()
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [initCollapse, setInitCollapse] = useState(false)
+  const [weekOffset, setWeekOffset] = useState(0)
+  const [viewMode, setViewMode] = useState<'list'|'week'>('list')
 
   // ── Effects ──
   useEffect(() => { load() }, [])
@@ -222,7 +291,7 @@ export default function TimeTrackingPage() {
       setEntries(done); setProjects(p)
       if (t) { setDesc(t.description||""); setProjId(t.project_id||undefined); setBillable(t.is_billable) }
       if (!initCollapse) {
-        const groups = groupByDate(done)
+        const groups = groupByDate(done, p)
         const c = new Set<string>()
         groups.forEach((g,i) => { if (i >= 7) c.add(g.key) })
         setCollapsed(c); setInitCollapse(true)
@@ -286,59 +355,57 @@ export default function TimeTrackingPage() {
 
   const resume = async (e: TimeEntry) => { await start(e.description||"", e.project_id||undefined, e.is_billable) }
 
-  const toggle = (k: string) => setCollapsed(prev => {
+  const toggleDay = (k: string) => setCollapsed(prev => {
     const n = new Set(prev); if (n.has(k)) n.delete(k); else n.add(k); return n
   })
 
+  const toggleGroup = (dayKey: string, groupKey: string) => {
+    const k = `${dayKey}:${groupKey}`
+    setExpandedGroups(prev => {
+      const n = new Set(prev); if (n.has(k)) n.delete(k); else n.add(k); return n
+    })
+  }
+
   // ── Computed ──
-  const days = groupByDate(entries)
+  const days = groupByDate(entries, projects)
+
+  // Filter by week if not "all dates"
+  const filteredDays = viewMode === 'week' ? (() => {
+    const { start, end } = getWeekRange(weekOffset)
+    const startStr = dateKey(start.toISOString())
+    const endStr = dateKey(end.toISOString())
+    return days.filter(d => d.key >= startStr && d.key <= endStr)
+  })() : days
+
   const todayKey = dateKey(new Date().toISOString())
   const todayTot = (days.find(g => g.key === todayKey)?.total || 0) + (timer?.is_running ? elapsed : 0)
   const weekTot = weekTotal(entries) + (timer?.is_running ? elapsed : 0)
-
-  const proj = (e: TimeEntry) => {
-    if (e.project_title) return { id: e.project_id||0, title: e.project_title, client: e.company_name }
-    const p = projects.find(p => p.id === e.project_id)
-    if (p) return { id: p.id, title: p.title, client: p.company_name }
-    return null
-  }
 
   // ── Render ──
   return (
     <AuthGuard>
       <MainLayout>
-        <div className="min-h-screen" style={{ background: '#fff', overflow: 'hidden', maxWidth: '100%' }}>
+        <div style={{ minHeight: '100vh', background: '#fff', overflow: 'hidden', maxWidth: '100%' }}>
 
           {/* ═══════════ TIMER BAR ═══════════ */}
           <div className="sticky top-0 z-30 bg-white" style={{ borderBottom: '1px solid #e5e5e5' }}>
             <div style={{ display:'flex', alignItems:'center', height:56, paddingLeft:20, paddingRight:12, gap:8 }}>
-              {/* Description input */}
               <input type="text" value={desc}
                 onChange={e => { setDesc(e.target.value); if (timer?.is_running) timeTrackingAPI.updateEntry(timer.id, { description: e.target.value }) }}
                 placeholder="What are you working on?"
                 style={{ flex:'1 1 auto', minWidth:0, border:'none', outline:'none', fontSize:14, color:'#111', background:'transparent' }}
               />
-
-              {/* Project picker */}
               <ProjectPicker projects={projects} value={projId}
                 onChange={id => { setProjId(id); if (timer?.is_running) timeTrackingAPI.updateEntry(timer.id, { project_id: id||null } as any) }} />
-
-              {/* Billable */}
               <button onClick={() => { const n = !billable; setBillable(n); if (timer?.is_running) timeTrackingAPI.updateEntry(timer.id, { is_billable: n } as any) }}
                 style={{ width:30, height:30, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:4, color: billable ? '#16a34a' : '#d1d5db', cursor:'pointer', background:'transparent', border:'none' }}
                 title={billable ? "Billable" : "Non-billable"}>
                 <DollarSign style={{ width:16, height:16 }} />
               </button>
-
-              {/* Divider */}
               <div style={{ width:1, height:28, background:'#e5e5e5' }} />
-
-              {/* Timer display */}
               <span style={{ fontFamily:'ui-monospace, SFMono-Regular, monospace', fontSize:17, minWidth:85, textAlign:'right' as const, fontVariantNumeric:'tabular-nums', color: timer?.is_running ? '#e11d48' : '#9ca3af', fontWeight: timer?.is_running ? 600 : 400 }}>
                 {timer?.is_running ? fmt(elapsed) : '0:00:00'}
               </span>
-
-              {/* Start/Stop button */}
               {timer?.is_running ? (
                 <button onClick={stop} style={{ width:36, height:36, borderRadius:'50%', background:'#ef4444', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }} title="Stop">
                   <Square style={{ width:14, height:14, color:'#fff', fill:'#fff' }} />
@@ -352,16 +419,12 @@ export default function TimeTrackingPage() {
                   <Play style={{ width:14, height:14, color:'#fff', fill:'#fff', marginLeft:2 }} />
                 </button>
               )}
-
-              {/* Manual mode toggle */}
               <button onClick={() => setManual(!manual)}
                 style={{ padding:6, borderRadius:4, background: manual ? '#eff6ff' : 'transparent', color: manual ? '#2563eb' : '#9ca3af', border:'none', cursor:'pointer' }}
                 title={manual ? "Timer mode" : "Manual mode"}>
                 <Clock style={{ width:16, height:16 }} />
               </button>
             </div>
-
-            {/* Manual mode inputs */}
             {manual && (
               <div style={{ display:'flex', alignItems:'center', gap:12, paddingLeft:20, paddingRight:12, paddingBottom:10, paddingTop:4, borderTop:'1px solid #f3f4f6', fontSize:13 }}>
                 <span style={{ color:'#9ca3af', fontSize:11 }}>Date:</span>
@@ -375,14 +438,61 @@ export default function TimeTrackingPage() {
             )}
           </div>
 
-          {/* ═══════════ STATS BAR ═══════════ */}
-          <div style={{ borderBottom:'1px solid #e5e5e5', background:'#fafafa', display:'flex', alignItems:'center', height:34, paddingLeft:20, gap:24 }}>
-            <span style={{ fontSize:11, letterSpacing:'0.05em', textTransform:'uppercase' as const, color:'#6b7280' }}>
-              Today total <span style={{ fontFamily:'ui-monospace, SFMono-Regular, monospace', fontWeight:600, color:'#374151', marginLeft:4, fontSize:12, fontVariantNumeric:'tabular-nums' }}>{fmt(todayTot)}</span>
-            </span>
-            <span style={{ fontSize:11, letterSpacing:'0.05em', textTransform:'uppercase' as const, color:'#6b7280' }}>
-              Week total <span style={{ fontFamily:'ui-monospace, SFMono-Regular, monospace', fontWeight:600, color:'#374151', marginLeft:4, fontSize:12, fontVariantNumeric:'tabular-nums' }}>{fmt(weekTot)}</span>
-            </span>
+          {/* ═══════════ DATE NAVIGATION BAR ═══════════ */}
+          <div style={{ borderBottom:'1px solid #e5e5e5', background:'#fafafa', display:'flex', alignItems:'center', height:42, paddingLeft:16, paddingRight:16, gap:8, justifyContent:'space-between' }}>
+            {/* Left: Week navigation */}
+            <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+              <button onClick={() => { setViewMode('week'); setWeekOffset(w => w - 1) }}
+                style={{ width:28, height:28, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:4, border:'1px solid #e5e7eb', background:'#fff', cursor:'pointer', color:'#6b7280' }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#f3f4f6')}
+                onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+                <ChevronLeft style={{ width:14, height:14 }} />
+              </button>
+              <button onClick={() => { setViewMode(viewMode === 'list' ? 'week' : 'list'); setWeekOffset(0) }}
+                style={{ padding:'4px 12px', borderRadius:4, border:'1px solid #e5e7eb', background:'#fff', cursor:'pointer', fontSize:13, fontWeight:500, color:'#374151', whiteSpace:'nowrap' as const }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#f3f4f6')}
+                onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+                {viewMode === 'list' ? 'All dates' : formatWeekLabel(weekOffset)}
+              </button>
+              <button onClick={() => { setViewMode('week'); setWeekOffset(w => w + 1) }}
+                style={{ width:28, height:28, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:4, border:'1px solid #e5e7eb', background:'#fff', cursor:'pointer', color:'#6b7280' }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#f3f4f6')}
+                onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+                <ChevronRight style={{ width:14, height:14 }} />
+              </button>
+            </div>
+
+            {/* Center: Totals */}
+            <div style={{ display:'flex', alignItems:'center', gap:24 }}>
+              <span style={{ fontSize:11, letterSpacing:'0.05em', textTransform:'uppercase' as const, color:'#6b7280' }}>
+                Today total <span style={{ fontFamily:'ui-monospace, SFMono-Regular, monospace', fontWeight:600, color:'#374151', marginLeft:4, fontSize:12, fontVariantNumeric:'tabular-nums' }}>{fmt(todayTot)}</span>
+              </span>
+              <span style={{ fontSize:11, letterSpacing:'0.05em', textTransform:'uppercase' as const, color:'#6b7280' }}>
+                Week total <span style={{ fontFamily:'ui-monospace, SFMono-Regular, monospace', fontWeight:600, color:'#374151', marginLeft:4, fontSize:12, fontVariantNumeric:'tabular-nums' }}>{fmt(weekTot)}</span>
+              </span>
+            </div>
+
+            {/* Right: View toggles */}
+            <div style={{ display:'flex', alignItems:'center', gap:2, background:'#fff', border:'1px solid #e5e7eb', borderRadius:6, padding:2 }}>
+              <button onClick={() => router.push('/time-tracking/reports')}
+                style={{ padding:'4px 10px', borderRadius:4, fontSize:12, fontWeight:500, color:'#6b7280', background:'transparent', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:4 }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#f3f4f6')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                <BarChart3 style={{ width:13, height:13 }} /> Reports
+              </button>
+              <div style={{ width:1, height:16, background:'#e5e7eb' }} />
+              <button
+                style={{ padding:'4px 10px', borderRadius:4, fontSize:12, fontWeight:500, color:'#fff', background:'#4f46e5', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:4 }}>
+                <List style={{ width:13, height:13 }} /> List view
+              </button>
+              <div style={{ width:1, height:16, background:'#e5e7eb' }} />
+              <button onClick={() => router.push('/time-tracking/rates')}
+                style={{ padding:'4px 10px', borderRadius:4, fontSize:12, fontWeight:500, color:'#6b7280', background:'transparent', border:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:4 }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#f3f4f6')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                <DollarSign style={{ width:13, height:13 }} /> Rates
+              </button>
+            </div>
           </div>
 
           {/* ═══════════ MESSAGES ═══════════ */}
@@ -403,110 +513,191 @@ export default function TimeTrackingPage() {
             </div>
           ) : (
             <div>
-              {days.map(day => {
+              {filteredDays.map(day => {
                 const isCollapsed = collapsed.has(day.key)
                 return (
                   <div key={day.key} style={{ borderBottom:'1px solid #f3f4f6' }}>
 
                     {/* ── Day Header ── */}
-                    <div onClick={() => toggle(day.key)}
+                    <div onClick={() => toggleDay(day.key)}
                       style={{ display:'flex', alignItems:'center', justifyContent:'space-between', height:42, paddingLeft:20, paddingRight:20, cursor:'pointer', userSelect:'none' as const }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#fafafa')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                       <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                         <ChevronRight style={{ width:14, height:14, color:'#9ca3af', transition:'transform 0.15s', transform: isCollapsed ? 'rotate(0deg)' : 'rotate(90deg)' }} />
                         <span style={{ fontSize:14, fontWeight:600, color:'#4b5563' }}>{day.label}</span>
+                        <span style={{ fontSize:12, color:'#9ca3af' }}>{day.entries.length} {day.entries.length === 1 ? 'entry' : 'entries'}</span>
                       </div>
-                      <span style={{ fontSize:14, fontFamily:'ui-monospace, SFMono-Regular, monospace', color:'#6b7280', fontVariantNumeric:'tabular-nums' }}>{fmt(day.total)}</span>
+                      <span style={{ fontSize:14, fontFamily:'ui-monospace, SFMono-Regular, monospace', color:'#374151', fontWeight:500, fontVariantNumeric:'tabular-nums' }}>{fmt(day.total)}</span>
                     </div>
 
-                    {/* ── Entries ── */}
-                    {!isCollapsed && day.entries.map(entry => {
-                      const p = proj(entry)
-                      const isEdit = editing === entry.id
+                    {/* ── Entry Groups ── */}
+                    {!isCollapsed && day.entryGroups.map(group => {
+                      const isGroupExpanded = expandedGroups.has(`${day.key}:${group.key}`)
+                      const hasMultiple = group.entries.length > 1
+                      const latestEntry = group.entries[0]
 
-                      if (isEdit) {
-                        return (
-                          <div key={entry.id} style={{ display:'flex', alignItems:'center', gap:8, height:50, paddingLeft:20, paddingRight:12 }}>
-                            <input type="text" value={editDesc} onChange={e => setEditDesc(e.target.value)}
-                              style={{ flex:'1 1 auto', minWidth:0, border:'1px solid #d1d5db', borderRadius:4, padding:'4px 8px', fontSize:14, color:'#111', outline:'none' }}
-                              placeholder="Description" autoFocus
-                              onKeyDown={e => { if (e.key === 'Enter') update(entry.id); if (e.key === 'Escape') setEditing(null) }} />
-                            <ProjectPicker projects={projects} value={editProj} onChange={setEditProj} compact />
-                            <button onClick={() => update(entry.id)} style={{ padding:4, color:'#16a34a', background:'transparent', border:'none', cursor:'pointer' }}><Check style={{ width:16, height:16 }} /></button>
-                            <button onClick={() => setEditing(null)} style={{ padding:4, color:'#9ca3af', background:'transparent', border:'none', cursor:'pointer' }}><X style={{ width:16, height:16 }} /></button>
-                          </div>
-                        )
-                      }
-
-                      {/* ═══ ENTRY ROW — matches Toggl's exact flex layout ═══
-                          Toggl row: 50px tall, display:flex, align-items:center, padding-left:20px
-                          Children (all direct flex items):
-                            [description: flex 0 1 auto] [project: flex 1 1 auto] [spacer] [$] [time+dur: flex 0 0 auto ~252px] [actions]
-                      */}
                       return (
-                        <div key={entry.id} className="group"
-                          style={{ display:'flex', alignItems:'center', height:50, paddingLeft:20, paddingRight:12, borderTop:'1px solid #f9fafb', overflow:'hidden', width:'100%', boxSizing:'border-box' as const }}
-                          onMouseEnter={e => (e.currentTarget.style.background = '#fafafa')}
-                          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                        <div key={group.key}>
+                          {/* Group summary row */}
+                          <div className="group"
+                            style={{ display:'flex', alignItems:'center', height:50, paddingLeft:20, paddingRight:12, borderTop:'1px solid #f9fafb', overflow:'hidden', width:'100%', boxSizing:'border-box' as const }}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#fafafa')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
 
-                          {/* 1. Description — flex: 1 1 0, takes ~40% of available space */}
-                          <div style={{ flex:'1 1 0', minWidth:0, overflow:'hidden', cursor:'pointer', maxWidth:'40%' }}
-                            onClick={() => { setEditing(entry.id); setEditDesc(entry.description||""); setEditProj(entry.project_id||undefined) }}>
-                            {entry.description ? (
-                              <div style={{ fontSize:14, color:'#111', whiteSpace:'nowrap' as const, overflow:'hidden', textOverflow:'ellipsis' }}>{entry.description}</div>
-                            ) : (
-                              <div style={{ fontSize:14, color:'#9ca3af', fontStyle:'italic' }}>Add description</div>
-                            )}
-                          </div>
+                            {/* Count badge or spacer */}
+                            <div style={{ flex:'0 0 auto', width:32, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                              {hasMultiple ? (
+                                <button onClick={() => toggleGroup(day.key, group.key)}
+                                  style={{ width:24, height:24, borderRadius:6, border:'1px solid #e5e7eb', background: isGroupExpanded ? '#eff6ff' : '#fff', color: isGroupExpanded ? '#3b82f6' : '#6b7280', fontSize:11, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1 }}
+                                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.color = '#3b82f6' }}
+                                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.color = isGroupExpanded ? '#3b82f6' : '#6b7280' }}>
+                                  {group.entries.length}
+                                </button>
+                              ) : null}
+                            </div>
 
-                          {/* 2. Project — flex: 1 1 0, takes remaining space, truncates */}
-                          <div style={{ flex:'1 1 0', minWidth:0, overflow:'hidden', display:'flex', alignItems:'center', gap:6, marginLeft: p ? 12 : 0 }}>
-                            {p && (<>
-                              <span style={{ width:8, height:8, borderRadius:'50%', flexShrink:0, background: color(p.id) }} />
-                              <span style={{ fontSize:13, fontWeight:500, color: color(p.id), whiteSpace:'nowrap' as const, overflow:'hidden', textOverflow:'ellipsis' }}>
-                                {p.title}
-                              </span>
-                              {p.client && (
-                                <span style={{ fontSize:12, color:'#9ca3af', whiteSpace:'nowrap' as const, overflow:'hidden', textOverflow:'ellipsis', flexShrink:1, marginLeft:4 }}>
-                                  {p.client}
+                            {/* Description */}
+                            <div style={{ flex:'1 1 0', minWidth:0, overflow:'hidden', cursor:'pointer', maxWidth:'35%' }}
+                              onClick={() => { setEditing(latestEntry.id); setEditDesc(latestEntry.description||""); setEditProj(latestEntry.project_id||undefined) }}>
+                              {latestEntry.description ? (
+                                <div style={{ fontSize:14, color:'#111', whiteSpace:'nowrap' as const, overflow:'hidden', textOverflow:'ellipsis' }}>{latestEntry.description}</div>
+                              ) : (
+                                <div style={{ fontSize:14, color:'#c9c9c9', fontStyle:'italic' }}>Add description</div>
+                              )}
+                            </div>
+
+                            {/* Project */}
+                            <div style={{ flex:'1 1 0', minWidth:0, overflow:'hidden', display:'flex', alignItems:'center', gap:6, marginLeft:12 }}>
+                              {group.project_title && (<>
+                                <span style={{ width:8, height:8, borderRadius:'50%', flexShrink:0, background: color(group.project_id || 0) }} />
+                                <span style={{ fontSize:13, fontWeight:500, color: color(group.project_id || 0), whiteSpace:'nowrap' as const, overflow:'hidden', textOverflow:'ellipsis' }}>
+                                  {group.project_title}
+                                </span>
+                                {group.company_name && (
+                                  <span style={{ fontSize:12, color:'#9ca3af', whiteSpace:'nowrap' as const, overflow:'hidden', textOverflow:'ellipsis', flexShrink:1, marginLeft:4 }}>
+                                    {group.company_name}
+                                  </span>
+                                )}
+                              </>)}
+                            </div>
+
+                            {/* Billable */}
+                            <div style={{ flex:'0 0 auto', width:24, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                              <DollarSign style={{ width:14, height:14, color: group.is_billable ? '#e8a82a' : '#e5e7eb' }} />
+                            </div>
+
+                            {/* Time range + Duration */}
+                            <div style={{ flex:'0 0 auto', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:12, marginLeft:8 }}>
+                              {!hasMultiple && (
+                                <span style={{ fontSize:12, color:'#9ca3af', whiteSpace:'nowrap' as const, fontVariantNumeric:'tabular-nums' }}>
+                                  {time12(latestEntry.start_time)} - {latestEntry.end_time ? time12(latestEntry.end_time) : '...'}
                                 </span>
                               )}
-                            </>)}
+                              <span style={{ fontSize:14, fontFamily:'ui-monospace, SFMono-Regular, monospace', color:'#374151', fontWeight:500, fontVariantNumeric:'tabular-nums', minWidth:56, textAlign:'right' as const }}>
+                                {fmt(group.totalSeconds)}
+                              </span>
+                            </div>
+
+                            {/* Hover actions */}
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity"
+                              style={{ flex:'0 0 auto', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:2, marginLeft:4 }}>
+                              <button onClick={() => resume(latestEntry)} style={{ padding:4, color:'#d1d5db', background:'transparent', border:'none', cursor:'pointer' }} title="Continue"
+                                onMouseEnter={e => (e.currentTarget.style.color = '#22c55e')} onMouseLeave={e => (e.currentTarget.style.color = '#d1d5db')}>
+                                <Play style={{ width:14, height:14, fill:'currentColor' }} />
+                              </button>
+                              <button onClick={() => { setEditing(latestEntry.id); setEditDesc(latestEntry.description||""); setEditProj(latestEntry.project_id||undefined) }}
+                                style={{ padding:4, color:'#d1d5db', background:'transparent', border:'none', cursor:'pointer' }} title="Edit"
+                                onMouseEnter={e => (e.currentTarget.style.color = '#3b82f6')} onMouseLeave={e => (e.currentTarget.style.color = '#d1d5db')}>
+                                <Edit2 style={{ width:14, height:14 }} />
+                              </button>
+                              {!hasMultiple && (
+                                <button onClick={() => del(latestEntry.id)} style={{ padding:4, color:'#d1d5db', background:'transparent', border:'none', cursor:'pointer' }} title="Delete"
+                                  onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')} onMouseLeave={e => (e.currentTarget.style.color = '#d1d5db')}>
+                                  <Trash2 style={{ width:14, height:14 }} />
+                                </button>
+                              )}
+                            </div>
                           </div>
 
-                          {/* 3. Billable — flex: 0 0 auto, 24px */}
-                          <div style={{ flex:'0 0 auto', width:24, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                            <DollarSign style={{ width:14, height:14, color: entry.is_billable ? '#16a34a' : '#e5e7eb' }} />
-                          </div>
+                          {/* Expanded individual entries within a group */}
+                          {hasMultiple && isGroupExpanded && group.entries.map(entry => {
+                            const isEdit = editing === entry.id
+                            if (isEdit) {
+                              return (
+                                <div key={entry.id} style={{ display:'flex', alignItems:'center', gap:8, height:44, paddingLeft:52, paddingRight:12, background:'#fafafa' }}>
+                                  <input type="text" value={editDesc} onChange={e => setEditDesc(e.target.value)}
+                                    style={{ flex:'1 1 auto', minWidth:0, border:'1px solid #d1d5db', borderRadius:4, padding:'4px 8px', fontSize:13, color:'#111', outline:'none' }}
+                                    placeholder="Description" autoFocus
+                                    onKeyDown={e => { if (e.key === 'Enter') update(entry.id); if (e.key === 'Escape') setEditing(null) }} />
+                                  <ProjectPicker projects={projects} value={editProj} onChange={setEditProj} compact />
+                                  <button onClick={() => update(entry.id)} style={{ padding:4, color:'#16a34a', background:'transparent', border:'none', cursor:'pointer' }}><Check style={{ width:14, height:14 }} /></button>
+                                  <button onClick={() => setEditing(null)} style={{ padding:4, color:'#9ca3af', background:'transparent', border:'none', cursor:'pointer' }}><X style={{ width:14, height:14 }} /></button>
+                                </div>
+                              )
+                            }
+                            return (
+                              <div key={entry.id} className="group"
+                                style={{ display:'flex', alignItems:'center', height:44, paddingLeft:52, paddingRight:12, borderTop:'1px solid #f3f4f6', background:'#fafafa', overflow:'hidden', width:'100%', boxSizing:'border-box' as const }}
+                                onMouseEnter={e => (e.currentTarget.style.background = '#f3f4f6')}
+                                onMouseLeave={e => (e.currentTarget.style.background = '#fafafa')}>
+                                {/* Description */}
+                                <div style={{ flex:'1 1 0', minWidth:0, overflow:'hidden', cursor:'pointer', maxWidth:'50%' }}
+                                  onClick={() => { setEditing(entry.id); setEditDesc(entry.description||""); setEditProj(entry.project_id||undefined) }}>
+                                  {entry.description ? (
+                                    <div style={{ fontSize:13, color:'#374151', whiteSpace:'nowrap' as const, overflow:'hidden', textOverflow:'ellipsis' }}>{entry.description}</div>
+                                  ) : (
+                                    <div style={{ fontSize:13, color:'#c9c9c9', fontStyle:'italic' }}>Add description</div>
+                                  )}
+                                </div>
+                                {/* Spacer */}
+                                <div style={{ flex:'1 1 0' }} />
+                                {/* Billable */}
+                                <div style={{ flex:'0 0 auto', width:24, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                                  <DollarSign style={{ width:12, height:12, color: entry.is_billable ? '#e8a82a' : '#e5e7eb' }} />
+                                </div>
+                                {/* Time + Duration */}
+                                <div style={{ flex:'0 0 auto', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:12, marginLeft:8 }}>
+                                  <span style={{ fontSize:12, color:'#9ca3af', whiteSpace:'nowrap' as const, fontVariantNumeric:'tabular-nums' }}>
+                                    {time12(entry.start_time)} - {entry.end_time ? time12(entry.end_time) : '...'}
+                                  </span>
+                                  <span style={{ fontSize:13, fontFamily:'ui-monospace, SFMono-Regular, monospace', color:'#6b7280', fontWeight:500, fontVariantNumeric:'tabular-nums', minWidth:56, textAlign:'right' as const }}>
+                                    {fmt(entry.duration_seconds||0)}
+                                  </span>
+                                </div>
+                                {/* Hover actions */}
+                                <div className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                  style={{ flex:'0 0 auto', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:2, marginLeft:4 }}>
+                                  <button onClick={() => resume(entry)} style={{ padding:3, color:'#d1d5db', background:'transparent', border:'none', cursor:'pointer' }} title="Continue"
+                                    onMouseEnter={e => (e.currentTarget.style.color = '#22c55e')} onMouseLeave={e => (e.currentTarget.style.color = '#d1d5db')}>
+                                    <Play style={{ width:12, height:12, fill:'currentColor' }} />
+                                  </button>
+                                  <button onClick={() => { setEditing(entry.id); setEditDesc(entry.description||""); setEditProj(entry.project_id||undefined) }}
+                                    style={{ padding:3, color:'#d1d5db', background:'transparent', border:'none', cursor:'pointer' }} title="Edit"
+                                    onMouseEnter={e => (e.currentTarget.style.color = '#3b82f6')} onMouseLeave={e => (e.currentTarget.style.color = '#d1d5db')}>
+                                    <Edit2 style={{ width:12, height:12 }} />
+                                  </button>
+                                  <button onClick={() => del(entry.id)} style={{ padding:3, color:'#d1d5db', background:'transparent', border:'none', cursor:'pointer' }} title="Delete"
+                                    onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')} onMouseLeave={e => (e.currentTarget.style.color = '#d1d5db')}>
+                                    <Trash2 style={{ width:12, height:12 }} />
+                                  </button>
+                                </div>
+                              </div>
+                            )
+                          })}
 
-                          {/* 4. Time range + Duration — flex: 0 0 auto, compact */}
-                          <div style={{ flex:'0 0 auto', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:8, marginLeft:8 }}>
-                            <span style={{ fontSize:12, color:'#9ca3af', whiteSpace:'nowrap' as const, fontVariantNumeric:'tabular-nums' }}>
-                              {time12(entry.start_time)} - {entry.end_time ? time12(entry.end_time) : '...'}
-                            </span>
-                            <span style={{ fontSize:14, fontFamily:'ui-monospace, SFMono-Regular, monospace', color:'#374151', fontWeight:500, fontVariantNumeric:'tabular-nums', minWidth:56, textAlign:'right' as const }}>
-                              {fmt(entry.duration_seconds||0)}
-                            </span>
-                          </div>
-
-                          {/* 5. Hover actions — flex: 0 0 auto */}
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            style={{ flex:'0 0 auto', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:2, marginLeft:4 }}>
-                            <button onClick={() => resume(entry)} style={{ padding:4, color:'#d1d5db', background:'transparent', border:'none', cursor:'pointer' }} title="Continue"
-                              onMouseEnter={e => (e.currentTarget.style.color = '#22c55e')} onMouseLeave={e => (e.currentTarget.style.color = '#d1d5db')}>
-                              <Play style={{ width:14, height:14, fill:'currentColor' }} />
-                            </button>
-                            <button onClick={() => { setEditing(entry.id); setEditDesc(entry.description||""); setEditProj(entry.project_id||undefined) }}
-                              style={{ padding:4, color:'#d1d5db', background:'transparent', border:'none', cursor:'pointer' }} title="Edit"
-                              onMouseEnter={e => (e.currentTarget.style.color = '#3b82f6')} onMouseLeave={e => (e.currentTarget.style.color = '#d1d5db')}>
-                              <Edit2 style={{ width:14, height:14 }} />
-                            </button>
-                            <button onClick={() => del(entry.id)} style={{ padding:4, color:'#d1d5db', background:'transparent', border:'none', cursor:'pointer' }} title="Delete"
-                              onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')} onMouseLeave={e => (e.currentTarget.style.color = '#d1d5db')}>
-                              <Trash2 style={{ width:14, height:14 }} />
-                            </button>
-                          </div>
+                          {/* Single entry edit mode */}
+                          {!hasMultiple && editing === latestEntry.id && (
+                            <div style={{ display:'flex', alignItems:'center', gap:8, height:44, paddingLeft:52, paddingRight:12, background:'#fafafa', borderTop:'1px solid #f3f4f6' }}>
+                              <input type="text" value={editDesc} onChange={e => setEditDesc(e.target.value)}
+                                style={{ flex:'1 1 auto', minWidth:0, border:'1px solid #d1d5db', borderRadius:4, padding:'4px 8px', fontSize:13, color:'#111', outline:'none' }}
+                                placeholder="Description" autoFocus
+                                onKeyDown={e => { if (e.key === 'Enter') update(latestEntry.id); if (e.key === 'Escape') setEditing(null) }} />
+                              <ProjectPicker projects={projects} value={editProj} onChange={setEditProj} compact />
+                              <button onClick={() => update(latestEntry.id)} style={{ padding:4, color:'#16a34a', background:'transparent', border:'none', cursor:'pointer' }}><Check style={{ width:16, height:16 }} /></button>
+                              <button onClick={() => setEditing(null)} style={{ padding:4, color:'#9ca3af', background:'transparent', border:'none', cursor:'pointer' }}><X style={{ width:16, height:16 }} /></button>
+                            </div>
+                          )}
                         </div>
                       )
                     })}
