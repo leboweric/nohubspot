@@ -100,6 +100,11 @@ function groupEntries(entries: TimeEntry[], projects: Project[]): EntryGroup[] {
     if (e.is_billable) map[k].is_billable = true
   }
   return Object.values(map).sort((a, b) => {
+    // Sort by project name first (like Toggl) — groups with same project together
+    const aName = (a.project_title || 'zzz').toLowerCase()
+    const bName = (b.project_title || 'zzz').toLowerCase()
+    if (aName !== bName) return aName.localeCompare(bName)
+    // Then by most recent entry time within the same project
     const aTime = Math.max(...a.entries.map(e => new Date(e.start_time).getTime()))
     const bTime = Math.max(...b.entries.map(e => new Date(e.start_time).getTime()))
     return bTime - aTime
