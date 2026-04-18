@@ -516,16 +516,16 @@ export default function TimeTrackingPage() {
               {filteredDays.map(day => {
                 const isCollapsed = collapsed.has(day.key)
                 return (
-                  <div key={day.key} style={{ borderBottom:'1px solid #f3f4f6' }}>
+                  <div key={day.key} style={{ borderBottom:'2px solid #e5e7eb', marginTop:4 }}>
 
                     {/* ── Day Header ── */}
                     <div onClick={() => toggleDay(day.key)}
-                      style={{ display:'flex', alignItems:'center', justifyContent:'space-between', height:42, paddingLeft:20, paddingRight:20, cursor:'pointer', userSelect:'none' as const }}
+                      style={{ display:'flex', alignItems:'center', justifyContent:'space-between', height:48, paddingLeft:20, paddingRight:20, cursor:'pointer', userSelect:'none' as const }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#fafafa')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                       <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                         <ChevronRight style={{ width:14, height:14, color:'#9ca3af', transition:'transform 0.15s', transform: isCollapsed ? 'rotate(0deg)' : 'rotate(90deg)' }} />
-                        <span style={{ fontSize:14, fontWeight:600, color:'#4b5563' }}>{day.label}</span>
+                        <span style={{ fontSize:14, fontWeight:700, color:'#111827', letterSpacing:'-0.01em' }}>{day.label}</span>
                         <span style={{ fontSize:12, color:'#9ca3af' }}>{day.entries.length} {day.entries.length === 1 ? 'entry' : 'entries'}</span>
                       </div>
                       <span style={{ fontSize:14, fontFamily:'ui-monospace, SFMono-Regular, monospace', color:'#374151', fontWeight:500, fontVariantNumeric:'tabular-nums' }}>{fmt(day.total)}</span>
@@ -558,7 +558,7 @@ export default function TimeTrackingPage() {
                             </div>
 
                             {/* Description */}
-                            <div style={{ flex:'1 1 0', minWidth:0, overflow:'hidden', cursor:'pointer', maxWidth:'35%' }}
+                            <div style={{ flex:'1 1 0', minWidth:0, overflow:'hidden', cursor:'pointer' }}
                               onClick={() => { setEditing(latestEntry.id); setEditDesc(latestEntry.description||""); setEditProj(latestEntry.project_id||undefined) }}>
                               {latestEntry.description ? (
                                 <div style={{ fontSize:14, color:'#111', whiteSpace:'nowrap' as const, overflow:'hidden', textOverflow:'ellipsis' }}>{latestEntry.description}</div>
@@ -568,7 +568,7 @@ export default function TimeTrackingPage() {
                             </div>
 
                             {/* Project */}
-                            <div style={{ flex:'1 1 0', minWidth:0, overflow:'hidden', display:'flex', alignItems:'center', gap:6, marginLeft:12 }}>
+                            <div style={{ flex:'0 1 auto', minWidth:0, overflow:'hidden', display:'flex', alignItems:'center', gap:6, marginLeft:12, maxWidth:'30%' }}>
                               {group.project_title && (<>
                                 <span style={{ width:8, height:8, borderRadius:'50%', flexShrink:0, background: color(group.project_id || 0) }} />
                                 <span style={{ fontSize:13, fontWeight:500, color: color(group.project_id || 0), whiteSpace:'nowrap' as const, overflow:'hidden', textOverflow:'ellipsis' }}>
@@ -582,13 +582,11 @@ export default function TimeTrackingPage() {
                               </>)}
                             </div>
 
-                            {/* Billable */}
-                            <div style={{ flex:'0 0 auto', width:24, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                              <DollarSign style={{ width:14, height:14, color: group.is_billable ? '#e8a82a' : '#e5e7eb' }} />
-                            </div>
-
-                            {/* Time range + Duration */}
-                            <div style={{ flex:'0 0 auto', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:0, marginLeft:8 }}>
+                            {/* Right-aligned fixed block: Billable + Time range + Duration */}
+                            <div style={{ flex:'0 0 270px', display:'flex', alignItems:'center', justifyContent:'flex-end', marginLeft:8 }}>
+                              <div style={{ width:24, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                                <DollarSign style={{ width:14, height:14, color: group.is_billable ? '#e8a82a' : '#e5e7eb' }} />
+                              </div>
                               <span style={{ fontSize:12, color:'#9ca3af', whiteSpace:'nowrap' as const, fontVariantNumeric:'tabular-nums', width:160, textAlign:'right' as const }}>
                                 {!hasMultiple ? `${time12(latestEntry.start_time)} - ${latestEntry.end_time ? time12(latestEntry.end_time) : '...'}` : ''}
                               </span>
@@ -650,12 +648,11 @@ export default function TimeTrackingPage() {
                                 </div>
                                 {/* Spacer */}
                                 <div style={{ flex:'1 1 0' }} />
-                                {/* Billable */}
-                                <div style={{ flex:'0 0 auto', width:24, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                                  <DollarSign style={{ width:12, height:12, color: entry.is_billable ? '#e8a82a' : '#e5e7eb' }} />
-                                </div>
-                                {/* Time + Duration */}
-                                <div style={{ flex:'0 0 auto', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:0, marginLeft:8 }}>
+                                {/* Right-aligned fixed block: Billable + Time range + Duration */}
+                                <div style={{ flex:'0 0 270px', display:'flex', alignItems:'center', justifyContent:'flex-end', marginLeft:8 }}>
+                                  <div style={{ width:24, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                                    <DollarSign style={{ width:12, height:12, color: entry.is_billable ? '#e8a82a' : '#e5e7eb' }} />
+                                  </div>
                                   <span style={{ fontSize:12, color:'#9ca3af', whiteSpace:'nowrap' as const, fontVariantNumeric:'tabular-nums', width:160, textAlign:'right' as const }}>
                                     {time12(entry.start_time)} - {entry.end_time ? time12(entry.end_time) : '...'}
                                   </span>
