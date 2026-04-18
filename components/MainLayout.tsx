@@ -370,7 +370,7 @@ function MainLayoutInner({ children }: MainLayoutProps) {
           <div className="flex-1" />
         </header>
         
-        <main className="flex-1 bg-gray-50 min-h-[calc(100vh-3rem)] md:min-h-screen">
+        <main className="flex-1 bg-gray-50 min-h-[calc(100vh-3rem)] md:min-h-screen overflow-x-hidden">
           {children}
         </main>
       </SidebarInset>
