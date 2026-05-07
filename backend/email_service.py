@@ -87,7 +87,7 @@ async def send_email(
     attachments: Optional[List[dict]] = None,
     cc_emails: Optional[List[str]] = None,
     bcc_emails: Optional[List[str]] = None,
-    disable_tracking: bool = False
+    disable_tracking: bool = True
 ) -> bool:
     """Send email via SendGrid"""
     # Load environment variables at runtime instead of module import time
@@ -138,11 +138,14 @@ async def send_email(
     if attachments:
         data["attachments"] = attachments
     
-    # Disable click tracking if requested (important for invitation links)
+    # SendGrid click/open tracking is disabled globally to prevent SSL certificate errors
+    # caused by SendGrid rewriting links to tracking subdomains (e.g. url4346.nothubspot.app).
+    # This system does not use SendGrid for prospect marketing emails, so tracking provides no value.
     if disable_tracking:
         data["tracking_settings"] = {
             "click_tracking": {
-                "enable": False
+                "enable": False,
+                "enable_text": False
             },
             "open_tracking": {
                 "enable": False
@@ -227,7 +230,7 @@ async def send_password_reset_email(
         subject=subject,
         html_content=html_content,
         text_content=text_content,
-        disable_tracking=True  # Disable tracking for password reset links
+        disable_tracking=True
     )
 
 async def send_invite_email(
@@ -255,7 +258,7 @@ async def send_invite_email(
         html_content=html_content,
         text_content=text_content,
         cc_emails=cc_list,
-        disable_tracking=True  # Disable link tracking to prevent SSL certificate errors
+        disable_tracking=True
     )
 
 async def send_calendar_invite(
