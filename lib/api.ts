@@ -1807,3 +1807,71 @@ export const timeTrackingAPI = {
     return apiRequest(`/api/time-tracking/reports/client-invoicing?${searchParams.toString()}`)
   },
 }
+
+
+// ─────────────────────────────────────────────────────────────
+// Lead Source Integration API (Clay, Surfe, LinkedIn Sales Navigator)
+// ─────────────────────────────────────────────────────────────
+
+export interface LeadSourceSettings {
+  id: number
+  organization_id: number
+  // Clay
+  clay_enabled: boolean
+  clay_webhook_url: string | null
+  clay_last_import_at: string | null
+  clay_total_imported: number
+  // Surfe
+  surfe_enabled: boolean
+  surfe_last_enrichment_at: string | null
+  surfe_total_enriched: number
+  // LinkedIn
+  linkedin_enabled: boolean
+  linkedin_last_import_at: string | null
+  linkedin_total_imported: number
+  created_at: string
+  updated_at: string
+}
+
+export interface GeneratedApiKey {
+  source: string
+  api_key: string
+  webhook_url: string
+}
+
+export interface LeadImportLog {
+  id: number
+  organization_id: number
+  source: string
+  event_type: string | null
+  contact_id: number | null
+  company_id: number | null
+  action: string | null
+  error_message: string | null
+  created_at: string
+}
+
+export const leadSourceAPI = {
+  getSettings: (): Promise<LeadSourceSettings> =>
+    apiRequest('/api/lead-source/settings'),
+
+  updateSettings: (data: {
+    clay_enabled?: boolean
+    surfe_enabled?: boolean
+    surfe_api_key?: string
+    linkedin_enabled?: boolean
+  }): Promise<LeadSourceSettings> =>
+    apiRequest('/api/lead-source/settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  generateKey: (source: 'clay' | 'linkedin'): Promise<GeneratedApiKey> =>
+    apiRequest(`/api/lead-source/generate-key/${source}`, { method: 'POST' }),
+
+  getLogs: (limit = 50, source?: string): Promise<LeadImportLog[]> => {
+    const params = new URLSearchParams({ limit: String(limit) })
+    if (source) params.append('source', source)
+    return apiRequest(`/api/lead-source/logs?${params.toString()}`)
+  },
+}

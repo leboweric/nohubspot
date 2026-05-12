@@ -1047,3 +1047,72 @@ class InvoiceRule(Base):
     __table_args__ = (
         UniqueConstraint('organization_id', 'company_id', name='_org_company_invoice_rule_uc'),
     )
+
+
+# ============================================================
+# Lead Source Integration Models (Clay, Surfe, LinkedIn Sales Navigator)
+# ============================================================
+
+class LeadSourceIntegration(Base):
+    """
+    Stores per-organization configuration and API keys for lead source integrations.
+    Supports Clay, Surfe, and LinkedIn Sales Navigator.
+    """
+    __tablename__ = "lead_source_integrations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, unique=True)
+
+    # --- Clay Integration ---
+    clay_enabled = Column(Boolean, default=False)
+    clay_api_key = Column(String(255), nullable=True)          # Key NHS generates; Clay uses this to POST to us
+    clay_webhook_url = Column(String(500), nullable=True)      # Auto-generated URL shown to user
+    clay_last_import_at = Column(DateTime(timezone=True), nullable=True)
+    clay_total_imported = Column(Integer, default=0)
+
+    # --- Surfe Integration ---
+    surfe_enabled = Column(Boolean, default=False)
+    surfe_api_key_encrypted = Column(Text, nullable=True)      # User's Surfe API key (stored encrypted)
+    surfe_webhook_secret = Column(String(255), nullable=True)  # HMAC secret for verifying Surfe webhooks
+    surfe_last_enrichment_at = Column(DateTime(timezone=True), nullable=True)
+    surfe_total_enriched = Column(Integer, default=0)
+
+    # --- LinkedIn Sales Navigator Integration ---
+    linkedin_enabled = Column(Boolean, default=False)
+    linkedin_webhook_api_key = Column(String(255), nullable=True)  # Key NHS generates; used by browser ext / Zapier
+    linkedin_last_import_at = Column(DateTime(timezone=True), nullable=True)
+    linkedin_total_imported = Column(Integer, default=0)
+
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # Relationships
+    organization = relationship("Organization")
+
+
+class LeadImportLog(Base):
+    """
+    Audit log for every lead imported from Clay, Surfe, or LinkedIn Sales Navigator.
+    """
+    __tablename__ = "lead_import_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+
+    source = Column(String(50), nullable=False)          # clay | surfe | linkedin
+    event_type = Column(String(100), nullable=True)      # e.g. person.enrichment.completed
+    raw_payload = Column(JSON, nullable=True)            # Full inbound payload for debugging
+
+    # What was created / updated
+    contact_id = Column(Integer, ForeignKey("contacts.id"), nullable=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
+    action = Column(String(50), nullable=True)           # created | updated | skipped | error
+    error_message = Column(Text, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    organization = relationship("Organization")
+    contact = relationship("Contact")
+    company = relationship("Company")

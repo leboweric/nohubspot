@@ -1282,3 +1282,148 @@ class InvoicePrepLineItem(BaseModel):
     hours: float
     rate: float
     amount: float
+
+
+# ============================================================
+# Lead Source Integration Schemas (Clay, Surfe, LinkedIn Sales Navigator)
+# ============================================================
+
+class LeadSourceIntegrationResponse(BaseModel):
+    id: int
+    organization_id: int
+    # Clay
+    clay_enabled: bool
+    clay_webhook_url: Optional[str] = None
+    clay_last_import_at: Optional[datetime] = None
+    clay_total_imported: int = 0
+    # Surfe
+    surfe_enabled: bool
+    surfe_last_enrichment_at: Optional[datetime] = None
+    surfe_total_enriched: int = 0
+    # LinkedIn
+    linkedin_enabled: bool
+    linkedin_last_import_at: Optional[datetime] = None
+    linkedin_total_imported: int = 0
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class LeadSourceIntegrationUpdate(BaseModel):
+    clay_enabled: Optional[bool] = None
+    surfe_enabled: Optional[bool] = None
+    surfe_api_key: Optional[str] = None          # Plain-text; backend will encrypt
+    linkedin_enabled: Optional[bool] = None
+
+
+class GenerateApiKeyResponse(BaseModel):
+    """Returned when a new API key is generated for Clay or LinkedIn webhook."""
+    source: str          # clay | linkedin
+    api_key: str         # The newly generated key (shown once)
+    webhook_url: str     # The URL to paste into Clay / Zapier
+
+
+# --- Clay Inbound Webhook Payload ---
+class ClayPersonPayload(BaseModel):
+    """Flexible schema for a single person row pushed from Clay via HTTP API action."""
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    title: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    company_name: Optional[str] = None
+    company_domain: Optional[str] = None
+    company_website: Optional[str] = None
+    company_industry: Optional[str] = None
+    company_city: Optional[str] = None
+    company_state: Optional[str] = None
+    # Allow any extra Clay columns to pass through
+    model_config = {"extra": "allow"}
+
+
+class ClayWebhookPayload(BaseModel):
+    """Clay HTTP API action sends either a single person or a list."""
+    people: Optional[List[ClayPersonPayload]] = None
+    person: Optional[ClayPersonPayload] = None
+    model_config = {"extra": "allow"}
+
+
+# --- Surfe Inbound Webhook Payload ---
+class SurfeEnrichedEmail(BaseModel):
+    email: Optional[str] = None
+    validationStatus: Optional[str] = None
+
+
+class SurfeEnrichedPhone(BaseModel):
+    mobilePhone: Optional[str] = None
+    confidenceScore: Optional[float] = None
+
+
+class SurfeEnrichedPerson(BaseModel):
+    externalID: Optional[str] = None
+    firstName: Optional[str] = None
+    lastName: Optional[str] = None
+    jobTitle: Optional[str] = None
+    companyName: Optional[str] = None
+    companyDomain: Optional[str] = None
+    linkedInUrl: Optional[str] = None
+    location: Optional[str] = None
+    country: Optional[str] = None
+    emails: Optional[List[SurfeEnrichedEmail]] = None
+    mobilePhones: Optional[List[SurfeEnrichedPhone]] = None
+    status: Optional[str] = None
+    model_config = {"extra": "allow"}
+
+
+class SurfeWebhookPayload(BaseModel):
+    eventType: str
+    data: dict
+    model_config = {"extra": "allow"}
+
+
+# --- LinkedIn Sales Navigator Inbound Webhook Payload ---
+class LinkedInPersonPayload(BaseModel):
+    """
+    Flexible schema for a LinkedIn profile pushed via browser extension, Zapier, or n8n.
+    Field names match common LinkedIn Sales Navigator export formats.
+    """
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    title: Optional[str] = None
+    headline: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    company_name: Optional[str] = None
+    company_website: Optional[str] = None
+    company_industry: Optional[str] = None
+    company_size: Optional[str] = None
+    location: Optional[str] = None
+    notes: Optional[str] = None
+    model_config = {"extra": "allow"}
+
+
+class LinkedInWebhookPayload(BaseModel):
+    """Supports single person or batch push from LinkedIn Sales Navigator."""
+    people: Optional[List[LinkedInPersonPayload]] = None
+    person: Optional[LinkedInPersonPayload] = None
+    model_config = {"extra": "allow"}
+
+
+class LeadImportLogResponse(BaseModel):
+    id: int
+    organization_id: int
+    source: str
+    event_type: Optional[str] = None
+    contact_id: Optional[int] = None
+    company_id: Optional[int] = None
+    action: Optional[str] = None
+    error_message: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

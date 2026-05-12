@@ -13,6 +13,7 @@ import SettingsNavigation, { SettingsTab } from "@/components/settings/SettingsN
 import UserManagementCard from "@/components/settings/UserManagementCard"
 import EditUserModal from "@/components/settings/EditUserModal"
 import IntegrationCard from "@/components/settings/IntegrationCard"
+import LeadSourceIntegration from "@/components/settings/LeadSourceIntegration"
 import ColorThemePicker from "@/components/settings/ColorThemePicker"
 import LogoUploader from "@/components/settings/LogoUploader"
 import { useEmailSignature } from "@/components/signature/SignatureManager"
@@ -755,6 +756,9 @@ export default function SettingsPage() {
 
           {/* Google Workspace */}
           <GoogleConnection />
+
+          {/* Lead Source Integrations: Clay, Surfe, LinkedIn Sales Navigator */}
+          <LeadSourceIntegration />
         </div>
       </div>
     )
