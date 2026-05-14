@@ -1,14 +1,15 @@
 """
 Lead Source Integration Routes
-Handles Clay, Surfe, and LinkedIn Sales Navigator webhooks and settings.
+Handles Clay, Surfe, LinkedIn Sales Navigator, and Apollo.io webhooks and settings.
 
 Endpoints:
   GET    /api/lead-source/settings              - Get org integration config
   PUT    /api/lead-source/settings              - Update integration toggles / Surfe API key
-  POST   /api/lead-source/generate-key/{source} - Generate a new inbound API key (clay | linkedin)
+  POST   /api/lead-source/generate-key/{source} - Generate a new inbound API key (clay | linkedin | apollo)
   POST   /api/webhooks/clay/import              - Clay HTTP API action webhook (Bearer key auth)
   POST   /api/webhooks/surfe/enrichment         - Surfe enrichment-completed webhook (HMAC auth)
   POST   /api/webhooks/linkedin/import          - LinkedIn Sales Navigator webhook (Bearer key auth)
+  POST   /api/webhooks/apollo/import            - Apollo.io webhook (Bearer key auth)
   GET    /api/lead-source/logs                  - Recent import audit log
 """
 
@@ -34,6 +35,7 @@ from schemas import (
     ClayWebhookPayload, ClayPersonPayload,
     SurfeWebhookPayload, SurfeEnrichedPerson,
     LinkedInWebhookPayload, LinkedInPersonPayload,
+    ApolloWebhookPayload, ApolloPersonPayload,
     LeadImportLogResponse,
     ContactCreate, CompanyCreate,
 )
@@ -200,6 +202,16 @@ def _get_org_from_linkedin_key(db: Session, api_key: str) -> LeadSourceIntegrati
     return row
 
 
+def _get_org_from_apollo_key(db: Session, api_key: str) -> LeadSourceIntegration:
+    row = db.query(LeadSourceIntegration).filter(
+        LeadSourceIntegration.apollo_api_key == api_key,
+        LeadSourceIntegration.apollo_enabled == True
+    ).first()
+    if not row:
+        raise HTTPException(status_code=401, detail="Invalid or disabled Apollo API key")
+    return row
+
+
 # ═══════════════════════════════════════════════════════════════
 # SETTINGS ENDPOINTS (JWT-authenticated, admin/owner only)
 # ═══════════════════════════════════════════════════════════════
@@ -232,6 +244,8 @@ async def update_lead_source_settings(
         row.surfe_api_key_encrypted = payload.surfe_api_key
     if payload.linkedin_enabled is not None:
         row.linkedin_enabled = payload.linkedin_enabled
+    if payload.apollo_enabled is not None:
+        row.apollo_enabled = payload.apollo_enabled
 
     db.commit()
     db.refresh(row)
@@ -249,8 +263,8 @@ async def generate_api_key(
     Generate (or regenerate) the inbound API key for Clay or LinkedIn.
     The key is shown once — the user must copy it into Clay / Zapier.
     """
-    if source not in ("clay", "linkedin"):
-        raise HTTPException(status_code=400, detail="source must be 'clay' or 'linkedin'")
+    if source not in ("clay", "linkedin", "apollo"):
+        raise HTTPException(status_code=400, detail="source must be 'clay', 'linkedin', or 'apollo'")
 
     row = _get_or_create_integration(db, current_user.organization_id)
     new_key = f"nhs_{source}_{secrets.token_urlsafe(32)}"
@@ -261,6 +275,10 @@ async def generate_api_key(
         row.clay_api_key = new_key
         row.clay_enabled = True
         webhook_url = f"{base_url}/api/webhooks/clay/import"
+    elif source == "apollo":
+        row.apollo_api_key = new_key
+        row.apollo_enabled = True
+        webhook_url = f"{base_url}/api/webhooks/apollo/import"
     else:
         row.linkedin_webhook_api_key = new_key
         row.linkedin_enabled = True
@@ -639,6 +657,177 @@ async def linkedin_import_webhook(
     # Update stats
     integration.linkedin_last_import_at = datetime.utcnow()
     integration.linkedin_total_imported += created_count
+    db.commit()
+
+    return {
+        "status": "ok",
+        "created": created_count,
+        "updated": updated_count,
+        "total_received": len(people_raw),
+    }
+
+
+# ═══════════════════════════════════════════════════════════════
+# APOLLO.IO WEBHOOK  POST /api/webhooks/apollo/import
+# ═══════════════════════════════════════════════════════════════
+
+@router.post("/api/webhooks/apollo/import")
+async def apollo_import_webhook(
+    request: Request,
+    authorization: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Receives contact data pushed from Apollo.io via:
+      1. Apollo's native Webhook Subscriptions (contact.created / contact.updated / contact.stage_changed)
+      2. A Zapier / Make / n8n automation triggered by Apollo sequence events
+      3. A manual CSV export processed and POSTed by a salesperson's automation
+
+    Authentication: Bearer token in Authorization header.
+    The token is the apollo_api_key generated in /api/lead-source/generate-key/apollo.
+
+    Apollo Webhook Setup (in Apollo → Settings → Integrations → Webhooks):
+      URL:    https://<your-domain>/api/webhooks/apollo/import
+      Events: contact.created, contact.updated, contact.stage_changed
+      Header: Authorization: Bearer <your_apollo_api_key>
+
+    Apollo sends the contact in the "data" envelope:
+      { "event": "contact.created", "data": { "first_name": ..., "organization_name": ..., ... } }
+
+    Zapier / batch push format (also supported):
+      { "people": [ {...}, ... ] }   or   { "person": { ... } }
+
+    Field mapping (Apollo → CRM):
+      first_name / last_name       → Contact name
+      email                        → Contact email
+      phone / mobile_phone         → Contact phone (mobile preferred)
+      title                        → Contact job title
+      organization_name            → Company name
+      company_domain               → Company website
+      company_industry             → Company industry
+      city / state                 → Stored in notes
+      seniority / department       → Stored in notes
+      linkedin_url                 → Stored in notes
+      stage                        → Stored in notes
+      owner_email                  → Stored in notes (maps to salesperson)
+      apollo_id                    → Stored in notes for dedup reference
+    """
+    # --- Auth ---
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing Bearer token")
+    api_key = authorization.removeprefix("Bearer ").strip()
+    integration = _get_org_from_apollo_key(db, api_key)
+    org_id = integration.organization_id
+
+    # --- Parse body ---
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON body")
+
+    # Normalise to a list of raw person dicts.
+    # Apollo native format: { "event": "contact.created", "data": { ... } }
+    # Batch / Zapier format: { "people": [...] } or { "person": {...} }
+    people_raw: List[dict] = []
+    event_type = body.get("event", "import")
+
+    if "data" in body and isinstance(body["data"], dict):
+        # Apollo native single-contact webhook
+        people_raw = [body["data"]]
+    elif "people" in body and isinstance(body["people"], list):
+        people_raw = body["people"]
+    elif "person" in body and isinstance(body["person"], dict):
+        people_raw = [body["person"]]
+    else:
+        # Flat body — treat as single person (CSV row via Zapier)
+        people_raw = [body]
+
+    created_count = 0
+    updated_count = 0
+
+    for raw in people_raw:
+        try:
+            p = ApolloPersonPayload(**raw)
+
+            # ── Resolve name ──────────────────────────────────────────
+            first = (p.first_name or "").strip()
+            last = (p.last_name or "").strip()
+            if not first and not last and p.name:
+                parts = p.name.strip().split(" ", 1)
+                first = parts[0]
+                last = parts[1] if len(parts) > 1 else ""
+
+            if not first and not last:
+                _log_import(db, org_id, "apollo", event_type, raw, None, None, "skipped",
+                            "No name provided")
+                continue
+
+            # ── Resolve phone (prefer mobile) ─────────────────────────
+            phone = (p.mobile_phone or p.phone or "").strip() or None
+
+            # ── Resolve company name (Apollo uses organization_name) ───
+            company_name = (p.company_name or p.organization_name or "").strip() or None
+            company_website = (p.company_website or p.company_domain or "").strip() or None
+
+            # ── Build notes from Apollo-specific fields ────────────────
+            notes_parts = ["Imported from Apollo.io"]
+            if p.apollo_id:
+                notes_parts.append(f"Apollo ID: {p.apollo_id}")
+            if p.stage:
+                notes_parts.append(f"Apollo Stage: {p.stage}")
+            if p.owner_email:
+                notes_parts.append(f"Apollo Owner: {p.owner_email}")
+            if p.seniority:
+                notes_parts.append(f"Seniority: {p.seniority}")
+            if p.department:
+                notes_parts.append(f"Department: {p.department}")
+            if p.linkedin_url:
+                notes_parts.append(f"LinkedIn: {p.linkedin_url}")
+            location_parts = [x for x in [p.city, p.state, p.country] if x]
+            if location_parts:
+                notes_parts.append(f"Location: {', '.join(location_parts)}")
+            if p.company_employee_count:
+                notes_parts.append(f"Company size: {p.company_employee_count}")
+            notes = " | ".join(notes_parts)
+
+            # ── Upsert company ─────────────────────────────────────────
+            company = _upsert_company(
+                db, org_id,
+                name=company_name or "",
+                website=company_website,
+                industry=p.company_industry,
+                city=p.company_city,
+                state=p.company_state,
+            )
+
+            # ── Upsert contact ─────────────────────────────────────────
+            contact, action = _upsert_contact(
+                db, org_id,
+                first_name=first or "Unknown",
+                last_name=last or "Lead",
+                email=p.email,
+                phone=phone,
+                title=p.title,
+                company_id=company.id if company else None,
+                company_name=company_name,
+                notes=notes,
+            )
+
+            _log_import(db, org_id, "apollo", event_type, raw,
+                        contact.id, company.id if company else None, action)
+
+            if action == "created":
+                created_count += 1
+            elif action == "updated":
+                updated_count += 1
+
+        except Exception as e:
+            logger.error(f"Apollo import error for row: {e}")
+            _log_import(db, org_id, "apollo", event_type, raw, None, None, "error", str(e))
+
+    # Update stats
+    integration.apollo_last_import_at = datetime.utcnow()
+    integration.apollo_total_imported += created_count
     db.commit()
 
     return {

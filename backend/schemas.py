@@ -1304,6 +1304,11 @@ class LeadSourceIntegrationResponse(BaseModel):
     linkedin_enabled: bool
     linkedin_last_import_at: Optional[datetime] = None
     linkedin_total_imported: int = 0
+    # Apollo
+    apollo_enabled: bool
+    apollo_webhook_url: Optional[str] = None
+    apollo_last_import_at: Optional[datetime] = None
+    apollo_total_imported: int = 0
     created_at: datetime
     updated_at: datetime
 
@@ -1316,13 +1321,14 @@ class LeadSourceIntegrationUpdate(BaseModel):
     surfe_enabled: Optional[bool] = None
     surfe_api_key: Optional[str] = None          # Plain-text; backend will encrypt
     linkedin_enabled: Optional[bool] = None
+    apollo_enabled: Optional[bool] = None
 
 
 class GenerateApiKeyResponse(BaseModel):
-    """Returned when a new API key is generated for Clay or LinkedIn webhook."""
-    source: str          # clay | linkedin
+    """Returned when a new API key is generated for Clay, LinkedIn, or Apollo webhook."""
+    source: str          # clay | linkedin | apollo
     api_key: str         # The newly generated key (shown once)
-    webhook_url: str     # The URL to paste into Clay / Zapier
+    webhook_url: str     # The URL to paste into Clay / Zapier / Apollo
 
 
 # --- Clay Inbound Webhook Payload ---
@@ -1411,6 +1417,57 @@ class LinkedInWebhookPayload(BaseModel):
     """Supports single person or batch push from LinkedIn Sales Navigator."""
     people: Optional[List[LinkedInPersonPayload]] = None
     person: Optional[LinkedInPersonPayload] = None
+    model_config = {"extra": "allow"}
+
+
+# --- Apollo.io Inbound Webhook Payload ---
+class ApolloPersonPayload(BaseModel):
+    """
+    Flexible schema for a contact record pushed from Apollo.io.
+    Supports both Apollo's native webhook format and CSV export field names.
+    Apollo webhook events: contact.created, contact.updated, contact.stage_changed
+    """
+    # Core identity
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    name: Optional[str] = None                    # Apollo sometimes sends full name
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    mobile_phone: Optional[str] = None
+    title: Optional[str] = None
+    seniority: Optional[str] = None               # e.g. "Director", "VP"
+    department: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = None
+    # Company fields
+    company_name: Optional[str] = None
+    organization_name: Optional[str] = None       # Apollo's alternate company field
+    company_domain: Optional[str] = None
+    company_website: Optional[str] = None
+    company_industry: Optional[str] = None
+    company_city: Optional[str] = None
+    company_state: Optional[str] = None
+    company_employee_count: Optional[str] = None
+    # Apollo-specific metadata
+    apollo_id: Optional[str] = None               # Apollo's internal contact ID
+    stage: Optional[str] = None                   # Apollo sequence stage
+    owner_email: Optional[str] = None             # Salesperson's email
+    notes: Optional[str] = None
+    model_config = {"extra": "allow"}
+
+
+class ApolloWebhookPayload(BaseModel):
+    """
+    Apollo.io webhook envelope.
+    Apollo sends: { "event": "contact.created", "data": { ... } }
+    Also supports direct batch push: { "people": [...] } or { "person": {...} }
+    """
+    event: Optional[str] = None                   # contact.created | contact.updated | contact.stage_changed
+    data: Optional[dict] = None                   # Apollo native envelope
+    people: Optional[List[ApolloPersonPayload]] = None
+    person: Optional[ApolloPersonPayload] = None
     model_config = {"extra": "allow"}
 
 

@@ -1083,6 +1083,13 @@ class LeadSourceIntegration(Base):
     linkedin_last_import_at = Column(DateTime(timezone=True), nullable=True)
     linkedin_total_imported = Column(Integer, default=0)
 
+    # --- Apollo.io Integration ---
+    apollo_enabled = Column(Boolean, default=False)
+    apollo_api_key = Column(String(255), nullable=True)          # Key NHS generates; Apollo uses this to POST to us
+    apollo_webhook_url = Column(String(500), nullable=True)      # Auto-generated URL shown to user
+    apollo_last_import_at = Column(DateTime(timezone=True), nullable=True)
+    apollo_total_imported = Column(Integer, default=0)
+
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

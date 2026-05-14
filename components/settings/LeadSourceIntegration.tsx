@@ -82,6 +82,7 @@ export default function LeadSourceIntegration() {
   // Generated keys (shown once after generation)
   const [newClayKey, setNewClayKey] = useState<GeneratedApiKey | null>(null)
   const [newLinkedInKey, setNewLinkedInKey] = useState<GeneratedApiKey | null>(null)
+  const [newApolloKey, setNewApolloKey] = useState<GeneratedApiKey | null>(null)
 
   // Surfe API key input
   const [surfeKeyInput, setSurfeKeyInput] = useState("")
@@ -121,7 +122,7 @@ export default function LeadSourceIntegration() {
   }
 
   // ── Toggle a source on/off ──────────────────────────────────
-  async function toggleSource(source: "clay" | "surfe" | "linkedin", enabled: boolean) {
+  async function toggleSource(source: "clay" | "surfe" | "linkedin" | "apollo", enabled: boolean) {
     if (!settings) return
     setSaving(true)
     setError("")
@@ -138,12 +139,13 @@ export default function LeadSourceIntegration() {
   }
 
   // ── Generate a new API key ──────────────────────────────────
-  async function generateKey(source: "clay" | "linkedin") {
+  async function generateKey(source: "clay" | "linkedin" | "apollo") {
     setSaving(true)
     setError("")
     try {
       const result = await leadSourceAPI.generateKey(source)
       if (source === "clay") setNewClayKey(result)
+      else if (source === "apollo") setNewApolloKey(result)
       else setNewLinkedInKey(result)
       await loadSettings()
       setSuccess(`New ${source} API key generated. Copy it now — it won't be shown again.`)
@@ -550,6 +552,164 @@ export default function LeadSourceIntegration() {
                   ].map(([li, crm]) => (
                     <tr key={li} className="border-b border-gray-100">
                       <td className="px-2 py-1 font-mono border border-gray-200">{li}</td>
+                      <td className="px-2 py-1 border border-gray-200">{crm}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      {/* ── APOLLO.IO ─────────────────────────────────────────── */}
+      <div className="bg-white border rounded-lg overflow-hidden">
+        <div className="p-4 flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow"
+              style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}>
+              A
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-gray-900">Apollo.io</h3>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                  settings?.apollo_enabled ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                }`}>
+                  {settings?.apollo_enabled ? "Enabled" : "Disabled"}
+                </span>
+              </div>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Push contacts from Apollo sequences directly into your CRM via native webhooks or Zapier.
+              </p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                <StatPill label="Imported" value={settings?.apollo_total_imported ?? 0} />
+                <StatPill label="Last import" value={fmt(settings?.apollo_last_import_at ?? null)} />
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => toggleSource("apollo", !settings?.apollo_enabled)}
+            disabled={saving}
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+              settings?.apollo_enabled ? "bg-green-500" : "bg-gray-200"
+            }`}
+          >
+            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+              settings?.apollo_enabled ? "translate-x-5" : "translate-x-0"
+            }`} />
+          </button>
+        </div>
+
+        <div className="border-t bg-gray-50 p-4 space-y-3">
+          <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">Webhook Configuration</p>
+
+          {/* Webhook URL */}
+          {settings?.apollo_webhook_url && (
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Webhook URL (paste into Apollo → Settings → Integrations → Webhooks)</label>
+              <div className="flex items-center gap-1 bg-white border rounded px-3 py-2 font-mono text-xs text-gray-700 break-all">
+                <span className="flex-1">{settings.apollo_webhook_url}</span>
+                <CopyButton text={settings.apollo_webhook_url} />
+              </div>
+            </div>
+          )}
+
+          {/* Newly generated key — shown once */}
+          {newApolloKey && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-xs font-semibold text-yellow-800 mb-1">⚠ Copy your API key now — it will not be shown again.</p>
+              <div className="flex items-center gap-1 bg-white border rounded px-3 py-2 font-mono text-xs text-gray-700 break-all">
+                <span className="flex-1">{newApolloKey.api_key}</span>
+                <CopyButton text={newApolloKey.api_key} />
+              </div>
+              <p className="text-xs text-yellow-700 mt-2">
+                In Apollo Webhooks, set the custom header: <code className="bg-yellow-100 px-1 rounded">Authorization: Bearer {newApolloKey.api_key}</code>
+              </p>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => generateKey("apollo")}
+              disabled={saving}
+              className="px-3 py-1.5 text-xs bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+            >
+              <RefreshCw className="w-3 h-3" />
+              {settings?.apollo_webhook_url ? "Regenerate API Key" : "Generate API Key & Webhook URL"}
+            </button>
+            <a
+              href="https://app.apollo.io/#/settings/integrations/webhooks"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 text-xs border border-gray-200 text-gray-600 rounded hover:bg-gray-100 transition-colors flex items-center gap-1.5"
+            >
+              <ExternalLink className="w-3 h-3" />
+              Apollo Webhooks
+            </a>
+          </div>
+
+          {/* Apollo setup guide */}
+          <details className="text-xs text-gray-500">
+            <summary className="cursor-pointer font-medium text-gray-600 hover:text-gray-800">Apollo setup guide</summary>
+            <div className="mt-2 space-y-2">
+              <div className="p-2 bg-white border rounded">
+                <p className="font-medium text-gray-700">Option 1 — Apollo Native Webhooks (Recommended)</p>
+                <ol className="mt-1 space-y-1 list-decimal list-inside text-gray-500">
+                  <li>Generate your API key above and copy the Webhook URL.</li>
+                  <li>In Apollo, go to <strong>Settings → Integrations → Webhooks</strong>.</li>
+                  <li>Create a new webhook, paste the URL, and subscribe to <code className="bg-gray-100 px-1 rounded">contact.created</code>, <code className="bg-gray-100 px-1 rounded">contact.updated</code>, and <code className="bg-gray-100 px-1 rounded">contact.stage_changed</code>.</li>
+                  <li>Add a custom header: <code className="bg-gray-100 px-1 rounded">Authorization: Bearer &lt;your_key&gt;</code>.</li>
+                  <li>Contacts will flow into your CRM automatically as your salespeople work in Apollo.</li>
+                </ol>
+              </div>
+              <div className="p-2 bg-white border rounded">
+                <p className="font-medium text-gray-700">Option 2 — Zapier / Make Automation</p>
+                <p className="text-gray-500 mt-1">
+                  Use the Apollo Zapier trigger ("New Contact" or "Contact Stage Changed"), map fields, and POST to the webhook URL with the Authorization header. Useful if you want to filter by sequence, owner, or stage before importing.
+                </p>
+              </div>
+              <div className="p-2 bg-white border rounded">
+                <p className="font-medium text-gray-700">Option 3 — Clay Pipeline (Enrichment First)</p>
+                <p className="text-gray-500 mt-1">
+                  Export your Apollo contact list into Clay, run enrichment (verified emails, phones, LinkedIn), then use Clay's HTTP API action to push the enriched records to the Clay webhook above. Best for material handling prospects where data quality matters.
+                </p>
+              </div>
+            </div>
+          </details>
+
+          {/* Field mapping */}
+          <details className="text-xs text-gray-500">
+            <summary className="cursor-pointer font-medium text-gray-600 hover:text-gray-800">Apollo field mapping guide</summary>
+            <div className="mt-2 overflow-x-auto">
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="text-left px-2 py-1 border border-gray-200">Apollo Field</th>
+                    <th className="text-left px-2 py-1 border border-gray-200">CRM Field</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ["first_name", "Contact First Name"],
+                    ["last_name", "Contact Last Name"],
+                    ["email", "Contact Email"],
+                    ["mobile_phone / phone", "Contact Phone (mobile preferred)"],
+                    ["title", "Contact Job Title"],
+                    ["linkedin_url", "Stored in Notes"],
+                    ["organization_name / company_name", "Company Name (auto-created)"],
+                    ["company_domain", "Company Website"],
+                    ["company_industry", "Company Industry"],
+                    ["seniority", "Stored in Notes"],
+                    ["department", "Stored in Notes"],
+                    ["stage", "Stored in Notes (Apollo sequence stage)"],
+                    ["owner_email", "Stored in Notes (salesperson)"],
+                    ["apollo_id", "Stored in Notes (for dedup reference)"],
+                    ["city / state / country", "Stored in Notes"],
+                    ["company_employee_count", "Stored in Notes"],
+                  ].map(([apollo, crm]) => (
+                    <tr key={apollo} className="border-b border-gray-100">
+                      <td className="px-2 py-1 font-mono border border-gray-200">{apollo}</td>
                       <td className="px-2 py-1 border border-gray-200">{crm}</td>
                     </tr>
                   ))}

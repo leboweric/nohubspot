@@ -1829,6 +1829,11 @@ export interface LeadSourceSettings {
   linkedin_enabled: boolean
   linkedin_last_import_at: string | null
   linkedin_total_imported: number
+  // Apollo
+  apollo_enabled: boolean
+  apollo_webhook_url: string | null
+  apollo_last_import_at: string | null
+  apollo_total_imported: number
   created_at: string
   updated_at: string
 }
@@ -1860,13 +1865,14 @@ export const leadSourceAPI = {
     surfe_enabled?: boolean
     surfe_api_key?: string
     linkedin_enabled?: boolean
+    apollo_enabled?: boolean
   }): Promise<LeadSourceSettings> =>
     apiRequest('/api/lead-source/settings', {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
-  generateKey: (source: 'clay' | 'linkedin'): Promise<GeneratedApiKey> =>
+  generateKey: (source: 'clay' | 'linkedin' | 'apollo'): Promise<GeneratedApiKey> =>
     apiRequest(`/api/lead-source/generate-key/${source}`, { method: 'POST' }),
 
   getLogs: (limit = 50, source?: string): Promise<LeadImportLog[]> => {
